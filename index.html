@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Francis Pwavwe - Tourism Management Student, Aspire Leader, and Tech Enthusiast.">
+    <meta name="description" content="Francis Pwavwe - Tourism Management Student, Aspire Leader, and Tech Entrepreneur.">
     <title>Francis Pwavwe | Tourism & Tech</title>
 
     <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
@@ -15,12 +15,13 @@
             --soft-blue: #D4F1F4;    /* Serenity */
             --dark-blue: #0a355c;    /* Deep contrast */
             --accent: #FFD700;       /* Gold */
+            --android-green: #3DDC84; /* Android Brand Color */
             --text-dark: #333;
             --text-light: #f4f4f4;
             --bg-light: #ffffff;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
             background-color: var(--bg-light);
@@ -52,7 +53,7 @@
             background-color: #fff;
         }
 
-        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: 1px; }
         header p.tagline { font-size: 1.1rem; opacity: 0.95; font-weight: 300; max-width: 600px; }
 
         /* --- Buttons --- */
@@ -67,6 +68,19 @@
             font-weight: bold;
             transition: transform 0.2s;
             border: 2px solid var(--accent);
+            display: inline-block;
+        }
+
+        .btn-app {
+            background: var(--android-green);
+            color: var(--dark-blue);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s;
+            border: 2px solid var(--android-green);
+            display: inline-block;
         }
         
         .btn-outline {
@@ -80,7 +94,7 @@
             transition: all 0.2s;
         }
 
-        .btn-main:hover, .btn-outline:hover { transform: translateY(-3px); opacity: 0.9; }
+        .btn-main:hover, .btn-app:hover, .btn-outline:hover { transform: translateY(-3px); opacity: 0.9; }
 
         /* --- Layout --- */
         .container { max-width: 900px; margin: -30px auto 0; padding: 2rem; z-index: 10; position: relative; }
@@ -94,7 +108,6 @@
         
         .card { background: #f9f9f9; padding: 1.5rem; border-left: 4px solid var(--primary-blue); border-radius: 4px; }
         
-        /* Specific style for the Hobby/Vibe cards */
         .vibe-card { border-left: 4px solid var(--accent); background: var(--soft-blue); }
 
         /* --- Contact --- */
@@ -107,6 +120,8 @@
         .contact-btn:hover { background: var(--primary-blue); color: white; }
 
         footer { text-align: center; padding: 2rem; background: #f0f0f0; color: #666; margin-top: auto; font-size: 0.9rem; }
+        
+        @media (max-width: 600px) { header h1 { font-size: 2rem; } }
     </style>
 </head>
 <body>
@@ -118,9 +133,16 @@
         <p class="tagline">Tourism Management @ UCC | Aspire Leader | Cadet</p>
         
         <div class="btn-group">
-            <a href="resume.pdf" class="btn-main" target="_blank">📄 Download My Resume</a>
+            <a href="resume.pdf" class="btn-main" target="_blank">📄 Download Resume</a>
+            
+            <a href="app.apk" class="btn-app">📱 Download App (APK)</a>
+            
             <a href="#contact" class="btn-outline">Link Up</a>
         </div>
+        
+        <p style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.8; max-width: 400px;">
+            *Note: To install the AZ Learner App, you may need to allow installation from unknown sources in your settings.
+        </p>
     </header>
 
     <div class="container">
@@ -147,7 +169,7 @@
                 </div>
                 <div class="card">
                     <h3>📱 AZ Learner</h3>
-                    <p>Founder of a student utility app streamlining campus life.</p>
+                    <p>Founder of a student utility app streamlining campus life. Available for download above.</p>
                 </div>
                 <div class="card">
                     <h3>🎖️ Cadet Corps</h3>
