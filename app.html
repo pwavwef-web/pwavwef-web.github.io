@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner - The Ultimate Student Utility App. Download the APK directly.">
+    <title>AZ Learner | Official Download</title>
+    
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --text-light: #f4f4f4;
+            --brand-green: #00e676; /* High-vis green for downloads */
+            --accent-blue: #2979ff;
+            --surface: #1c2333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* Navbar with Logo */
+        nav {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+        .logo { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            font-size: 1.5rem; font-weight: 800; color: var(--text-light); letter-spacing: -1px; text-decoration: none; 
+        }
+        .logo img {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px; /* Slight curve on the icon corners */
+            box-shadow: 0 4px 10px rgba(0,230,118,0.2);
+        }
+        .back-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 30px; backdrop-filter: blur(5px); }
+
+        /* Hero Section with Banner Background */
+        .hero {
+            text-align: center;
+            padding: 6rem 1.5rem 3rem; /* More top padding for banner space */
+            /* THIS IS THE BANNER MAGIC: Dark overlay + your image */
+            background-image: linear-gradient(to bottom, rgba(10, 14, 23, 0.8), rgba(10, 14, 23, 1)), url('app-banner.jpg');
+            background-size: cover;
+            background-position: center;
+            margin-top: -80px; /* Pulls it up behind navbar */
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+            font-weight: 800;
+            /* Subtle text gradient */
+            background: linear-gradient(to right, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* The Big Green Button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--brand-green);
+            color: #0a0e17;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 25px rgba(0, 230, 118, 0.5);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 40px rgba(0, 230, 118, 0.7);
+        }
+
+        .safe-badge {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+
+        /* SCREENSHOT GALLERY */
+        .gallery-section {
+            text-align: center;
+            padding: 3rem 0;
+            overflow-x: hidden;
+            background: linear-gradient(to bottom, var(--bg-dark), var(--surface));
+        }
+        
+        .gallery-scroll {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem 2rem;
+            overflow-x: auto;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .phone-frame {
+            width: 220px; /* Slightly larger */
+            height: 440px;
+            border-radius: 24px;
+            border: 6px solid #222;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            transition: transform 0.3s;
+        }
+        
+        .phone-frame:hover { transform: translateY(-10px); }
+        
+        .phone-frame img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Features Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: border-color 0.3s;
+        }
+        
+        .feature-card:hover { border-color: var(--brand-green); }
+
+        .feature-card h3 { color: var(--brand-green); margin-bottom: 0.5rem; font-size: 1.3rem;}
+        .feature-card p { color: rgba(255,255,255,0.7); }
+
+        /* Install Guide */
+        .install-guide {
+            background: linear-gradient(135deg, var(--surface), #151b29);
+            max-width: 800px;
+            margin: 5rem auto;
+            padding: 3rem;
+            border-radius: 20px;
+            border-left: 5px solid var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .steps { margin-top: 2rem; margin-left: 1.5rem; }
+        .steps li { margin-bottom: 1.2rem; color: #ccc; font-size: 1.1rem;}
+        .steps strong { color: var(--accent-blue); }
+
+        footer { text-align: center; padding: 4rem 2rem; color: #555; font-size: 0.9rem; background: #080b12;}
+
+        @media (max-width: 600px) { 
+            h1 { font-size: 2.5rem; } 
+            .hero { padding-top: 5rem; }
+            .gallery-scroll { justify-content: flex-start; padding-bottom: 2rem; } 
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#" class="logo">
+            <img src="app-icon.png" alt="AZ Learner Logo">
+            AZ Learner
+        </a>
+        <a href="index.html" class="back-link">← Main Portfolio</a>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Campus Life,<br>Levelled Up.</h1>
+            <p class="subtitle">The essential utility app for students. Timetables, instant alerts, and resources—built by students, for students.</p>
+            
+            <a href="app.apk" class="download-btn">⬇ Download APK (v1.0)</a>
+            
+            <div class="safe-badge">
+                <span>🛡️</span> Verified Safe • No Ads • Free Beta
+            </div>
+        </div>
+    </section>
+
+    <section class="gallery-section">
+        <div class="gallery-scroll">
+            <div class="phone-frame"><img src="screen1.jpg" alt="App Screenshot 1"></div>
+            <div class="phone-frame"><img src="screen2.jpg" alt="App Screenshot 2"></div>
+            <div class="phone-frame"><img src="screen3.jpg" alt="App Screenshot 3"></div>
+        </div>
+    </section>
+
+    <div class="features">
+        <div class="feature-card">
+            <h3>📅 Smart Timetable</h3>
+            <p>Your schedule, organized automatically. Get notified before your next lecture starts.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🔔 Instant Campus Alerts</h3>
+            <p>Real-time notifications for events, deadline shifts, and critical announcements.</p>
+        </div>
+        <div class="feature-card">
+            <h3>⚡ Reliable Offline Mode</h3>
+            <p>Access your essential data anytime, even when campus Wi-Fi is down.</p>
+        </div>
+    </div>
+
+    <section class="install-guide">
+        <h2>⚠️ How to Install (Beta Access)</h2>
+        <p style="color: #999; margin-top: 0.5rem;">Get exclusive early access before we hit the Play Store. Follow these simple steps:</p>
+        <ol class="steps">
+            <li>Tap the <strong>Download APK</strong> button above.</li>
+            <li>Open the downloaded file from your notifications.</li>
+            <li>If prompted, go to <strong>Settings</strong> and enable <strong>"Allow from this source"</strong>.</li>
+            <li>Tap <strong>Install</strong> and launch AZ Learner!</li>
+        </ol>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 AZ Learner Team. A Francis Pwavwe Production.</p>
+    </footer>
+
+</body>
+</html>
