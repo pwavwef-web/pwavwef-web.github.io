@@ -1,213 +1,234 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Francis Pwavwe - Tourism Management Student, Aspire Leader, and Tech Entrepreneur.">
-    <title>Francis Pwavwe | Tourism & Tech</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Francis Pwavwe - Tourism Management Student, Aspire Leader, and Tech Entrepreneur. Founder of AZ Learner.">
+<title>Francis Pwavwe | Tourism & Tech</title>
 
-    <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
+<meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
 
-    <style>
-        :root {
-            /* Blue-Themed Serenity Palette */
-            --primary-blue: #0F4C81; /* Classic Blue */
-            --soft-blue: #D4F1F4;    /* Serenity */
-            --dark-blue: #0a355c;    /* Deep contrast */
-            --accent: #FFD700;       /* Gold */
-            --android-green: #3DDC84; /* Android Brand Color */
-            --text-dark: #333;
-            --text-light: #f4f4f4;
-            --bg-light: #ffffff;
-        }
+<style>
+    :root {
+        /* Blue-Themed Serenity Palette */
+        --primary-blue: #0F4C81; /* Classic Blue */
+        --soft-blue: #D4F1F4;    /* Serenity */
+        --dark-blue: #0a355c;    /* Deep contrast */
+        --accent: #FFD700;       /* Gold */
+        --android-green: #3DDC84; /* Android Brand Color */
+        --paystack-blue: #011b33; /* Paystack Branding */
+        --text-dark: #333;
+        --text-light: #f4f4f4;
+        --bg-light: #ffffff;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-dark);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+    body {
+        background-color: var(--bg-light);
+        color: var(--text-dark);
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
 
-        /* --- Header & Profile --- */
-        header {
-            background: linear-gradient(135deg, var(--primary-blue), #1e90ff);
-            color: var(--text-light);
-            padding: 4rem 2rem;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    /* --- Header & Profile --- */
+    header {
+        background: linear-gradient(135deg, var(--primary-blue), #1e90ff);
+        color: var(--text-light);
+        padding: 4rem 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-        .profile-pic {
-            width: 180px; height: 180px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid var(--accent);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            margin-bottom: 1.5rem;
-            background-color: #fff;
-        }
+    .profile-pic {
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--accent);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        margin-bottom: 1.5rem;
+        background-color: #fff;
+    }
 
-        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: 1px; }
-        header p.tagline { font-size: 1.1rem; opacity: 0.95; font-weight: 300; max-width: 600px; }
+    header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: 1px; }
+    header p.tagline { font-size: 1.1rem; opacity: 0.95; font-weight: 300; max-width: 600px; }
 
-        /* --- Buttons --- */
-        .btn-group { margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
-        
-        .btn-main {
-            background: var(--accent);
-            color: var(--dark-blue);
-            padding: 0.8rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: transform 0.2s;
-            border: 2px solid var(--accent);
-            display: inline-block;
-        }
+    /* --- Buttons --- */
+    .btn-group { margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    
+    .btn-main {
+        background: var(--accent);
+        color: var(--dark-blue);
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: transform 0.2s;
+        border: 2px solid var(--accent);
+        display: inline-block;
+    }
 
-        .btn-app {
-            background: var(--android-green);
-            color: var(--dark-blue);
-            padding: 0.8rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: transform 0.2s;
-            border: 2px solid var(--android-green);
-            display: inline-block;
-        }
-        
-        .btn-outline {
-            background: transparent;
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            border: 2px solid rgba(255,255,255,0.5);
-            transition: all 0.2s;
-        }
+    .btn-app {
+        background: var(--android-green);
+        color: var(--dark-blue);
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: transform 0.2s;
+        border: 2px solid var(--android-green);
+        display: inline-block;
+    }
 
-        .btn-main:hover, .btn-app:hover, .btn-outline:hover { transform: translateY(-3px); opacity: 0.9; }
+    .btn-support {
+        background: var(--paystack-blue);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: transform 0.2s;
+        border: 2px solid var(--paystack-blue);
+        display: inline-block;
+    }
+    
+    .btn-outline {
+        background: transparent;
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        border: 2px solid rgba(255,255,255,0.5);
+        transition: all 0.2s;
+    }
 
-        /* --- Layout --- */
-        .container { max-width: 900px; margin: -30px auto 0; padding: 2rem; z-index: 10; position: relative; }
-        
-        section { margin-bottom: 2rem; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .btn-main:hover, .btn-app:hover, .btn-outline:hover, .btn-support:hover { transform: translateY(-3px); opacity: 0.9; }
 
-        h2 { color: var(--primary-blue); border-bottom: 2px solid var(--soft-blue); padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.5rem; }
+    /* --- Layout --- */
+    .container { max-width: 900px; margin: -30px auto 0; padding: 2rem; z-index: 10; position: relative; }
+    
+    section { margin-bottom: 2rem; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
-        /* --- Grid Layouts --- */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        
-        .card { background: #f9f9f9; padding: 1.5rem; border-left: 4px solid var(--primary-blue); border-radius: 4px; }
-        
-        .vibe-card { border-left: 4px solid var(--accent); background: var(--soft-blue); }
+    h2 { color: var(--primary-blue); border-bottom: 2px solid var(--soft-blue); padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.5rem; }
 
-        /* --- Contact --- */
-        .contact-links { display: flex; flex-direction: column; gap: 1rem; }
-        .contact-btn {
-            display: flex; align-items: center; justify-content: center; padding: 1rem;
-            background: #f0f4f8; color: var(--primary-blue); text-decoration: none;
-            border-radius: 8px; font-weight: bold; transition: all 0.3s ease;
-        }
-        .contact-btn:hover { background: var(--primary-blue); color: white; }
+    /* --- Grid Layouts --- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+    
+    .card { background: #f9f9f9; padding: 1.5rem; border-left: 4px solid var(--primary-blue); border-radius: 4px; }
+    
+    .vibe-card { border-left: 4px solid var(--accent); background: var(--soft-blue); }
 
-        footer { text-align: center; padding: 2rem; background: #f0f0f0; color: #666; margin-top: auto; font-size: 0.9rem; }
-        
-        @media (max-width: 600px) { header h1 { font-size: 2rem; } }
-    </style>
+    /* --- Contact --- */
+    .contact-links { display: flex; flex-direction: column; gap: 1rem; }
+    .contact-btn {
+        display: flex; align-items: center; justify-content: center; padding: 1rem;
+        background: #f0f4f8; color: var(--primary-blue); text-decoration: none;
+        border-radius: 8px; font-weight: bold; transition: all 0.3s ease;
+    }
+    .contact-btn:hover { background: var(--primary-blue); color: white; }
+
+    footer { text-align: center; padding: 2rem; background: #f0f0f0; color: #666; margin-top: auto; font-size: 0.9rem; }
+    
+    @media (max-width: 600px) { header h1 { font-size: 2rem; } }
+</style>
+
+
 </head>
 <body>
 
-    <header>
-        <img src="profile.jpg" alt="Francis Pwavwe" class="profile-pic">
-        
-        <h1>Francis Pwavwe</h1>
-        <p class="tagline">Tourism Management @ UCC | Aspire Leader | Cadet</p>
-        
-        <div class="btn-group">
-            <a href="resume.pdf" class="btn-main" target="_blank">📄 Download Resume</a>
-            
-            <a href="app.html" class="btn-app">📱 Get AZ Learner App</a>
-            
-            <a href="#contact" class="btn-outline">Link Up</a>
-        </div>
-        
-        <p style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.8; max-width: 400px;">
-            *Visit the AZ Learner page for installation guide and features.
-        </p>
-    </header>
-
-    <div class="container">
-        
-        <section id="about">
-            <h2>The Vibe Check</h2>
-            <p>
-                I'm a student at the University of Cape Coast (SS/TMG/22/0014) crafting a future where tourism meets tech. 
-                My ambition is powered by morning sunlight and a delusion-level belief that I can change the game. 
-                I dream of a career in the US, living in blue-themed serenity, and proving that the "fairytale ending" is something you build yourself.
-            </p>
-        </section>
-
-        <section id="portfolio">
-            <h2>The Grind & Glory</h2>
-            <div class="grid">
-                <div class="card">
-                    <h3>🏆 Aspire Leaders 2025</h3>
-                    <p>Graduate of Cohort 5. Leadership development and social impact training.</p>
-                </div>
-                <div class="card">
-                    <h3>🏨 Kempinski Internship</h3>
-                    <p>Operational excellence in Housekeeping and Banqueting at a 5-star level.</p>
-                </div>
-                <div class="card">
-                    <h3>📱 AZ Learner</h3>
-                    <p>Founder of a student utility app streamlining campus life. Download available above.</p>
-                </div>
-                <div class="card">
-                    <h3>🎖️ Cadet Corps</h3>
-                    <p>Oguaa Hall Army Cadet & UCC Armed Forces Cadet Corps.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="vibes">
-            <h2>The B-Side: Passions</h2>
-            <div class="grid">
-                <div class="card vibe-card">
-                    <h3>🇨🇳 Chinese Language Instructor</h3>
-                    <p>
-                        Breaking language barriers. I design lesson plans and teach basic Chinese, helping others navigate a new culture.
-                    </p>
-                </div>
-                <div class="card vibe-card">
-                    <h3>🎶 Drill Music & Vibes</h3>
-                    <p>
-                        Drill isn't just noise; it's energy. Whether I'm vibing to a new track or curating a playlist, music fuels my daily grind.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <section id="contact">
-            <h2>Link Up</h2>
-            <div class="contact-links">
-                <a href="mailto:pwavwef@gmail.com" class="contact-btn">📧 Email Me</a>
-                <a href="https://wa.me/233557535673" class="contact-btn">💬 WhatsApp</a>
-                <a href="https://www.linkedin.com/in/francis-pwavwe" class="contact-btn">💼 LinkedIn Profile</a>
-            </div>
-        </section>
-
+<header>
+    <img src="profile.jpg" alt="Francis Pwavwe" class="profile-pic">
+    
+    <h1>Francis Pwavwe</h1>
+    <p class="tagline">Tourism Management @ UCC | Aspire Leader | Founder of AZ Learner</p>
+    
+    <div class="btn-group">
+        <a href="resume.pdf" class="btn-main" target="_blank">📄 Download Resume</a>
+        <a href="https://azlearner.me/download" class="btn-app">📱 Get AZ Learner App</a>
+        <a href="https://paystack.shop/pay/fw5uib9s1g" class="btn-support">💸 Support Project</a>
+        <a href="#contact" class="btn-outline">Link Up</a>
     </div>
+    
+    <p style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.8; max-width: 400px;">
+        *Visit the AZ Learner page for installation guide and feature lists.
+    </p>
+</header>
 
-    <footer>
+<div class="container">
+    
+    <section id="about">
+        <h2>The Vibe Check</h2>
+        <p>
+            I'm a student at the University of Cape Coast (SS/TMG/22/0014) crafting a future where tourism meets tech. 
+            My ambition is powered by morning sunlight and a delusion-level belief that I can change the game. 
+            I dream of a career in the US, living in blue-themed serenity, and proving that the "fairytale ending" is something you build yourself.
+        </p>
+    </section>
+
+    <section id="portfolio">
+        <h2>The Grind & Glory</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>🏆 Aspire Leaders 2025</h3>
+                <p>Graduate of Cohort 5. Focused on leadership development and social impact training at a global scale.</p>
+            </div>
+            <div class="card">
+                <h3>🏨 Kempinski Internship</h3>
+                <p>Mastering operational excellence and 5-star service standards in high-pressure hospitality environments.</p>
+            </div>
+            <div class="card">
+                <h3>📱 AZ Learner</h3>
+                <p>Founder of a student utility app streamlining campus life for the UCC community. No cap, just utility.</p>
+            </div>
+            <div class="card">
+                <h3>🎖️ Cadet Corps</h3>
+                <p>Oguaa Hall Army Cadet & UCC Armed Forces Cadet Corps. Discipline, honor, and leadership.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="vibes">
+        <h2>The B-Side: Passions</h2>
+        <div class="grid">
+            <div class="card vibe-card">
+                <h3>🇨🇳 Chinese Language</h3>
+                <p>
+                    Designing lesson plans and teaching basic Chinese. Breaking cultural barriers one character at a time.
+                </p>
+            </div>
+            <div class="card vibe-card">
+                <h3>🎶 Drill & Serenity</h3>
+                <p>
+                    High-energy drill music fuels the grind, while blue-themed serenity keeps the mind clear for the big picture.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2>Link Up</h2>
+        <div class="contact-links">
+            <a href="mailto:pwavwef@gmail.com" class="contact-btn">📧 Email Me</a>
+            <a href="https://wa.me/233557535673" class="contact-btn">💬 WhatsApp</a>
+            <a href="https://www.linkedin.com/in/francis-pwavwe" class="contact-btn">💼 LinkedIn Profile</a>
+        </div>
+    </section>
+
+</div>
+
+<footer>
+    <p>&copy; 2026 Francis Pwavwe. SS/TMG/22/0014. Built with ambition & blue-themed serenity.</p>
+</footer>
+
+
+</body>
+</html>
         <p>&copy; 2025 Francis Pwavwe. Built with ambition.</p>
     </footer>
 
