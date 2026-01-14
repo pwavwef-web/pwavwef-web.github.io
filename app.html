@@ -654,6 +654,16 @@
             cursor: none; 
         }
 
+        /* --- Mobile Optimization: Disable Custom Cursor --- */
+        @media (max-width: 768px), (hover: none) {
+            .custom-cursor, .glow-orb {
+                display: none !important;
+            }
+            body {
+                cursor: auto !important;
+            }
+        }
+
         /* --- Animated Background --- */
         .bg-animated {
             position: fixed;
