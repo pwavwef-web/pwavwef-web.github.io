@@ -62,17 +62,14 @@
             btn.classList.add('opacity-80', 'cursor-wait');
 
             try {
-                // The Real Auth Call
                 await signInWithEmailAndPassword(auth, email, password);
                 
-                // Success UI
                 btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> Welcome Back, Legend`;
                 btn.classList.remove('from-blue-600', 'to-cyan-600');
                 btn.classList.add('from-green-600', 'to-emerald-600');
 
                 setTimeout(() => {
                     forceCloseModal();
-                    // Reset button style
                     btn.innerHTML = originalContent;
                     btn.classList.add('from-blue-600', 'to-cyan-600');
                     btn.classList.remove('from-green-600', 'to-emerald-600', 'opacity-80', 'cursor-wait');
@@ -80,14 +77,9 @@
 
             } catch (error) {
                 console.error("Login Error:", error);
-                
-                // Error UI
                 btn.innerHTML = `<span class="material-symbols-outlined">error</span> Failed`;
                 btn.classList.add('from-red-600', 'to-red-500');
-                
                 alert(`Login Failed: ${error.message}`);
-                
-                // Reset button
                 setTimeout(() => {
                     btn.innerHTML = originalContent;
                     btn.classList.remove('from-red-600', 'to-red-500');
@@ -97,11 +89,10 @@
             }
         }
 
-        // --- LOGOUT ---
         window.logoutUser = () => {
             if(confirm("Disconnect from the Squad?")) {
                 signOut(auth).then(() => {
-                    // UI resets automatically via onAuthStateChanged
+                    // UI resets via onAuthStateChanged
                 }).catch((error) => {
                     console.error("Logout Error:", error);
                 });
@@ -148,8 +139,24 @@
 
             const user = auth.currentUser;
 
-            // 2. Check Auth
-            if (!user && type !== 'map') {
+            // 2. Map & Events don't strictly require login, but personalization helps
+            if (type === 'map') {
+                renderMap();
+                return;
+            }
+            
+            if (type === 'events') {
+                renderEvents();
+                return;
+            }
+            
+            if (type === 'gpa') {
+                renderGPACalculator();
+                return;
+            }
+
+            // 3. Check Auth for personal data
+            if (!user) {
                 featureBody.innerHTML = `
                     <div class="text-center py-8">
                         <span class="material-symbols-outlined text-4xl text-red-400 mb-2">lock</span>
@@ -161,35 +168,22 @@
                 return;
             }
 
-            // 3. Map is static
-            if (type === 'map') {
-                renderMap();
-                return;
-            }
-
-            // 4. Fetch User Data from Firestore
+            // 4. Fetch User Data
             try {
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
-
                 let userData;
 
                 if (docSnap.exists()) {
                     userData = docSnap.data();
                 } else {
-                    // --- AUTO-INITIALIZE DATA FOR DEMO ---
                     userData = {
                         name: user.displayName || user.email.split('@')[0],
                         email: user.email,
                         userId: user.uid,
                         school: "UCC",
-                        weeklyXp: 50, // Welcome bonus
+                        weeklyXp: 50, 
                         role: "student",
-                        grades: {
-                            "Ecotourism": 88,
-                            "Hospitality": 84,
-                            "Marketing": 78
-                        },
                         indexNumber: "SS/TMG/22/0014"
                     };
                     await setDoc(docRef, userData);
@@ -199,7 +193,6 @@
                 if (type === 'leaderboard') renderLeaderboard(userData);
                 if (type === 'print') renderPrintStatus(user.uid);
                 if (type === 'blog') renderBlog(userData);
-                if (type === 'grades') renderGrades(userData);
                 if (type === 'countdown') renderCountdown(userData);
 
             } catch (error) {
@@ -258,7 +251,6 @@
                 </div>
             `;
             
-            // Fetch Top 10
             const q = query(collection(db, "users"), orderBy("weeklyXp", "desc"), limit(10));
             const snap = await getDocs(q);
             const list = document.getElementById('lb-list');
@@ -290,153 +282,15 @@
             });
         }
 
-        async function renderPrintStatus(uid) {
-             const featureBody = document.getElementById('featureBody');
-             featureBody.innerHTML = `<div class="text-center py-10"><span class="material-symbols-outlined animate-spin text-3xl text-orange-400">sync</span></div>`;
-             
-             const docRef = doc(db, "print_orders", uid);
-             const snap = await getDoc(docRef);
-             
-             let statusHTML = '';
-             
-             if (!snap.exists()) {
-                 statusHTML = `
-                    <div class="text-center py-6">
-                        <span class="material-symbols-outlined text-4xl text-gray-600 mb-2">print_disabled</span>
-                        <p class="text-gray-400 text-sm mb-4">No active print jobs.</p>
-                        <p class="text-xs text-gray-500">Upload documents in the app to skip the queue.</p>
-                    </div>
-                 `;
-             } else {
-                 const data = snap.data();
-                 const statusMap = {
-                     'received': { text: 'Received', color: 'blue', icon: 'pending' },
-                     'printing': { text: 'Printing...', color: 'yellow', icon: 'print' },
-                     'delivering': { text: 'Out for Delivery', color: 'orange', icon: 'local_shipping' },
-                     'completed': { text: 'Delivered', color: 'green', icon: 'check_circle' }
-                 };
-                 const s = statusMap[data.status] || statusMap['received'];
-                 
-                 statusHTML = `
-                    <div class="text-center py-6">
-                        <div class="w-16 h-16 rounded-full bg-${s.color}-500/20 flex items-center justify-center mx-auto mb-4 border border-${s.color}-500/50">
-                            <span class="material-symbols-outlined text-3xl text-${s.color}-400">${s.icon}</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-1">${s.text}</h3>
-                        <p class="text-xs text-gray-400">Last Update: ${new Date(data.lastUpdated).toLocaleTimeString()}</p>
-                    </div>
-                 `;
-             }
-
-             featureBody.innerHTML = `
-                 <div class="text-center mb-4">
-                    <h2 class="text-xl font-bold text-white">Print Queue 🖨️</h2>
-                    <p class="text-gray-400 text-xs">Skip the stress.</p>
-                </div>
-                ${statusHTML}
-                <div class="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-500/20 text-xs text-blue-200 text-center">
-                    💡 Use the mobile app to upload files.
-                </div>
-            `;
-        }
-
-        // --- RESTORED: GRADES RENDER ---
-        function renderGrades(data) {
-            const featureBody = document.getElementById('featureBody');
-            const gradesHTML = Object.entries(data.grades || {}).map(([subject, score]) => {
-                let color = score >= 80 ? 'green' : (score >= 70 ? 'blue' : 'purple');
-                let letter = score >= 80 ? 'A' : (score >= 75 ? 'B+' : 'B');
-                return `
-                    <div>
-                        <div class="flex justify-between text-sm mb-2 font-semibold">
-                            <span>${subject}</span>
-                            <span class="text-${color}-400">${letter} (${score}%)</span>
-                        </div>
-                        <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-${color}-500 to-${color}-400 rounded-full" style="width: ${score}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            featureBody.innerHTML = `
-                 <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Grade Analytics</h2>
-                    <p class="text-gray-400 text-sm">ID: <span class="text-blue-400">${data.indexNumber || 'Unknown'}</span></p>
-                </div>
-                <div class="space-y-5">
-                    ${gradesHTML || '<p class="text-center text-gray-500">No grade data found.</p>'}
-                </div>
-                <div class="mt-6 p-3 bg-blue-500/10 rounded-lg text-xs text-center text-blue-300 border border-blue-500/20">
-                    "Delusion-level ambition detected. You're crushing it."
-                </div>
-            `;
-        }
-
-        // --- RESTORED: COUNTDOWN RENDER ---
-        function renderCountdown(data) {
-             const featureBody = document.getElementById('featureBody');
-             featureBody.innerHTML = `
-                 <div class="text-center py-4">
-                    <div class="w-16 h-16 bg-purple-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                        <span class="material-symbols-outlined text-3xl text-purple-400">hourglass_top</span>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white mb-6">Final Exams Countdown</h2>
-                    
-                    <div class="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-2">
-                        42<span class="text-2xl text-white font-sans">d</span> : 14<span class="text-2xl text-white font-sans">h</span>
-                    </div>
-                    <p class="text-gray-400 text-sm mb-8">Until Judgement Day</p>
-                    <button class="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-semibold text-sm">Download Revision Schedule</button>
-                </div>
-            `;
-        }
-
-        function renderMap() {
+        // --- NEW: EVENTS RENDER ---
+        async function renderEvents() {
             const featureBody = document.getElementById('featureBody');
             featureBody.innerHTML = `
-                <div class="text-center mb-4">
-                    <h2 class="text-xl font-bold text-white">UCC Campus Navigation</h2>
-                    <p class="text-gray-400 text-xs">Target: Oguaa Hall...</p>
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Campus Events 🎟️</h2>
+                    <p class="text-gray-400 text-sm">What's poppin' at UCC</p>
                 </div>
-                <div class="w-full h-64 rounded-2xl overflow-hidden bg-gray-800 border border-white/10 relative group">
-                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3974.229267926343!2d-1.292150685237894!3d5.105432396294784!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfde2e44a95447b9%3A0x2d05777402660d2b!2sUniversity%20of%20Cape%20Coast!5e0!3m2!1sen!2sgh!4v1705628543599!5m2!1sen!2sgh" width="100%" height="100%" style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(90%);" allowfullscreen="" loading="lazy"></iframe>
-                     <div class="absolute inset-0 pointer-events-none border-[4px] border-blue-500/20 rounded-2xl"></div>
-                </div>
-                <div class="mt-4 flex gap-2">
-                    <button class="flex-1 py-2 rounded-lg bg-blue-600 text-xs font-bold hover:bg-blue-500 transition">Route to Library</button>
-                    <button class="flex-1 py-2 rounded-lg bg-white/10 text-xs font-bold hover:bg-white/20 transition">Find Shuttle</button>
-                </div>
-            `;
-        }
-
-        function forceCloseModal() {
-            const loginModal = document.getElementById('loginModal');
-            const loginContent = document.getElementById('loginContent');
-            
-            if (loginContent && loginModal) {
-                loginContent.classList.remove('scale-100', 'opacity-100');
-                loginContent.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    loginModal.classList.add('hidden');
-                }, 300);
-            }
-        }
-
-        // --- BLOG RENDER ---
-        async function renderBlog(user) {
-            const featureBody = document.getElementById('featureBody');
-            
-            // Header
-            featureBody.innerHTML = `
-                <div class="text-center mb-6 relative">
-                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">The Vibe Check ✍️</h2>
-                    <p class="text-gray-400 text-sm">Chronicles of a Main Character.</p>
-                    <button onclick="renderWriteBlog()" class="absolute right-0 top-0 bg-blue-500/20 p-2 rounded-full text-blue-300 hover:bg-blue-500 hover:text-white transition">
-                        <span class="material-symbols-outlined text-lg">edit_square</span>
-                    </button>
-                </div>
-                <div id="blog-feed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-20">
+                <div id="events-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-10">
                     <div class="animate-pulse flex flex-col gap-4">
                         <div class="h-32 bg-white/5 rounded-xl"></div>
                         <div class="h-32 bg-white/5 rounded-xl"></div>
@@ -444,18 +298,248 @@
                 </div>
             `;
 
+            const list = document.getElementById('events-list');
+            const q = query(collection(db, "events"), orderBy("timestamp", "desc"), limit(20));
+            const snap = await getDocs(q);
+            list.innerHTML = '';
+
+            if (snap.empty) {
+                list.innerHTML = `<div class="text-center opacity-60 py-10"><span class="material-symbols-outlined text-4xl mb-2">event_busy</span><p>No upcoming events. Dry spell? 🏜️</p></div>`;
+                return;
+            }
+
+            snap.forEach(doc => {
+                const ev = doc.data();
+                list.innerHTML += `
+                    <div class="bg-white/5 rounded-xl overflow-hidden border border-white/10 group hover:border-blue-500/30 transition">
+                        <div class="h-32 bg-black/50 relative">
+                            <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
+                            <div class="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded">
+                                ${ev.date}
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg text-white mb-1 leading-tight">${ev.title}</h3>
+                            <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
+                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> ${ev.venue}</span>
+                                <span>•</span>
+                                <span>${ev.time}</span>
+                            </div>
+                            <p class="text-sm text-gray-300 line-clamp-2">${ev.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function renderPrintStatus(uid) {
+             const featureBody = document.getElementById('featureBody');
+             featureBody.innerHTML = `<div class="text-center py-10"><span class="material-symbols-outlined animate-spin text-3xl text-orange-400">sync</span></div>`;
+             const docRef = doc(db, "print_orders", uid);
+             const snap = await getDoc(docRef);
+             let statusHTML = '';
+             if (!snap.exists()) {
+                 statusHTML = `<div class="text-center py-6"><span class="material-symbols-outlined text-4xl text-gray-600 mb-2">print_disabled</span><p class="text-gray-400 text-sm mb-4">No active print jobs.</p><p class="text-xs text-gray-500">Upload documents in the app to skip the queue.</p></div>`;
+             } else {
+                 const data = snap.data();
+                 const statusMap = { 'received': { text: 'Received', color: 'blue', icon: 'pending' }, 'printing': { text: 'Printing...', color: 'yellow', icon: 'print' }, 'delivering': { text: 'Out for Delivery', color: 'orange', icon: 'local_shipping' }, 'completed': { text: 'Delivered', color: 'green', icon: 'check_circle' } };
+                 const s = statusMap[data.status] || statusMap['received'];
+                 statusHTML = `<div class="text-center py-6"><div class="w-16 h-16 rounded-full bg-${s.color}-500/20 flex items-center justify-center mx-auto mb-4 border border-${s.color}-500/50"><span class="material-symbols-outlined text-3xl text-${s.color}-400">${s.icon}</span></div><h3 class="text-xl font-bold text-white mb-1">${s.text}</h3><p class="text-xs text-gray-400">Last Update: ${new Date(data.lastUpdated).toLocaleTimeString()}</p></div>`;
+             }
+             featureBody.innerHTML = `<div class="text-center mb-4"><h2 class="text-xl font-bold text-white">Print Queue 🖨️</h2><p class="text-gray-400 text-xs">Skip the stress.</p></div>${statusHTML}<div class="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-500/20 text-xs text-blue-200 text-center">💡 Use the mobile app to upload files.</div>`;
+        }
+
+        // --- GPA CALCULATOR LOGIC (REPLACES GRADES) ---
+        window.gpaCourses = []; // Store temporary data
+
+        function renderGPACalculator() {
+            const featureBody = document.getElementById('featureBody');
+            window.gpaCourses = []; // Reset on open
+            
+            featureBody.innerHTML = `
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">GPA Simulator 🧮</h2>
+                    <p class="text-gray-400 text-sm">Predict your Academic Weapon status.</p>
+                </div>
+                
+                <div class="bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <input type="text" id="gpa-course" placeholder="Course (Opt)" class="col-span-3 bg-black/30 border border-white/10 rounded-lg p-2 text-white text-sm outline-none focus:border-blue-500 transition">
+                        <input type="number" id="gpa-credit" placeholder="Credits" class="bg-black/30 border border-white/10 rounded-lg p-2 text-white text-sm outline-none focus:border-blue-500 transition">
+                        <select id="gpa-grade" class="col-span-2 bg-black/30 border border-white/10 rounded-lg p-2 text-white text-sm outline-none focus:border-blue-500 transition">
+                            <option value="4.0">A (80-100)</option>
+                            <option value="3.5">B+ (75-79)</option>
+                            <option value="3.0">B (70-74)</option>
+                            <option value="2.5">C+ (65-69)</option>
+                            <option value="2.0">C (60-64)</option>
+                            <option value="1.5">D+ (55-59)</option>
+                            <option value="1.0">D (50-54)</option>
+                            <option value="0.0">E (0-49)</option>
+                        </select>
+                    </div>
+                    <button onclick="window.addGPACourse()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-sm transition shadow-lg shadow-blue-500/20">Add to Calculation</button>
+                </div>
+
+                <div id="gpa-list" class="space-y-2 mb-6 max-h-40 overflow-y-auto pr-2">
+                    <p class="text-center text-gray-500 text-xs italic">No courses added yet.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-500/20 to-blue-500/20 p-4 rounded-xl border border-white/10 text-center">
+                    <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Projected GPA</p>
+                    <div class="text-4xl font-black text-white" id="gpa-result">0.00</div>
+                </div>
+            `;
+        }
+
+        window.addGPACourse = () => {
+            const course = document.getElementById('gpa-course').value || `Course ${window.gpaCourses.length + 1}`;
+            const credits = parseFloat(document.getElementById('gpa-credit').value);
+            const gradePoints = parseFloat(document.getElementById('gpa-grade').value);
+            const gradeText = document.getElementById('gpa-grade').options[document.getElementById('gpa-grade').selectedIndex].text.split(' ')[0];
+
+            if (!credits || isNaN(credits)) {
+                alert("Enter credit hours!");
+                return;
+            }
+
+            window.gpaCourses.push({ course, credits, gradePoints, gradeText });
+            updateGPAResults();
+            
+            // Clear inputs
+            document.getElementById('gpa-course').value = '';
+            document.getElementById('gpa-credit').value = '';
+        }
+
+        function updateGPAResults() {
+            const list = document.getElementById('gpa-list');
+            const resultDisplay = document.getElementById('gpa-result');
+            
+            list.innerHTML = '';
+            let totalPoints = 0;
+            let totalCredits = 0;
+
+            window.gpaCourses.forEach((c, index) => {
+                totalPoints += (c.credits * c.gradePoints);
+                totalCredits += c.credits;
+                
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg text-sm border border-white/5">
+                        <span class="truncate w-1/2 text-gray-300">${c.course}</span>
+                        <div class="flex gap-3">
+                            <span class="text-xs text-gray-500">${c.credits} cr</span>
+                            <span class="font-bold text-white w-8 text-right">${c.gradeText}</span>
+                        </div>
+                        <button onclick="window.removeGPACourse(${index})" class="text-red-400 hover:text-white ml-2"><span class="material-symbols-outlined text-sm">close</span></button>
+                    </div>
+                `;
+            });
+
+            const gpa = totalCredits === 0 ? 0.00 : (totalPoints / totalCredits).toFixed(2);
+            resultDisplay.innerText = gpa;
+        }
+
+        window.removeGPACourse = (index) => {
+            window.gpaCourses.splice(index, 1);
+            updateGPAResults();
+        }
+
+        function renderCountdown(data) {
+             const featureBody = document.getElementById('featureBody');
+             featureBody.innerHTML = `<div class="text-center py-4"><div class="w-16 h-16 bg-purple-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4"><span class="material-symbols-outlined text-3xl text-purple-400">hourglass_top</span></div><h2 class="text-2xl font-bold text-white mb-6">Final Exams Countdown</h2><div class="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-2">42<span class="text-2xl text-white font-sans">d</span> : 14<span class="text-2xl text-white font-sans">h</span></div><p class="text-gray-400 text-sm mb-8">Until Judgement Day</p><button class="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-semibold text-sm">Download Revision Schedule</button></div>`;
+        }
+
+        // --- UPDATED MAP LOGIC ---
+        function renderMap() {
+            const featureBody = document.getElementById('featureBody');
+            
+            // Try to locate user immediately to show coordinates (visual only for now)
+            let locStatus = "Locating...";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (p) => { locStatus = `GPS Locked: ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`; updateLocStatus(locStatus); }, 
+                    () => { locStatus = "GPS Signal Lost"; updateLocStatus(locStatus); }
+                );
+            }
+
+            featureBody.innerHTML = `
+                <div class="text-center mb-4">
+                    <h2 class="text-xl font-bold text-white">UCC Tactical Nav 🧭</h2>
+                    <p class="text-gray-400 text-xs" id="map-status">${locStatus}</p>
+                </div>
+                <div class="w-full h-64 rounded-2xl overflow-hidden bg-gray-800 border border-white/10 relative group mb-4">
+                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3974.229267926343!2d-1.292150685237894!3d5.105432396294784!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfde2e44a95447b9%3A0x2d05777402660d2b!2sUniversity%20of%20Cape%20Coast!5e0!3m2!1sen!2sgh!4v1705628543599!5m2!1sen!2sgh" width="100%" height="100%" style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(90%);" allowfullscreen="" loading="lazy"></iframe>
+                     <div class="absolute inset-0 pointer-events-none border-[4px] border-blue-500/20 rounded-2xl"></div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="window.startNavigation('Sam Jonah Library UCC')" class="py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-500/20">
+                        <span class="material-symbols-outlined text-lg">menu_book</span>
+                        Route to Library
+                    </button>
+                    <button onclick="window.startNavigation('UCC Shuttle Station Old Site')" class="py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex flex-col items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-lg">directions_bus</span>
+                        Find Shuttle
+                    </button>
+                </div>
+            `;
+        }
+
+        function updateLocStatus(msg) {
+            const el = document.getElementById('map-status');
+            if(el) el.innerText = msg;
+        }
+
+        // --- NAVIGATION HANDLER ---
+        window.startNavigation = (destinationName) => {
+            const btn = event.currentTarget; // Visual feedback
+            btn.classList.add('animate-pulse');
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    // Construct Universal Google Maps Directions URL
+                    // 'dir_action=navigate' triggers navigation mode directly on mobile
+                    const url = `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${encodeURIComponent(destinationName)}&travelmode=walking`;
+                    
+                    window.open(url, '_blank');
+                    btn.classList.remove('animate-pulse');
+                }, (err) => {
+                    alert("⚠️ Location access denied. Enable GPS to use tactical routing.");
+                    btn.classList.remove('animate-pulse');
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function forceCloseModal() {
+            const loginModal = document.getElementById('loginModal');
+            const loginContent = document.getElementById('loginContent');
+            if (loginContent && loginModal) {
+                loginContent.classList.remove('scale-100', 'opacity-100');
+                loginContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => { loginModal.classList.add('hidden'); }, 300);
+            }
+        }
+
+        // --- BLOG RENDER ---
+        async function renderBlog(user) {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                <div class="text-center mb-6 relative">
+                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">The Vibe Check ✍️</h2>
+                    <p class="text-gray-400 text-sm">Chronicles of a Main Character.</p>
+                    <button onclick="renderWriteBlog()" class="absolute right-0 top-0 bg-blue-500/20 p-2 rounded-full text-blue-300 hover:bg-blue-500 hover:text-white transition"><span class="material-symbols-outlined text-lg">edit_square</span></button>
+                </div>
+                <div id="blog-feed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-20"><div class="animate-pulse flex flex-col gap-4"><div class="h-32 bg-white/5 rounded-xl"></div><div class="h-32 bg-white/5 rounded-xl"></div></div></div>
+            `;
             const feed = document.getElementById('blog-feed');
             const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
             const snap = await getDocs(q);
-            
             feed.innerHTML = ''; 
-
             if (snap.empty) {
-                const placeholders = [
-                    { title: "Manifesting NYC 2027 🇺🇸", author: "Francis Pwavwe", content: "The goal isn't just to visit; it's to take over. Tourism Management is the key.", likes: 104, tags: ["#Delusion", "#Ambition"] },
-                    { title: "Why Drill Music is Therapy 🎶", author: "Squad Leader", content: "Nothing clears the head for a 7AM lecture like Kumerican Drill. Change my mind.", likes: 88, tags: ["#Music", "#Vibes"] },
-                    { title: "Cadet Life: The Reality", author: "SS/TMG/22/0014", content: "Powered by morning sunlight and pure discipline.", likes: 200, tags: ["#Cadet", "#UCC"] }
-                ];
+                const placeholders = [{ title: "Manifesting NYC 2027 🇺🇸", author: "Francis Pwavwe", content: "The goal isn't just to visit; it's to take over. Tourism Management is the key.", likes: 104, tags: ["#Delusion", "#Ambition"] }, { title: "Why Drill Music is Therapy 🎶", author: "Squad Leader", content: "Nothing clears the head for a 7AM lecture like Kumerican Drill. Change my mind.", likes: 88, tags: ["#Music", "#Vibes"] }];
                 placeholders.forEach(p => { feed.innerHTML += createBlogCard(p, true); });
                 feed.innerHTML += `<div class="text-center text-xs text-gray-500 mt-4 italic">Start writing to replace the simulation...</div>`;
             } else {
@@ -500,7 +584,6 @@
                 displayName = 'Student';
             }
 
-            // 1. Update Top Nav Button
             const loginBtn = document.getElementById('loginBtn');
             if (loginBtn) {
                 const firstName = displayName.split(' ')[0];
@@ -511,7 +594,6 @@
                 loginBtn.onclick = window.logoutUser; 
             }
 
-            // 2. Update Sidebar Profile
             const sidebarName = document.getElementById('sidebarName');
             const sidebarEmail = document.getElementById('sidebarEmail');
             const sidebarAvatar = document.getElementById('sidebarAvatar');
@@ -549,7 +631,6 @@
         window.closeFeature = () => {
              const featureModal = document.getElementById('featureModal');
              const featureContent = document.getElementById('featureContent');
-             
              featureContent.classList.remove('scale-100', 'opacity-100');
              featureContent.classList.add('scale-95', 'opacity-0');
              setTimeout(() => featureModal.classList.add('hidden'), 300);
@@ -562,7 +643,7 @@
             --cursor-hover-size: 60px;
             --brand-blue: #3b82f6;
             --brand-white: #ffffff;
-            --brand-orange: #FFAB40; /* Copied from App Code */
+            --brand-orange: #FFAB40; 
         }
 
         body {
@@ -695,7 +776,7 @@
     <div class="custom-cursor" id="cursor"></div>
 
     <!-- Sidebar (Collapsible) -->
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 glass-panel z-[100] sidebar-hidden transition-transform duration-500 ease-in-out border-r border-white/10 flex flex-col pt-24 px-6 shadow-2xl">
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 glass-panel z-[100] sidebar-hidden transition-transform duration-500 ease-in-out border-r border-white/10 flex flex-col pt-24 px-6 shadow-2xl overflow-y-auto">
         <button id="closeSidebar" class="absolute top-6 right-6 hoverable p-2 rounded-full hover:bg-white/10">
             <span class="material-symbols-outlined text-gray-400">close</span>
         </button>
@@ -706,23 +787,26 @@
                 <a href="#" onclick="openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">dashboard</span> Neural Dashboard
                 </a>
-                <a href="#" onclick="openFeature('grades')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
-                    <span class="material-symbols-outlined">school</span> Grade Analytics
+                <a href="#" onclick="openFeature('events')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">event</span> Campus Events
+                </a>
+                <a href="#" onclick="openFeature('gpa')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">calculate</span> GPA Calculator
                 </a>
                 <a href="#" onclick="openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">calendar_month</span> Exam Countdown
                 </a>
                 <a href="#" onclick="openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
-                    <span class="material-symbols-outlined">emoji_events</span> The Arena (Leaderboard)
+                    <span class="material-symbols-outlined">emoji_events</span> The Arena
                 </a>
                 <a href="#" onclick="openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
-                    <span class="material-symbols-outlined">rss_feed</span> The Vibe Check (Blog)
+                    <span class="material-symbols-outlined">rss_feed</span> The Vibe Check
                 </a>
                 <a href="#" onclick="openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
-                    <span class="material-symbols-outlined">print</span> Print Queue Status
+                    <span class="material-symbols-outlined">print</span> Print Queue
                 </a>
                 <a href="#" onclick="openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
-                    <span class="material-symbols-outlined">map</span> UCC Campus Map
+                    <span class="material-symbols-outlined">map</span> UCC Navigation
                 </a>
             </nav>
         </div>
@@ -958,28 +1042,28 @@
                 <p class="text-sm text-gray-400">Automatic group chats for every course you take. Never miss info.</p>
             </div>
 
-            <!-- Item 4: Smart Timetable (RESTORED) -->
-            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+            <!-- Item 4: Events (UPDATED) -->
+            <div onclick="openFeature('events')" class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500 cursor-pointer">
                 <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-purple-500/30">
-                    <span class="material-symbols-outlined text-purple-400 text-3xl">calendar_month</span>
+                    <span class="material-symbols-outlined text-purple-400 text-3xl">event</span>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Smart Timetable</h3>
-                <p class="text-sm text-gray-400">Organized automatically. Get notified before your next lecture starts.</p>
+                <h3 class="text-xl font-bold mb-2">Campus Events</h3>
+                <p class="text-sm text-gray-400">See what's popping on campus. Parties, seminars, and vibes.</p>
             </div>
 
-            <!-- Item 5: Instant Alerts (RESTORED) -->
-            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
-                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-red-500/30">
-                    <span class="material-symbols-outlined text-red-400 text-3xl">notifications_active</span>
+            <!-- Item 5: GPA Calculator (UPDATED) -->
+            <div onclick="openFeature('gpa')" class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500 cursor-pointer">
+                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-green-500/30">
+                    <span class="material-symbols-outlined text-green-400 text-3xl">calculate</span>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Instant Alerts</h3>
-                <p class="text-sm text-gray-400">Real-time notifications for events, deadline shifts, and critical announcements.</p>
+                <h3 class="text-xl font-bold mb-2">GPA Calculator</h3>
+                <p class="text-sm text-gray-400">Simulate your results. Keep that GPA skyrocketing.</p>
             </div>
 
             <!-- Item 6: Offline Mode (RESTORED) -->
             <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
-                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-green-500/30">
-                    <span class="material-symbols-outlined text-green-400 text-3xl">wifi_off</span>
+                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-red-500/30">
+                    <span class="material-symbols-outlined text-red-400 text-3xl">wifi_off</span>
                 </div>
                 <h3 class="text-xl font-bold mb-2">Offline Mode</h3>
                 <p class="text-sm text-gray-400">Access your essential data anytime, even when campus Wi-Fi is down.</p>
@@ -1170,11 +1254,13 @@
                 sidebar.classList.add('sidebar-visible');
                 sidebarOverlay.classList.remove('hidden');
                 setTimeout(() => sidebarOverlay.classList.remove('opacity-0'), 10);
+                document.body.classList.add('overflow-hidden'); // Lock body scroll
             } else {
                 sidebar.classList.add('sidebar-hidden');
                 sidebar.classList.remove('sidebar-visible');
                 sidebarOverlay.classList.add('opacity-0');
                 setTimeout(() => sidebarOverlay.classList.add('hidden'), 500);
+                document.body.classList.remove('overflow-hidden'); // Unlock body scroll
             }
         }
 
