@@ -3,256 +3,1238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="AZ Learner - The Ultimate Student Utility App. Download the APK directly.">
-    <title>AZ Learner | Official Download</title>
+    <meta name="description" content="AZ Learner - The Squad Companion. Print, Chat, Grind, Shine.">
+    <title>AZ Learner | The Squad Companion</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Google Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, addDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYmyffOVf2BDA0o4DOYMG2_8-JGpDJ-l4",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- AUTH STATE OBSERVER ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                console.log("Squad Member detected:", user.email);
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const userData = userDoc.exists() ? userDoc.data() : {};
+                updateUIForUser(user, userData);
+            } else {
+                console.log("No user signed in");
+                resetUI();
+            }
+        });
+
+        // --- EMAIL LOGIN FUNCTION ---
+        window.handleEmailLogin = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('authSubmitBtn');
+            const originalContent = btn.innerHTML;
+
+            if (!email || !password) {
+                alert("Please enter both email and password.");
+                return;
+            }
+
+            // UI Loading State
+            btn.innerHTML = `<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Verifying Credentials...`;
+            btn.classList.add('opacity-80', 'cursor-wait');
+
+            try {
+                // The Real Auth Call
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // Success UI
+                btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> Welcome Back, Legend`;
+                btn.classList.remove('from-blue-600', 'to-cyan-600');
+                btn.classList.add('from-green-600', 'to-emerald-600');
+
+                setTimeout(() => {
+                    forceCloseModal();
+                    // Reset button style
+                    btn.innerHTML = originalContent;
+                    btn.classList.add('from-blue-600', 'to-cyan-600');
+                    btn.classList.remove('from-green-600', 'to-emerald-600', 'opacity-80', 'cursor-wait');
+                }, 800);
+
+            } catch (error) {
+                console.error("Login Error:", error);
+                
+                // Error UI
+                btn.innerHTML = `<span class="material-symbols-outlined">error</span> Failed`;
+                btn.classList.add('from-red-600', 'to-red-500');
+                
+                alert(`Login Failed: ${error.message}`);
+                
+                // Reset button
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('from-red-600', 'to-red-500');
+                    btn.classList.add('from-blue-600', 'to-cyan-600');
+                    btn.classList.remove('opacity-80', 'cursor-wait');
+                }, 1500);
+            }
+        }
+
+        // --- LOGOUT ---
+        window.logoutUser = () => {
+            if(confirm("Disconnect from the Squad?")) {
+                signOut(auth).then(() => {
+                    // UI resets automatically via onAuthStateChanged
+                }).catch((error) => {
+                    console.error("Logout Error:", error);
+                });
+            }
+        }
+
+        // --- RANK LOGIC ---
+        function getRank(xp) {
+            if (xp >= 2000) return "God Tier ⚡";
+            if (xp >= 1000) return "Academic Weapon ⚔️";
+            if (xp >= 500) return "Main Character ✨";
+            if (xp >= 100) return "Scholar 📚";
+            return "Rookie 🥚";
+        }
+
+        // --- REAL FIREBASE DATA FETCHING ---
+        window.openFeature = async (type) => {
+            const featureModal = document.getElementById('featureModal');
+            const featureBody = document.getElementById('featureBody');
+            const featureContent = document.getElementById('featureContent');
+            
+            // 1. Show Modal with Loading State
+            featureModal.classList.remove('hidden');
+            featureBody.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10">
+                    <span class="material-symbols-outlined animate-spin text-4xl text-blue-400 mb-4">settings_suggest</span>
+                    <p class="text-gray-400 animate-pulse">Syncing with AZ Cloud...</p>
+                </div>
+            `;
+            
+            // Animate In
+            setTimeout(() => {
+                featureContent.classList.remove('scale-95', 'opacity-0');
+                featureContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            // Close sidebar on mobile
+            if(window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('sidebar-hidden')) {
+                    document.getElementById('openSidebar').click();
+                }
+            }
+
+            const user = auth.currentUser;
+
+            // 2. Check Auth
+            if (!user && type !== 'map') {
+                featureBody.innerHTML = `
+                    <div class="text-center py-8">
+                        <span class="material-symbols-outlined text-4xl text-red-400 mb-2">lock</span>
+                        <h3 class="text-xl font-bold">Squad Access Only</h3>
+                        <p class="text-gray-400 mb-6">Log in to view your academic stats, blogs, and print queue.</p>
+                        <button onclick="document.getElementById('featureModal').classList.add('hidden'); document.getElementById('loginBtn').click()" class="px-6 py-2 bg-blue-600 rounded-full text-sm font-bold shadow-lg shadow-blue-500/30">Log In Now</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // 3. Map is static
+            if (type === 'map') {
+                renderMap();
+                return;
+            }
+
+            // 4. Fetch User Data from Firestore
+            try {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                let userData;
+
+                if (docSnap.exists()) {
+                    userData = docSnap.data();
+                } else {
+                    // --- AUTO-INITIALIZE DATA FOR DEMO ---
+                    userData = {
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        userId: user.uid,
+                        school: "UCC",
+                        weeklyXp: 50, // Welcome bonus
+                        role: "student",
+                        grades: {
+                            "Ecotourism": 88,
+                            "Hospitality": 84,
+                            "Marketing": 78
+                        },
+                        indexNumber: "SS/TMG/22/0014"
+                    };
+                    await setDoc(docRef, userData);
+                }
+
+                if (type === 'dashboard') renderDashboard(userData);
+                if (type === 'leaderboard') renderLeaderboard(userData);
+                if (type === 'print') renderPrintStatus(user.uid);
+                if (type === 'blog') renderBlog(userData);
+                if (type === 'grades') renderGrades(userData);
+                if (type === 'countdown') renderCountdown(userData);
+
+            } catch (error) {
+                console.error("Error getting document:", error);
+                featureBody.innerHTML = `<div class="text-center text-red-400 py-8">Error fetching data: ${error.message}</div>`;
+            }
+        };
+
+        // --- RENDER FUNCTIONS ---
+        function renderDashboard(data) {
+            const xp = data.weeklyXp || 0;
+            const rank = getRank(xp);
+            const featureBody = document.getElementById('featureBody');
+            
+            featureBody.innerHTML = `
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Neural Dashboard</h2>
+                    <div class="inline-flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full mt-2 border border-white/10">
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        <p class="text-xs font-bold text-white uppercase tracking-wider">${rank}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gradient-to-br from-blue-900/50 to-slate-900 p-4 rounded-xl border border-blue-500/20">
+                        <div class="text-xs text-blue-300 uppercase tracking-widest mb-1">Weekly XP</div>
+                        <div class="text-4xl font-black text-white">${xp}</div>
+                        <div class="text-[10px] text-gray-400 mt-1">Grind harder ⚔️</div>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                        <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Institution</div>
+                        <div class="text-xl font-bold text-white truncate">${data.school || 'UCC'}</div>
+                        <div class="text-[10px] text-gray-400 mt-1">${data.program || 'General Arts'}</div>
+                    </div>
+                    <div onclick="openFeature('print')" class="col-span-2 bg-gradient-to-r from-orange-600/20 to-orange-900/20 p-4 rounded-xl border border-orange-500/30 cursor-pointer hover:bg-orange-600/10 transition">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-orange-300 uppercase font-bold mb-1"><i class="material-symbols-outlined text-[12px] align-middle">print</i> Print & Deliver</div>
+                                <div class="text-sm font-medium text-white">Check Queue Status</div>
+                            </div>
+                            <span class="material-symbols-outlined text-orange-400">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function renderLeaderboard(myData) {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                 <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white flex justify-center items-center gap-2">The Arena <span class="text-yellow-400 material-symbols-outlined">emoji_events</span></h2>
+                    <p class="text-gray-400 text-sm">Top Performers this Week</p>
+                </div>
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="lb-list">
+                    <div class="animate-pulse flex space-x-4"><div class="rounded-full bg-white/10 h-10 w-10"></div><div class="flex-1 space-y-2 py-1"><div class="h-2 bg-white/10 rounded"></div></div></div>
+                </div>
+            `;
+            
+            // Fetch Top 10
+            const q = query(collection(db, "users"), orderBy("weeklyXp", "desc"), limit(10));
+            const snap = await getDocs(q);
+            const list = document.getElementById('lb-list');
+            list.innerHTML = '';
+            
+            if (snap.empty) {
+                list.innerHTML = '<p class="text-center text-gray-500 text-sm">Arena is empty. Be the first.</p>';
+                return;
+            }
+
+            snap.forEach((doc) => {
+                const u = doc.data();
+                const isMe = u.userId === myData.userId;
+                const border = isMe ? 'border-blue-500 bg-blue-500/10' : 'border-white/5 bg-white/5';
+                const rankTitle = getRank(u.weeklyXp || 0);
+                
+                list.innerHTML += `
+                    <div class="flex items-center gap-3 p-3 rounded-xl border ${border}">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-xs">${u.name ? u.name[0] : '?'}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-white truncate">${u.name || 'Unknown'} ${isMe ? '(You)' : ''}</p>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-wider">${rankTitle}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black text-yellow-400">${u.weeklyXp || 0}</span> <span class="text-[10px] text-gray-500">XP</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function renderPrintStatus(uid) {
+             const featureBody = document.getElementById('featureBody');
+             featureBody.innerHTML = `<div class="text-center py-10"><span class="material-symbols-outlined animate-spin text-3xl text-orange-400">sync</span></div>`;
+             
+             const docRef = doc(db, "print_orders", uid);
+             const snap = await getDoc(docRef);
+             
+             let statusHTML = '';
+             
+             if (!snap.exists()) {
+                 statusHTML = `
+                    <div class="text-center py-6">
+                        <span class="material-symbols-outlined text-4xl text-gray-600 mb-2">print_disabled</span>
+                        <p class="text-gray-400 text-sm mb-4">No active print jobs.</p>
+                        <p class="text-xs text-gray-500">Upload documents in the app to skip the queue.</p>
+                    </div>
+                 `;
+             } else {
+                 const data = snap.data();
+                 const statusMap = {
+                     'received': { text: 'Received', color: 'blue', icon: 'pending' },
+                     'printing': { text: 'Printing...', color: 'yellow', icon: 'print' },
+                     'delivering': { text: 'Out for Delivery', color: 'orange', icon: 'local_shipping' },
+                     'completed': { text: 'Delivered', color: 'green', icon: 'check_circle' }
+                 };
+                 const s = statusMap[data.status] || statusMap['received'];
+                 
+                 statusHTML = `
+                    <div class="text-center py-6">
+                        <div class="w-16 h-16 rounded-full bg-${s.color}-500/20 flex items-center justify-center mx-auto mb-4 border border-${s.color}-500/50">
+                            <span class="material-symbols-outlined text-3xl text-${s.color}-400">${s.icon}</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-1">${s.text}</h3>
+                        <p class="text-xs text-gray-400">Last Update: ${new Date(data.lastUpdated).toLocaleTimeString()}</p>
+                    </div>
+                 `;
+             }
+
+             featureBody.innerHTML = `
+                 <div class="text-center mb-4">
+                    <h2 class="text-xl font-bold text-white">Print Queue 🖨️</h2>
+                    <p class="text-gray-400 text-xs">Skip the stress.</p>
+                </div>
+                ${statusHTML}
+                <div class="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-500/20 text-xs text-blue-200 text-center">
+                    💡 Use the mobile app to upload files.
+                </div>
+            `;
+        }
+
+        // --- RESTORED: GRADES RENDER ---
+        function renderGrades(data) {
+            const featureBody = document.getElementById('featureBody');
+            const gradesHTML = Object.entries(data.grades || {}).map(([subject, score]) => {
+                let color = score >= 80 ? 'green' : (score >= 70 ? 'blue' : 'purple');
+                let letter = score >= 80 ? 'A' : (score >= 75 ? 'B+' : 'B');
+                return `
+                    <div>
+                        <div class="flex justify-between text-sm mb-2 font-semibold">
+                            <span>${subject}</span>
+                            <span class="text-${color}-400">${letter} (${score}%)</span>
+                        </div>
+                        <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-${color}-500 to-${color}-400 rounded-full" style="width: ${score}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            featureBody.innerHTML = `
+                 <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Grade Analytics</h2>
+                    <p class="text-gray-400 text-sm">ID: <span class="text-blue-400">${data.indexNumber || 'Unknown'}</span></p>
+                </div>
+                <div class="space-y-5">
+                    ${gradesHTML || '<p class="text-center text-gray-500">No grade data found.</p>'}
+                </div>
+                <div class="mt-6 p-3 bg-blue-500/10 rounded-lg text-xs text-center text-blue-300 border border-blue-500/20">
+                    "Delusion-level ambition detected. You're crushing it."
+                </div>
+            `;
+        }
+
+        // --- RESTORED: COUNTDOWN RENDER ---
+        function renderCountdown(data) {
+             const featureBody = document.getElementById('featureBody');
+             featureBody.innerHTML = `
+                 <div class="text-center py-4">
+                    <div class="w-16 h-16 bg-purple-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-3xl text-purple-400">hourglass_top</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-6">Final Exams Countdown</h2>
+                    
+                    <div class="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-2">
+                        42<span class="text-2xl text-white font-sans">d</span> : 14<span class="text-2xl text-white font-sans">h</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-8">Until Judgement Day</p>
+                    <button class="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-semibold text-sm">Download Revision Schedule</button>
+                </div>
+            `;
+        }
+
+        function renderMap() {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                <div class="text-center mb-4">
+                    <h2 class="text-xl font-bold text-white">UCC Campus Navigation</h2>
+                    <p class="text-gray-400 text-xs">Target: Oguaa Hall...</p>
+                </div>
+                <div class="w-full h-64 rounded-2xl overflow-hidden bg-gray-800 border border-white/10 relative group">
+                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3974.229267926343!2d-1.292150685237894!3d5.105432396294784!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfde2e44a95447b9%3A0x2d05777402660d2b!2sUniversity%20of%20Cape%20Coast!5e0!3m2!1sen!2sgh!4v1705628543599!5m2!1sen!2sgh" width="100%" height="100%" style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(90%);" allowfullscreen="" loading="lazy"></iframe>
+                     <div class="absolute inset-0 pointer-events-none border-[4px] border-blue-500/20 rounded-2xl"></div>
+                </div>
+                <div class="mt-4 flex gap-2">
+                    <button class="flex-1 py-2 rounded-lg bg-blue-600 text-xs font-bold hover:bg-blue-500 transition">Route to Library</button>
+                    <button class="flex-1 py-2 rounded-lg bg-white/10 text-xs font-bold hover:bg-white/20 transition">Find Shuttle</button>
+                </div>
+            `;
+        }
+
+        function forceCloseModal() {
+            const loginModal = document.getElementById('loginModal');
+            const loginContent = document.getElementById('loginContent');
+            
+            if (loginContent && loginModal) {
+                loginContent.classList.remove('scale-100', 'opacity-100');
+                loginContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    loginModal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // --- BLOG RENDER ---
+        async function renderBlog(user) {
+            const featureBody = document.getElementById('featureBody');
+            
+            // Header
+            featureBody.innerHTML = `
+                <div class="text-center mb-6 relative">
+                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">The Vibe Check ✍️</h2>
+                    <p class="text-gray-400 text-sm">Chronicles of a Main Character.</p>
+                    <button onclick="renderWriteBlog()" class="absolute right-0 top-0 bg-blue-500/20 p-2 rounded-full text-blue-300 hover:bg-blue-500 hover:text-white transition">
+                        <span class="material-symbols-outlined text-lg">edit_square</span>
+                    </button>
+                </div>
+                <div id="blog-feed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-20">
+                    <div class="animate-pulse flex flex-col gap-4">
+                        <div class="h-32 bg-white/5 rounded-xl"></div>
+                        <div class="h-32 bg-white/5 rounded-xl"></div>
+                    </div>
+                </div>
+            `;
+
+            const feed = document.getElementById('blog-feed');
+            const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
+            const snap = await getDocs(q);
+            
+            feed.innerHTML = ''; 
+
+            if (snap.empty) {
+                const placeholders = [
+                    { title: "Manifesting NYC 2027 🇺🇸", author: "Francis Pwavwe", content: "The goal isn't just to visit; it's to take over. Tourism Management is the key.", likes: 104, tags: ["#Delusion", "#Ambition"] },
+                    { title: "Why Drill Music is Therapy 🎶", author: "Squad Leader", content: "Nothing clears the head for a 7AM lecture like Kumerican Drill. Change my mind.", likes: 88, tags: ["#Music", "#Vibes"] },
+                    { title: "Cadet Life: The Reality", author: "SS/TMG/22/0014", content: "Powered by morning sunlight and pure discipline.", likes: 200, tags: ["#Cadet", "#UCC"] }
+                ];
+                placeholders.forEach(p => { feed.innerHTML += createBlogCard(p, true); });
+                feed.innerHTML += `<div class="text-center text-xs text-gray-500 mt-4 italic">Start writing to replace the simulation...</div>`;
+            } else {
+                snap.forEach(doc => { const post = doc.data(); post.id = doc.id; feed.innerHTML += createBlogCard(post, false); });
+            }
+        }
+
+        function createBlogCard(post, isFake) {
+            const tagsHtml = (post.tags || []).map(t => `<span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-300">${t}</span>`).join(' ');
+            const likeAction = isFake ? '' : `onclick="window.toggleLike('${post.id}')"`;
+            const likeColor = isFake ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500';
+            return `<div class="glass-panel p-5 rounded-2xl border border-white/5 hover:border-blue-500/30 transition group relative overflow-hidden"><div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition"></div><div class="relative z-10"><h3 class="text-lg font-bold text-white mb-1 leading-tight">${post.title}</h3><div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-blue-400">${post.author || 'Anonymous'}</span><span class="text-[10px] text-gray-500">• ${isFake ? 'Just now' : new Date(post.timestamp).toLocaleDateString()}</span></div><p class="text-sm text-gray-300 leading-relaxed mb-4 line-clamp-3">${post.content}</p><div class="flex justify-between items-center border-t border-white/5 pt-3"><div class="flex gap-2">${tagsHtml}</div><button ${likeAction} class="flex items-center gap-1 ${likeColor} transition group/btn"><span class="material-symbols-outlined text-sm group-hover/btn:scale-125 transition-transform">favorite</span><span class="text-xs font-bold">${post.likes || 0}</span></button></div></div></div>`;
+        }
+
+        window.renderWriteBlog = () => {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `<div class="h-full flex flex-col"><div class="flex justify-between items-center mb-6"><button onclick="openFeature('blog')" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">arrow_back</span></button><h2 class="text-xl font-bold text-white">Drop a Gem 💎</h2><div class="w-6"></div></div><form onsubmit="event.preventDefault(); window.saveBlogPost()" class="space-y-4 flex-1"><input type="text" id="blog-title" placeholder="Title (Make it pop)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-blue-500 outline-none transition font-bold text-lg"><textarea id="blog-content" placeholder="What's on your mind? (Manifestations, Rants, Ideas...)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-blue-500 outline-none transition h-40 resize-none"></textarea><input type="text" id="blog-tags" placeholder="Tags (e.g. #Drill #UCC #Vibes)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-blue-500 outline-none transition text-sm"><button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"><span>Manifest It</span> <span class="material-symbols-outlined">auto_awesome</span></button></form></div>`;
+        }
+
+        window.saveBlogPost = async () => {
+            const title = document.getElementById('blog-title').value;
+            const content = document.getElementById('blog-content').value;
+            const tagsStr = document.getElementById('blog-tags').value;
+            const user = auth.currentUser;
+            if(!title || !content) return alert("You gotta say something!");
+            let authorName = "Anonymous";
+            const docSnap = await getDoc(doc(db, "users", user.uid));
+            if(docSnap.exists()) authorName = docSnap.data().name || user.email.split('@')[0];
+            const tags = tagsStr.split(' ').filter(t => t.startsWith('#'));
+            try { await addDoc(collection(db, "blogs"), { title, content, author: authorName, userId: user.uid, tags, likes: 0, timestamp: Date.now() }); const userRef = doc(db, "users", user.uid); await updateDoc(userRef, { weeklyXp: increment(20) }); alert("Posted! +20 XP ⚡"); openFeature('blog'); } catch(e) { console.error(e); alert("Failed to post."); }
+        }
+
+        window.toggleLike = async (id) => { const ref = doc(db, "blogs", id); await updateDoc(ref, { likes: increment(1) }); openFeature('blog'); }
+
+        // --- UI UPDATER ---
+        function updateUIForUser(user, userData) {
+            let displayName = userData.name || user.displayName;
+            if (!displayName && user.email) {
+                const namePart = user.email.split('@')[0];
+                displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+            } else if (!displayName) {
+                displayName = 'Student';
+            }
+
+            // 1. Update Top Nav Button
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                const firstName = displayName.split(' ')[0];
+                loginBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">verified</span> ${firstName}`;
+                loginBtn.classList.replace('bg-blue-600/20', 'bg-green-500/20');
+                loginBtn.classList.replace('text-blue-300', 'text-green-300');
+                loginBtn.classList.replace('border-blue-500/50', 'border-green-500/50');
+                loginBtn.onclick = window.logoutUser; 
+            }
+
+            // 2. Update Sidebar Profile
+            const sidebarName = document.getElementById('sidebarName');
+            const sidebarEmail = document.getElementById('sidebarEmail');
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+
+            if (sidebarName) sidebarName.textContent = displayName;
+            if (sidebarEmail) sidebarEmail.textContent = user.email || "Squad Member";
+
+            if (sidebarAvatar) {
+                if (userData.profilePic || user.photoURL) {
+                    sidebarAvatar.innerHTML = `<img src="${userData.profilePic || user.photoURL}" alt="Profile" class="w-full h-full object-cover">`;
+                } else {
+                    const initials = displayName.charAt(0).toUpperCase();
+                    sidebarAvatar.innerHTML = `<span class="text-white font-bold text-lg">${initials}</span>`;
+                }
+            }
+        }
+
+        function resetUI() {
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">login</span> Login`;
+                loginBtn.className = "hoverable px-5 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] flex items-center gap-2";
+                loginBtn.onclick = window.toggleLogin; 
+            }
+
+            const sidebarName = document.getElementById('sidebarName');
+            const sidebarEmail = document.getElementById('sidebarEmail');
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+            
+            if (sidebarName) sidebarName.textContent = "Guest";
+            if (sidebarEmail) sidebarEmail.textContent = "Join the Squad";
+            if (sidebarAvatar) sidebarAvatar.innerHTML = ""; 
+        }
+        
+        window.closeFeature = () => {
+             const featureModal = document.getElementById('featureModal');
+             const featureContent = document.getElementById('featureContent');
+             
+             featureContent.classList.remove('scale-100', 'opacity-100');
+             featureContent.classList.add('scale-95', 'opacity-0');
+             setTimeout(() => featureModal.classList.add('hidden'), 300);
+        }
+    </script>
+
     <style>
         :root {
-            --bg-dark: #0a0e17;
-            --text-light: #f4f4f4;
-            --brand-green: #00e676; /* High-vis green for downloads */
-            --accent-blue: #2979ff;
-            --surface: #1c2333;
+            --cursor-size: 20px;
+            --cursor-hover-size: 60px;
+            --brand-blue: #3b82f6;
+            --brand-white: #ffffff;
+            --brand-orange: #FFAB40; /* Copied from App Code */
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            line-height: 1.6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            overflow-x: hidden;
+            cursor: none; 
         }
 
-        /* Navbar with Logo */
-        nav {
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
+        /* --- Animated Background --- */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Ambient Glow --- */
+        .glow-orb {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s ease-out;
+        }
+
+        /* --- Custom Cursor --- */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--cursor-size);
+            height: var(--cursor-size);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor.hovered {
+            width: var(--cursor-hover-size);
+            height: var(--cursor-hover-size);
+            background: rgba(255, 255, 255, 0.9);
+            border-color: transparent;
+            mix-blend-mode: normal;
+            opacity: 0.8;
+        }
+
+        /* --- Glassmorphism --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        /* --- Sidebar & Modal Transitions --- */
+        .sidebar-hidden { transform: translateX(-100%); }
+        .sidebar-visible { transform: translateX(0); }
+        
+        /* --- Infinite Marquee --- */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
             position: relative;
-            z-index: 10;
         }
-        .logo { 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            font-size: 1.5rem; font-weight: 800; color: var(--text-light); letter-spacing: -1px; text-decoration: none; 
-        }
-        .logo img {
-            width: 45px;
-            height: 45px;
-            border-radius: 10px; /* Slight curve on the icon corners */
-            box-shadow: 0 4px 10px rgba(0,230,118,0.2);
-        }
-        .back-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 30px; backdrop-filter: blur(5px); }
-
-        /* Hero Section with Banner Background */
-        .hero {
-            text-align: center;
-            padding: 6rem 1.5rem 3rem; /* More top padding for banner space */
-            /* THIS IS THE BANNER MAGIC: Dark overlay + your image */
-            background-image: linear-gradient(to bottom, rgba(10, 14, 23, 0.8), rgba(10, 14, 23, 1)), url('app-banner.jpg');
-            background-size: cover;
-            background-position: center;
-            margin-top: -80px; /* Pulls it up behind navbar */
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+        
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
         }
 
-        .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
-        h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            line-height: 1.1;
-            font-weight: 800;
-            /* Subtle text gradient */
-            background: linear-gradient(to right, #ffffff, #e0e0e0);
+        /* --- Utilities --- */
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #60a5fa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 2.5rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* The Big Green Button */
-        .download-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--brand-green);
-            color: #0a0e17;
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 1.2rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 0 25px rgba(0, 230, 118, 0.5);
-        }
-
-        .download-btn:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 0 40px rgba(0, 230, 118, 0.7);
-        }
-
-        .safe-badge {
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.6);
-            display: flex; align-items: center; justify-content: center; gap: 5px;
-        }
-
-        /* SCREENSHOT GALLERY */
-        .gallery-section {
-            text-align: center;
-            padding: 3rem 0;
-            overflow-x: hidden;
-            background: linear-gradient(to bottom, var(--bg-dark), var(--surface));
         }
         
-        .gallery-scroll {
-            display: flex;
-            gap: 2rem;
-            padding: 1rem 2rem;
-            overflow-x: auto;
-            justify-content: center;
-            flex-wrap: wrap;
+        .video-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
         }
 
-        .phone-frame {
-            width: 220px; /* Slightly larger */
-            height: 440px;
-            border-radius: 24px;
-            border: 6px solid #222;
-            overflow: hidden;
-            background: #000;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            transition: transform 0.3s;
-        }
-        
-        .phone-frame:hover { transform: translateY(-10px); }
-        
-        .phone-frame img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Features Grid */
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            max-width: 1000px;
-            margin: 5rem auto;
-            padding: 0 1.5rem;
-        }
-
-        .feature-card {
-            background: var(--surface);
-            padding: 2.5rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: border-color 0.3s;
-        }
-        
-        .feature-card:hover { border-color: var(--brand-green); }
-
-        .feature-card h3 { color: var(--brand-green); margin-bottom: 0.5rem; font-size: 1.3rem;}
-        .feature-card p { color: rgba(255,255,255,0.7); }
-
-        /* Install Guide */
-        .install-guide {
-            background: linear-gradient(135deg, var(--surface), #151b29);
-            max-width: 800px;
-            margin: 5rem auto;
-            padding: 3rem;
-            border-radius: 20px;
-            border-left: 5px solid var(--accent-blue);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .steps { margin-top: 2rem; margin-left: 1.5rem; }
-        .steps li { margin-bottom: 1.2rem; color: #ccc; font-size: 1.1rem;}
-        .steps strong { color: var(--accent-blue); }
-
-        footer { text-align: center; padding: 4rem 2rem; color: #555; font-size: 0.9rem; background: #080b12;}
-
-        @media (max-width: 600px) { 
-            h1 { font-size: 2.5rem; } 
-            .hero { padding-top: 5rem; }
-            .gallery-scroll { justify-content: flex-start; padding-bottom: 2rem; } 
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body>
+<body class="antialiased selection:bg-cyan-500 selection:text-white">
 
-    <nav>
-        <a href="#" class="logo">
-            <img src="app-icon.png" alt="AZ Learner Logo">
-            AZ Learner
-        </a>
-        <a href="index.html" class="back-link">← Main Portfolio</a>
+    <!-- Background Elements -->
+    <div class="bg-animated"></div>
+    <div class="glow-orb" id="glowOrb"></div>
+    <div class="custom-cursor" id="cursor"></div>
+
+    <!-- Sidebar (Collapsible) -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 glass-panel z-[100] sidebar-hidden transition-transform duration-500 ease-in-out border-r border-white/10 flex flex-col pt-24 px-6 shadow-2xl">
+        <button id="closeSidebar" class="absolute top-6 right-6 hoverable p-2 rounded-full hover:bg-white/10">
+            <span class="material-symbols-outlined text-gray-400">close</span>
+        </button>
+
+        <div class="mb-10">
+            <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">The Squad Hub</h3>
+            <nav class="space-y-2">
+                <a href="#" onclick="openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">dashboard</span> Neural Dashboard
+                </a>
+                <a href="#" onclick="openFeature('grades')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">school</span> Grade Analytics
+                </a>
+                <a href="#" onclick="openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">calendar_month</span> Exam Countdown
+                </a>
+                <a href="#" onclick="openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">emoji_events</span> The Arena (Leaderboard)
+                </a>
+                <a href="#" onclick="openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
+                    <span class="material-symbols-outlined">rss_feed</span> The Vibe Check (Blog)
+                </a>
+                <a href="#" onclick="openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">print</span> Print Queue Status
+                </a>
+                <a href="#" onclick="openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">map</span> UCC Campus Map
+                </a>
+            </nav>
+        </div>
+
+        <!-- UPDATED SIDEBAR FOOTER -->
+        <div class="mt-auto mb-8 border-t border-white/10 pt-6">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 hoverable group">
+                <div id="sidebarAvatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 overflow-hidden flex items-center justify-center">
+                    <!-- Default State -->
+                </div>
+                <div>
+                    <div id="sidebarName" class="text-sm font-bold group-hover:text-blue-300 transition">Guest</div>
+                    <div id="sidebarEmail" class="text-xs text-gray-400">Join the Squad</div>
+                </div>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Overlay for Sidebar -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden opacity-0 transition-opacity duration-500"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-6 py-4 glass-panel border-b-0 border-b-white/10">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-6">
+                <!-- Hamburger Menu -->
+                <button id="openSidebar" class="hoverable p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined text-white">menu</span>
+                </button>
+                <a href="#" class="text-2xl font-extrabold tracking-tighter hoverable group">
+                    <span class="bg-white text-blue-900 px-2 py-1 rounded mr-1">AZ</span> LEARNER
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <a href="#" class="hidden md:block text-sm font-medium text-gray-300 hover:text-white transition hoverable">Francis Pwavwe Prod.</a>
+                <!-- Login Button -->
+                <button id="loginBtn" class="hoverable px-5 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Login
+                </button>
+            </div>
+        </div>
     </nav>
 
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Campus Life,<br>Levelled Up.</h1>
-            <p class="subtitle">The essential utility app for students. Timetables, instant alerts, and resources—built by students, for students.</p>
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" id="closeModalBg"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable">
+                <span class="material-symbols-outlined">close</span>
+            </button>
             
-            <a href="appv2.0.apk" class="download-btn">⬇ Download APK (v2.0)</a>
-            <a href="https://paystack.shop/pay/fw5uib9s1g" class="btn-support">💸 Support Project</a>
-            <div class="safe-badge">
-                <span>🛡️</span> Verified Safe • No Ads • Free Beta
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                    <span class="material-symbols-outlined text-3xl text-blue-400">fingerprint</span>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Squad Access</h2>
+                <p class="text-gray-400 text-sm">Enter the mainframe.</p>
+            </div>
+
+            <form class="space-y-4" onsubmit="event.preventDefault(); window.handleEmailLogin();">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Email</label>
+                    <input type="email" id="emailInput" placeholder="ss.tmg.22.0014@ucc.edu.gh" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition hoverable">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="passwordInput" placeholder="••••••••" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition hoverable">
+                </div>
+                
+                <button id="authSubmitBtn" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 py-3 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition hoverable mt-2 flex justify-center items-center gap-2">
+                    Secure Login 🔐
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GENERIC FEATURE MODAL -->
+    <div id="featureModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="window.closeFeature()"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-lg border border-white/10 shadow-[0_0_60px_rgba(59,130,246,0.15)] transform scale-95 opacity-0 transition-all duration-300" id="featureContent">
+            <button onclick="window.closeFeature()" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            
+            <div id="featureBody">
+                <!-- Content Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="relative pt-40 pb-20 px-6 min-h-screen flex flex-col justify-center items-center text-center">
+        <div class="max-w-4xl mx-auto space-y-8 z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/10 text-xs font-semibold tracking-wide uppercase text-blue-300 mb-4 animate-fade-in-up">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                v2.2 Beta Live
+            </div>
+            
+            <h1 class="text-6xl md:text-8xl font-black leading-tight tracking-tight">
+                The Squad <br>
+                <span class="text-gradient">Companion.</span>
+            </h1>
+            
+            <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light">
+                Print, Chat, Grind, Shine. The ultimate utility tool for the academic weapon.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+                <a href="appv2.0.apk" class="hoverable px-8 py-4 bg-white text-blue-900 rounded-full font-bold text-lg transition hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">download</span>
+                    Download APK
+                </a>
+                <a href="https://paystack.shop/pay/fw5uib9s1g" target="_blank" class="hoverable px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-green-300 border border-green-500/30">
+                    Support AZ Learner 💸
+                </a>
             </div>
         </div>
     </section>
 
-    <section class="gallery-section">
-        <div class="gallery-scroll">
-            <div class="phone-frame"><img src="screen1.jpg" alt="App Screenshot 1"></div>
-            <div class="phone-frame"><img src="screen2.jpg" alt="App Screenshot 2"></div>
-            <div class="phone-frame"><img src="screen3.jpg" alt="App Screenshot 3"></div>
-        </div>
-    </section>
-
-    <div class="features">
-        <div class="feature-card">
-            <h3>📅 Smart Timetable</h3>
-            <p>Your schedule, organized automatically. Get notified before your next lecture starts.</p>
-        </div>
-        <div class="feature-card">
-            <h3>🔔 Instant Campus Alerts</h3>
-            <p>Real-time notifications for events, deadline shifts, and critical announcements.</p>
-        </div>
-        <div class="feature-card">
-            <h3>⚡ Reliable Offline Mode</h3>
-            <p>Access your essential data anytime, even when campus Wi-Fi is down.</p>
+    <!-- Infinite Marquee -->
+    <div class="py-6 glass-panel border-y border-white/5 transform -rotate-1 scale-105 mb-20">
+        <div class="marquee-container">
+            <div class="marquee-content text-4xl font-black uppercase text-transparent stroke-text opacity-50">
+                <span class="mx-8 text-outline">Learn in Style</span> • 
+                <span class="mx-8 text-white">Academic Weapon</span> • 
+                <span class="mx-8 text-outline">Main Character Energy</span> • 
+                <span class="mx-8 text-white">Squad Goals</span> • 
+                <span class="mx-8 text-outline">Future Ready</span> • 
+                <span class="mx-8 text-white">Print & Deliver</span> •
+                <span class="mx-8 text-outline">Learn in Style</span> • 
+                <span class="mx-8 text-white">Academic Weapon</span> • 
+                <span class="mx-8 text-outline">Main Character Energy</span> • 
+                <span class="mx-8 text-white">Squad Goals</span> • 
+                <span class="mx-8 text-outline">Future Ready</span> • 
+                <span class="mx-8 text-white">Print & Deliver</span> •
+            </div>
         </div>
     </div>
 
-    <section class="install-guide">
-        <h2>⚠️ How to Install (Beta Access)</h2>
-        <p style="color: #999; margin-top: 0.5rem;">Get exclusive early access before we hit the Play Store. Follow these simple steps:</p>
-        <ol class="steps">
-            <li>Tap the <strong>Download APK</strong> button above.</li>
-            <li>Open the downloaded file from your notifications.</li>
-            <li>If prompted, go to <strong>Settings</strong> and enable <strong>"Allow from this source"</strong>.</li>
-            <li>Tap <strong>Install</strong> and launch AZ Learner!</li>
-        </ol>
+    <!-- YouTube Video Section -->
+    <section class="max-w-5xl mx-auto px-6 mb-32">
+        <div class="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl">
+            <div class="video-wrapper aspect-video bg-black rounded-xl overflow-hidden hoverable">
+                <iframe src="https://www.youtube.com/embed/WV7Ix6j7a_A?si=Yx1JWatvKkqjUNIu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
     </section>
 
-    <footer>
-        <p>&copy; 2025 AZ Learner Team. A Francis Pwavwe Production.</p>
+    <!-- UI Screenshot Gallery -->
+    <section class="max-w-7xl mx-auto px-6 mb-32 overflow-hidden">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold mb-4">The Interface</h2>
+            <p class="text-gray-400">Clean. Calm. Control.</p>
+        </div>
+        
+        <!-- Staggered Phone Layout -->
+        <div class="flex flex-col md:flex-row gap-8 justify-center items-center">
+            <!-- Screen 1 -->
+            <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                <div class="relative w-[280px] h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                    <img src="screen1.jpg" alt="Home Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                </div>
+            </div>
+            <!-- Screen 2 (Offset) -->
+            <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4 md:mt-16">
+                <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                <div class="relative w-[280px] h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                    <img src="screen2.jpg" alt="Timetable Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                </div>
+            </div>
+            <!-- Screen 3 -->
+            <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-green-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                <div class="relative w-[280px] h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                    <img src="screen3.jpg" alt="Events Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bento Grid Features -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="features">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4">The Ecosystem</h2>
+            <p class="text-gray-400">Everything you need to survive and thrive on campus.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[800px]">
+            <!-- Item 1: Print (Large) -->
+            <div class="col-span-1 md:col-span-2 row-span-2 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group transition duration-500 hoverable">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl group-hover:bg-orange-400/30 transition duration-500"></div>
+                <div class="relative z-10 h-full flex flex-col justify-between">
+                    <div>
+                        <div class="inline-flex items-center gap-2 bg-orange-500/20 px-3 py-1 rounded-full mb-4 border border-orange-500/30">
+                            <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                            <span class="text-xs font-bold text-orange-200 uppercase tracking-wide">Premium Feature</span>
+                        </div>
+                        <h3 class="text-3xl font-bold mb-2">Print & Deliver 🖨️</h3>
+                        <p class="text-gray-400 max-w-sm">Skip the long queues at the cafe. Upload your assignment, track the print job, and get it delivered to your hall. Efficiency level: 100.</p>
+                    </div>
+                    <div class="mt-8 bg-black/40 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-400 uppercase">Status</span>
+                            <span class="text-xs font-bold text-green-400">Out for Delivery 🚀</span>
+                        </div>
+                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full w-[80%] rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item 2: Leaderboard -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-yellow-500/30">
+                    <span class="material-symbols-outlined text-yellow-400 text-3xl">emoji_events</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">The Arena</h3>
+                <p class="text-sm text-gray-400">Earn XP. Rank up to "Academic Weapon". Flex on the leaderboard.</p>
+            </div>
+
+            <!-- Item 3: Course Circles -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-blue-500/30">
+                    <span class="material-symbols-outlined text-blue-400 text-3xl">groups</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Course Circles</h3>
+                <p class="text-sm text-gray-400">Automatic group chats for every course you take. Never miss info.</p>
+            </div>
+
+            <!-- Item 4: Smart Timetable (RESTORED) -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-purple-500/30">
+                    <span class="material-symbols-outlined text-purple-400 text-3xl">calendar_month</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Smart Timetable</h3>
+                <p class="text-sm text-gray-400">Organized automatically. Get notified before your next lecture starts.</p>
+            </div>
+
+            <!-- Item 5: Instant Alerts (RESTORED) -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-red-500/30">
+                    <span class="material-symbols-outlined text-red-400 text-3xl">notifications_active</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Instant Alerts</h3>
+                <p class="text-sm text-gray-400">Real-time notifications for events, deadline shifts, and critical announcements.</p>
+            </div>
+
+            <!-- Item 6: Offline Mode (RESTORED) -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-green-500/30">
+                    <span class="material-symbols-outlined text-green-400 text-3xl">wifi_off</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Offline Mode</h3>
+                <p class="text-sm text-gray-400">Access your essential data anytime, even when campus Wi-Fi is down.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- The AZ Manifesto / Brand Concept -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="vision">
+        <div class="text-center mb-20">
+            <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-6">
+                Where Ambition <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white">Meets Lifestyle.</span>
+            </h2>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto font-light">
+                AZ Learner isn't just a tool; it's a "Digital Exhale" for the busy student. 
+                We reject the formal. We embrace the vibrant.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Card 1: Identity -->
+            <div class="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 hover:bg-white/5 transition hoverable">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                        <span class="material-symbols-outlined">palette</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white">Vibrant Minimalism</h3>
+                </div>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    Our visual anchor is rooted in clarity. The <span class="text-white font-bold">Light Blue</span> represents a refreshing open sky—endless possibility and a calm mind. The bold <span class="text-white font-bold">White AZ</span> signifies the definitive start and end of your journey.
+                </p>
+                <p class="text-gray-400 text-sm italic border-l-2 border-gray-600 pl-4">
+                    "Clean logo, wild promo. High-energy, Gen Z-centric layouts that feel alive rather than corporate."
+                </p>
+            </div>
+
+            <!-- Card 2: Voice -->
+            <div class="glass-panel p-10 rounded-3xl border-l-4 border-l-purple-500 hover:bg-white/5 transition hoverable">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                        <span class="material-symbols-outlined">campaign</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white">Edutainment Vibe</h3>
+                </div>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    We reject the "serious and formal." Striving hard is a lifestyle choice, not a chore. We are your easy-going mentor, providing survival tools (timetables, CV revamps) with a vibe that says:
+                </p>
+                <p class="text-purple-300 font-bold text-lg">
+                    "You’ve got this, and you can look good doing it."
+                </p>
+            </div>
+
+            <!-- Card 3: Community (Spans Full Width on Desktop) -->
+            <div class="md:col-span-2 glass-panel p-10 rounded-3xl border-l-4 border-l-orange-500 hover:bg-white/5 transition hoverable relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400">
+                                <span class="material-symbols-outlined">hub</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white">Beyond the Screen</h3>
+                        </div>
+                        <ul class="space-y-6">
+                            <li class="flex gap-4">
+                                <span class="material-symbols-outlined text-gray-500">podcasts</span>
+                                <div>
+                                    <strong class="text-white block">The AZ Podcast</strong>
+                                    <span class="text-gray-400 text-sm">Relaxing, high-quality interviews with successful figures. Making success feel attainable.</span>
+                                </div>
+                            </li>
+                            <li class="flex gap-4">
+                                <span class="material-symbols-outlined text-gray-500">nightlife</span>
+                                <div>
+                                    <strong class="text-white block">Boiler Room Events</strong>
+                                    <span class="text-gray-400 text-sm">High-energy parties with DJs and artists. Wellness walks and mixers in a relaxed setting.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-black/30 p-6 rounded-2xl border border-white/5">
+                        <h4 class="text-xl font-bold text-white mb-2">The AZ Innovation Center</h4>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Modeled after WeWork. A dedicated physical space where students don't just study—they build.
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-xs text-gray-300">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Idea Incubation
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-gray-300">
+                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Collaborative Networking
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-gray-300">
+                                <span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span> Youth-Led Social Action
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-white/10">
+                            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">The Mission</p>
+                            <p class="text-white font-serif italic mt-1">"Building the country together. We are the change-makers."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Contact / Link Up Section -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="contact">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4">Link Up 🔌</h2>
+            <p class="text-gray-400">Got ideas? Need support? Just want to vibe?</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Email -->
+            <a href="mailto:info@azlearner.me" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-blue-500/30">
+                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
+                    <span class="material-symbols-outlined">mail</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">Email Us</h3>
+                    <p class="text-xs text-gray-400">info@azlearner.me</p>
+                </div>
+            </a>
+            <!-- WhatsApp -->
+            <a href="https://wa.me/233557535673" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-green-500/30">
+                <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 group-hover:scale-110 transition">
+                    <!-- WhatsApp SVG -->
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">WhatsApp</h3>
+                    <p class="text-xs text-gray-400">Direct Line</p>
+                </div>
+            </a>
+            <!-- YouTube -->
+            <a href="https://www.youtube.com/@AZ-Learner-m6z" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-red-500/30">
+                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition">
+                     <!-- YouTube SVG -->
+                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">YouTube</h3>
+                    <p class="text-xs text-gray-400">Watch the Vibe</p>
+                </div>
+            </a>
+            <!-- LinkedIn -->
+            <a href="https://www.linkedin.com/in/company/az-learner" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-blue-700/30">
+                <div class="w-12 h-12 rounded-full bg-blue-700/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
+                     <!-- LinkedIn SVG -->
+                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">LinkedIn</h3>
+                    <p class="text-xs text-gray-400">Professional Network</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
+            <p class="text-gray-500 mb-8">UCC • Cape Coast • The World</p>
+            <div class="text-sm text-gray-600">
+                &copy; 2026 Francis Pwavwe Production. Powered by Sunlight & Ambition.
+            </div>
+        </div>
     </footer>
 
+    <!-- Scripts -->
+    <script>
+        // --- Sidebar Logic ---
+        const sidebar = document.getElementById('sidebar');
+        const openSidebarBtn = document.getElementById('openSidebar');
+        const closeSidebarBtn = document.getElementById('closeSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            const isHidden = sidebar.classList.contains('sidebar-hidden');
+            if (isHidden) {
+                sidebar.classList.remove('sidebar-hidden');
+                sidebar.classList.add('sidebar-visible');
+                sidebarOverlay.classList.remove('hidden');
+                setTimeout(() => sidebarOverlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('sidebar-hidden');
+                sidebar.classList.remove('sidebar-visible');
+                sidebarOverlay.classList.add('opacity-0');
+                setTimeout(() => sidebarOverlay.classList.add('hidden'), 500);
+            }
+        }
+
+        openSidebarBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // --- Login Modal Logic ---
+        const loginBtn = document.getElementById('loginBtn');
+        const loginModal = document.getElementById('loginModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalBg = document.getElementById('closeModalBg');
+        const loginContent = document.getElementById('loginContent');
+
+        window.toggleLogin = function() {
+            // Check if logged in (if button has click listener for logout, don't open modal)
+            if (loginBtn.innerHTML.includes('verified')) return;
+
+            const isHidden = loginModal.classList.contains('hidden');
+            if (isHidden) {
+                loginModal.classList.remove('hidden');
+                setTimeout(() => {
+                    loginContent.classList.remove('scale-95', 'opacity-0');
+                    loginContent.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                // Manual Close Logic
+                loginContent.classList.remove('scale-100', 'opacity-100');
+                loginContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => loginModal.classList.add('hidden'), 300);
+            }
+        }
+
+        // Attach initial toggle behavior
+        loginBtn.onclick = window.toggleLogin;
+        
+        closeModalBtn.addEventListener('click', window.toggleLogin);
+        closeModalBg.addEventListener('click', window.toggleLogin);
+
+        // --- Custom Cursor Logic (Existing) ---
+        const cursor = document.getElementById('cursor');
+        const glowOrb = document.getElementById('glowOrb');
+        const hoverables = document.querySelectorAll('.hoverable');
+
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            cursor.style.left = x + 'px';
+            cursor.style.top = y + 'px';
+            glowOrb.style.left = x + 'px';
+            glowOrb.style.top = y + 'px';
+        });
+
+        hoverables.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        document.addEventListener('mousedown', () => cursor.style.transform = "translate(-50%, -50%) scale(0.8)");
+        document.addEventListener('mouseup', () => cursor.style.transform = "translate(-50%, -50%) scale(1)");
+    </script>
 </body>
 </html>
