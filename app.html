@@ -180,36 +180,39 @@
         <div class="mb-10">
             <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">The Squad Hub</h3>
             <nav class="space-y-2">
-                <a href="#" onclick="openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">dashboard</span> Neural Dashboard
                 </a>
-                <a href="#" onclick="openFeature('events')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('events')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">event</span> Campus Events
                 </a>
-                <a href="#" onclick="openFeature('gpa')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('gpa')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">calculate</span> GPA Calculator
                 </a>
-                <a href="#" onclick="openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">calendar_month</span> Exam Countdown
                 </a>
-                <a href="#" onclick="openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">emoji_events</span> The Arena
                 </a>
-                <a href="#" onclick="openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
+                <a href="javascript:void(0)" onclick="openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
                     <span class="material-symbols-outlined">rss_feed</span> The Vibe Check
                 </a>
-                <a href="#" onclick="openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">print</span> Print Queue
                 </a>
-                <a href="#" onclick="openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">map</span> UCC Navigation
+                </a>
+                 <a href="javascript:void(0)" onclick="openFeature('pastquestions')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">library_books</span> Past Questions
                 </a>
             </nav>
         </div>
 
         <!-- SIDEBAR FOOTER -->
         <div class="mt-auto mb-8 border-t border-white/10 pt-6">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 hoverable group">
+            <a href="javascript:void(0)" class="flex items-center gap-3 px-4 py-3 hoverable group">
                 <div id="sidebarAvatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 overflow-hidden flex items-center justify-center">
                     <span class="material-symbols-outlined text-white text-sm">person</span>
                 </div>
@@ -240,7 +243,7 @@
             <div class="flex items-center gap-4">
                 <a href="#" class="hidden md:block text-sm font-medium text-gray-300 hover:text-white transition hoverable">Francis Pwavwe Prod.</a>
                 
-                <!-- NEW: Notification Bell in Header -->
+                <!-- Notification Bell -->
                 <button onclick="openFeature('notifications')" class="hoverable p-2 rounded-full hover:bg-white/10 transition relative text-gray-300 hover:text-white">
                     <span class="material-symbols-outlined">notifications</span>
                     <span id="header-notif-dot" class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full hidden animate-pulse border border-[#0f172a]"></span>
@@ -302,6 +305,7 @@
     </div>
 
     <!-- Hero Section -->
+    <!-- ... (rest of UI is stable) ... -->
     <section class="relative pt-40 pb-20 px-6 min-h-screen flex flex-col justify-center items-center text-center">
         <div class="max-w-4xl mx-auto space-y-8 z-10">
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/10 text-xs font-semibold tracking-wide uppercase text-blue-300 mb-4 animate-fade-in-up">
@@ -461,96 +465,18 @@
                 <p class="text-sm text-gray-400">Simulate your results. Keep that GPA skyrocketing.</p>
             </div>
 
-            <!-- Item 6: Offline Mode -->
-            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
-                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-red-500/30">
-                    <span class="material-symbols-outlined text-red-400 text-3xl">wifi_off</span>
+            <!-- Item 6: Past Questions -->
+            <div onclick="openFeature('pastquestions')" class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500 cursor-pointer">
+                <div class="w-16 h-16 bg-pink-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-pink-500/30">
+                    <span class="material-symbols-outlined text-pink-400 text-3xl">menu_book</span>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Offline Mode</h3>
-                <p class="text-sm text-gray-400">Access your essential data anytime, even when campus Wi-Fi is down.</p>
+                <h3 class="text-xl font-bold mb-2">Past Questions</h3>
+                <p class="text-sm text-gray-400">Access the archives. Study smart, not just hard.</p>
             </div>
         </div>
     </section>
 
-    <!-- The AZ Manifesto / Brand Concept -->
-    <section class="max-w-7xl mx-auto px-6 mb-32" id="vision">
-        <div class="text-center mb-20">
-            <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                Where Ambition <br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white">Meets Lifestyle.</span>
-            </h2>
-            <p class="text-xl text-gray-400 max-w-2xl mx-auto font-light">
-                AZ Learner isn't just a tool; it's a "Digital Exhale" for the busy student. 
-                We reject the formal. We embrace the vibrant.
-            </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 hover:bg-white/5 transition hoverable">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                        <span class="material-symbols-outlined">palette</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white">Vibrant Minimalism</h3>
-                </div>
-                <p class="text-gray-400 leading-relaxed mb-4">
-                    Our visual anchor is rooted in clarity. The Light Blue represents a refreshing open sky—endless possibility and a calm mind.
-                </p>
-            </div>
-
-            <div class="glass-panel p-10 rounded-3xl border-l-4 border-l-purple-500 hover:bg-white/5 transition hoverable">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
-                        <span class="material-symbols-outlined">campaign</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white">Edutainment Vibe</h3>
-                </div>
-                <p class="text-gray-400 leading-relaxed mb-4">
-                    We reject the "serious and formal." Striving hard is a lifestyle choice, not a chore. "You’ve got this, and you can look good doing it."
-                </p>
-            </div>
-
-            <div class="md:col-span-2 glass-panel p-10 rounded-3xl border-l-4 border-l-orange-500 hover:bg-white/5 transition hoverable relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400">
-                                <span class="material-symbols-outlined">hub</span>
-                            </div>
-                            <h3 class="text-2xl font-bold text-white">Beyond the Screen</h3>
-                        </div>
-                        <ul class="space-y-6">
-                            <li class="flex gap-4">
-                                <span class="material-symbols-outlined text-gray-500">podcasts</span>
-                                <div>
-                                    <strong class="text-white block">The AZ Podcast</strong>
-                                    <span class="text-gray-400 text-sm">Relaxing, high-quality interviews with successful figures.</span>
-                                </div>
-                            </li>
-                            <li class="flex gap-4">
-                                <span class="material-symbols-outlined text-gray-500">nightlife</span>
-                                <div>
-                                    <strong class="text-white block">Boiler Room Events</strong>
-                                    <span class="text-gray-400 text-sm">High-energy parties with DJs and artists.</span>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="bg-black/30 p-6 rounded-2xl border border-white/5">
-                        <h4 class="text-xl font-bold text-white mb-2">The AZ Innovation Center</h4>
-                        <p class="text-gray-400 text-sm mb-4">A dedicated physical space where students don't just study—they build.</p>
-                        <div class="mt-6 pt-4 border-t border-white/10">
-                            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">The Mission</p>
-                            <p class="text-white font-serif italic mt-1">"Building the country together. We are the change-makers."</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact / Link Up Section -->
+    <!-- Link Up Section (UPDATED) -->
     <section class="max-w-7xl mx-auto px-6 mb-32" id="contact">
         <div class="text-center mb-16">
             <h2 class="text-4xl font-bold mb-4">Link Up 🔌</h2>
@@ -573,6 +499,44 @@
                 <div class="text-center">
                     <h3 class="font-bold text-white">WhatsApp</h3>
                     <p class="text-xs text-gray-400">Direct Line</p>
+                </div>
+            </a>
+            <a href="https://whatsapp.com/channel/0029VbBfNR8It5rz68xRrC20" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-teal-500/30">
+                <div class="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition">
+                    <span class="material-symbols-outlined text-2xl">campaign</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">The Channel</h3>
+                    <p class="text-xs text-gray-400">Updates & Lore</p>
+                </div>
+            </a>
+            <a href="https://twitter.com/az_learner" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-gray-500/30">
+                <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition">
+                     <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">X</h3>
+                    <p class="text-xs text-gray-400">@az_learner</p>
+                </div>
+            </a>
+            <a href="https://tiktok.com/@azlearner0" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-pink-500/30">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-400 to-pink-500 flex items-center justify-center text-white group-hover:scale-110 transition p-0.5">
+                     <div class="w-full h-full bg-black rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.35-1.17 1.09-1.07 1.93.03.58.49 1.13 1.07 1.3.87.22 1.89.18 2.73-.23.61-.3 1.15-.72 1.52-1.35.41-.7.55-1.56.54-2.38V.02z"/></svg>
+                     </div>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">TikTok</h3>
+                    <p class="text-xs text-gray-400">@azlearner0</p>
+                </div>
+            </a>
+            <a href="https://bsky.app/profile/azlearner.bsky.social" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-sky-500/30">
+                <div class="w-12 h-12 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-110 transition">
+                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.133 1.915 0 2.561 0 3.208c0 3.766 6.199 9.224 9.465 10.222-1.988 1.088-6.8 1.594-7.545 1.652-.271.021-.853.074-1.065.127-1.176.297-1.144 1.616-.277 1.947 1.53.582 3.86.693 5.485.49 4.354-.54 7.29-3.284 5.937-6.846 1.354 3.562 4.29 6.306 8.644 6.846 1.625.203 3.955.092 5.485-.49.867-.331.9-1.65.277-1.947-.212-.053-.794-.106-1.065-.127-.745-.058-5.557-.564-7.545-1.652 3.266-.998 9.465-6.456 9.465-10.222 0-.647-.133-1.293-.902-1.643-.659-.299-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.686 12 10.8z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">Bluesky</h3>
+                    <p class="text-xs text-gray-400">The New Wave</p>
                 </div>
             </a>
             <a href="https://www.youtube.com/@AZ-Learner-m6z" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-red-500/30">
@@ -617,22 +581,40 @@
         window.showToast = (message, type = 'success') => {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
+            
             const color = type === 'success' ? 'bg-green-600' : 'bg-red-600';
             const icon = type === 'success' ? 'check_circle' : 'error';
+            
             toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter`;
             toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span> <span class="font-bold text-sm">${message}</span>`;
+            
             container.appendChild(toast);
-            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
-            setTimeout(() => { toast.classList.remove('toast-enter-active'); toast.classList.add('toast-exit-active'); setTimeout(() => toast.remove(), 300); }, 3000);
+            
+            // Animation In
+            requestAnimationFrame(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-enter-active');
+            });
+
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-exit-active');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // Global Modal Logic - Refactored for Stability
-        window.closeFeature = () => {
-             // Detach listeners safely
+        window.cleanupListeners = () => {
              if (window.activeListeners) {
                 window.activeListeners.forEach(unsub => { if(typeof unsub === 'function') unsub(); });
                 window.activeListeners = [];
              }
+        }
+
+        window.closeFeature = () => {
+             // Detach listeners
+             window.cleanupListeners();
 
              const featureModal = document.getElementById('featureModal');
              const featureContent = document.getElementById('featureContent');
@@ -828,11 +810,8 @@
             const featureBody = document.getElementById('featureBody');
             const featureContent = document.getElementById('featureContent');
             
-            // Clean up old listeners manually without triggering close animation
-            if (window.activeListeners) {
-                window.activeListeners.forEach(unsub => { if(typeof unsub === 'function') unsub(); });
-                window.activeListeners = [];
-            }
+            // Clean up old listeners manually WITHOUT closing
+            window.cleanupListeners();
 
             featureModal.classList.remove('hidden');
             featureBody.innerHTML = `
@@ -900,13 +879,285 @@
                 if (type === 'blog') renderBlog(userData);
                 if (type === 'grades') renderGrades(userData);
                 if (type === 'countdown') renderCountdown(userData);
-                if (type === 'notifications') renderNotifications(user); // New
+                if (type === 'notifications') renderNotifications(user);
+                if (type === 'pastquestions') renderPastQuestions(user); 
 
             } catch (error) {
                 console.error("Error getting document:", error);
                 featureBody.innerHTML = `<div class="text-center text-red-400 py-8">Error fetching data: ${error.message}</div>`;
             }
         };
+
+        // --- PAST QUESTIONS RENDER LOGIC ---
+        async function renderPastQuestions(user) {
+            const featureBody = document.getElementById('featureBody');
+            let userRole = 'student';
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) userRole = userDoc.data().role;
+            } catch(e) {}
+            
+            const showAdminControls = (userRole === 'admin' || user.email === "pwavwef@gmail.com") ? '' : 'hidden';
+
+            featureBody.innerHTML = `
+                <div class="text-center mb-6 relative">
+                    <h2 class="text-2xl font-bold text-white">Past Questions 📚</h2>
+                    <p class="text-gray-400 text-sm">The ultimate cheat code.</p>
+                    <button onclick="window.renderAddCourse()" class="absolute right-0 top-0 bg-blue-500/20 p-2 rounded-full text-blue-300 hover:bg-blue-500 hover:text-white transition ${showAdminControls}">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <input type="text" id="pq-search" placeholder="Search courses (e.g. TMG 101)..." class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500 transition" oninput="window.filterCourses()">
+                </div>
+
+                <div id="pq-course-list" class="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 pb-10">
+                    <div class="animate-pulse flex flex-col gap-4 col-span-2">
+                        <div class="h-24 bg-white/5 rounded-xl"></div>
+                        <div class="h-24 bg-white/5 rounded-xl"></div>
+                    </div>
+                </div>
+            `;
+
+            const list = document.getElementById('pq-course-list');
+            const q = query(collection(db, "pq_courses")); 
+            const snap = await getDocs(q);
+            
+            list.innerHTML = '';
+
+            if (snap.empty) {
+                list.innerHTML = `<div class="col-span-2 text-center opacity-60 py-10"><span class="material-symbols-outlined text-4xl mb-2">folder_off</span><p>No courses found.</p></div>`;
+                return;
+            }
+
+            window.allPQCourses = [];
+            snap.forEach(d => {
+                const c = { id: d.id, ...d.data() };
+                window.allPQCourses.push(c);
+            });
+            window.filterCourses(); 
+        }
+
+        window.filterCourses = () => {
+            const search = document.getElementById('pq-search').value.toLowerCase();
+            const list = document.getElementById('pq-course-list');
+            list.innerHTML = '';
+            
+            const filtered = window.allPQCourses.filter(c => c.name.toLowerCase().includes(search) || c.code.toLowerCase().includes(search));
+            
+            if (filtered.length === 0) {
+                 list.innerHTML = `<div class="col-span-2 text-center opacity-40 text-xs py-4">No matching courses.</div>`;
+                 return;
+            }
+
+            filtered.forEach(c => {
+                list.innerHTML += `
+                    <div onclick="window.openCoursePQ('${c.id}', '${c.name}')" class="bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 cursor-pointer transition flex flex-col justify-between h-28 group">
+                        <div>
+                            <h3 class="font-bold text-white truncate">${c.code}</h3>
+                            <p class="text-xs text-gray-400 truncate">${c.name}</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">Level ${c.level}</span>
+                            <span class="material-symbols-outlined text-gray-500 group-hover:text-white transition text-lg">folder_open</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.renderAddCourse = () => {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <button onclick="openFeature('pastquestions')" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">arrow_back</span></button>
+                        <h2 class="text-xl font-bold text-white">Add New Course 📚</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    <form onsubmit="event.preventDefault(); window.saveNewCourse()" class="space-y-4">
+                        <input type="text" id="new-course-code" placeholder="Course Code (e.g. TMG 101)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                        <input type="text" id="new-course-name" placeholder="Course Name (e.g. Intro to Tourism)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                        <input type="number" id="new-course-level" placeholder="Level (e.g. 100)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg">Create Course</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        window.saveNewCourse = async () => {
+            const code = document.getElementById('new-course-code').value.toUpperCase();
+            const name = document.getElementById('new-course-name').value;
+            const level = document.getElementById('new-course-level').value;
+
+            if(!code || !name) return window.showToast("Fill details", "error");
+
+            try {
+                await addDoc(collection(db, "pq_courses"), { code, name, level });
+                window.showToast("Course Added! ✅");
+                openFeature('pastquestions');
+            } catch(e) { window.showToast("Error adding course", "error"); }
+        }
+
+        window.openCoursePQ = async (courseId, courseName) => {
+            const featureBody = document.getElementById('featureBody');
+            
+            let isAdmin = false;
+            try {
+                const user = auth.currentUser;
+                if (user.email === "pwavwef@gmail.com") isAdmin = true;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') isAdmin = true;
+            } catch(e) {}
+            
+            const adminUploadBtn = isAdmin ? `
+                <div class="flex gap-2 mt-4 pt-4 border-t border-white/10">
+                    <input type="file" id="pq-file" class="hidden" onchange="window.handlePQUpload(this, '${courseId}')">
+                    <input type="text" id="pq-title" placeholder="Paper Title (e.g. Midsem 2024)" class="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-xs text-white outline-none">
+                    <button onclick="document.getElementById('pq-file').click()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap">Upload PDF/Img</button>
+                </div>
+            ` : '';
+
+            featureBody.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <button onclick="openFeature('pastquestions')" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">arrow_back</span></button>
+                        <h2 class="text-lg font-bold text-white truncate max-w-[200px]">${courseName}</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    
+                    <div id="pq-file-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                        <div class="animate-pulse h-12 bg-white/5 rounded-lg"></div>
+                    </div>
+
+                    ${adminUploadBtn}
+                </div>
+            `;
+
+            const list = document.getElementById('pq-file-list');
+            const q = query(collection(db, "past_questions"), where("courseId", "==", courseId), orderBy("timestamp", "desc"));
+            
+            const unsub = onSnapshot(q, (snap) => {
+                let html = '';
+                if(snap.empty) html = '<div class="text-center opacity-40 text-sm mt-10">No past questions yet.</div>';
+                
+                snap.forEach(d => {
+                    const pq = d.data();
+                    const icon = pq.type && pq.type.includes('pdf') ? 'picture_as_pdf' : 'image';
+                    const color = pq.type && pq.type.includes('pdf') ? 'text-red-400' : 'text-blue-400';
+                    
+                    html += `
+                        <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl hover:bg-white/10 transition border border-white/5 group">
+                            <div class="flex items-center gap-3 overflow-hidden" onclick="window.open('${pq.fileData}', '_blank')">
+                                <span class="material-symbols-outlined ${color}">${icon}</span>
+                                <span class="text-sm text-gray-200 truncate cursor-pointer hover:underline">${pq.title}</span>
+                            </div>
+                            <button onclick="window.downloadFileBase64('${pq.fileData}', '${pq.title}')" class="text-gray-500 hover:text-white transition">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                            </button>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            });
+            window.activeListeners.push(unsub);
+        }
+
+        window.handlePQUpload = (input, courseId) => {
+            const titleInput = document.getElementById('pq-title');
+            const title = titleInput.value.trim() || 'Untitled PQ';
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // --- SIZE CHECK ---
+                if (file.size > 1000000) { // 1MB Limit
+                     window.showToast("File too large! Max 1MB.", "error");
+                     input.value = ''; // Reset input
+                     return;
+                }
+
+                const reader = new FileReader();
+                
+                window.showToast(`Uploading ${file.name}...`, "success"); 
+
+                reader.onload = async (e) => {
+                    let base64 = e.target.result;
+                    
+                    // --- IMAGE COMPRESSION IF APPLICABLE ---
+                    if(file.type.startsWith('image/')) {
+                        try {
+                           base64 = await window.compressImage(base64);
+                        } catch(err) {
+                           console.log("Compression skipped", err);
+                        }
+                    }
+
+                    try {
+                        await addDoc(collection(db, "past_questions"), {
+                            courseId,
+                            title: title,
+                            fileData: base64,
+                            type: file.type,
+                            timestamp: Date.now()
+                        });
+                        window.showToast("Uploaded!", "success");
+                        titleInput.value = ''; 
+                    } catch(err) {
+                        console.error(err);
+                        window.showToast("Upload failed. Database limit.", "error");
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // --- HELPER: Image Compression ---
+        window.compressImage = (base64Str) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Resize logic
+                    const MAX_WIDTH = 800; 
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to JPEG 0.7
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+            });
+        }
+        
+        window.downloadFileBase64 = (base64, fileName) => {
+            const link = document.createElement('a');
+            link.href = base64;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         function renderPrintService(user) {
             const featureBody = document.getElementById('featureBody');
