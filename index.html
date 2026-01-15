@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="AZ Learner - The Squad Companion. Print, Chat, Grind, Shine.">
     <title>AZ Learner | The Squad Companion</title>
-    <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
     <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -181,31 +181,31 @@
         <div class="mb-10">
             <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">The Squad Hub</h3>
             <nav class="space-y-2">
-                <a href="javascript:void(0)" onclick="openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">dashboard</span> Neural Dashboard
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('events')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('events')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">event</span> Campus Events
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('gpa')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('gpa')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">calculate</span> GPA Calculator
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">calendar_month</span> Exam Countdown
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">emoji_events</span> The Arena
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
+                <a href="javascript:void(0)" onclick="window.openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
                     <span class="material-symbols-outlined">rss_feed</span> The Vibe Check
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">print</span> Print Queue
                 </a>
-                <a href="javascript:void(0)" onclick="openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="window.openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">map</span> UCC Navigation
                 </a>
-                 <a href="javascript:void(0)" onclick="openFeature('pastquestions')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                 <a href="javascript:void(0)" onclick="window.openFeature('pastquestions')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
                     <span class="material-symbols-outlined">library_books</span> Past Questions
                 </a>
             </nav>
@@ -244,7 +244,7 @@
                 <a href="#" class="hidden md:block text-sm font-medium text-gray-300 hover:text-white transition hoverable">Francis Pwavwe Prod.</a>
                 
                 <!-- Notification Bell -->
-                <button onclick="openFeature('notifications')" class="hoverable p-2 rounded-full hover:bg-white/10 transition relative text-gray-300 hover:text-white">
+                <button onclick="window.openFeature('notifications')" class="hoverable p-2 rounded-full hover:bg-white/10 transition relative text-gray-300 hover:text-white">
                     <span class="material-symbols-outlined">notifications</span>
                     <span id="header-notif-dot" class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full hidden animate-pulse border border-[#0f172a]"></span>
                 </button>
@@ -332,7 +332,7 @@
         <div class="max-w-4xl mx-auto space-y-8 z-10">
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/10 text-xs font-semibold tracking-wide uppercase text-blue-300 mb-4 animate-fade-in-up">
                 <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                v2.7 Beta Live
+                v3.0 Stable
             </div>
             
             <h1 class="text-4xl sm:text-5xl md:text-7xl font-black leading-tight tracking-tight">
@@ -349,9 +349,19 @@
                     <span class="material-symbols-outlined">download</span>
                     Download APK
                 </a>
-                <a href="https://paystack.shop/pay/fw5uib9s1g" target="_blank" class="hoverable px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-green-300 border border-green-500/30">
-                    Support AZ Learner 💸
+                <a href="https://azlearner.me/home.html" target="_blank" class="hoverable px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-white border border-white/20">
+                    <span class="material-symbols-outlined">public</span>
+                    Web App / iOS
                 </a>
+                <a href="https://paystack.shop/pay/fw5uib9s1g" target="_blank" class="hoverable px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-green-300 border border-green-500/30">
+                     <span class="material-symbols-outlined">payments</span>
+                     Support AZ
+                </a>
+            </div>
+            
+            <div class="text-xs text-gray-500 mt-4 opacity-70">
+                <span class="block">iPhone Users: Cannot download APK?</span>
+                <span class="block">Use the Web App to create your account & set timetables.</span>
             </div>
         </div>
     </section>
@@ -385,6 +395,19 @@
         </div>
     </section>
 
+    <!-- Upcoming Events (Horizontal) -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="home-events">
+        <div class="text-center mb-12">
+             <h2 class="text-3xl font-bold mb-4">Upcoming Events 🎟️</h2>
+             <p class="text-gray-400">See what's popping on campus.</p>
+        </div>
+        <div id="home-events-feed" class="flex gap-4 overflow-x-auto no-scrollbar pb-8 snap-x snap-mandatory px-4">
+            <!-- Loaded via JS -->
+            <div class="min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
+            <div class="min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
+        </div>
+    </section>
+
     <!-- UI Screenshot Gallery -->
     <section class="max-w-7xl mx-auto px-6 mb-32 overflow-hidden">
         <div class="text-center mb-12">
@@ -393,29 +416,35 @@
         </div>
         
         <!-- Staggered Phone Layout -->
-        <div class="flex flex-col md:flex-row gap-8 justify-center items-center">
+        <div class="flex gap-6 overflow-x-auto snap-x snap-mandatory px-6 pb-8 md:justify-center no-scrollbar">
             <!-- Screen 1 -->
-            <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
-                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                <div class="relative w-[280px] h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
-                    <img src="screen1.jpg" alt="Home Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
-                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="snap-center shrink-0 w-[280px]">
+                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                        <img src="screen1.jpg" alt="Home Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                    </div>
                 </div>
             </div>
             <!-- Screen 2 (Offset) -->
-            <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4 md:mt-16">
-                <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                <div class="relative w-[280px] h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
-                    <img src="screen2.jpg" alt="Timetable Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
-                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="snap-center shrink-0 w-[280px] md:mt-16">
+                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                        <img src="screen2.jpg" alt="Timetable Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                    </div>
                 </div>
             </div>
             <!-- Screen 3 -->
-            <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
-                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-green-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                <div class="relative w-[280px] h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
-                    <img src="screen3.jpg" alt="Events Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
-                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="snap-center shrink-0 w-[280px]">
+                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-green-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                        <img src="screen3.jpg" alt="Events Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -962,12 +991,31 @@
             }
 
             try {
-                if (type === 'dashboard') renderDashboard(window.userData);
-                if (type === 'leaderboard') renderLeaderboard(window.userData);
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                let userData;
+
+                if (docSnap.exists()) {
+                    userData = docSnap.data();
+                } else {
+                    userData = {
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        userId: user.uid,
+                        school: "UCC",
+                        weeklyXp: 50, 
+                        role: "student",
+                        indexNumber: "SS/TMG/22/0014"
+                    };
+                    await setDoc(docRef, userData);
+                }
+
+                if (type === 'dashboard') renderDashboard(userData);
+                if (type === 'leaderboard') renderLeaderboard(userData);
                 if (type === 'print') renderPrintService(user); 
-                if (type === 'blog') renderBlog(window.userData);
-                if (type === 'grades') renderGrades(window.userData);
-                if (type === 'countdown') renderCountdown(window.userData);
+                if (type === 'blog') renderBlog(userData);
+                if (type === 'grades') renderGrades(userData);
+                if (type === 'countdown') renderCountdown(userData);
                 if (type === 'notifications') renderNotifications(user);
                 if (type === 'pastquestions') renderPastQuestions(user); 
 
@@ -1508,16 +1556,6 @@
             } else { window.showToast("Geolocation not supported.", "error"); }
         }
 
-        function renderGrades(data) {
-            const featureBody = document.getElementById('featureBody');
-            const gradesHTML = Object.entries(data.grades || {}).map(([subject, score]) => {
-                let color = score >= 80 ? 'green' : (score >= 70 ? 'blue' : 'purple');
-                let letter = score >= 80 ? 'A' : (score >= 75 ? 'B+' : 'B');
-                return `<div><div class="flex justify-between text-sm mb-2 font-semibold"><span>${subject}</span><span class="text-${color}-400">${letter} (${score}%)</span></div><div class="h-2 w-full bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-${color}-500 to-${color}-400 rounded-full" style="width: ${score}%"></div></div></div>`;
-            }).join('');
-            featureBody.innerHTML = `<div class="text-center mb-6"><h2 class="text-2xl font-bold text-white">Grade Analytics</h2><p class="text-gray-400 text-sm">ID: <span class="text-blue-400">${data.indexNumber || 'Unknown'}</span></p></div><div class="space-y-5">${gradesHTML || '<p class="text-center text-gray-500">No grade data found.</p>'}</div><div class="mt-6 p-3 bg-blue-500/10 rounded-lg text-xs text-center text-blue-300 border border-blue-500/20">"Delusion-level ambition detected. You're crushing it."</div>`;
-        }
-
         // --- BLOG RENDER & LOGIC ---
         async function renderBlog(user) {
             const featureBody = document.getElementById('featureBody');
@@ -1916,7 +1954,7 @@
                 loginBtn.classList.replace('bg-blue-600/20', 'bg-green-500/20');
                 loginBtn.classList.replace('text-blue-300', 'text-green-300');
                 loginBtn.classList.replace('border-blue-500/50', 'border-green-500/50');
-                loginBtn.onclick = window.logoutUser; 
+                loginBtn.onclick = window.logoutUser; 
             }
 
             const sidebarName = document.getElementById('sidebarName');
@@ -1941,7 +1979,7 @@
             if (loginBtn) {
                 loginBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">login</span> Login`;
                 loginBtn.className = "hoverable px-5 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] flex items-center gap-2";
-                loginBtn.onclick = window.toggleLogin; 
+                loginBtn.onclick = window.toggleLogin; 
             }
 
             const sidebarName = document.getElementById('sidebarName');
@@ -1949,7 +1987,7 @@
             
             if (sidebarName) sidebarName.textContent = "Guest";
             if (sidebarEmail) sidebarEmail.textContent = "Join the Squad";
-            if (sidebarAvatar) sidebarAvatar.innerHTML = ""; 
+            if (sidebarAvatar) sidebarAvatar.innerHTML = ""; 
         }
     </script>
 </body>
