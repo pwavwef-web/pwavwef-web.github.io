@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AZ Learner 🎓</title>
+    <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF', orangeAccent: '#FFAB40', darkBg: '#212121', darkCard: '#424242', lightBg: '#FAFAFA', noteYellow: '#FFF9C4',
+                        chatUser: '#E3F2FD', chatAdmin: '#F1F8E9', darkChatUser: '#1E293B', darkChatAdmin: '#3F3F46'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        
+        /* --- NOTCH & SAFE AREA HANDLING --- */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        
+        .header-safe-area { padding-top: env(safe-area-inset-top); height: calc(4rem + env(safe-area-inset-top)); }
+        .main-safe-area { margin-top: calc(4rem + env(safe-area-inset-top)); }
+        
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        #sidebar-drawer { transition: transform 0.3s ease-in-out; }
+        .task-done { text-decoration: line-through; opacity: 0.5; }
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .msg-enter { animation: popIn 0.2s ease-out; }
+        @keyframes popIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .today-highlight { background-color: rgba(72,187,120,0.1) !important; border: 1px solid #48bb78 !important; }
+        
+        /* Star Rating Hover Effect */
+        .star-rating i:hover, .star-rating i.active { color: #FFAB40; transform: scale(1.2); }
+        
+        /* Heartbeat Animation for Thank You */
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .heart-beat { animation: heartbeat 1.5s infinite; }
+        
+        /* Profile Gradient */
+        .profile-gradient { background: linear-gradient(135deg, #448AFF 0%, #00d2ff 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Gold Gradient for VIP */
+        .vip-gradient { background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); }
+        
+        /* Leaderboard Ranks */
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: 2px solid #fff; }
+        .rank-2 { background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: black; border: 2px solid #fff; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: white; border: 2px solid #fff; }
+    </style>
+</head>
+<body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
+
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <audio id="xp-sound" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
+
+    <div id="splash-screen" class="fixed inset-0 z-[200] bg-lightBg dark:bg-darkBg flex flex-col items-center justify-center transition-opacity duration-700">
+        <div class="flex flex-col items-center animate-pulse">
+            <div class="w-24 h-24 bg-blueAccent dark:bg-orangeAccent rounded-3xl flex items-center justify-center shadow-2xl mb-6 transform -rotate-6">
+                <i class="fa-solid fa-graduation-cap text-5xl text-white"></i>
+            </div>
+            <h1 class="text-4xl font-black text-blueAccent dark:text-orangeAccent tracking-tighter mb-2">AZ Learner</h1>
+            <p class="text-xs font-bold opacity-40 uppercase tracking-[0.4em]">The Squad Companion</p>
+        </div>
+        <div class="absolute bottom-16">
+            <div class="w-8 h-8 border-4 border-gray-200 border-t-blueAccent dark:border-t-orangeAccent rounded-full animate-spin"></div>
+        </div>
+    </div>
+
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-lightBg dark:bg-darkBg flex flex-col items-center justify-center p-6 overflow-y-auto pt-safe hidden">
+        <div id="view-login" class="w-full max-w-sm bg-white dark:bg-darkCard p-8 rounded-2xl shadow-2xl text-center my-auto transition-all">
+            <h1 class="text-3xl font-bold text-blueAccent dark:text-orangeAccent mb-2">AZ Learner 🎓</h1>
+            <p class="text-sm opacity-60 mb-6">Welcome back, Learner</p>
+            <input type="email" id="login-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors">
+            <button onclick="authManager.login()" class="w-full py-3 bg-blueAccent dark:bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Secure Login 🔐</button>
+            <p class="text-xs opacity-60">First time here?</p>
+            <button onclick="authManager.toggleView('signup')" class="text-blueAccent dark:text-orangeAccent font-bold text-sm mt-1 hover:underline">Create an Account</button>
+            <p id="login-msg" class="text-red-500 text-xs mt-4 h-4"></p>
+        </div>
+        <div id="view-signup" class="hidden w-full max-w-sm bg-white dark:bg-darkCard p-8 rounded-2xl shadow-2xl text-center my-auto transition-all">
+            <h1 class="text-2xl font-bold text-blueAccent dark:text-orangeAccent mb-2">Join the Squad 🚀</h1>
+            <p class="text-sm opacity-60 mb-6">Let's get you set up.</p>
+            <input type="text" id="signup-name" placeholder="Full Name" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            
+            <input type="text" id="signup-school" placeholder="University / High School" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+
+            <input type="text" id="signup-program" placeholder="Program of Study (e.g. Tourism)" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+
+            <input type="tel" id="signup-phone" placeholder="Phone Number" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            <input type="email" id="signup-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            <input type="password" id="signup-pass" placeholder="Create Password (6+ chars)" class="w-full mb-6 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            <button onclick="authManager.signup()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Create Account ✨</button>
+            <button onclick="authManager.toggleView('login')" class="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white">Back to Login</button>
+            <p id="signup-msg" class="text-red-500 text-xs mt-4 h-4"></p>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" class="hidden fixed inset-0 z-[60] bg-gray-900 text-white flex flex-col pt-safe">
+        <div class="sticky top-0 bg-gray-900 z-10 px-6 pb-2">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl font-bold text-orangeAccent">👑 Admin HQ</h1>
+                <button onclick="app.closeAdmin()" class="bg-gray-800 px-4 py-2 rounded-full text-sm font-bold hover:bg-gray-700">Exit</button>
+            </div>
+            <nav class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                <button onclick="app.switchAdminView('dash')" id="adm-btn-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
+                <button onclick="app.switchAdminView('godmode')" id="adm-btn-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition animate-pulse border border-purple-400">God Mode ⚡</button>
+                <button onclick="app.switchAdminView('broadcast')" id="adm-btn-broadcast" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
+                <button onclick="app.switchAdminView('events')" id="adm-btn-events" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
+                <button onclick="app.switchAdminView('users')" id="adm-btn-users" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Users 👥</button>
+                <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
+            </nav>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-20">
+            <div id="adm-view-dash" class="admin-view space-y-6 pt-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Total Users</h3><p class="text-3xl font-bold" id="adm-count-users">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Requests</h3><p class="text-3xl font-bold" id="adm-count-reqs">0</p></div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i class="fa-solid fa-print"></i> Live Print Queue</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-green-600/30">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
+                            <tbody id="adm-print-list" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading jobs...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-godmode" class="admin-view hidden space-y-8 pt-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 relative overflow-hidden group cursor-pointer" onclick="app.injectCapital()">
+                        <div class="absolute -right-4 -top-4 text-8xl opacity-10 text-green-500"><i class="fa-solid fa-money-bill-wave"></i></div>
+                        <h3 class="text-lg font-bold text-white mb-2 relative z-10">App Valuation 💰</h3>
+                        <p class="text-4xl font-black text-green-400 relative z-10">$<span id="ceo-valuation">1,000,000,000</span></p>
+                        <p class="text-xs text-gray-400 mt-1 relative z-10 animate-pulse">Tap to inject capital 💉</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-white mb-2">US Career Status 🇺🇸</h3>
+                        <div class="w-full bg-gray-700 rounded-full h-4 mt-2">
+                            <div class="bg-blueAccent h-4 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <p class="text-xs text-right text-blue-400 mt-1 font-bold">Manifesting... 85%</p>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order 📜</h2>
+                    <input id="vip-title" type="text" placeholder="Subject of Order" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Your message to the people..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish Gold Alert 🔔</button>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">The Circle ⭕</h2>
+                    <p class="text-purple-300 text-xs mb-6">Manage the inner circle. Only you have this power.</p>
+                    <div class="flex gap-2 mb-4">
+                        <input id="admin-email-input" type="email" placeholder="Enter email to promote..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="app.addAdminByEmail()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
+                    </div>
+                    <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-purple-900/30 text-xs uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
+                            <tbody id="admin-team-list" class="divide-y divide-purple-900/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-red-900/20 border border-red-500/50 p-6 rounded-xl">
+                         <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2"><i class="fa-solid fa-gavel"></i> The Ban Hammer</h3>
+                         <p class="text-xs text-red-300 mb-4">Enter a user's email to permanently ban them.</p>
+                         <div class="flex gap-2">
+                            <input id="ban-email-input" type="email" placeholder="Bad actor's email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                            <button onclick="app.banUser()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                         </div>
+                    </div>
+                    <div class="bg-gray-800 border border-gray-600 p-6 rounded-xl flex flex-col justify-between">
+                         <div>
+                             <h3 class="text-white font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-broom text-blueAccent"></i> System Flush</h3>
+                             <p class="text-xs text-gray-400 mb-4">Clear all service requests logs to keep the dashboard clean. Use with caution.</p>
+                         </div>
+                         <button onclick="app.flushRequests()" class="w-full bg-gray-700 hover:bg-blueAccent hover:text-white text-gray-300 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">Purge Logs 🧹</button>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-broadcast" class="admin-view hidden space-y-6 pt-4">
+                <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700">
+                    <h2 class="text-xl font-bold mb-4">Standard Announcement</h2>
+                    <input id="broadcast-title" type="text" placeholder="Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
+                    <textarea id="broadcast-body" placeholder="Message content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                             <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Add Image <input type="file" id="broadcast-file" accept="image/*" class="hidden" onchange="document.getElementById('broadcast-file-name').innerText = this.files[0].name"></label>
+                             <span id="broadcast-file-name" class="text-xs text-gray-400">No image selected</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.sendBroadcast()" id="btn-send-broadcast" class="bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 flex-1 shadow-lg">Send Blast 🚀</button>
+                        <button onclick="app.cancelBroadcastEdit()" id="btn-cancel-broadcast" class="hidden bg-red-500 text-white px-4 py-3 rounded-lg font-bold">Cancel</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">History</h3>
+                    <div id="adm-broadcast-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div id="adm-view-events" class="admin-view hidden space-y-6 pt-4">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h2 class="text-xl font-bold mb-4 text-orangeAccent">Create Event / Flyer</h2>
+                    <input id="event-title" type="text" placeholder="Event Name" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>
+                    <input id="event-venue" type="text" placeholder="Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    <textarea id="event-desc" placeholder="Details..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20"></textarea>
+                    <div class="flex items-center gap-2 mb-4">
+                         <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Flyer Image <input type="file" id="event-file" accept="image/*" class="hidden" onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
+                         <span id="event-file-name" class="text-xs text-gray-400">No file selected</span>
+                    </div>
+                    <button onclick="app.saveEvent()" class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110">Post Event 📅</button>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Active Events</h3>
+                    <div id="adm-event-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div id="adm-view-users" class="admin-view hidden space-y-8 pt-4">
+                <div>
+                    <h2 class="text-xl font-bold mb-4">All Users Database</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Role</th></tr></thead>
+                            <tbody id="adm-user-list" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-feedback" class="admin-view hidden pt-4">
+                <h2 class="text-xl font-bold mb-4 text-pink-400">User Reviews</h2>
+                <div class="bg-gray-800 rounded-xl overflow-hidden border border-pink-600/30">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">User</th><th class="px-4 py-3">Message</th><th class="px-4 py-3">Rating</th></tr></thead>
+                        <tbody id="adm-feedback-list" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading feedback...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="fixed top-0 w-full z-40 transition-colors duration-200 bg-blueAccent dark:bg-[#303030] text-white shadow-md flex items-center justify-between px-4 header-safe-area">
+        <div class="flex items-center gap-3">
+            <button onclick="app.toggleSidebar()" class="p-1"><i class="fa-solid fa-ellipsis-vertical text-xl"></i></button>
+            <h1 class="text-xl font-bold">AZ Learner 🎓</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="header-admin-btn" onclick="app.openAdmin()" class="hidden bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">ADMIN</button>
+            <div class="relative cursor-pointer" onclick="app.showNotifications()">
+                <i class="fa-solid fa-bell text-xl"></i>
+                <div id="notification-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center border border-white dark:border-gray-800">0</div>
+            </div>
+            <div onclick="app.openProfile()" class="w-8 h-8 rounded-full overflow-hidden border-2 border-white/50 cursor-pointer flex-shrink-0 bg-white/20">
+                <img id="header-profile-img" src="" class="hidden w-full h-full object-cover">
+                <div id="header-profile-placeholder" class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
+            </div>
+        </div>
+    </header>
+
+    <div id="sidebar-overlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity"></div>
+    <aside id="sidebar-drawer" class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-[#303030] z-50 shadow-2xl transform -translate-x-full flex flex-col header-safe-area">
+        <div class="h-40 bg-blueAccent dark:bg-orangeAccent flex flex-col justify-end p-4 text-white">
+            <h2 id="sidebar-name" class="text-2xl font-bold">Student</h2>
+            <p id="sidebar-email-display" class="text-sm opacity-80">Guest</p>
+        </div>
+        <div class="flex-1 py-4">
+            <button onclick="app.openSettings(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-gear text-gray-500 w-6"></i><span class="font-medium">Settings</span></button>
+            <button onclick="app.openLeaderboard(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-trophy text-yellow-500 w-6"></i><span class="font-medium">Leaderboard</span></button>
+            <button onclick="app.openFeedback(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-star text-gray-500 w-6"></i><span class="font-medium">Review</span></button>
+            <button onclick="authManager.logout()" class="w-full text-left px-6 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-4 transition-colors mt-auto"><i class="fa-solid fa-right-from-bracket w-6"></i><span class="font-medium">Log Out</span></button>
+        </div>
+    </aside>
+
+    <main class="main-safe-area p-4 max-w-3xl mx-auto min-h-screen">
+        <div id="tab-home" class="tab-content hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-black text-gray-800 dark:text-white" id="home-greeting">Good Morning! ☀️</h2>
+                    <p class="text-sm opacity-60">Ready to conquer the day?</p>
+                </div>
+            </div>
+
+            <!-- Premium Services Grid -->
+            <div>
+                <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">Quick Access ⚡</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div onclick="app.openPrintChat()" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm h-32">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2"><i class="fa-solid fa-print text-blue-500 text-lg"></i></div>
+                        <h3 class="font-bold text-blue-700 dark:text-blue-300 text-sm">Print & Deliver</h3>
+                        <p class="text-[10px] opacity-60">Skip the queue</p>
+                    </div>
+                    <div onclick="app.openServiceModal('Assignment Help')" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
+                        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2"><i class="fa-solid fa-book-open text-orange-500 text-lg"></i></div>
+                        <h3 class="font-bold text-sm">Research Assistance</h3>
+                        <p class="text-[10px] opacity-60">Stuck on research? we can help</p>
+                    </div>
+                    <div onclick="app.openServiceModal('Project Assistance')" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2"><i class="fa-solid fa-laptop-code text-purple-500 text-lg"></i></div>
+                        <h3 class="font-bold text-sm">Project Support</h3>
+                        <p class="text-[10px] opacity-60">Code & Tech</p>
+                    </div>
+                    <div onclick="app.openServiceModal('CV Writing')" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2"><i class="fa-solid fa-briefcase text-green-500 text-lg"></i></div>
+                        <h3 class="font-bold text-sm">CV/Resume Revamp</h3>
+                        <p class="text-[10px] opacity-60">Professional CVs that'll get you hired</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events Section -->
+            <div>
+                <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">What's Poppin' 🎉</h3>
+                <div id="home-events-feed" class="space-y-4"></div>
+                <div id="home-no-events" class="hidden text-center opacity-40 py-8 text-sm">No upcoming events. Dry spell? 🏜️</div>
+            </div>
+        </div>
+
+        <div id="tab-timetable" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">My Schedule 📅</h2><div id="course-list" class="space-y-3"></div><div id="empty-courses" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No classes yet! Tap + to add.</p></div></div>
+        
+        <div id="tab-assignments" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Assignments 📚</h2><div id="assignment-list" class="space-y-3"></div><div id="empty-assignments" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No homework? Tap + to add.</p></div></div>
+        
+        <div id="tab-notes" class="tab-content hidden pt-2"><h2 class="text-2xl font-bold mb-4">My Notes 📝</h2><div id="notes-list" class="grid grid-cols-2 gap-3"></div><div id="empty-notes" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No notes yet.</p></div></div>
+        
+        <div id="tab-chat" class="tab-content hidden pt-2">
+            <h2 class="text-2xl font-bold mb-4">Messages 💬</h2>
+            
+            <div id="course-circles-section" class="mb-6 hidden">
+                <h3 class="text-sm font-bold opacity-60 uppercase mb-2 tracking-wider ml-1">My Course Circles ⭕</h3>
+                <div id="course-chat-list" class="flex gap-4 overflow-x-auto no-scrollbar pb-4 px-2 -mx-2"></div>
+            </div>
+            
+            <h3 class="text-sm font-bold opacity-60 uppercase mb-2 tracking-wider ml-1">Direct Messages</h3>
+            <div class="bg-white dark:bg-darkCard p-2 rounded-xl flex gap-2 mb-4 shadow-sm">
+                <input id="user-search-input" type="text" placeholder="Search by Email or Phone..." class="flex-1 bg-transparent outline-none p-2 text-sm" oninput="if(this.value === '') app.renderChatList()">
+                <button onclick="app.searchUser()" class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold text-sm">Search</button>
+            </div>
+            <div id="chat-list" class="space-y-3"></div>
+            <div id="empty-chats" class="hidden flex flex-col items-center justify-center h-40 opacity-50 mt-10"><i class="fa-solid fa-comments text-4xl mb-2"></i><p>No active chats yet.</p></div>
+        </div>
+    </main>
+
+    <div id="full-screen-leaderboard" class="fixed inset-0 z-[55] bg-lightBg dark:bg-darkBg flex flex-col hidden overflow-y-auto pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center px-4 py-3 sticky top-0 z-10">
+            <button onclick="history.back()" class="text-gray-500 mr-4"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h1 class="text-xl font-bold">Leaderboard 🏆</h1>
+        </header>
+        <div class="p-4 flex-1">
+            <div class="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fa-solid fa-trophy text-3xl text-white drop-shadow-md"></i>
+                    <div>
+                        <h2 class="text-2xl font-black italic uppercase">The Arena</h2>
+                        <p class="text-xs font-bold opacity-80 uppercase tracking-widest">Weekly Reset Enabled</p>
+                    </div>
+                </div>
+                <p class="text-sm opacity-90">Grind hard, earn XP, and become an Academic Weapon. ⚔️</p>
+            </div>
+            
+            <div class="flex justify-between items-center px-2 mb-4">
+                <h3 class="font-bold text-lg">Top Performers</h3>
+                <span class="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 font-bold" id="lb-program-name">Program</span>
+            </div>
+
+            <div class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                <table class="w-full">
+                    <tbody id="leaderboard-list"></tbody>
+                </table>
+            </div>
+            <p class="text-center text-xs opacity-40 mt-4">XP resets every Monday at 00:00.</p>
+        </div>
+    </div>
+
+    <div id="full-screen-feedback" class="fixed inset-0 z-[60] bg-lightBg dark:bg-darkBg flex flex-col hidden pt-safe overflow-y-auto">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center px-4 py-3 sticky top-0 z-10">
+            <button onclick="history.back()" class="text-gray-500 mr-4"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h1 class="text-xl font-bold">Feedback</h1>
+        </header>
+        <div class="p-6 max-w-2xl mx-auto w-full flex-1 flex flex-col">
+            <div id="feedback-form-content">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-400 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                    <h2 class="text-2xl font-bold mb-1">We ❤️ Feedback</h2>
+                    <p class="opacity-80 text-sm">Help us make AZ Learner better.</p>
+                </div>
+                
+                <form onsubmit="event.preventDefault(); app.sendFeedback();" class="space-y-6">
+                    <div class="flex flex-col items-center gap-2">
+                        <label class="text-xs uppercase tracking-wide opacity-50 font-bold">Rate Experience</label>
+                        <div class="flex gap-2 text-3xl text-gray-300 star-rating" id="star-rating-container">
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(1)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(2)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(3)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(4)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(5)"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 justify-center flex-wrap">
+                        <button type="button" onclick="app.addTag('Bug 🐛')" class="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold hover:bg-red-200">Bug 🐛</button>
+                        <button type="button" onclick="app.addTag('Feature 💡')" class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold hover:bg-yellow-200">Feature 💡</button>
+                        <button type="button" onclick="app.addTag('Love ❤️')" class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-bold hover:bg-pink-200">Love ❤️</button>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkCard rounded-xl p-1 shadow-sm border border-gray-100 dark:border-gray-700 focus-within:ring-2 ring-blueAccent transition-all">
+                        <textarea id="fb-experience" rows="5" class="w-full bg-transparent outline-none resize-none p-3" placeholder="Tell us what's on your mind..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-blueAccent to-blue-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <span>Send Feedback</span> <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <div id="feedback-success" class="hidden flex-1 flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-heart text-6xl text-pink-500 mb-4 heart-beat"></i>
+                <h2 class="text-2xl font-bold mb-2">Thank You!</h2>
+                <p class="opacity-60 max-w-xs mx-auto">Your feedback has been sent directly to the team. You are awesome!</p>
+                <button onclick="history.back()" class="mt-8 text-blueAccent font-bold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="full-screen-chat" class="fixed inset-0 z-[60] bg-gray-100 dark:bg-darkBg flex flex-col hidden pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-md flex flex-col px-4 py-2 sticky top-0 z-10 cursor-pointer">
+            <div class="flex items-center justify-between">
+                <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+                <div class="text-center">
+                    <h1 id="chat-header-title" class="text-lg font-bold">Chat</h1>
+                    <p id="chat-header-status" class="text-xs text-blueAccent font-bold"></p>
+                </div>
+                <div class="w-6"></div> 
+            </div>
+            <div id="print-steps-container" class="hidden flex items-center gap-1 mt-2 justify-center" onclick="event.stopPropagation()">
+                <button onclick="app.updatePrintStatus('received')" id="step-1" class="h-1 w-8 bg-green-500 rounded-full cursor-default" title="Received"></button>
+                <button onclick="app.updatePrintStatus('printing')" id="step-2" class="h-1 w-8 bg-gray-300 rounded-full transition-colors cursor-default" title="Printing"></button>
+                <button onclick="app.updatePrintStatus('delivering')" id="step-3" class="h-1 w-8 bg-gray-300 rounded-full transition-colors cursor-default" title="Delivering"></button>
+                <button onclick="app.updatePrintStatus('completed')" id="step-4" class="h-1 w-8 bg-gray-300 rounded-full transition-colors cursor-default" title="Delivered"></button>
+            </div>
+            <button onclick="app.startNewPrintOrder()" id="btn-new-print-order" class="hidden w-full mt-2 bg-blueAccent text-white text-xs font-bold py-2 rounded-lg shadow animate-pulse">Start New Request 🔄</button>
+        </header>
+        
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24"></div>
+
+        <div class="bg-white dark:bg-[#303030] p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2 fixed bottom-0 w-full max-w-3xl pb-safe">
+            <input type="file" id="chat-file-input" class="hidden" onchange="app.handleFileUpload(this)">
+            <button onclick="document.getElementById('chat-file-input').click()" class="text-gray-500 hover:text-blueAccent p-2"><i class="fa-solid fa-paperclip text-xl"></i></button>
+            <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2 outline-none">
+            <button onclick="app.sendMessage()" class="bg-blueAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="full-screen-profile" class="fixed inset-0 z-[55] bg-gray-50 dark:bg-darkBg flex flex-col hidden overflow-y-auto">
+        <div class="relative w-full h-64 profile-gradient shrink-0 overflow-hidden">
+            <div class="absolute top-0 w-full flex items-center justify-between px-4 pt-safe mt-4 z-30">
+                <div class="flex items-center">
+                    <button onclick="history.back()" class="text-white bg-black/20 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-sm hover:bg-black/30 transition shadow-sm mr-4 flex-shrink-0">
+                        <i class="fa-solid fa-arrow-left text-xl"></i>
+                    </button>
+                    <h1 class="text-white font-bold text-xl drop-shadow-md">My Profile</h1>
+                </div>
+                <button id="btn-edit-profile" onclick="app.toggleProfileEdit()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-bold text-xs backdrop-blur-sm transition">Edit</button>
+                <button id="btn-save-profile" onclick="app.toggleProfileEdit()" class="hidden bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg transition">Done</button>
+            </div>
+
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 flex-col">
+                <h1 id="profile-rank-display" class="text-white font-black text-3xl drop-shadow-lg uppercase tracking-widest mb-1">Rookie 🥚</h1>
+                <p id="profile-xp-display" class="text-white/80 text-sm font-bold bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">0 XP</p>
+            </div>
+        </div>
+        
+        <div class="px-6 relative -mt-20 pb-10 flex-1 z-20">
+            <div class="flex flex-col items-center">
+                <div class="relative group cursor-pointer" onclick="if(!document.getElementById('prof-name').disabled) document.getElementById('profile-pic-input').click()">
+                    <div class="w-32 h-32 rounded-full bg-white dark:bg-gray-800 overflow-hidden border-4 border-white dark:border-darkBg shadow-2xl flex items-center justify-center relative z-10">
+                        <img id="profile-pic-img" src="" class="w-full h-full object-cover hidden">
+                        <i id="profile-pic-placeholder" class="fa-solid fa-user text-5xl text-gray-300"></i>
+                    </div>
+                    <div id="profile-camera-btn" class="absolute bottom-2 right-2 bg-blueAccent text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-darkBg z-20 hidden"><i class="fa-solid fa-camera text-xs"></i></div>
+                    <input type="file" id="profile-pic-input" accept="image/*" class="hidden" onchange="app.handleProfilePic(this)">
+                </div>
+                
+                <h2 id="profile-display-name" class="text-3xl font-bold mt-3 text-center text-gray-800 dark:text-white">User</h2>
+                <p id="profile-school-display" class="text-sm text-blueAccent font-bold uppercase tracking-wide opacity-80 mb-6">Student</p>
+
+                <div class="w-full grid grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white dark:bg-darkCard p-3 rounded-2xl shadow-sm text-center border border-gray-100 dark:border-gray-700">
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white" id="stat-courses">0</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Classes</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard p-3 rounded-2xl shadow-sm text-center border border-gray-100 dark:border-gray-700">
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white" id="stat-assignments">0</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Tasks</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard p-3 rounded-2xl shadow-sm text-center border border-gray-100 dark:border-gray-700">
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white" id="stat-notes">0</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Notes</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-700 flex items-center justify-center text-blueAccent"><i class="fa-regular fa-user"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Full Name</label>
+                        <input type="text" id="prof-name" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50 transition-opacity" disabled oninput="app.updateProfile('name', this.value)">
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-green-50 dark:bg-gray-700 flex items-center justify-center text-green-500"><i class="fa-solid fa-phone"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</label>
+                        <input type="tel" id="prof-phone" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50 transition-opacity" disabled oninput="app.updateProfile('phone', this.value)">
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-gray-700 flex items-center justify-center text-purple-500"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Program</label>
+                        <input type="text" id="prof-program" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50 transition-opacity" disabled oninput="app.updateProfile('program', this.value)">
+                    </div>
+                </div>
+                  
+                 <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 opacity-70">
+                    <div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-gray-700 flex items-center justify-center text-orangeAccent"><i class="fa-solid fa-building-columns"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Institution (Read Only)</label>
+                        <input type="text" id="prof-school-input" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.deleteAccount()" class="w-full py-4 rounded-xl border border-red-200 text-red-500 font-bold text-sm hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 transition mb-8 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-trash-can"></i> Delete My Account
+            </button>
+        </div>
+    </div>
+
+    <div id="full-screen-settings" class="fixed inset-0 z-[55] bg-lightBg dark:bg-darkBg flex flex-col hidden overflow-y-auto pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center px-4 py-3 sticky top-0 z-10">
+            <button onclick="history.back()" class="text-gray-500 mr-4"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h1 class="text-xl font-bold">Settings</h1>
+        </header>
+        <div class="p-4 space-y-6 max-w-2xl mx-auto w-full">
+            <h2 class="text-sm font-bold opacity-50 uppercase tracking-wider ml-1">App Preferences</h2>
+            <div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 space-y-6">
+                <div class="flex items-center justify-between">
+                    <div><h3 class="font-bold text-lg">Dark Theme</h3><p class="text-xs opacity-60">Easier on the eyes.</p></div>
+                    <button onclick="app.toggleTheme()" id="theme-toggle-btn" class="w-12 h-7 rounded-full bg-gray-400 relative transition-colors duration-200"><div class="w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200"></div></button>
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div><h3 class="font-bold text-lg">Push Notifications</h3><p class="text-xs opacity-60">Get alerts for classes & assignments.</p></div>
+                    <button onclick="app.toggleSystemNotifications()" id="notif-toggle-btn" class="w-12 h-7 rounded-full bg-gray-400 relative transition-colors duration-200"><div class="w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200"></div></button>
+                </div>
+            </div>
+            
+            <div class="text-center opacity-40 text-xs mt-10">
+                <p>AZ Learner v2.2</p>
+                <p>Built for the Squad 🇬🇭</p>
+            </div>
+        </div>
+    </div>
+
+    <button id="fab" onclick="app.handleFabClick()" class="fixed bottom-20 right-4 bg-blueAccent dark:bg-orangeAccent text-white px-5 py-3 rounded-2xl shadow-lg font-bold flex items-center gap-2 z-30"><i id="fab-icon" class="fa-solid fa-plus"></i><span id="fab-label">Add</span></button>
+
+    <nav class="fixed bottom-0 w-full bg-white dark:bg-[#303030] border-t border-gray-200 dark:border-gray-700 h-16 flex justify-around items-center z-40 pb-safe shadow-lg">
+        <button onclick="app.switchTab(0)" class="nav-item flex flex-col items-center justify-center w-full h-full text-blueAccent" data-index="0"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px]">Home</span></button>
+        <button onclick="app.switchTab(1)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="1"><i class="fa-solid fa-calendar-days text-xl"></i><span class="text-[10px]">Timetable</span></button>
+        <button onclick="app.switchTab(2)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="2"><i class="fa-solid fa-list-check text-xl"></i><span class="text-[10px]">Tasks</span></button>
+        <button onclick="app.switchTab(3)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="3"><i class="fa-solid fa-pencil text-xl"></i><span class="text-[10px]">Notes</span></button>
+        <button onclick="app.switchTab(4)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="4"><i class="fa-solid fa-user-group text-xl"></i><span class="text-[10px]">Chat</span></button>
+    </nav>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="modal-add-course" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl hidden">
+            <h3 class="text-xl font-bold mb-4" id="course-modal-title">Add Class</h3>
+            <input id="new-course-name" type="text" placeholder="Code (e.g., TMG 101)" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <input id="new-course-venue" type="text" placeholder="Venue (e.g., CALC 1)" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <div class="flex gap-2 mb-2">
+                <select id="new-course-day" class="flex-1 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg outline-none"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select>
+                <input id="new-course-time" type="time" class="w-32 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg outline-none">
+            </div>
+            <label class="block text-xs opacity-60 mb-1 ml-1">Reminder</label>
+            <select id="new-course-alert" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none">
+                <option value="15">15 Minutes Before</option>
+                <option value="30">30 Minutes Before</option>
+                <option value="60">1 Hour Before</option>
+                <option value="0">No Alert</option>
+            </select>
+            <div class="flex justify-end gap-2"><button onclick="history.back()" class="px-4 py-2 text-sm font-bold opacity-60">Cancel</button><button onclick="app.saveCourse()" class="bg-blueAccent text-white px-6 py-2 rounded-lg font-bold shadow">Save</button></div>
+        </div>
+
+        <div id="modal-add-assignment" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl hidden">
+            <h3 class="text-xl font-bold mb-4">Add Assignment</h3>
+            <input id="new-assign-title" type="text" placeholder="Title" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <input id="new-assign-course" type="text" placeholder="Course" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <input id="new-assign-date" type="date" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none">
+            <label class="block text-xs opacity-60 mb-1 ml-1">Reminder</label>
+            <select id="new-assign-alert" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none">
+                <option value="1">1 Day Before</option>
+                <option value="2">2 Days Before</option>
+                <option value="3">3 Days Before</option>
+                <option value="0">No Alert</option>
+            </select>
+            <div class="flex justify-end gap-2"><button onclick="history.back()" class="px-4 py-2 text-sm font-bold opacity-60">Cancel</button><button onclick="app.saveAssignment()" class="bg-blueAccent text-white px-6 py-2 rounded-lg font-bold shadow">Save</button></div>
+        </div>
+
+        <div id="modal-service" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 hidden text-center">
+            <h3 class="text-xl font-bold mb-4">Contact Admin</h3>
+            <button onclick="app.contactAdmin('Francis', '233557535673')" class="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-xl mb-2 flex items-center justify-between"><span class="font-bold">Chat with Francis</span> <i class="fa-brands fa-whatsapp text-green-500 text-xl"></i></button>
+            <button onclick="app.contactAdmin('Bright', '233208300055')" class="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-xl mb-4 flex items-center justify-between"><span class="font-bold">Chat with Bright</span> <i class="fa-brands fa-whatsapp text-green-500 text-xl"></i></button>
+            <button onclick="history.back()" class="text-sm opacity-60">Close</button>
+        </div>
+
+        <div id="modal-event-details" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-0 shadow-2xl hidden overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="relative h-48 bg-gray-200">
+                <img id="modal-event-img" class="w-full h-full object-cover">
+                <button onclick="history.back()" class="absolute top-2 right-2 bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto">
+                <h3 id="modal-event-title" class="text-2xl font-black mb-1"></h3>
+                <div class="flex items-center gap-2 text-sm opacity-60 mb-4">
+                    <span id="modal-event-date"></span> • <span id="modal-event-time"></span>
+                </div>
+                <div class="flex items-center gap-2 mb-4 bg-gray-100 dark:bg-gray-700/50 p-2 rounded-lg">
+                    <i class="fa-solid fa-location-dot text-red-500"></i>
+                    <span id="modal-event-venue" class="font-bold text-sm"></span>
+                </div>
+                <p id="modal-event-desc" class="text-sm opacity-80 mb-6 leading-relaxed"></p>
+                
+                <button id="btn-rsvp" class="w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                    <span>Count Me In</span> <i class="fa-solid fa-hand"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-image-view" class="fixed inset-0 z-[70] bg-black bg-opacity-95 hidden flex items-center justify-center p-2" onclick="history.back()">
+        <img id="full-image" class="max-w-full max-h-full object-contain rounded-lg">
+    </div>
+
+    <div id="modal-notifications" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
+        <header class="bg-blueAccent dark:bg-[#303030] text-white shadow-md flex items-center justify-between px-4 h-16 shrink-0">
+            <button onclick="history.back()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h1 class="text-xl font-bold">Notifications 🔔</h1>
+        </header>
+        <div id="notifications-list" class="flex-1 p-4 space-y-3 overflow-y-auto"></div>
+        <div id="empty-notifications" class="hidden h-full flex flex-col items-center justify-center opacity-60"><p>All clear!</p></div>
+    </div>
+
+    <div id="modal-note-editor" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3">
+            <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            <div class="flex gap-4"><button onclick="app.deleteNote()" id="btn-delete-note" class="text-red-500 hidden"><i class="fa-solid fa-trash"></i></button><button onclick="app.saveNote()" class="text-blueAccent font-bold">Save</button></div>
+        </header>
+        <div class="flex-1 p-4 flex flex-col space-y-2">
+            <input id="note-title" type="text" placeholder="Title" class="text-2xl font-bold bg-transparent outline-none">
+            <input id="note-subtitle" type="text" placeholder="Subtitle" class="text-sm text-gray-500 bg-transparent outline-none">
+            <div class="h-[1px] bg-gray-200 my-2"></div>
+            <textarea id="note-body" class="flex-1 bg-transparent outline-none resize-none text-lg" placeholder="Start typing..."></textarea>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        let currentUser = null;
+        let listeners = [];
+        let alertInterval = null;
+        let activeChatListener = null;
+        let activeJobListener = null; 
+        let activeChatType = null; 
+        let activeChatId = null; 
+        let valuation = 1000000000;
+
+        window.authManager = {
+            async login() { try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch (err) { document.getElementById('login-msg').innerText = err.message; } },
+            async signup() {
+                try {
+                    const email = document.getElementById('signup-email').value;
+                    const pass = document.getElementById('signup-pass').value;
+                    const name = document.getElementById('signup-name').value;
+                    const phone = document.getElementById('signup-phone').value;
+                    
+                    const school = document.getElementById('signup-school').value.trim();
+                    const program = document.getElementById('signup-program').value;
+
+                    if(!name || !phone || !school || !program) throw new Error("All fields including School and Program are required.");
+                    
+                    const schoolLower = school.toLowerCase();
+                    const uccVariants = ['ucc', 'university of cape coast', 'univ of cape coast', 'cape coast university'];
+                    const isUCC = uccVariants.some(v => schoolLower.includes(v));
+
+                    if(!isUCC) {
+                        const confirmMsg = "Just a heads up! 🚀\n\nPremium services (like Print & Deliver) are currently optimized for UCC students. You can still use the app for your classes and notes.\n\nContinue signing up?";
+                        if(!confirm(confirmMsg)) return; 
+                    }
+
+                    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                    await setDoc(doc(db, "users", cred.user.uid), { 
+                        userId: cred.user.uid, 
+                        email, 
+                        name, 
+                        phone, 
+                        school: school,
+                        program: program, 
+                        role: "student",
+                        weeklyXp: 50 // Signup Bonus
+                    });
+                } catch (err) { document.getElementById('signup-msg').innerText = err.message; }
+            },
+            logout() { if(confirm('Log out?')) signOut(auth); },
+            toggleView(view) {
+                if(view === 'signup') { document.getElementById('view-login').classList.add('hidden'); document.getElementById('view-signup').classList.remove('hidden'); }
+                else { document.getElementById('view-signup').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); }
+            }
+        };
+
+        window.app = {
+            data: { 
+                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash',
+                badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
+                currentTabIndex: 0
+            },
+
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    const splash = document.getElementById('splash-screen');
+                    const authOverlay = document.getElementById('auth-overlay');
+
+                    if (user) {
+                        // Logged In Logic
+                        currentUser = user;
+                        authOverlay.classList.add('hidden');
+
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if(userDoc.exists()) {
+                            this.data.user = userDoc.data();
+                            
+                            // XP RESET LOGIC (Weekly)
+                            const now = new Date();
+                            const currentWeekId = `${now.getFullYear()}-W${Math.ceil((now - new Date(now.getFullYear(),0,1)) / 86400000 / 7)}`;
+                            
+                            if (this.data.user.weekId !== currentWeekId) {
+                                // New week, reset XP
+                                await updateDoc(doc(db, "users", user.uid), { weeklyXp: 0, weekId: currentWeekId });
+                                this.data.user.weeklyXp = 0;
+                                this.data.user.weekId = currentWeekId;
+                                this.sendSystemNotification("New Week! 🔄", "XP has been reset. Time to grind!");
+                            } else {
+                                // Same week, check for daily login bonus
+                                const lastLogin = this.data.user.lastLogin ? new Date(this.data.user.lastLogin).getDate() : 0;
+                                if (lastLogin !== now.getDate()) {
+                                    this.addXp(50, "Daily Login ☀️");
+                                    await updateDoc(doc(db, "users", user.uid), { lastLogin: Date.now() });
+                                }
+                            }
+                            
+                            if(this.data.user.role === 'banned') {
+                                alert("Your account has been restricted. Contact support.");
+                                signOut(auth);
+                                return;
+                            }
+
+                            if(user.email === "pwavwef@gmail.com" && this.data.user.role !== 'admin') { await updateDoc(doc(db, "users", user.uid), { role: "admin" }); this.data.user.role = 'admin'; }
+                            this.updateProfileUI(this.data.user);
+                            if(this.data.user.role === 'admin') document.getElementById('header-admin-btn').classList.remove('hidden');
+                            
+                            if(user.email === "pwavwef@gmail.com") {
+                                document.getElementById('adm-btn-godmode').classList.remove('hidden');
+                            }
+                        }
+                        const read = localStorage.getItem('az_read_notifs');
+                        if(read) this.data.readNotifications = JSON.parse(read);
+                        this.startListeners();
+                        this.startAlertSystem();
+                        this.setupSwipeNavigation();
+                        
+                        this.switchTab(0);
+                        history.replaceState({ tab: 0 }, null, ""); 
+                        
+                        // --- HISTORY API FIX ---
+                        window.addEventListener('popstate', (event) => {
+                            // Define all your full-screen views and modals
+                            const views = [
+                                'full-screen-profile', 
+                                'full-screen-settings', 
+                                'full-screen-leaderboard', 
+                                'full-screen-feedback', 
+                                'full-screen-chat',
+                                'modal-overlay',
+                                'modal-image-view',
+                                'modal-notifications',
+                                'modal-note-editor'
+                            ];
+
+                            let viewClosed = false;
+
+                            // Check if any view is currently open (not hidden)
+                            views.forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el && !el.classList.contains('hidden')) {
+                                    el.classList.add('hidden'); // Close it
+                                    viewClosed = true;
+
+                                    // Special cleanup for Chat (stop listeners)
+                                    if (id === 'full-screen-chat' && this.activeChatListener) {
+                                        this.activeChatListener(); 
+                                        this.activeChatListener = null;
+                                    }
+                                    
+                                    // Special cleanup for modals inside overlay
+                                    if (id === 'modal-overlay') {
+                                        document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden'));
+                                    }
+                                }
+                            });
+
+                            // If we closed a view, stop here. Don't switch tabs.
+                            if (viewClosed) return;
+
+                            // If no view was open, handle Tab Switching
+                            if (event.state && event.state.tab !== undefined) {
+                                this.switchTab(event.state.tab, true);
+                            } else {
+                                this.switchTab(0, true);
+                            }
+                        });
+
+                        setTimeout(() => { splash.classList.add('opacity-0', 'pointer-events-none'); }, 800);
+
+                    } else {
+                        currentUser = null;
+                        this.stopListeners();
+                        clearInterval(alertInterval);
+                        authOverlay.classList.remove('hidden');
+                        setTimeout(() => { splash.classList.add('opacity-0', 'pointer-events-none'); }, 500);
+                    }
+                });
+                try { const ls = localStorage; if(ls.getItem('az_theme')) this.data.theme = ls.getItem('az_theme'); if(ls.getItem('az_sys_notif')) this.data.systemNotifications = JSON.parse(ls.getItem('az_sys_notif')); } catch(e){}
+                this.applyTheme();
+                this.updateToggleUI('notif-toggle-btn', this.data.systemNotifications);
+            },
+
+            // --- XP SYSTEM ---
+            async addXp(amount, reason) {
+                if(!currentUser) return;
+                try {
+                    const newXp = (this.data.user.weeklyXp || 0) + amount;
+                    this.data.user.weeklyXp = newXp;
+                    await updateDoc(doc(db, "users", currentUser.uid), { weeklyXp: newXp });
+                    
+                    // SFX
+                    try { document.getElementById('xp-sound').play(); } catch(e){}
+                    
+                    // Toast
+                    const toast = document.createElement('div');
+                    toast.className = "fixed top-20 right-4 bg-yellow-500 text-black font-bold px-4 py-2 rounded-full shadow-xl z-[100] animate-bounce flex items-center gap-2 border-2 border-white";
+                    toast.innerHTML = `<i class="fa-solid fa-bolt"></i> +${amount} XP`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2000);
+                    
+                    this.updateProfileUI(this.data.user); // Update rank instantly
+                } catch(e) { console.log("XP Error", e); }
+            },
+
+            getRank(xp) {
+                if (xp >= 2000) return "God Tier ⚡";
+                if (xp >= 1000) return "Academic Weapon ⚔️";
+                if (xp >= 500) return "Main Character ✨";
+                if (xp >= 100) return "Scholar 📚";
+                return "Rookie 🥚";
+            },
+
+            async renderLeaderboard() {
+                const list = document.getElementById('leaderboard-list');
+                const progName = document.getElementById('lb-program-name');
+                list.innerHTML = '<tr><td class="p-4 text-center opacity-50">Loading rankings...</td></tr>';
+                
+                const userProg = this.data.user.program || "General";
+                progName.innerText = userProg;
+
+                // Simple query: get all users (filtering locally for prototype simplicity as compound queries require index)
+                // In production: query(collection(db, "users"), where("program", "==", userProg), orderBy("weeklyXp", "desc"), limit(50))
+                const q = query(collection(db, "users"), limit(100)); // Fetch top 100 mostly
+                const snap = await getDocs(q);
+                
+                let users = [];
+                snap.forEach(d => users.push(d.data()));
+                
+                // Filter by program and sort by XP locally
+                users = users.filter(u => u.program && u.program.toLowerCase() === userProg.toLowerCase());
+                users.sort((a,b) => (b.weeklyXp || 0) - (a.weeklyXp || 0));
+                
+                list.innerHTML = '';
+                if(users.length === 0) {
+                    list.innerHTML = '<tr><td class="p-4 text-center opacity-50">No one here yet. Be the first! 🥇</td></tr>';
+                    return;
+                }
+
+                users.forEach((u, index) => {
+                    const rank = index + 1;
+                    const isMe = u.userId === currentUser.uid;
+                    const xp = u.weeklyXp || 0;
+                    const rankTitle = this.getRank(xp);
+                    
+                    let rankClass = "bg-white dark:bg-darkCard";
+                    let rankIcon = `<span class="font-bold text-gray-400">#${rank}</span>`;
+                    
+                    if(rank === 1) { rankClass = "rank-1"; rankIcon = "🥇"; }
+                    else if(rank === 2) { rankClass = "rank-2"; rankIcon = "🥈"; }
+                    else if(rank === 3) { rankClass = "rank-3"; rankIcon = "🥉"; }
+                    
+                    const border = isMe ? "border-2 border-blueAccent" : "border-b border-gray-100 dark:border-gray-700";
+
+                    list.innerHTML += `
+                    <tr class="${rankClass} ${border} transition">
+                        <td class="px-4 py-3 text-lg">${rankIcon}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-bold flex items-center gap-2">
+                                ${u.name} ${isMe ? '(You)' : ''}
+                            </div>
+                            <div class="text-[10px] opacity-80 uppercase tracking-wider font-bold">${rankTitle}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-black text-lg">${xp} <span class="text-[10px] font-normal opacity-60">XP</span></td>
+                    </tr>`;
+                });
+            },
+
+            openProfile() { 
+                history.pushState({ view: 'profile' }, null, ""); // Push State
+                document.getElementById('stat-courses').innerText = this.data.courses.length;
+                document.getElementById('stat-assignments').innerText = this.data.assignments.filter(a => !a.isCompleted).length;
+                document.getElementById('stat-notes').innerText = this.data.notes.length;
+                
+                // Show actual rank based on XP
+                this.updateProfileUI(this.data.user);
+
+                // Ensure clean state on open
+                ['prof-name', 'prof-phone', 'prof-program'].forEach(id => document.getElementById(id).disabled = true);
+                document.getElementById('btn-edit-profile').classList.remove('hidden');
+                document.getElementById('btn-save-profile').classList.add('hidden');
+                document.getElementById('profile-camera-btn').classList.add('hidden');
+
+                document.getElementById('full-screen-profile').classList.remove('hidden'); 
+            },
+            toggleProfileEdit() {
+                const isEditing = document.getElementById('prof-name').disabled;
+                const inputs = ['prof-name', 'prof-phone', 'prof-program'];
+                inputs.forEach(id => document.getElementById(id).disabled = !isEditing);
+                
+                const editBtn = document.getElementById('btn-edit-profile');
+                const saveBtn = document.getElementById('btn-save-profile');
+                const camBtn = document.getElementById('profile-camera-btn');
+                
+                if (isEditing) {
+                    editBtn.classList.add('hidden');
+                    saveBtn.classList.remove('hidden');
+                    camBtn.classList.remove('hidden');
+                    document.getElementById('prof-name').focus();
+                } else {
+                    editBtn.classList.remove('hidden');
+                    saveBtn.classList.add('hidden');
+                    camBtn.classList.add('hidden');
+                }
+            },
+            
+            // --- FULL SCREEN LEADERBOARD ---
+            openLeaderboard() {
+                history.pushState({ view: 'leaderboard' }, null, ""); // Push State
+                this.renderLeaderboard();
+                document.getElementById('full-screen-leaderboard').classList.remove('hidden');
+            },
+            
+            openSettings() { 
+                history.pushState({ view: 'settings' }, null, ""); // Push State
+                document.getElementById('full-screen-settings').classList.remove('hidden'); 
+            },
+            closeFullScreen(id) { document.getElementById(id).classList.add('hidden'); }, // Deprecated by history.back() mostly
+            openFeedback() { 
+                history.pushState({ view: 'feedback' }, null, ""); // Push State
+                document.getElementById('full-screen-feedback').classList.remove('hidden'); 
+                document.getElementById('feedback-form-content').classList.remove('hidden');
+                document.getElementById('feedback-success').classList.add('hidden');
+            },
+            showNotifications() { 
+                if(this.data.notifications.length > 0) {
+                   const ids = this.data.notifications.map(n => n.id);
+                   this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
+                   localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
+                   this.updateBadge(); 
+                }
+                this.renderNotifications(); 
+                this.openModal('modal-notifications'); 
+            },
+            viewImage(src) { 
+                document.getElementById('full-image').src = src; 
+                this.openModal('modal-image-view');
+            },
+
+            // --- EVENT & HOME LOGIC ---
+            renderHome() {
+                // Greeting Logic
+                const hour = new Date().getHours();
+                const greeting = hour < 12 ? "Good Morning! ☀️" : hour < 18 ? "Good Afternoon! 🌤️" : "Good Evening! 🌙";
+                document.getElementById('home-greeting').innerText = greeting;
+
+                // Render Events
+                const feed = document.getElementById('home-events-feed');
+                feed.innerHTML = '';
+                if (this.data.events.length === 0) {
+                    document.getElementById('home-no-events').classList.remove('hidden');
+                } else {
+                    document.getElementById('home-no-events').classList.add('hidden');
+                    this.data.events.forEach(ev => {
+                        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+                        const btnText = isRsvp ? 'Going ✅' : 'Details';
+                        const btnClass = isRsvp ? 'text-green-500' : 'text-blueAccent';
+                        
+                        feed.innerHTML += `
+                        <div onclick='app.openEventModal(${JSON.stringify(ev).replace(/'/g, "&apos;")})' class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-transform">
+                            <div class="h-32 bg-gray-200 relative">
+                                <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover">
+                                <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm font-bold">
+                                    ${ev.date}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-lg leading-tight mb-1">${ev.title}</h3>
+                                <p class="text-xs opacity-60 mb-3 line-clamp-2">${ev.venue} • ${ev.time}</p>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex -space-x-2">
+                                        ${(ev.rsvps || []).slice(0,3).map(() => `<div class="w-6 h-6 rounded-full bg-gray-300 border-2 border-white dark:border-darkCard"></div>`).join('')}
+                                        ${(ev.rsvps || []).length > 3 ? `<div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[8px] border-2 border-white dark:border-darkCard font-bold">+${ev.rsvps.length - 3}</div>` : ''}
+                                    </div>
+                                    <span class="text-xs font-bold ${btnClass}">${btnText} <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i></span>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                }
+            },
+
+            openEventModal(ev) {
+                const modal = document.getElementById('modal-event-details');
+                document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
+                document.getElementById('modal-event-title').innerText = ev.title;
+                document.getElementById('modal-event-date').innerText = ev.date;
+                document.getElementById('modal-event-time').innerText = ev.time;
+                document.getElementById('modal-event-venue').innerText = ev.venue;
+                document.getElementById('modal-event-desc').innerText = ev.description;
+                
+                const btn = document.getElementById('btn-rsvp');
+                const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+                
+                btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
+                
+                if (isRsvp) {
+                    btn.innerHTML = `<span>You're Going! ✅</span>`;
+                    btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
+                } else {
+                    btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
+                    btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
+                }
+
+                this.openModal('modal-event-details');
+            },
+
+            async toggleRsvp(eventId, currentRsvps) {
+                let newRsvps = [...currentRsvps];
+                if (newRsvps.includes(currentUser.uid)) {
+                    newRsvps = newRsvps.filter(id => id !== currentUser.uid);
+                } else {
+                    newRsvps.push(currentUser.uid);
+                }
+                await updateDoc(doc(db, "events", eventId), { rsvps: newRsvps });
+                this.closeModals(); // Calls history.back() logic if we modify closeModals to do so, but here we just hide
+                document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById('modal-event-details').classList.add('hidden');
+                history.back(); // Manually pop history here since closeModals is just visual
+            },
+
+            async saveEvent() {
+                const title = document.getElementById('event-title').value;
+                const date = document.getElementById('event-date').value;
+                const time = document.getElementById('event-time').value;
+                const venue = document.getElementById('event-venue').value;
+                const desc = document.getElementById('event-desc').value;
+                const fileInput = document.getElementById('event-file');
+
+                if (!title || !date || !venue) return alert("Fill in the basics!");
+
+                let image = null;
+                if (fileInput.files.length > 0) {
+                    image = await this.compressImage(fileInput.files[0]);
+                }
+
+                await addDoc(collection(db, "events"), {
+                    title, date, time, venue, description: desc, image,
+                    rsvps: [], timestamp: Date.now()
+                });
+
+                alert("Event Posted! 🎉");
+                // Reset form
+                document.getElementById('event-title').value = '';
+                document.getElementById('event-desc').value = '';
+                document.getElementById('event-file').value = '';
+            },
+
+            async deleteEvent(id) {
+                if(confirm("Delete this event?")) await deleteDoc(doc(db, "events", id));
+            },
+
+            // --- EXISTING CHAT & PRINT LOGIC ---
+            async openPrintChat(targetUserId = null) {
+                history.pushState({ view: 'chat' }, null, ""); // Push State
+                activeChatType = 'print';
+                activeChatId = targetUserId || currentUser.uid;
+                const isMe = activeChatId === currentUser.uid;
+                
+                document.getElementById('full-screen-chat').classList.remove('hidden');
+                document.getElementById('print-steps-container').classList.remove('hidden');
+                document.getElementById('chat-header-title').innerText = "Print & Deliver 🖨️";
+                
+                const chatRef = doc(db, "print_orders", activeChatId);
+                const chatSnap = await getDoc(chatRef);
+                if (!chatSnap.exists()) {
+                    await setDoc(chatRef, { userId: activeChatId, status: 'received', lastUpdated: Date.now(), userName: isMe ? (this.data.user.name || 'Student') : 'Unknown' });
+                } else {
+                    if (this.data.user.role === 'admin' && chatSnap.data().hasUnread) await updateDoc(chatRef, { hasUnread: false });
+                    this.updatePrintStatusUI(chatSnap.data().status);
+                }
+                this.loadMessages("print_messages", "orderId", activeChatId);
+            },
+
+            async openCourseChat(courseName) {
+                history.pushState({ view: 'chat' }, null, ""); // Push State
+                const normalizedId = courseName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                activeChatType = 'course';
+                activeChatId = normalizedId;
+
+                document.getElementById('full-screen-chat').classList.remove('hidden');
+                document.getElementById('print-steps-container').classList.add('hidden');
+                document.getElementById('chat-header-title').innerText = courseName;
+                document.getElementById('chat-header-status').innerText = "Course Circle 📚";
+                
+                this.loadMessages("course_messages", "courseId", activeChatId);
+            },
+
+            renderChatList() {
+                const list = document.getElementById('chat-list');
+                const courseList = document.getElementById('course-chat-list');
+                list.innerHTML = '';
+                courseList.innerHTML = '';
+
+                // --- 1. RENDER COURSE CIRCLES ---
+                const uniqueCourses = [...new Set(this.data.courses.map(c => c.name))];
+                if (uniqueCourses.length > 0) {
+                    document.getElementById('course-circles-section').classList.remove('hidden');
+                    uniqueCourses.forEach(name => {
+                        const colors = [
+                            'from-blue-400 to-blue-600',
+                            'from-purple-400 to-purple-600', 
+                            'from-pink-400 to-pink-600',
+                            'from-orange-400 to-orange-600',
+                            'from-green-400 to-green-600',
+                            'from-teal-400 to-teal-600'
+                        ];
+                        const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                        const colorClass = colors[charCodeSum % colors.length];
+
+                        courseList.innerHTML += `
+                        <div onclick="app.openCourseChat('${name}')" class="flex flex-col items-center gap-1 cursor-pointer min-w-[70px] group">
+                            <div class="w-[70px] h-[70px] rounded-full bg-gradient-to-br ${colorClass} text-white flex items-center justify-center shadow-lg border-2 border-white dark:border-darkBg group-active:scale-95 transition-transform relative overflow-hidden">
+                                <span class="text-[10px] font-black text-center leading-tight px-1 break-words z-10 drop-shadow-md">${name}</span>
+                                <div class="absolute inset-0 bg-black/10 rounded-full"></div>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    document.getElementById('course-circles-section').classList.add('hidden');
+                }
+
+                // --- 2. RENDER DIRECT MESSAGES ---
+                if(this.data.recentChats.length === 0) {
+                    document.getElementById('empty-chats').classList.remove('hidden');
+                } else {
+                    document.getElementById('empty-chats').classList.add('hidden');
+                    this.data.recentChats.forEach(chat => {
+                         const otherUid = chat.users.find(u => u !== currentUser.uid);
+                         const otherName = chat.userNames[otherUid] || "Unknown";
+                         const otherPic = chat.userProfilePics ? chat.userProfilePics[otherUid] : null;
+                         const initial = otherName[0] || "?";
+                         const isUnread = chat.readBy && !chat.readBy.includes(currentUser.uid);
+                         const redDotHtml = isUnread ? `<div class="w-3 h-3 bg-red-500 rounded-full border-2 border-white absolute -top-1 -right-1"></div>` : '';
+                         
+                         let avatarHtml = '';
+                         if (otherPic) {
+                             avatarHtml = `<img src="${otherPic}" class="w-12 h-12 rounded-full object-cover border border-gray-200">`;
+                         } else {
+                             avatarHtml = `<div class="w-12 h-12 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold text-lg">${initial}</div>`;
+                         }
+                         
+                         list.innerHTML += `
+                            <div class="relative group">
+                                <div onclick="app.startDirectChat('${otherUid}', '${otherName}', '${otherPic || ''}')" class="bg-white dark:bg-darkCard p-4 rounded-xl shadow flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition relative">
+                                    <div class="relative">
+                                        ${avatarHtml}
+                                        ${redDotHtml}
+                                    </div>
+                                    <div class="flex-1 overflow-hidden">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-bold text-lg truncate pr-2">${otherName}</h3>
+                                            <span class="text-[10px] opacity-40 shrink-0">${new Date(chat.lastUpdated).toLocaleDateString()}</span>
+                                        </div>
+                                        <p class="text-xs opacity-60 truncate">Tap to chat</p>
+                                    </div>
+                                </div>
+                                <button onclick="app.deleteChat('${chat.id}')" class="absolute top-4 right-2 text-gray-300 hover:text-red-500 p-2 z-10"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                         `;
+                    });
+                }
+            },
+
+            async deleteChat(chatId) {
+                if(confirm("Delete this conversation permanently?")) {
+                    await deleteDoc(doc(db, "direct_chats", chatId));
+                }
+            },
+
+            async searchUser() {
+                const queryStr = document.getElementById('user-search-input').value.trim();
+                if(!queryStr) return;
+                const list = document.getElementById('chat-list');
+                list.innerHTML = '<div class="text-center opacity-50">Searching...</div>';
+                
+                const qEmail = query(collection(db, "users"), where("email", "==", queryStr));
+                const qPhone = query(collection(db, "users"), where("phone", "==", queryStr));
+                
+                const [snapEmail, snapPhone] = await Promise.all([getDocs(qEmail), getDocs(qPhone)]);
+                let foundUser = null;
+                snapEmail.forEach(d => foundUser = d.data());
+                if(!foundUser) snapPhone.forEach(d => foundUser = d.data());
+
+                if(foundUser && foundUser.userId !== currentUser.uid) {
+                    const pic = foundUser.profilePic || '';
+                    const avatar = pic ? `<img src="${pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold">${foundUser.name[0]}</div>`;
+                    
+                    list.innerHTML = `<div onclick="app.startDirectChat('${foundUser.userId}', '${foundUser.name}', '${pic}')" class="bg-white dark:bg-darkCard p-4 rounded-xl shadow flex items-center gap-3 cursor-pointer">${avatar}<div><h3 class="font-bold">${foundUser.name}</h3><p class="text-xs opacity-60">Tap to chat</p></div></div>`;
+                } else {
+                    list.innerHTML = '<div class="text-center opacity-50 text-red-500">User not found (Try exact email/phone)</div>';
+                }
+            },
+
+            async startDirectChat(otherUserId, otherName, otherPic = null) {
+                history.pushState({ view: 'chat' }, null, ""); // Push State
+                activeChatType = 'direct';
+                const sortedIds = [currentUser.uid, otherUserId].sort();
+                activeChatId = sortedIds.join('_');
+                
+                const chatRef = doc(db, "direct_chats", activeChatId);
+                const chatSnap = await getDoc(chatRef);
+                
+                const myPic = this.data.user.profilePic || null;
+
+                if(chatSnap.exists()) {
+                    const data = chatSnap.data();
+                    let readBy = data.readBy || [];
+                    if(!readBy.includes(currentUser.uid)) {
+                        readBy.push(currentUser.uid);
+                        await updateDoc(chatRef, { 
+                            readBy: readBy,
+                            userNames: { [currentUser.uid]: this.data.user.name, [otherUserId]: otherName },
+                            userProfilePics: { [currentUser.uid]: myPic, [otherUserId]: otherPic }
+                        });
+                    } else {
+                         await updateDoc(chatRef, { 
+                            userNames: { [currentUser.uid]: this.data.user.name, [otherUserId]: otherName },
+                            userProfilePics: { [currentUser.uid]: myPic, [otherUserId]: otherPic }
+                        });
+                    }
+                } else {
+                     await setDoc(chatRef, { 
+                         users: sortedIds, 
+                         userNames: { [currentUser.uid]: this.data.user.name, [otherUserId]: otherName },
+                         userProfilePics: { [currentUser.uid]: myPic, [otherUserId]: otherPic }, 
+                         lastUpdated: Date.now(), 
+                         lastSenderId: currentUser.uid,
+                         readBy: [currentUser.uid] 
+                     });
+                }
+
+                document.getElementById('full-screen-chat').classList.remove('hidden');
+                document.getElementById('print-steps-container').classList.add('hidden');
+                document.getElementById('chat-header-title').innerText = otherName;
+                document.getElementById('chat-header-status').innerText = "";
+                this.loadMessages("direct_messages", "chatId", activeChatId);
+            },
+
+            closeFullScreenChat() {
+                // Deprecated by history.back()
+                document.getElementById('full-screen-chat').classList.add('hidden');
+                if(activeChatListener) { activeChatListener(); activeChatListener = null; }
+            },
+
+            loadMessages(collName, idField, idValue) {
+                const msgDiv = document.getElementById('chat-messages');
+                msgDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-64 opacity-50"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-blueAccent mb-2"></i><p class="text-xs">Connecting vibe...</p></div>`;
+                
+                if(activeChatListener) activeChatListener();
+                const q = query(collection(db, collName), where(idField, "==", idValue));
+                
+                activeChatListener = onSnapshot(q, (snap) => {
+                    if(snap.empty) { 
+                        msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60"><p>No messages yet.</p></div>`; 
+                        return; 
+                    }
+                    
+                    const messages = [];
+                    this.data.activeMsgCache = {}; 
+
+                    snap.forEach(d => {
+                        const m = d.data();
+                        m.id = d.id;
+                        messages.push(m);
+                        if(m.fileData) this.data.activeMsgCache[d.id] = m;
+                    });
+                    
+                    messages.sort((a,b) => a.timestamp - b.timestamp);
+
+                    let html = '';
+                    messages.forEach(msg => {
+                        const isSender = msg.senderId === currentUser.uid;
+                        const align = isSender ? 'items-end' : 'items-start';
+                        const bg = isSender ? 'bg-blueAccent text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-white';
+                        
+                        let senderNameHtml = '';
+                        if (activeChatType === 'course' && !isSender) {
+                            senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
+                        }
+
+                        let content = `<p>${msg.text}</p>`;
+                        
+                        if (msg.fileData) {
+                            if (msg.fileType.startsWith('image/')) content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px]" onclick="app.viewImage('${msg.fileData}')">`;
+                            else content += `<div onclick="app.downloadFile('${msg.id}')" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center"><i class="fa-solid fa-file"></i> ${msg.fileName}</div>`;
+                        }
+                        
+                        html += `
+                        <div class="flex flex-col ${align} mb-2 w-full msg-enter">
+                            ${senderNameHtml}
+                            <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
+                            <span class="text-[10px] opacity-40 mt-1 mr-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>`;
+                    });
+                    
+                    msgDiv.innerHTML = html;
+                    setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 100);
+                });
+            },
+
+            downloadFile(msgId) {
+                const msg = this.data.activeMsgCache[msgId];
+                if(!msg || !msg.fileData) return alert("File not found locally.");
+                
+                try {
+                    // Mobile-friendly Blob download strategy
+                    const splitData = msg.fileData.split(',');
+                    const byteString = atob(splitData[1]);
+                    const mimeString = splitData[0].split(':')[1].split(';')[0];
+                    
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    
+                    const blob = new Blob([ab], {type: mimeString});
+                    const url = URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = msg.fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                } catch(e) { 
+                    console.log("Blob download failed, trying direct link", e);
+                    // Fallback
+                    const link = document.createElement('a');
+                    link.href = msg.fileData;
+                    link.download = msg.fileName;
+                    link.target = "_blank"; 
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            },
+
+            async sendMessage() {
+                const input = document.getElementById('chat-input');
+                const txt = input.value.trim();
+                const fileInput = document.getElementById('chat-file-input');
+                if(!txt && fileInput.files.length === 0) return;
+
+                let fileData = null; let fileName = null; let fileType = null;
+                if(fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    if(file.size > 2000000) return alert("File too big! Max 2MB."); 
+                    fileData = await this.compressImage(file); 
+                    fileName = file.name; fileType = file.type;
+                }
+
+                // DETERMINE COLLECTION & ID
+                let coll, idField;
+                if (activeChatType === 'print') { coll = 'print_messages'; idField = 'orderId'; }
+                else if (activeChatType === 'course') { coll = 'course_messages'; idField = 'courseId'; }
+                else { coll = 'direct_messages'; idField = 'chatId'; }
+                
+                const msgData = {
+                    [idField]: activeChatId, 
+                    senderId: currentUser.uid, 
+                    text: txt, 
+                    fileData, fileName, fileType, 
+                    timestamp: Date.now()
+                };
+
+                if (activeChatType === 'course') {
+                    msgData.senderName = this.data.user.name || 'Anonymous';
+                }
+
+                await addDoc(collection(db, coll), msgData);
+
+                if(activeChatType === 'print') {
+                    const isStudentOwner = (currentUser.uid === activeChatId); 
+                    const updateData = { lastUpdated: Date.now() };
+                    if (isStudentOwner) updateData.hasUnread = true;
+                    await updateDoc(doc(db, "print_orders", activeChatId), updateData);
+                } else if(activeChatType === 'direct') {
+                    await updateDoc(doc(db, "direct_chats", activeChatId), { 
+                        lastUpdated: Date.now(), 
+                        lastSenderId: currentUser.uid,
+                        readBy: [currentUser.uid] 
+                    });
+                }
+
+                input.value = ''; fileInput.value = ''; 
+            },
+
+            async handleFileUpload(input) { if(input.files.length > 0) { this.sendMessage(); } },
+
+            async updatePrintStatus(newStatus) {
+                if(!currentUser || this.data.user.role !== 'admin') return;
+                if(confirm(`Change status to: ${newStatus}?`)) {
+                    await updateDoc(doc(db, "print_orders", activeChatId), { status: newStatus });
+                    this.updatePrintStatusUI(newStatus);
+                }
+            },
+
+            updatePrintStatusUI(status) {
+                const s1 = document.getElementById('step-1'); 
+                const s2 = document.getElementById('step-2'); 
+                const s3 = document.getElementById('step-3');
+                const s4 = document.getElementById('step-4');
+                const txt = document.getElementById('chat-header-status');
+                const btnNew = document.getElementById('btn-new-print-order');
+
+                [s1, s2, s3, s4].forEach(s => { s.classList.remove('bg-green-500'); s.classList.add('bg-gray-300'); });
+                
+                if(status === 'received') { 
+                    s1.classList.remove('bg-gray-300'); s1.classList.add('bg-green-500'); 
+                    txt.innerText = "Status: Received"; 
+                }
+                else if(status === 'printing') { 
+                    [s1, s2].forEach(s => { s.classList.remove('bg-gray-300'); s.classList.add('bg-green-500'); });
+                    txt.innerText = "Printing..."; 
+                }
+                else if(status === 'delivering') { 
+                    [s1, s2, s3].forEach(s => { s.classList.remove('bg-gray-300'); s.classList.add('bg-green-500'); });
+                    txt.innerText = "Out for Delivery 🚀"; 
+                }
+                else if(status === 'completed') {
+                    [s1, s2, s3, s4].forEach(s => { s.classList.remove('bg-gray-300'); s.classList.add('bg-green-500'); });
+                    txt.innerText = "Delivered ✅";
+                }
+                
+                if(status === 'completed' && activeChatId === currentUser.uid) {
+                    btnNew.classList.remove('hidden');
+                } else {
+                    btnNew.classList.add('hidden');
+                }
+
+                if(this.data.user.role === 'admin') [s1, s2, s3, s4].forEach(s => s.classList.add('cursor-pointer', 'hover:scale-110'));
+            },
+
+            async startNewPrintOrder() {
+                if(!confirm("Start a fresh print request? This will reset the status.")) return;
+                const chatRef = doc(db, "print_orders", activeChatId);
+                
+                await updateDoc(chatRef, { 
+                    status: 'received', 
+                    lastUpdated: Date.now(),
+                    hasUnread: true 
+                });
+                
+                await addDoc(collection(db, "print_messages"), {
+                    orderId: activeChatId,
+                    senderId: "system",
+                    text: "--- 🔄 NEW REQUEST STARTED ---",
+                    timestamp: Date.now()
+                });
+                
+                this.updatePrintStatusUI('received');
+            },
+
+            updateBadge() {
+                const unreadCount = this.data.notifications.filter(n => !this.data.readNotifications.includes(n.id)).length;
+                const badge = document.getElementById('notification-badge');
+                if(unreadCount > 0) { badge.classList.remove('hidden'); badge.innerText = unreadCount; } else { badge.classList.add('hidden'); }
+            },
+            sendSystemNotification(title, body) {
+                try {
+                    const audio = document.getElementById('alert-sound');
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.log("Audio play blocked until user interaction:", e));
+                } catch(e) {}
+                if (navigator.vibrate) {
+                    navigator.vibrate([500, 200, 500]); 
+                }
+                if(Notification.permission === "granted") {
+                    try { 
+                        new Notification(title, { 
+                            body: body,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png', 
+                            vibrate: [500, 200, 500],
+                            requireInteraction: true 
+                        }); 
+                    } catch(e){}
+                }
+                const toast = document.createElement('div');
+                toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-4 animate-bounce border-2 border-white";
+                toast.innerHTML = `<i class="fa-solid fa-bell fa-shake text-2xl"></i> <div><p class="font-bold text-lg">${title}</p><p class="text-sm opacity-90">${body}</p></div>`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 6000);
+            },
+            startAlertSystem() {
+                clearInterval(alertInterval);
+                alertInterval = setInterval(() => {
+                    const now = new Date();
+                    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+                    
+                    this.data.courses.forEach(c => {
+                        if(c.day === currentDay && parseInt(c.alertOffset) > 0) {
+                            const [h, m] = c.time.split(':').map(Number);
+                            const classDate = new Date(); classDate.setHours(h, m, 0);
+                            const diffMins = Math.floor((classDate - now) / 60000);
+                            if(diffMins === parseInt(c.alertOffset)) {
+                                this.sendSystemNotification(`Class Reminder 🎓`, `Your ${c.name} class starts in ${diffMins} mins!`);
+                            }
+                        }
+                    });
+
+                    this.data.assignments.forEach(a => {
+                        if(!a.isCompleted && parseInt(a.alertOffset) > 0) {
+                           const due = new Date(a.dueDate);
+                           const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+                           if(diffDays === parseInt(a.alertOffset) && now.getHours() === 8 && now.getMinutes() === 0) {
+                                this.sendSystemNotification(`Assignment Due 📚`, `${a.title} is due in ${diffDays} days!`);
+                           }
+                        }
+                    });
+                }, 60000); 
+            },
+
+            async compressImage(file, maxWidth = 600, quality = 0.6) { 
+                return new Promise((resolve) => {
+                    const reader = new FileReader(); reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        if(file.type.startsWith('image/')) {
+                            const img = new Image(); img.src = e.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                                let w = img.width; let h = img.height;
+                                if (w > maxWidth) { h *= maxWidth / w; w = maxWidth; }
+                                canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
+                                resolve(canvas.toDataURL('image/jpeg', quality));
+                            };
+                        } else { resolve(e.target.result); }
+                    };
+                });
+            },
+
+            updateProfileUI(u) {
+                if(document.activeElement.id !== 'prof-name') document.getElementById('prof-name').value = u.name || '';
+                if(document.activeElement.id !== 'prof-phone') document.getElementById('prof-phone').value = u.phone || '';
+                if(document.activeElement.id !== 'prof-program') document.getElementById('prof-program').value = u.program || '';
+                document.getElementById('profile-display-name').innerText = u.name || 'User';
+                document.getElementById('sidebar-name').innerText = u.name || 'Student';
+                document.getElementById('sidebar-email-display').innerText = u.email;
+                if(u.school) {
+                     document.getElementById('prof-school-input').value = u.school;
+                     document.getElementById('profile-school-display').innerText = u.school;
+                }
+                if(u.profilePic) { ['header-profile-img', 'profile-pic-img'].forEach(id => { document.getElementById(id).src = u.profilePic; document.getElementById(id).classList.remove('hidden'); }); ['header-profile-placeholder', 'profile-pic-placeholder'].forEach(id => document.getElementById(id).classList.add('hidden')); }
+                
+                // Rank Display Update
+                const xp = u.weeklyXp || 0;
+                document.getElementById('profile-xp-display').innerText = `${xp} XP`;
+                document.getElementById('profile-rank-display').innerText = this.getRank(xp);
+            },
+
+            startListeners() {
+                if(!currentUser) return;
+                const collections = ['courses', 'assignments', 'notes'];
+                collections.forEach(col => {
+                    const q = query(collection(db, col), where("userId", "==", currentUser.uid));
+                    listeners.push(onSnapshot(q, (snap) => {
+                        this.data[col] = []; snap.forEach(d => this.data[col].push({id: d.id, ...d.data()}));
+                        if(col === 'courses') this.renderCourses(); if(col === 'assignments') this.renderAssignments(); if(col === 'notes') this.renderNotes();
+                        // Re-render chat list when courses update to show new circles
+                        if(col === 'courses' && !document.getElementById('tab-chat').classList.contains('hidden')) {
+                            this.renderChatList();
+                        }
+                    }));
+                });
+                
+                const qEvents = query(collection(db, "events"), orderBy("timestamp", "desc"));
+                listeners.push(onSnapshot(qEvents, (snap) => {
+                    const events = [];
+                    const adminEventList = document.getElementById('adm-event-list');
+                    adminEventList.innerHTML = '';
+                    
+                    snap.forEach(d => {
+                        const ev = {id: d.id, ...d.data()};
+                        events.push(ev);
+                        // Admin Panel Render
+                        adminEventList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded flex justify-between items-center border border-gray-700">
+                            <div class="flex items-center gap-3">
+                                <img src="${ev.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover">
+                                <div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-xs text-gray-400">${ev.date}</p></div>
+                            </div>
+                            <button onclick="app.deleteEvent('${ev.id}')" class="text-red-400 text-xs font-bold hover:text-red-300">DELETE</button>
+                        </div>`;
+                    });
+                    this.data.events = events;
+                    if(!document.getElementById('tab-home').classList.contains('hidden')) this.renderHome();
+                }));
+
+                const qBroadcast = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"));
+                listeners.push(onSnapshot(qBroadcast, (snap) => {
+                    const newNotifs = []; 
+                    
+                    // Check for new broadcasts to notify
+                    snap.docChanges().forEach(change => {
+                        if (change.type === "added") {
+                            const d = change.doc.data();
+                            // Only notify if it's recent (prevent spam on reload)
+                            if (Date.now() - d.timestamp < 20000) {
+                                this.sendSystemNotification(d.title || "New Announcement", d.body || "Check the app for details.");
+                            }
+                        }
+                    });
+
+                    snap.forEach(d => newNotifs.push({id: d.id, ...d.data()}));
+                    this.data.notifications = newNotifs;
+                    this.renderNotifications(); this.updateBadge();
+                }));
+
+                const qChats = query(collection(db, "direct_chats"), where("users", "array-contains", currentUser.uid));
+                listeners.push(onSnapshot(qChats, (snap) => {
+                    const rawChats = [];
+                    snap.forEach(d => {
+                        const c = d.data();
+                        c.id = d.id;
+                        rawChats.push(c);
+                        
+                        if (c.lastSenderId && c.lastSenderId !== currentUser.uid && c.readBy && !c.readBy.includes(currentUser.uid) && (Date.now() - c.lastUpdated < 10000)) {
+                            const otherUid = c.users.find(u => u !== currentUser.uid);
+                            const senderName = c.userNames[otherUid] || "Someone";
+                            if (activeChatType !== 'direct' || activeChatId !== c.id) {
+                                this.sendSystemNotification("New Message 💬", `${senderName} sent you a message.`);
+                            }
+                        }
+                    });
+                    
+                    rawChats.sort((a,b) => b.lastUpdated - a.lastUpdated);
+                    this.data.recentChats = rawChats;
+                    
+                    const searchInput = document.getElementById('user-search-input');
+                    if (!searchInput.value.trim()) {
+                        this.renderChatList();
+                    }
+                }));
+            },
+
+            stopListeners() { listeners.forEach(u => u()); listeners = []; },
+
+            async openAdmin() {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                this.switchAdminView('dash'); 
+                
+                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('adm-broadcast-list');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const b = d.data();
+                        list.innerHTML += `<div class="bg-gray-900 p-2 rounded flex justify-between items-center"><span class="truncate text-sm w-1/2">${b.title}</span><div><button onclick="app.editBroadcast('${d.id}', '${b.title}', '${b.body}')" class="text-blue-400 text-xs mr-2">Edit</button><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs">Delete</button></div></div>`;
+                    });
+                });
+
+                const usersSnap = await getDocs(query(collection(db, "users"), limit(50)));
+                const reqSnap = await getDocs(query(collection(db, "service_requests"), orderBy("timestamp", "desc"), limit(50)));
+                const feedbackSnap = await getDocs(query(collection(db, "feedback"), orderBy("timestamp", "desc"), limit(50)));
+                
+                document.getElementById('adm-count-users').innerText = usersSnap.size + "+";
+                document.getElementById('adm-count-reqs').innerText = reqSnap.size + "+";
+                
+                let feedbackHtml = '';
+                feedbackSnap.forEach(d => {
+                    const f = d.data();
+                    feedbackHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${f.userName}</td><td class="px-4 py-3 truncate max-w-xs text-xs">${f.message}</td><td class="px-4 py-3 font-bold text-yellow-400">${f.rating} ★</td></tr>`;
+                });
+                document.getElementById('adm-feedback-list').innerHTML = feedbackHtml || '<tr><td colspan="3" class="p-4 text-center">No feedback yet.</td></tr>';
+
+                let userHtml = ''; let adminHtml = ''; 
+                usersSnap.forEach(doc => { 
+                    const u = doc.data(); 
+                    userHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3">${u.role}</td><td class="px-4 py-3 text-xs text-gray-500">View</td></tr>`;
+                    
+                    if(u.role === 'admin') {
+                        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.email}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`; 
+                    }
+                });
+                
+                document.getElementById('adm-user-list').innerHTML = userHtml || '<tr><td colspan="4" class="p-4 text-center">No users.</td></tr>';
+                document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No admins found.</td></tr>';
+
+                if(activeJobListener) activeJobListener(); 
+                const q = query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50));
+                
+                activeJobListener = onSnapshot(q, (snap) => {
+                    let printHtml = '';
+                    if(snap.empty) { document.getElementById('adm-print-list').innerHTML = '<tr><td colspan="3" class="p-4 text-center">No active jobs.</td></tr>'; return; }
+                    snap.forEach(doc => {
+                        const job = doc.data();
+                        const unreadIndicator = job.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse shadow-sm shadow-red-500/50">NEW</span>' : '';
+                        printHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white">${job.userName || 'Student'} ${unreadIndicator}<span class="text-xs text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-xs font-bold text-blue-300">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.openPrintChat('${doc.id}')" class="bg-blueAccent hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">Chat</button></td></tr>`;
+                    });
+                    document.getElementById('adm-print-list').innerHTML = printHtml;
+                });
+            },
+            
+            switchAdminView(viewName) {
+                this.data.currentAdminView = viewName;
+                document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
+                
+                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback'].forEach(v => {
+                    const btn = document.getElementById(`adm-btn-${v}`);
+                    if (!btn) return; 
+
+                    if(v === viewName) {
+                        btn.classList.remove('bg-gray-800', 'text-gray-400');
+                        if(v === 'godmode') {
+                            btn.classList.add('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-500/50');
+                        } else {
+                            btn.classList.add('bg-blueAccent', 'text-white');
+                        }
+                    } else {
+                        btn.classList.add('bg-gray-800', 'text-gray-400');
+                        btn.classList.remove('bg-blueAccent', 'text-white', 'bg-purple-600', 'shadow-lg', 'shadow-purple-500/50');
+                        if (v === 'godmode') btn.classList.add('border', 'border-purple-400');
+                    }
+                });
+            },
+            
+            injectCapital() {
+                valuation += Math.floor(Math.random() * 50000000) + 1000000;
+                document.getElementById('ceo-valuation').innerText = valuation.toLocaleString();
+                const ticker = document.getElementById('ceo-valuation');
+                ticker.classList.add('text-yellow-400');
+                setTimeout(() => ticker.classList.remove('text-yellow-400'), 200);
+            },
+            
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value.trim();
+                if(!email) return;
+                if(!confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY BAN ${email}?`)) return;
+                
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                
+                if(snap.empty) { alert("User not found."); return; }
+                
+                snap.forEach(async (d) => {
+                    await updateDoc(doc(db, "users", d.id), { role: "banned" });
+                });
+                alert(`${email} has been exiled from the kingdom. 🔨`);
+                document.getElementById('ban-email-input').value = '';
+            },
+
+            async flushRequests() {
+                if(!confirm("⚠️ FLUSH SYSTEM?\n\nThis will permanently delete ALL service request logs. This cannot be undone.")) return;
+                const q = query(collection(db, "service_requests"));
+                const snap = await getDocs(q);
+                if(snap.empty) return alert("System is already clean. ✨");
+                const deletePromises = snap.docs.map(d => deleteDoc(doc(db, "service_requests", d.id)));
+                await Promise.all(deletePromises);
+                alert(`System Flushed. ${snap.size} records purged. 🧹`);
+            },
+
+            async sendVIPBroadcast() {
+                const title = document.getElementById('vip-title').value;
+                const body = document.getElementById('vip-body').value;
+                if(!title || !body) return alert("Enter content for the Executive Order.");
+                await addDoc(collection(db, "global_announcements"), { 
+                    title, body, isVIP: true, timestamp: Date.now() 
+                });
+                alert("Executive Order Published. 📜");
+                document.getElementById('vip-title').value = '';
+                document.getElementById('vip-body').value = '';
+            },
+
+            closeAdmin() { document.getElementById('admin-panel').classList.add('hidden'); if(activeJobListener) { activeJobListener(); activeJobListener = null; } },
+            async addAdminByEmail() { const email = document.getElementById('admin-email-input').value.trim(); if(!email) return; const q = query(collection(db, "users"), where("email", "==", email)); const snap = await getDocs(q); if(snap.empty) { alert("User not found!"); return; } snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); alert(`Success! ${email} promoted.`); this.openAdmin(); },
+            async toggleUserRole(uid, currentRole) { if(confirm(`Change role from ${currentRole}?`)) { const newRole = currentRole === 'admin' ? 'student' : 'admin'; await updateDoc(doc(db, "users", uid), { role: newRole }); this.openAdmin(); } },
+
+            async sendBroadcast() {
+                const title = document.getElementById('broadcast-title').value;
+                const body = document.getElementById('broadcast-body').value;
+                const fileInput = document.getElementById('broadcast-file');
+                if(!title || !body) return alert("Enter Title and Body");
+
+                let imgData = null;
+                if (fileInput.files.length > 0) { imgData = await this.compressImage(fileInput.files[0]); }
+                
+                if(this.data.editingBroadcastId) {
+                    const updateData = { title, body };
+                    if(imgData) updateData.image = imgData;
+                    await updateDoc(doc(db, "global_announcements", this.data.editingBroadcastId), updateData);
+                    alert("Broadcast Updated!");
+                } else {
+                    await addDoc(collection(db, "global_announcements"), { title, body, image: imgData, timestamp: Date.now() });
+                    alert("Broadcast Sent!");
+                }
+                this.cancelBroadcastEdit();
+            },
+            editBroadcast(id, title, body) {
+                this.data.editingBroadcastId = id;
+                document.getElementById('broadcast-title').value = title;
+                document.getElementById('broadcast-body').value = body;
+                document.getElementById('btn-send-broadcast').innerText = "Update Broadcast";
+                document.getElementById('btn-cancel-broadcast').classList.remove('hidden');
+            },
+            async deleteBroadcast(id) { if(confirm("Delete this broadcast?")) await deleteDoc(doc(db, "global_announcements", id)); },
+            cancelBroadcastEdit() {
+                this.data.editingBroadcastId = null;
+                document.getElementById('broadcast-title').value = '';
+                document.getElementById('broadcast-body').value = '';
+                document.getElementById('btn-send-broadcast').innerText = "Send Blast 🚀";
+                document.getElementById('btn-cancel-broadcast').classList.add('hidden');
+            },
+
+            async contactAdmin(adminName, phone) {
+                const safeName = (this.data.user && this.data.user.name) ? this.data.user.name : "Guest";
+                try { await addDoc(collection(db, "service_requests"), { userId: currentUser.uid, userName: safeName, userPhone: this.data.user.phone || '', service: this.data.selectedService, admin: adminName, timestamp: Date.now() }); } catch(e){}
+                window.open(`https://wa.me/${phone}?text=Hello ${adminName}, I am ${safeName}. I need help with ${this.data.selectedService}.`, '_blank');
+            },
+
+            async toggleAssignment(id, currentStatus) { 
+                await updateDoc(doc(db, "assignments", id), { isCompleted: !currentStatus }); 
+                if(!currentStatus) this.addXp(100, "Assignment Complete 📚"); 
+            },
+            async updateProfile(field, value) { if(!currentUser) return; this.data.user[field] = value; await updateDoc(doc(db, "users", currentUser.uid), { [field]: value }); if(field === 'name') this.updateProfileUI(this.data.user); },
+            async handleProfilePic(input) { if (input.files && input.files[0]) { const compressed = await this.compressImage(input.files[0], 200, 0.7); this.updateProfile('profilePic', compressed); } },
+            
+            async saveCourse() { 
+                const name = document.getElementById('new-course-name').value; 
+                const venue = document.getElementById('new-course-venue').value; 
+                const day = document.getElementById('new-course-day').value; 
+                const time = document.getElementById('new-course-time').value;
+                const alertOffset = document.getElementById('new-course-alert').value;
+                if(name) { 
+                    if(this.data.editingCourseId) {
+                         await updateDoc(doc(db, "courses", this.data.editingCourseId), { name, venue, day, time, alertOffset });
+                    } else {
+                         await addDoc(collection(db, "courses"), { userId: currentUser.uid, name, venue, day, time, alertOffset }); 
+                         this.addXp(50, "Added Class 🎓");
+                    }
+                    this.closeModals(); 
+                    // Visual fix handled by CSS classes, but we can pop manually to sync state
+                    history.back();
+                } 
+            },
+            editCourse(c) {
+                this.data.editingCourseId = c.id;
+                document.getElementById('new-course-name').value = c.name;
+                document.getElementById('new-course-venue').value = c.venue;
+                document.getElementById('new-course-day').value = c.day;
+                document.getElementById('new-course-time').value = c.time;
+                document.getElementById('new-course-alert').value = c.alertOffset || "0";
+                document.getElementById('course-modal-title').innerText = "Edit Class";
+                this.openModal('modal-add-course');
+            },
+            async deleteCourse(id) { if(confirm('Delete?')) await deleteDoc(doc(db, "courses", id)); },
+            
+            async saveAssignment() { 
+                const title = document.getElementById('new-assign-title').value; 
+                const course = document.getElementById('new-assign-course').value; 
+                const date = document.getElementById('new-assign-date').value;
+                const alertOffset = document.getElementById('new-assign-alert').value;
+                if(title) { 
+                    await addDoc(collection(db, "assignments"), { userId: currentUser.uid, title, course, dueDate: date, isCompleted: false, alertOffset }); 
+                    this.closeModals(); 
+                    history.back(); // Pop state
+                } 
+            },
+            async deleteAssignment(id) { if(confirm('Delete?')) await deleteDoc(doc(db, "assignments", id)); },
+            
+            async saveNote() { 
+                const title = document.getElementById('note-title').value; 
+                const subtitle = document.getElementById('note-subtitle').value; 
+                const body = document.getElementById('note-body').value; 
+                if(this.data.editingNoteId) { 
+                    await updateDoc(doc(db, "notes", this.data.editingNoteId), { title, subtitle, body }); 
+                } else { 
+                    await addDoc(collection(db, "notes"), { userId: currentUser.uid, title, subtitle, body }); 
+                    this.addXp(30, "Took a Note 📝");
+                } 
+                this.closeModals(); 
+                history.back(); // Pop state
+            },
+            async deleteNote() { if(confirm('Delete?')) { await deleteDoc(doc(db, "notes", this.data.editingNoteId)); this.closeModals(); history.back(); } },
+
+            renderCourses() { 
+                const list = document.getElementById('course-list'); list.innerHTML = ''; 
+                if(this.data.courses.length === 0) { document.getElementById('empty-courses').classList.remove('hidden'); return; } 
+                document.getElementById('empty-courses').classList.add('hidden'); 
+                const days = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":7}; 
+                const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                this.data.courses.sort((a,b) => days[a.day] - days[b.day]); 
+                this.data.courses.forEach(c => { 
+                    const isToday = c.day === currentDay ? 'today-highlight' : '';
+                    const tCheck = c.time ? c.time : '??:??';
+                    list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex items-center gap-4 ${isToday} relative overflow-hidden"><div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">${c.day.substring(0,3).toUpperCase()}</div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg truncate">${c.name}</h3><p class="text-sm font-medium text-blueAccent dark:text-orangeAccent"><i class="fa-regular fa-clock mr-1"></i>${tCheck}</p><p class="text-xs opacity-60 truncate">${c.venue}</p></div><div class="flex gap-3"><button onclick='app.editCourse(${JSON.stringify(c)})'><i class="fa-solid fa-pen text-gray-400 hover:text-blueAccent"></i></button><button onclick="app.deleteCourse('${c.id}')"><i class="fa-solid fa-trash text-gray-400 hover:text-red-500"></i></button></div></div>`;
+                }); 
+            },
+            renderAssignments() { const list = document.getElementById('assignment-list'); list.innerHTML = ''; if(this.data.assignments.length === 0) { document.getElementById('empty-assignments').classList.remove('hidden'); return; } document.getElementById('empty-assignments').classList.add('hidden'); this.data.assignments.forEach(a => { const style = a.isCompleted ? 'task-done' : ''; const check = a.isCompleted ? 'checked' : ''; list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex justify-between items-center border-l-4 border-blueAccent"><div class="flex items-center gap-3"><input type="checkbox" ${check} onclick="app.toggleAssignment('${a.id}', ${a.isCompleted})" class="w-5 h-5 cursor-pointer"><div class="${style}"><h3 class="font-bold">${a.title}</h3><p class="text-xs opacity-60">${a.course} • ${a.dueDate}</p></div></div><button onclick="app.deleteAssignment('${a.id}')"><i class="fa-solid fa-trash text-gray-400"></i></button></div>`; }); },
+            renderNotes() { const list = document.getElementById('notes-list'); list.innerHTML = ''; if(this.data.notes.length === 0) { document.getElementById('empty-notes').classList.remove('hidden'); return; } document.getElementById('empty-notes').classList.add('hidden'); this.data.notes.forEach(n => { const card = document.createElement('div'); card.className = "bg-noteYellow dark:bg-darkCard rounded-xl p-4 shadow-sm h-32 flex flex-col cursor-pointer"; card.onclick = () => { this.data.editingNoteId = n.id; document.getElementById('note-title').value = n.title; document.getElementById('note-subtitle').value = n.subtitle; document.getElementById('note-body').value = n.body; document.getElementById('btn-delete-note').classList.remove('hidden'); app.openModal('modal-note-editor'); }; card.innerHTML = `<h3 class="font-bold line-clamp-1">${n.title}</h3><p class="text-xs opacity-80 line-clamp-2">${n.subtitle}</p>`; list.appendChild(card); }); },
+            
+            renderNotifications() {
+                const list = document.getElementById('notifications-list'); list.innerHTML = '';
+                if(this.data.notifications.length === 0) { document.getElementById('empty-notifications').classList.remove('hidden'); return; }
+                document.getElementById('empty-notifications').classList.add('hidden');
+                this.data.notifications.forEach(n => {
+                    let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage('${n.image}')" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
+                    let cardClass = "bg-white dark:bg-darkCard";
+                    let titleClass = "text-blueAccent";
+                    let border = "";
+                    if(n.isVIP) {
+                        cardClass = "vip-gradient text-black";
+                        titleClass = "text-black";
+                        border = "border-2 border-yellow-300";
+                    }
+                    list.innerHTML += `<div class="${cardClass} p-4 rounded-xl shadow mb-2 relative ${border}"><h3 class="font-bold ${titleClass}">${n.title} ${n.isVIP ? '👑' : ''}</h3><p class="text-sm opacity-80">${n.body}</p>${imgHtml}<p class="text-[10px] opacity-40 mt-1">${new Date(n.timestamp).toLocaleDateString()}</p></div>`;
+                });
+            },
+
+            switchTab(index, fromHistory = false) { 
+                window.scrollTo(0,0);
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
+                const tabs = ['tab-home', 'tab-timetable', 'tab-assignments', 'tab-notes', 'tab-chat', 'tab-leaderboard']; 
+                if(tabs[index]) document.getElementById(tabs[index]).classList.remove('hidden'); 
+                document.querySelectorAll('.nav-item').forEach(el => { el.classList.toggle('text-blueAccent', parseInt(el.dataset.index) === index); el.classList.toggle('text-gray-400', parseInt(el.dataset.index) !== index); }); 
+                document.getElementById('fab').classList.toggle('hidden', index === 0 || (index > 2 && index !== 3)); 
+                
+                if (index === 0) this.renderHome();
+                if (index === 4) this.renderChatList();
+                // Leaderboard is now its own full screen view
+
+                if (!fromHistory) {
+                    history.pushState({ tab: index }, null, "");
+                }
+                this.data.currentTabIndex = index;
+            },
+            toggleSidebar() { const d = document.getElementById('sidebar-drawer'); const o = document.getElementById('sidebar-overlay'); if(d.classList.contains('-translate-x-full')) { d.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { d.classList.add('-translate-x-full'); o.classList.add('hidden'); } },
+            toggleTheme() { this.data.theme = this.data.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('az_theme', this.data.theme); this.applyTheme(); },
+            applyTheme() { const isDark = this.data.theme === 'dark'; document.documentElement.classList.toggle('dark', isDark); this.updateToggleUI('theme-toggle-btn', isDark); },
+            
+            toggleSystemNotifications() {
+                if (!this.data.systemNotifications) {
+                    Notification.requestPermission().then(perm => {
+                        if (perm === 'granted') { 
+                            this.data.systemNotifications = true; 
+                            localStorage.setItem('az_sys_notif', true); 
+                            this.updateToggleUI('notif-toggle-btn', true); 
+                            const audio = document.getElementById('alert-sound');
+                            audio.play().then(() => {
+                                audio.pause();
+                                audio.currentTime = 0;
+                            });
+                            this.sendSystemNotification("Alerts Active 🔔", "Sound and Vibration enabled!"); 
+                        } else {
+                            alert("We need permission to send alerts! Please allow them in your browser settings.");
+                        }
+                    });
+                } else { 
+                    this.data.systemNotifications = false; 
+                    localStorage.setItem('az_sys_notif', false); 
+                    this.updateToggleUI('notif-toggle-btn', false); 
+                }
+            },
+
+            updateToggleUI(btnId, isActive) { const btn = document.getElementById(btnId); const knob = btn.firstElementChild; if (isActive) { btn.classList.remove('bg-gray-400'); btn.classList.add('bg-blueAccent'); knob.classList.add('translate-x-5'); } else { btn.classList.add('bg-gray-400'); btn.classList.remove('bg-blueAccent'); knob.classList.remove('translate-x-5'); } },
+            
+            setupSwipeNavigation() {
+                let touchStartX = 0;
+                let touchStartY = 0;
+
+                document.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    // Guard clauses: Don't swipe if overlays are open
+                    const overlays = [
+                        'auth-overlay', 'splash-screen', 'admin-panel', 
+                        'full-screen-leaderboard', 'full-screen-feedback', 
+                        'full-screen-chat', 'full-screen-profile', 
+                        'full-screen-settings', 'modal-overlay'
+                    ];
+                    
+                    const isOverlayOpen = overlays.some(id => !document.getElementById(id).classList.contains('hidden'));
+                    if(isOverlayOpen) return;
+
+                    // Don't swipe if interacting with a horizontal slider (like course circles)
+                    if(e.target.closest('.overflow-x-auto')) return;
+
+                    const touchEndX = e.changedTouches[0].screenX;
+                    const touchEndY = e.changedTouches[0].screenY;
+                    
+                    const diffX = touchEndX - touchStartX;
+                    const diffY = touchEndY - touchStartY;
+
+                    // Threshold: 50px, and horizontal movement must dominate vertical
+                    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                        const currentIndex = this.data.currentTabIndex;
+                        
+                        // Swipe Left (finger moves left) -> Go Next (Index + 1)
+                        if (diffX < 0) {
+                            if (currentIndex < 4) this.switchTab(currentIndex + 1);
+                        } 
+                        // Swipe Right (finger moves right) -> Go Prev (Index - 1)
+                        else {
+                            if (currentIndex > 0) this.switchTab(currentIndex - 1);
+                        }
+                    }
+                }, { passive: true });
+            },
+
+            openModal(id) { 
+                history.pushState({ view: 'modal' }, null, ""); // Push State
+                document.getElementById('modal-overlay').classList.remove('hidden'); 
+                document.getElementById(id).classList.remove('hidden'); 
+            },
+            
+            closeModals() { 
+                // Just visual hiding, but in the new system we should prefer history.back()
+                document.getElementById('modal-overlay').classList.add('hidden'); 
+                document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden')); 
+                document.getElementById('modal-note-editor').classList.add('hidden'); 
+                document.getElementById('modal-notifications').classList.add('hidden'); 
+            },
+            
+            handleFabClick() { 
+                if(!document.getElementById('tab-timetable').classList.contains('hidden')) {
+                    this.data.editingCourseId = null; 
+                    document.getElementById('new-course-name').value = ''; 
+                    document.getElementById('new-course-venue').value = ''; 
+                    document.getElementById('course-modal-title').innerText = "Add Class";
+                    this.openModal('modal-add-course');
+                } else if(!document.getElementById('tab-assignments').classList.contains('hidden')) {
+                    this.openModal('modal-add-assignment');
+                } else {
+                    this.data.editingNoteId = null;
+                    document.getElementById('note-title').value = '';
+                    document.getElementById('note-subtitle').value = '';
+                    document.getElementById('note-body').value = '';
+                    document.getElementById('btn-delete-note').classList.add('hidden');
+                    this.openModal('modal-note-editor');
+                }
+            },
+            openServiceModal(name) { this.data.selectedService = name; this.openModal('modal-service'); },
+            setRating(n) {
+                this.data.rating = n;
+                const stars = document.getElementById('star-rating-container').children;
+                for(let i=0; i<5; i++) { stars[i].classList.toggle('text-yellow-400', i < n); stars[i].classList.toggle('text-gray-300', i >= n); }
+            },
+            addTag(tag) { 
+                const area = document.getElementById('fb-experience'); 
+                area.value = (area.value ? area.value + " " : "") + tag; 
+                area.focus(); 
+            },
+            async sendFeedback() { 
+                const msg = document.getElementById('fb-experience').value;
+                if(!msg) return alert("Please type something!");
+                try {
+                    await addDoc(collection(db, "feedback"), {
+                        userId: currentUser.uid,
+                        userName: this.data.user.name || "Anonymous",
+                        message: msg,
+                        rating: this.data.rating || 5,
+                        timestamp: Date.now()
+                    });
+                    document.getElementById('feedback-form-content').classList.add('hidden');
+                    document.getElementById('feedback-success').classList.remove('hidden');
+                    document.getElementById('fb-experience').value = ""; // Clear form
+                } catch(e) {
+                    alert("Error sending feedback: " + e.message);
+                }
+            },
+            
+            // --- FULL SCREEN LEADERBOARD ---
+            openLeaderboard() {
+                history.pushState({ view: 'leaderboard' }, null, ""); // Push State
+                this.renderLeaderboard();
+                document.getElementById('full-screen-leaderboard').classList.remove('hidden');
+            },
+            
+            deleteAccount() { if(confirm('PERMANENTLY DELETE ACCOUNT?')) { deleteUser(currentUser); } }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
