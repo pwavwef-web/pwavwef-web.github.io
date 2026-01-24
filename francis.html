@@ -1,232 +1,976 @@
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Francis Pwavwe - Tourism Management Student, Aspire Leader, and Tech Entrepreneur. Founder of AZ Learner.">
-<title>Francis Pwavwe | Tourism & Tech</title>
-<link rel="icon" type="image/png" href="favicon.png">
-<meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
-
-<style>
-    :root {
-        /* Blue-Themed Serenity Palette */
-        --primary-blue: #0F4C81; /* Classic Blue */
-        --soft-blue: #D4F1F4;    /* Serenity */
-        --dark-blue: #0a355c;    /* Deep contrast */
-        --accent: #FFD700;       /* Gold */
-        --android-green: #3DDC84; /* Android Brand Color */
-        --paystack-blue: #011b33; /* Paystack Branding */
-        --text-dark: #333;
-        --text-light: #f4f4f4;
-        --bg-light: #ffffff;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-    body {
-        background-color: var(--bg-light);
-        color: var(--text-dark);
-        line-height: 1.6;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-
-    /* --- Header & Profile --- */
-    header {
-        background: linear-gradient(135deg, var(--primary-blue), #1e90ff);
-        color: var(--text-light);
-        padding: 4rem 2rem;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .profile-pic {
-        width: 180px; height: 180px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 4px solid var(--accent);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        margin-bottom: 1.5rem;
-        background-color: #fff;
-    }
-
-    header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: 1px; }
-    header p.tagline { font-size: 1.1rem; opacity: 0.95; font-weight: 300; max-width: 600px; }
-
-    /* --- Buttons --- */
-    .btn-group { margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Francis Pwavwe - Tourism Management Student, Cadet Leader, Podcaster.">
+    <title>Francis Pwavwe | The Portfolio</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
     
-    .btn-main {
-        background: var(--accent);
-        color: var(--dark-blue);
-        padding: 0.8rem 1.5rem;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: transform 0.2s;
-        border: 2px solid var(--accent);
-        display: inline-block;
-    }
-
-    .btn-app {
-        background: var(--android-green);
-        color: var(--dark-blue);
-        padding: 0.8rem 1.5rem;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: transform 0.2s;
-        border: 2px solid var(--android-green);
-        display: inline-block;
-    }
-
-    .btn-support {
-        background: var(--paystack-blue);
-        color: white;
-        padding: 0.8rem 1.5rem;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: transform 0.2s;
-        border: 2px solid var(--paystack-blue);
-        display: inline-block;
-    }
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Poppins:wght@500;700;800&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
     
-    .btn-outline {
-        background: transparent;
-        color: white;
-        padding: 0.8rem 1.5rem;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: bold;
-        border: 2px solid rgba(255,255,255,0.5);
-        transition: all 0.2s;
-    }
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0f172a', /* Slate 900 */
+                            primary: '#1e40af', /* Blue 800 */
+                            accent: '#6366f1', /* Indigo 500 */
+                            gold: '#fbbf24',
+                            light: '#f8fafc',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Poppins', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-    .btn-main:hover, .btn-app:hover, .btn-outline:hover, .btn-support:hover { transform: translateY(-3px); opacity: 0.9; }
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    /* --- Layout --- */
-    .container { max-width: 900px; margin: -30px auto 0; padding: 2rem; z-index: 10; position: relative; }
-    
-    section { margin-bottom: 2rem; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
 
-    h2 { color: var(--primary-blue); border-bottom: 2px solid var(--soft-blue); padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.5rem; }
+        /* Glassmorphism utility */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-    /* --- Grid Layouts --- */
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-    
-    .card { background: #f9f9f9; padding: 1.5rem; border-left: 4px solid var(--primary-blue); border-radius: 4px; }
-    
-    .vibe-card { border-left: 4px solid var(--accent); background: var(--soft-blue); }
+        /* Hero Text Gradient */
+        .text-gradient {
+            background: linear-gradient(to right, #1e40af, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dark .text-gradient {
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-    /* --- Contact --- */
-    .contact-links { display: flex; flex-direction: column; gap: 1rem; }
-    .contact-btn {
-        display: flex; align-items: center; justify-content: center; padding: 1rem;
-        background: #f0f4f8; color: var(--primary-blue); text-decoration: none;
-        border-radius: 8px; font-weight: bold; transition: all 0.3s ease;
-    }
-    .contact-btn:hover { background: var(--primary-blue); color: white; }
+        /* Scroll Reveal Utility */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-    footer { text-align: center; padding: 2rem; background: #f0f0f0; color: #666; margin-top: auto; font-size: 0.9rem; }
-    
-    @media (max-width: 600px) { header h1 { font-size: 2rem; } }
-</style>
-
-
+        /* Admin Tab Styling */
+        .tab-active {
+            border-bottom: 2px solid #6366f1;
+            color: #6366f1;
+            font-weight: 700;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-brand-light text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans selection:bg-brand-accent selection:text-white">
 
-<header>
-    <img src="profile.jpg" alt="Francis Pwavwe" class="profile-pic">
-    
-    <h1>Francis Pwavwe</h1>
-    <p class="tagline">Tourism Management @ UCC | Aspire Leader | Founder of AZ Learner</p>
-    
-    <div class="btn-group">
-        <a href="resume.pdf" class="btn-main" target="_blank">📄 Download Resume</a>
-        <a href="app.html" class="btn-app">📱 Get AZ Learner App</a>
-        <a href="https://paystack.shop/pay/fw5uib9s1g" class="btn-support">💸 Support Project</a>
-        <a href="#contact" class="btn-outline">Link Up</a>
+    <!-- Sticky Nav -->
+    <nav class="fixed w-full z-50 transition-all duration-300 glass" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <a href="#" class="font-display font-bold text-2xl tracking-tighter hover:text-brand-primary dark:hover:text-brand-accent transition-colors">
+                    FP<span class="text-brand-accent">.</span>
+                </a>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#about" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">About</a>
+                    <a href="#projects" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">Projects</a>
+                    <a href="#podcast" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">Blue Mind</a>
+                    <a href="#contact" class="px-5 py-2.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium text-sm hover:shadow-lg hover:scale-105 transition-all">Let's Talk</a>
+                    
+                    <!-- Admin Button (Hidden by default) -->
+                    <button id="admin-dashboard-btn" class="hidden text-sm font-bold text-red-500 hover:text-red-600 border border-red-500 px-3 py-1 rounded-full uppercase tracking-wider">
+                        Admin
+                    </button>
+
+                    <!-- Auth Button -->
+                    <button id="auth-btn" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors flex items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
+                    </button>
+
+                    <!-- Dark Mode Toggle -->
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                        <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                        <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center gap-4">
+                    <button id="theme-toggle-mobile" class="p-2">
+                        <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                        <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    </button>
+                    <button id="mobile-menu-btn" class="p-2">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden absolute w-full glass border-t border-slate-200 dark:border-slate-800">
+            <div class="px-4 pt-2 pb-6 space-y-1">
+                <a href="#about" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">About</a>
+                <a href="#projects" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Projects</a>
+                <a href="#podcast" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Blue Mind</a>
+                <button id="mobile-auth-btn" class="block w-full text-left px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-brand-primary">Sign In</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Dashboard Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="close-admin-bg"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[80vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800">
+                <h2 class="text-2xl font-bold font-display">Admin Dashboard</h2>
+                <button id="close-admin-btn" class="text-slate-500 hover:text-red-500">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-200 dark:border-slate-800">
+                <button id="tab-inbox" class="flex-1 py-4 text-center font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 tab-active transition-colors">
+                    Inbox (Messages)
+                </button>
+                <button id="tab-studio" class="flex-1 py-4 text-center font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Studio (Upload Episode)
+                </button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950/50">
+                
+                <!-- Inbox View -->
+                <div id="view-inbox" class="space-y-4">
+                    <h3 class="text-lg font-bold mb-4">Recent Messages</h3>
+                    <div id="messages-list" class="space-y-3">
+                        <!-- Messages injected here -->
+                        <div class="text-center text-slate-400 py-10">Loading messages...</div>
+                    </div>
+                </div>
+
+                <!-- Studio View (Hidden) -->
+                <div id="view-studio" class="hidden">
+                    <h3 class="text-lg font-bold mb-4">Upload New Episode</h3>
+                    <form id="upload-episode-form" class="space-y-4 max-w-xl mx-auto">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Episode Title</label>
+                            <input type="text" id="ep-title" required class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-primary" placeholder="e.g. The Gen Z Dilemma">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Category</label>
+                            <select id="ep-category" class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-primary">
+                                <option value="Philosophy">Philosophy</option>
+                                <option value="Tourism">Tourism</option>
+                                <option value="Life">Life</option>
+                                <option value="Cadet">Cadet Life</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Link (Spotify/YouTube/Audio)</label>
+                            <input type="url" id="ep-link" required class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-primary" placeholder="https://...">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-brand-primary text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                            Publish Episode
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <p style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.8; max-width: 400px;">
-        *Visit the AZ Learner page for installation guide and feature lists.
-    </p>
-</header>
 
-<div class="container">
-    
-    <section id="about">
-        <h2>The Vibe Check</h2>
-        <p>
-            I'm a student at the University of Cape Coast (SS/TMG/22/0014) crafting a future where tourism meets tech. 
-            My ambition is powered by morning sunlight and a delusion-level belief that I can change the game. 
-            I dream of a career in the US, living in blue-themed serenity, and proving that the "fairytale ending" is something you build yourself.
-        </p>
-    </section>
+    <!-- Hero Section -->
+    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        <!-- Abstract Background Blobs -->
+        <div class="absolute top-20 right-0 w-96 h-96 bg-brand-accent/20 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-20 left-0 w-72 h-72 bg-brand-primary/20 rounded-full blur-3xl animate-float" style="animation-delay: 2s;"></div>
 
-    <section id="portfolio">
-        <h2>The Grind & Glory</h2>
-        <div class="grid">
-            <div class="card">
-                <h3>🏆 Aspire Leaders 2025</h3>
-                <p>Graduate of Cohort 5. Focused on leadership development and social impact training at a global scale.</p>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col md:flex-row items-center gap-12">
+                <!-- Text Content -->
+                <div class="flex-1 text-center md:text-left reveal active">
+                    <div class="inline-block px-4 py-1.5 mb-6 border border-slate-300 dark:border-slate-700 rounded-full text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Based in Ghana 🇬🇭
+                    </div>
+                    <h1 class="font-display font-bold text-5xl md:text-7xl lg:text-8xl leading-tight mb-6">
+                        Hey, I'm <br>
+                        <span class="text-gradient">Francis Pwavwe</span> 👋🏽
+                    </h1>
+                    <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-light mb-8 max-w-2xl leading-relaxed">
+                        Forever curious. Globally-minded. <br class="hidden md:block">
+                        Always in uniform or on a mic.
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                        <a href="#projects" class="px-8 py-4 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-full font-semibold hover:shadow-2xl hover:-translate-y-1 transition-all">
+                            View Work
+                        </a>
+                        <a href="#podcast" class="px-8 py-4 border border-slate-300 dark:border-slate-700 rounded-full font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-2">
+                            <i data-lucide="mic" class="w-4 h-4"></i> Blue Mind
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Hero Image -->
+                <div class="flex-1 relative w-full max-w-lg reveal active" style="transition-delay: 200ms;">
+                    <div class="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border-[8px] border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
+                        <!-- IMPORTANT: Replace 'assets/profile.jpg' with your actual image file path -->
+                        <img src="assets/profile.jpg" 
+                             onerror="this.src='https://placehold.co/600x800/1e293b/FFF?text=Francis+Pwavwe'"
+                             alt="Francis Pwavwe" class="object-cover w-full h-full hover:scale-105 transition-transform duration-700">
+                        
+                        <!-- Floating Badge -->
+                        <div class="absolute bottom-6 right-6 glass px-6 py-4 rounded-xl shadow-lg">
+                            <p class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Current Vibe</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="relative flex h-3 w-3">
+                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                                </span>
+                                <span class="text-sm font-semibold">Building & Learning</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <h3>🏨 Kempinski Internship</h3>
-                <p>Mastering operational excellence and 5-star service standards in high-pressure hospitality environments.</p>
-            </div>
-            <div class="card">
-                <h3>📱 AZ Learner</h3>
-                <p>Founder of a student utility app streamlining campus life for the UCC community. No cap, just utility.</p>
-            </div>
-            <div class="card">
-                <h3>🎖️ Cadet Corps</h3>
-                <p>Oguaa Hall Army Cadet & UCC Armed Forces Cadet Corps. Discipline, honor, and leadership.</p>
+        </div>
+    </header>
+
+    <!-- About Me -->
+    <section id="about" class="py-24 bg-white dark:bg-slate-950">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-12 gap-12">
+                <!-- Narrative -->
+                <div class="md:col-span-7 reveal">
+                    <h2 class="font-display text-4xl font-bold mb-8">The Story So Far</h2>
+                    <div class="prose dark:prose-invert text-lg text-slate-600 dark:text-slate-400 space-y-6">
+                        <p>
+                            Born in Ghana to a world of noise, I found my voice in <span class="font-serif italic text-brand-primary dark:text-brand-accent">clarity and purpose</span>. I’m a student of life, currently formalizing that education in Tourism Management at the University of Cape Coast.
+                        </p>
+                        <p>
+                            I don't just study destinations; I study <strong>systems</strong>. Whether it's the disciplined hierarchy of the Cadet Corps, the operational flow of a 5-star hotel, or the digital architecture of my app, AZ Learner, I am obsessed with how things work—and how to make them work better.
+                        </p>
+                        <p>
+                            When the uniform comes off, the mic turns on. As the host of <strong>Blue Mind Radio</strong>, I explore the intersections of Gen Z culture, philosophy, and personal growth.
+                        </p>
+                        <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border-l-4 border-brand-accent mt-8">
+                            <p class="font-serif text-xl italic text-slate-800 dark:text-slate-200">
+                                "Dream big. Plan specifically. Execute daily."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats / Quick Facts -->
+                <div class="md:col-span-5 space-y-6 reveal" style="transition-delay: 200ms;">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-6 rounded-2xl bg-brand-light dark:bg-slate-900 text-center hover:-translate-y-1 transition-transform">
+                            <i data-lucide="map-pin" class="w-8 h-8 mx-auto text-brand-accent mb-3"></i>
+                            <h3 class="font-bold text-xl">Cape Coast</h3>
+                            <p class="text-sm text-slate-500">Current Base</p>
+                        </div>
+                        <div class="p-6 rounded-2xl bg-brand-light dark:bg-slate-900 text-center hover:-translate-y-1 transition-transform">
+                            <i data-lucide="book-open" class="w-8 h-8 mx-auto text-brand-accent mb-3"></i>
+                            <h3 class="font-bold text-xl">Tourism</h3>
+                            <p class="text-sm text-slate-500">Major</p>
+                        </div>
+                        <div class="p-6 rounded-2xl bg-brand-light dark:bg-slate-900 text-center hover:-translate-y-1 transition-transform">
+                            <i data-lucide="mic-2" class="w-8 h-8 mx-auto text-brand-accent mb-3"></i>
+                            <h3 class="font-bold text-xl">Podcaster</h3>
+                            <p class="text-sm text-slate-500">Blue Mind</p>
+                        </div>
+                        <div class="p-6 rounded-2xl bg-brand-light dark:bg-slate-900 text-center hover:-translate-y-1 transition-transform">
+                            <i data-lucide="award" class="w-8 h-8 mx-auto text-brand-accent mb-3"></i>
+                            <h3 class="font-bold text-xl">Cadet</h3>
+                            <p class="text-sm text-slate-500">Leadership</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Fun Fact Widget -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-br from-brand-primary to-brand-accent text-white shadow-xl relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <span class="text-xs font-bold uppercase opacity-80 mb-2 block">Fun Fact of the Week</span>
+                            <p class="font-serif text-lg leading-relaxed">
+                                I believe fairytales are just blueprints for reality waiting for an architect. ✨
+                            </p>
+                        </div>
+                        <i data-lucide="sparkles" class="absolute -bottom-4 -right-4 w-32 h-32 text-white opacity-10 group-hover:rotate-12 transition-transform duration-500"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <section id="vibes">
-        <h2>The B-Side: Passions</h2>
-        <div class="grid">
-            <div class="card vibe-card">
-                <h3>🇨🇳 Chinese Language</h3>
-                <p>
-                    Designing lesson plans and teaching basic Chinese. Breaking cultural barriers one character at a time.
-                </p>
+    <!-- Resume / Timeline -->
+    <section id="resume" class="py-24 bg-slate-50 dark:bg-slate-900/50">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-16 reveal">
+                <div>
+                    <span class="text-brand-accent font-bold tracking-widest uppercase text-sm">Professional Journey</span>
+                    <h2 class="font-display text-4xl font-bold mt-2">Resume & Experience</h2>
+                </div>
+                <button onclick="alert('PDF Resume downloading...')" class="mt-6 md:mt-0 flex items-center gap-2 text-sm font-bold border-b-2 border-slate-900 dark:border-white pb-1 hover:text-brand-primary transition-colors">
+                    Download Full CV <i data-lucide="download" class="w-4 h-4"></i>
+                </button>
             </div>
-            <div class="card vibe-card">
-                <h3>🎶 Drill & Serenity</h3>
-                <p>
-                    High-energy drill music fuels the grind, while blue-themed serenity keeps the mind clear for the big picture.
-                </p>
+
+            <div class="grid md:grid-cols-2 gap-12">
+                <!-- Experience Column -->
+                <div class="space-y-8 reveal">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <span class="p-2 bg-brand-accent/10 rounded-lg text-brand-accent"><i data-lucide="briefcase"></i></span>
+                        Roles
+                    </h3>
+                    
+                    <!-- Item -->
+                    <div class="relative pl-8 border-l-2 border-slate-200 dark:border-slate-800">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-brand-accent border-4 border-slate-50 dark:border-slate-900"></div>
+                        <div class="mb-1 text-sm text-slate-500">2024 - Present</div>
+                        <h4 class="font-bold text-lg">Founder & Lead</h4>
+                        <div class="text-brand-primary dark:text-brand-accent font-medium mb-2">AZ Learner Platform</div>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm">Created a digital utility for UCC students. Managed product development and campus launch.</p>
+                    </div>
+
+                    <!-- Item -->
+                    <div class="relative pl-8 border-l-2 border-slate-200 dark:border-slate-800">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-slate-50 dark:border-slate-900"></div>
+                        <div class="mb-1 text-sm text-slate-500">2024</div>
+                        <h4 class="font-bold text-lg">Quartermaster</h4>
+                        <div class="text-brand-primary dark:text-brand-accent font-medium mb-2">Oguaa Hall Cadet Corps</div>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm">Managed logistics and inventory for cadet operations. Ensured operational readiness.</p>
+                    </div>
+
+                    <!-- Item -->
+                    <div class="relative pl-8 border-l-2 border-slate-200 dark:border-slate-800">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-slate-50 dark:border-slate-900"></div>
+                        <div class="mb-1 text-sm text-slate-500">Summer 2024</div>
+                        <h4 class="font-bold text-lg">Hospitality Intern</h4>
+                        <div class="text-brand-primary dark:text-brand-accent font-medium mb-2">Kempinski Hotel Gold Coast City</div>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm">Rotational internship focusing on Front Office operations and guest experience management.</p>
+                    </div>
+                </div>
+
+                <!-- Education & Skills Column -->
+                <div class="space-y-8 reveal" style="transition-delay: 200ms;">
+                    <h3 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <span class="p-2 bg-brand-accent/10 rounded-lg text-brand-accent"><i data-lucide="graduation-cap"></i></span>
+                        Education & Skills
+                    </h3>
+
+                    <!-- Item -->
+                    <div class="relative pl-8 border-l-2 border-slate-200 dark:border-slate-800">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-brand-accent border-4 border-slate-50 dark:border-slate-900"></div>
+                        <div class="mb-1 text-sm text-slate-500">Expected 2026</div>
+                        <h4 class="font-bold text-lg">B.Sc. Tourism Management</h4>
+                        <div class="text-brand-primary dark:text-brand-accent font-medium mb-2">University of Cape Coast</div>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm">Focus: Sustainable Development, Destination Planning.</p>
+                    </div>
+
+                    <!-- Item -->
+                    <div class="relative pl-8 border-l-2 border-slate-200 dark:border-slate-800">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-slate-50 dark:border-slate-900"></div>
+                        <div class="mb-1 text-sm text-slate-500">2025</div>
+                        <h4 class="font-bold text-lg">Aspire Leaders Program</h4>
+                        <div class="text-brand-primary dark:text-brand-accent font-medium mb-2">Cohort 5 Graduate</div>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm">Global leadership development fellowship.</p>
+                    </div>
+
+                    <!-- Skills Grid -->
+                    <div class="mt-8">
+                        <h4 class="font-bold text-lg mb-4">Core Competencies</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-4 py-2 bg-white dark:bg-slate-800 rounded-full text-xs font-semibold shadow-sm">Leadership</span>
+                            <span class="px-4 py-2 bg-white dark:bg-slate-800 rounded-full text-xs font-semibold shadow-sm">Public Speaking</span>
+                            <span class="px-4 py-2 bg-white dark:bg-slate-800 rounded-full text-xs font-semibold shadow-sm">Strategic Planning</span>
+                            <span class="px-4 py-2 bg-white dark:bg-slate-800 rounded-full text-xs font-semibold shadow-sm">Digital Marketing</span>
+                            <span class="px-4 py-2 bg-white dark:bg-slate-800 rounded-full text-xs font-semibold shadow-sm">Chinese (Basic)</span>
+                            <span class="px-4 py-2 bg-white dark:bg-slate-800 rounded-full text-xs font-semibold shadow-sm">Event Management</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <section id="contact">
-        <h2>Link Up</h2>
-        <div class="contact-links">
-            <a href="mailto:pwavwef@gmail.com" class="contact-btn">📧 Email Me</a>
-            <a href="https://wa.me/233557535673" class="contact-btn">💬 WhatsApp</a>
-            <a href="https://www.linkedin.com/in/francis-pwavwe" class="contact-btn">💼 LinkedIn Profile</a>
+    <!-- Projects -->
+    <section id="projects" class="py-24 bg-white dark:bg-slate-950">
+        <div class="container mx-auto px-6">
+            <h2 class="font-display text-4xl font-bold mb-12 text-center reveal">Featured Work</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Project 1: AZ Learner -->
+                <div class="group relative overflow-hidden rounded-2xl aspect-[4/5] md:aspect-auto md:h-[500px] reveal">
+                    <img src="https://placehold.co/600x800/22c55e/FFF?text=AZ+Learner" alt="AZ Learner" class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8">
+                        <span class="text-green-400 font-bold text-xs uppercase tracking-wider mb-2">Tech Utility</span>
+                        <h3 class="text-white text-2xl font-bold mb-2">AZ Learner</h3>
+                        <p class="text-slate-300 text-sm mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0">
+                            A utility app streamlining campus life for 500+ students. Features include academic resources, maps, and event updates.
+                        </p>
+                        <div class="flex flex-col gap-3">
+                            <a href="https://azlearner.me" target="_blank" class="inline-flex items-center text-white font-semibold gap-2 hover:text-green-400 transition-colors">
+                                Visit Site <i data-lucide="external-link" class="w-4 h-4"></i>
+                            </a>
+                            <a href="https://paystack.shop/pay/fw5uib9s1g" target="_blank" class="inline-flex items-center bg-green-500 text-slate-900 px-4 py-2 rounded-full font-bold text-sm gap-2 hover:bg-green-400 transition-colors w-max">
+                                Support Project 💸
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="group relative overflow-hidden rounded-2xl aspect-[4/5] md:aspect-auto md:h-[500px] reveal" style="transition-delay: 150ms;">
+                    <img src="https://placehold.co/600x800/ea580c/FFF?text=Torchlight" alt="Torchlight Tours" class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8">
+                        <span class="text-orange-400 font-bold text-xs uppercase tracking-wider mb-2">Campaign</span>
+                        <h3 class="text-white text-2xl font-bold mb-2">Torchlight Tours</h3>
+                        <p class="text-slate-300 text-sm mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0">
+                            A digital marketing campaign promoting night tourism in the Central Region. Increased engagement by 40%.
+                        </p>
+                        <a href="#" class="inline-flex items-center text-white font-semibold gap-2 hover:text-orange-400 transition-colors">
+                            View Campaign <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="group relative overflow-hidden rounded-2xl aspect-[4/5] md:aspect-auto md:h-[500px] reveal" style="transition-delay: 300ms;">
+                    <img src="https://placehold.co/600x800/3b82f6/FFF?text=Blue+Mind" alt="Blue Mind" class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8">
+                        <span class="text-blue-400 font-bold text-xs uppercase tracking-wider mb-2">Media</span>
+                        <h3 class="text-white text-2xl font-bold mb-2">Blue Mind Radio</h3>
+                        <p class="text-slate-300 text-sm mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0">
+                            A podcast series diving into the intellectual and cultural lives of African Gen Z.
+                        </p>
+                        <a href="#podcast" class="inline-flex items-center text-white font-semibold gap-2 hover:text-blue-400 transition-colors">
+                            Listen Now <i data-lucide="play-circle" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-</div>
+    <!-- Gallery Section -->
+    <section id="gallery" class="py-24 bg-slate-50 dark:bg-slate-900/50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <h2 class="font-display text-4xl font-bold">The Gallery</h2>
+                <p class="text-slate-500 mt-4">Curated moments from the uniform to the streets.</p>
+            </div>
 
-<footer>
-    <p>&copy; 2026 Francis Pwavwe. SS/TMG/22/0014. Built with ambition & blue-themed serenity.</p>
-</footer>
+            <!-- Masonry-style Grid (CSS Grid) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px]">
+                <div class="col-span-2 row-span-2 relative group overflow-hidden rounded-2xl reveal">
+                    <!-- Replace 'assets/gallery1.jpg' with your image -->
+                    <img src="assets/gallery1.jpg" 
+                         onerror="this.src='https://placehold.co/800x800/1e293b/FFF?text=Cadet+Leadership'" 
+                         alt="Cadet" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <p class="text-white font-bold">Cadet Parade</p>
+                    </div>
+                </div>
+                <div class="col-span-1 row-span-1 relative group overflow-hidden rounded-2xl reveal">
+                    <img src="assets/gallery2.jpg" 
+                         onerror="this.src='https://placehold.co/400x400/6366f1/FFF?text=Travel'" 
+                         alt="Travel" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                </div>
+                <div class="col-span-1 row-span-2 relative group overflow-hidden rounded-2xl reveal">
+                    <img src="assets/gallery3.jpg" 
+                         onerror="this.src='https://placehold.co/400x800/fbbf24/000?text=Vibes'" 
+                         alt="Portrait" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                </div>
+                <div class="col-span-1 row-span-1 relative group overflow-hidden rounded-2xl reveal">
+                    <img src="assets/gallery4.jpg" 
+                         onerror="this.src='https://placehold.co/400x400/22c55e/FFF?text=Nature'" 
+                         alt="Nature" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- Blue Mind Radio / Blog (Firebase Connected) -->
+    <section id="podcast" class="py-24 bg-brand-primary text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col md:flex-row items-center justify-between mb-12">
+                <div>
+                    <span class="bg-brand-accent px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white">Latest Episode</span>
+                    <h2 class="font-display text-4xl md:text-5xl font-bold mt-4">Blue Mind Radio</h2>
+                </div>
+                <a href="#" class="mt-6 md:mt-0 px-6 py-3 border border-white/30 rounded-full hover:bg-white hover:text-brand-primary transition-all font-semibold">
+                    Browse All Episodes
+                </a>
+            </div>
 
+            <div class="grid md:grid-cols-2 gap-12 items-center" id="latest-episodes-container">
+                <!-- Static Placeholder (Will be replaced if Firebase loads data) -->
+                <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-16 h-16 rounded-xl bg-brand-accent flex items-center justify-center text-2xl">🎙️</div>
+                        <div>
+                            <h3 class="font-bold text-xl">The Gen Z Dilemma</h3>
+                            <p class="text-blue-200 text-sm">Episode #014 • 42 min</p>
+                        </div>
+                    </div>
+                    <p class="text-blue-100 mb-6">
+                        We discuss the pressure of "potential," the reality of academic burnout, and finding purpose in a chaotic digital world.
+                    </p>
+                    <div class="w-full bg-blue-900/50 h-2 rounded-full mb-4 overflow-hidden">
+                        <div class="bg-brand-accent h-full w-1/3"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <button class="p-3 bg-white text-brand-primary rounded-full hover:scale-110 transition-transform"><i data-lucide="play" class="fill-current"></i></button>
+                        <span class="text-xs font-mono text-blue-200">12:34 / 42:00</span>
+                    </div>
+                </div>
+
+                <!-- List of Episodes -->
+                <div class="space-y-6" id="recent-notes-list">
+                    <h3 class="text-2xl font-bold border-b border-white/20 pb-4">Recent Notes</h3>
+                    <a href="#" class="block group">
+                        <span class="text-xs text-brand-accent font-bold">PHILOSOPHY</span>
+                        <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">Why "Waiting" is an Action Verb</h4>
+                    </a>
+                    <a href="#" class="block group">
+                        <span class="text-xs text-brand-accent font-bold">TOURISM</span>
+                        <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">The Future of Eco-Tourism in West Africa</h4>
+                    </a>
+                    <a href="#" class="block group">
+                        <span class="text-xs text-brand-accent font-bold">LIFE</span>
+                        <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">Balancing Uniforms and Creativity</h4>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="py-24 bg-white dark:bg-slate-950">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <div class="text-center mb-16 reveal">
+                <h2 class="font-display text-4xl font-bold">Let's Create Something</h2>
+                <p class="text-slate-500 mt-4">Available for speaking, collaborations, and coffee.</p>
+            </div>
+
+            <form id="contact-form" class="space-y-6 reveal">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 dark:text-slate-300">Name</label>
+                        <input type="text" id="contact-name" required class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all" placeholder="Your Name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2 dark:text-slate-300">Email</label>
+                        <input type="email" id="contact-email" required class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all" placeholder="hello@example.com">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2 dark:text-slate-300">Message</label>
+                    <textarea id="contact-message" rows="4" required class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all" placeholder="Tell me about your project..."></textarea>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button type="submit" class="flex-1 px-8 py-4 bg-brand-primary text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        Send Message
+                    </button>
+                    <a href="https://wa.me/233557535673" target="_blank" class="flex-1 px-8 py-4 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg text-center flex items-center justify-center gap-2">
+                        <i data-lucide="message-circle" class="w-5 h-5"></i> Chat on WhatsApp
+                    </a>
+                </div>
+            </form>
+
+            <div class="mt-16 flex justify-center gap-8">
+                <a href="#" class="text-slate-400 hover:text-brand-primary transition-colors"><i data-lucide="instagram" class="w-6 h-6"></i></a>
+                <a href="https://www.linkedin.com/in/francis-pwavwe" class="text-slate-400 hover:text-brand-primary transition-colors"><i data-lucide="linkedin" class="w-6 h-6"></i></a>
+                <a href="#" class="text-slate-400 hover:text-brand-primary transition-colors"><i data-lucide="twitter" class="w-6 h-6"></i></a>
+                <a href="mailto:pwavwef@gmail.com" class="text-slate-400 hover:text-brand-primary transition-colors"><i data-lucide="mail" class="w-6 h-6"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-50 dark:bg-slate-900 py-12 border-t border-slate-200 dark:border-slate-800">
+        <div class="container mx-auto px-6 text-center">
+            <h3 class="font-display font-bold text-2xl mb-2">Stay Curious.</h3>
+            <p class="text-slate-500 mb-8">Join the newsletter for monthly musings.</p>
+            <button onclick="document.getElementById('newsletter-modal').classList.remove('hidden')" class="text-brand-primary font-bold hover:underline mb-12 inline-block">
+                Subscribe to the inner circle 💌
+            </button>
+            
+            <div class="text-sm text-slate-400 flex flex-col items-center gap-4">
+                <p>&copy; 2026 Francis Pwavwe. Built with <span class="text-red-500">♥</span> and Tailwind.</p>
+                <a href="#" onclick="alert('🚪 You found the portal to Narnia! (Coming Soon)')" class="opacity-10 hover:opacity-100 transition-opacity text-xs">
+                    Do not click this secret link
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Newsletter Modal -->
+    <div id="newsletter-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('newsletter-modal').classList.add('hidden')"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl animate-fade-in-up">
+            <button onclick="document.getElementById('newsletter-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-brand-light dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">📧</div>
+                <h3 class="text-2xl font-bold mb-2">Join the Tribe</h3>
+                <p class="text-slate-500 mb-6">Get my latest thoughts on tourism, leadership, and life directly in your inbox.</p>
+                <input type="email" placeholder="Your best email" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none mb-4 focus:ring-2 focus:ring-brand-primary">
+                <button class="w-full py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">Sign Me Up</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Dark Mode Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+        const html = document.documentElement;
+
+        function toggleTheme() {
+            html.classList.toggle('dark');
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+        themeToggleMobile.addEventListener('click', toggleTheme);
+
+        // Mobile Menu Logic
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Admin Modal Logic
+        const adminBtn = document.getElementById('admin-dashboard-btn');
+        const adminModal = document.getElementById('admin-modal');
+        const closeAdminBtn = document.getElementById('close-admin-btn');
+        const closeAdminBg = document.getElementById('close-admin-bg');
+
+        function toggleAdminModal() {
+            adminModal.classList.toggle('hidden');
+        }
+
+        adminBtn.addEventListener('click', toggleAdminModal);
+        closeAdminBtn.addEventListener('click', toggleAdminModal);
+        closeAdminBg.addEventListener('click', toggleAdminModal);
+
+        // Tab Switching
+        const tabInbox = document.getElementById('tab-inbox');
+        const tabStudio = document.getElementById('tab-studio');
+        const viewInbox = document.getElementById('view-inbox');
+        const viewStudio = document.getElementById('view-studio');
+
+        tabInbox.addEventListener('click', () => {
+            tabInbox.classList.add('tab-active');
+            tabStudio.classList.remove('tab-active');
+            viewInbox.classList.remove('hidden');
+            viewStudio.classList.add('hidden');
+        });
+
+        tabStudio.addEventListener('click', () => {
+            tabStudio.classList.add('tab-active');
+            tabInbox.classList.remove('tab-active');
+            viewStudio.classList.remove('hidden');
+            viewInbox.classList.add('hidden');
+        });
+
+        // Scroll Reveal Animation
+        function reveal() {
+            var reveals = document.querySelectorAll(".reveal");
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                var elementVisible = 150;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        reveal();
+    </script>
+
+    <!-- Firebase Configuration & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, limit, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6lxgjNY4CRNHAe3pAgR5SYv1ohL8brOI",
+            authDomain: "francis-pwavwe.firebaseapp.com",
+            projectId: "francis-pwavwe",
+            storageBucket: "francis-pwavwe.firebasestorage.app",
+            messagingSenderId: "658069378543",
+            appId: "1:658069378543:web:87b1dcb0dd27d3255bd21a"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const ADMIN_EMAIL = 'pwavwef@gmail.com';
+
+        // --- AUTHENTICATION LOGIC ---
+        const authBtn = document.getElementById('auth-btn');
+        const mobileAuthBtn = document.getElementById('mobile-auth-btn');
+        const adminDashboardBtn = document.getElementById('admin-dashboard-btn');
+
+        async function handleLogin() {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Login failed", error);
+                alert("Login failed: " + error.message);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Logout failed", error);
+            }
+        }
+
+        authBtn.addEventListener('click', () => {
+            if (auth.currentUser) handleLogout();
+            else handleLogin();
+        });
+
+        mobileAuthBtn.addEventListener('click', () => {
+            if (auth.currentUser) handleLogout();
+            else handleLogin();
+        });
+
+        // Monitor Auth State
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                authBtn.innerHTML = `<i data-lucide="log-out" class="w-4 h-4"></i> Sign Out`;
+                mobileAuthBtn.innerText = "Sign Out";
+                
+                // Check if Admin
+                if (user.email === ADMIN_EMAIL) {
+                    adminDashboardBtn.classList.remove('hidden');
+                    fetchMessages(); // Load admin data
+                } else {
+                    adminDashboardBtn.classList.add('hidden');
+                }
+                lucide.createIcons();
+            } else {
+                // User is signed out
+                authBtn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i> Sign In`;
+                mobileAuthBtn.innerText = "Sign In";
+                adminDashboardBtn.classList.add('hidden');
+                lucide.createIcons();
+            }
+        });
+
+        // --- CONTACT FORM LOGIC ---
+        const contactForm = document.getElementById('contact-form');
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = contactForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "Sending...";
+            submitBtn.disabled = true;
+
+            const name = document.getElementById('contact-name').value;
+            const email = document.getElementById('contact-email').value;
+            const message = document.getElementById('contact-message').value;
+
+            try {
+                await addDoc(collection(db, "messages"), {
+                    name: name,
+                    email: email,
+                    message: message,
+                    timestamp: serverTimestamp()
+                });
+                alert("Message sent successfully! Francis will get back to you.");
+                contactForm.reset();
+            } catch (error) {
+                console.error("Error sending message: ", error);
+                alert("Failed to send message. Please try again or use WhatsApp.");
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- ADMIN: FETCH MESSAGES ---
+        async function fetchMessages() {
+            const listContainer = document.getElementById('messages-list');
+            try {
+                const q = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(20));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = '<div class="text-center text-slate-400 py-10">No messages yet.</div>';
+                } else {
+                    listContainer.innerHTML = ''; // Clear loading
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : 'Just now';
+                        const html = `
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="font-bold text-sm">${data.name}</h4>
+                                        <p class="text-xs text-slate-500">${data.email}</p>
+                                    </div>
+                                    <span class="text-xs text-slate-400">${date}</span>
+                                </div>
+                                <p class="text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 p-3 rounded-md">${data.message}</p>
+                            </div>
+                        `;
+                        listContainer.innerHTML += html;
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+                // Likely permission error if rules aren't set up yet
+            }
+        }
+
+        // --- ADMIN: UPLOAD EPISODE ---
+        const uploadForm = document.getElementById('upload-episode-form');
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (auth.currentUser?.email !== ADMIN_EMAIL) return;
+
+            const submitBtn = uploadForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = "Publishing...";
+            submitBtn.disabled = true;
+
+            const title = document.getElementById('ep-title').value;
+            const category = document.getElementById('ep-category').value;
+            const link = document.getElementById('ep-link').value;
+
+            try {
+                await addDoc(collection(db, "episodes"), {
+                    title: title,
+                    category: category,
+                    link: link,
+                    timestamp: serverTimestamp()
+                });
+                alert("Episode published successfully!");
+                uploadForm.reset();
+                fetchEpisodes(); // Refresh list on page
+            } catch (error) {
+                console.error("Error publishing episode: ", error);
+                alert("Failed to publish.");
+            } finally {
+                submitBtn.innerText = "Publish Episode";
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- PUBLIC: FETCH EPISODES ---
+        async function fetchEpisodes() {
+            const listContainer = document.getElementById('recent-notes-list');
+            try {
+                // Try to order by timestamp if index exists, else just fetch
+                let q;
+                try {
+                     q = query(collection(db, "episodes"), orderBy("timestamp", "desc"), limit(5));
+                } catch {
+                     q = query(collection(db, "episodes"), limit(5));
+                }
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    listContainer.innerHTML = '<h3 class="text-2xl font-bold border-b border-white/20 pb-4">Latest from Cloud</h3>';
+                    
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const html = `
+                            <a href="${data.link || '#'}" target="_blank" class="block group mb-4">
+                                <span class="text-xs text-brand-accent font-bold uppercase">${data.category || 'Podcast'}</span>
+                                <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">${data.title || 'Untitled Episode'}</h4>
+                            </a>
+                        `;
+                        listContainer.innerHTML += html;
+                    });
+                }
+            } catch (error) {
+                console.log("Firebase not yet populated or accessible, showing default content.");
+            }
+        }
+
+        // Initial fetch
+        fetchEpisodes();
+    </script>
 </body>
 </html>
         <p>&copy; 2025 Francis Pwavwe. Built with ambition.</p>
