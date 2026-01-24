@@ -57,3 +57,1945 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
+        /* --- Ambient Glow --- */
+        .glow-orb {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s ease-out;
+        }
+
+        /* --- Custom Cursor --- */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--cursor-size);
+            height: var(--cursor-size);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor.hovered {
+            width: var(--cursor-hover-size);
+            height: var(--cursor-hover-size);
+            background: rgba(255, 255, 255, 0.9);
+            border-color: transparent;
+            mix-blend-mode: normal;
+            opacity: 0.8;
+        }
+
+        /* --- Glassmorphism --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        /* --- Sidebar Transitions --- */
+        .sidebar-hidden { transform: translateX(-100%); }
+        .sidebar-visible { transform: translateX(0); }
+        
+        /* --- Infinite Marquee --- */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* --- Utilities --- */
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .video-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 768px) or (hover: none) {
+            .custom-cursor, .glow-orb {
+                display: none !important;
+            }
+            body {
+                cursor: auto !important; 
+            }
+        }
+        
+        /* Toast Animation */
+        .toast-enter { transform: translateY(-20px); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s ease-out; }
+        .toast-exit { transform: translateY(0); opacity: 1; }
+        .toast-exit-active { transform: translateY(-20px); opacity: 0; transition: all 0.3s ease-in; }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- Background Elements -->
+    <div class="bg-animated"></div>
+    <div class="glow-orb" id="glowOrb"></div>
+    <div class="custom-cursor" id="cursor"></div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-20 right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Sidebar (Collapsible) -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 glass-panel z-[100] sidebar-hidden transition-transform duration-500 ease-in-out border-r border-white/10 flex flex-col pt-24 px-6 shadow-2xl overflow-y-auto">
+        <button id="closeSidebar" class="absolute top-6 right-6 hoverable p-2 rounded-full hover:bg-white/10">
+            <span class="material-symbols-outlined text-gray-400">close</span>
+        </button>
+
+        <div class="mb-10">
+            <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">The Squad Hub</h3>
+            <nav class="space-y-2">
+                <a href="javascript:void(0)" onclick="window.openFeature('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">dashboard</span> Neural Dashboard
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('events')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">event</span> Campus Events
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('gpa')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">calculate</span> GPA Calculator
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('countdown')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">calendar_month</span> Exam Countdown
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('leaderboard')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">emoji_events</span> The Arena
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('blog')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3 bg-white/5 border border-white/5">
+                    <span class="material-symbols-outlined">rss_feed</span> The Vibe Check
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('print')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">print</span> Print Queue
+                </a>
+                <a href="javascript:void(0)" onclick="window.openFeature('map')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">map</span> UCC Navigation
+                </a>
+                 <a href="javascript:void(0)" onclick="window.openFeature('pastquestions')" class="block px-4 py-3 rounded-xl hover:bg-white/5 hover:text-blue-300 transition hoverable flex items-center gap-3">
+                    <span class="material-symbols-outlined">library_books</span> Past Questions
+                </a>
+            </nav>
+        </div>
+
+        <!-- SIDEBAR FOOTER -->
+        <div class="mt-auto mb-8 border-t border-white/10 pt-6">
+            <a href="javascript:void(0)" class="flex items-center gap-3 px-4 py-3 hoverable group">
+                <div id="sidebarAvatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 overflow-hidden flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-sm">person</span>
+                </div>
+                <div>
+                    <div id="sidebarName" class="text-sm font-bold group-hover:text-blue-300 transition">Guest</div>
+                    <div id="sidebarEmail" class="text-xs text-gray-400">Join the Squad</div>
+                </div>
+            </a>
+        </div>
+    </aside>
+
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden opacity-0 transition-opacity duration-500"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-6 py-4 glass-panel border-b-0 border-b-white/10">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-6">
+                <!-- Hamburger Menu -->
+                <button id="openSidebar" class="hoverable p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined text-white">menu</span>
+                </button>
+                <a href="#" class="text-2xl font-extrabold tracking-tighter hoverable group">
+                    <span class="bg-white text-blue-900 px-2 py-1 rounded mr-1">AZ</span> LEARNER
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <a href="#" class="hidden md:block text-sm font-medium text-gray-300 hover:text-white transition hoverable">The AZ Console</a>
+                
+                <!-- Notification Bell -->
+                <button onclick="window.openFeature('notifications')" class="hoverable p-2 rounded-full hover:bg-white/10 transition relative text-gray-300 hover:text-white">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span id="header-notif-dot" class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full hidden animate-pulse border border-[#0f172a]"></span>
+                </button>
+
+                <!-- Login Button -->
+                <button id="loginBtn" class="hoverable px-5 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Login
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" id="closeModalBg"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                    <span class="material-symbols-outlined text-3xl text-blue-400">fingerprint</span>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Squad Access</h2>
+                <p class="text-gray-400 text-sm">Enter the mainframe.</p>
+            </div>
+
+            <form class="space-y-4" onsubmit="event.preventDefault(); window.handleEmailLogin();">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Email</label>
+                    <input type="email" id="emailInput" placeholder="ss.tmg.22.0014@ucc.edu.gh" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition hoverable">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="passwordInput" placeholder="••••••••" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition hoverable">
+                </div>
+                
+                <button id="authSubmitBtn" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 py-3 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition hoverable mt-2 flex justify-center items-center gap-2">
+                    Secure Login 🔐
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GENERIC FEATURE MODAL -->
+    <div id="featureModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="window.closeFeature()"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-lg border border-white/10 shadow-[0_0_60px_rgba(59,130,246,0.15)] transform scale-95 opacity-0 transition-all duration-300" id="featureContent">
+            <button onclick="window.closeFeature()" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            
+            <div id="featureBody">
+                <!-- Content Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Screen Overlays -->
+    <div id="pqOverlay" class="fixed inset-0 z-[250] bg-[#0f172a] hidden flex flex-col transition-opacity duration-300 overflow-hidden">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#0f172a]/90 backdrop-blur-sm sticky top-0 z-10">
+             <div class="flex items-center gap-4">
+                 <button onclick="window.closeFeature()" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition"><span class="material-symbols-outlined">arrow_back</span></button>
+                 <div><h2 class="text-xl font-bold text-white flex items-center gap-2"><span class="text-pink-400 material-symbols-outlined">library_books</span> The Vault</h2><p class="text-xs text-gray-400">Past Questions & Archives</p></div>
+             </div>
+             <button onclick="window.renderAddCourse()" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 hidden" id="pq-admin-btn"><span class="material-symbols-outlined text-sm">add</span> New Course</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6" id="pq-content-area"><div class="mb-6"><input type="text" id="pq-search-full" placeholder="Search..." class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-pink-500 transition shadow-lg" oninput="window.filterCoursesFull()"></div><div id="pq-grid-full" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div></div>
+    </div>
+
+    <div id="blogOverlay" class="fixed inset-0 z-[250] bg-[#0f172a] hidden flex flex-col transition-opacity duration-300 overflow-hidden">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#0f172a]/90 backdrop-blur-sm sticky top-0 z-10">
+             <div class="flex items-center gap-4">
+                 <button onclick="window.closeFeature()" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition"><span class="material-symbols-outlined">arrow_back</span></button>
+                 <div><h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 flex items-center gap-2"><span class="material-symbols-outlined text-blue-400">rss_feed</span> The Vibe Check</h2><p class="text-xs text-gray-400">Main Character Energy Only.</p></div>
+             </div>
+             <button onclick="window.renderWriteBlog()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-blue-500/20"><span class="material-symbols-outlined text-sm">edit</span> Drop a Gem</button>
+        </div>
+        <div id="blog-feed-full" class="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full"></div>
+    </div>
+
+    <!-- Hero Section (Mobile Optimized Text) -->
+    <section class="relative pt-40 pb-20 px-6 min-h-screen flex flex-col justify-center items-center text-center">
+        <div class="max-w-4xl mx-auto space-y-8 z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/10 text-xs font-semibold tracking-wide uppercase text-blue-300 mb-4 animate-fade-in-up">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                v3.0 Stable
+            </div>
+            
+            <h1 class="text-4xl sm:text-5xl md:text-7xl font-black leading-tight tracking-tight">
+                The Squad <br>
+                <span class="text-gradient">Companion.</span>
+            </h1>
+            
+            <p class="text-lg md:text-2xl text-gray-400 max-w-2xl mx-auto font-light">
+                Print, Chat, Grind, Shine. The ultimate utility tool for the academic weapon.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+                <a href="appv2.0.apk" class="hoverable px-8 py-4 bg-white text-blue-900 rounded-full font-bold text-lg transition hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">download</span>
+                    Download APK
+                </a>
+                <a href="https://azlearner.me/home.html" target="_blank" class="hoverable px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-white border border-white/20">
+                    <span class="material-symbols-outlined">public</span>
+                    Web App / iOS
+                </a>
+                <a href="https://paystack.shop/pay/fw5uib9s1g" target="_blank" class="hoverable px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-green-300 border border-green-500/30">
+                     <span class="material-symbols-outlined">payments</span>
+                     Support AZ
+                </a>
+            </div>
+            
+            <div class="text-xs text-gray-500 mt-4 opacity-70">
+                <span class="block">iPhone Users: Cannot download APK?</span>
+                <span class="block">Use the Web App to create your account & set timetables.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Infinite Marquee -->
+    <div class="py-6 glass-panel border-y border-white/5 transform -rotate-1 scale-105 mb-20">
+        <div class="marquee-container">
+            <div class="marquee-content text-4xl font-black uppercase text-transparent stroke-text opacity-50">
+                <span class="mx-8 text-outline">Learn in Style</span> • 
+                <span class="mx-8 text-white">Academic Weapon</span> • 
+                <span class="mx-8 text-outline">Main Character Energy</span> • 
+                <span class="mx-8 text-white">Squad Goals</span> • 
+                <span class="mx-8 text-outline">Future Ready</span> • 
+                <span class="mx-8 text-white">Print & Deliver</span> •
+                <span class="mx-8 text-outline">Learn in Style</span> • 
+                <span class="mx-8 text-white">Academic Weapon</span> • 
+                <span class="mx-8 text-outline">Main Character Energy</span> • 
+                <span class="mx-8 text-white">Squad Goals</span> • 
+                <span class="mx-8 text-outline">Future Ready</span> • 
+                <span class="mx-8 text-white">Print & Deliver</span> •
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Video Section -->
+    <section class="max-w-5xl mx-auto px-6 mb-32">
+        <div class="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl">
+            <div class="video-wrapper aspect-video bg-black rounded-xl overflow-hidden hoverable">
+                <iframe src="https://www.youtube.com/embed/WV7Ix6j7a_A?si=Yx1JWatvKkqjUNIu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Events (Horizontal) -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="home-events">
+        <div class="text-center mb-12">
+             <h2 class="text-3xl font-bold mb-4">Upcoming Events 🎟️</h2>
+             <p class="text-gray-400">See what's popping on campus.</p>
+        </div>
+        <div id="home-events-feed" class="flex gap-4 overflow-x-auto no-scrollbar pb-8 snap-x snap-mandatory px-4">
+            <!-- Loaded via JS -->
+            <div class="min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
+            <div class="min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
+        </div>
+    </section>
+
+    <!-- UI Screenshot Gallery -->
+    <section class="max-w-7xl mx-auto px-6 mb-32 overflow-hidden">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold mb-4">The Interface</h2>
+            <p class="text-gray-400">Clean. Calm. Control.</p>
+        </div>
+        
+        <!-- Staggered Phone Layout -->
+        <div class="flex gap-6 overflow-x-auto snap-x snap-mandatory px-6 pb-8 md:justify-center no-scrollbar">
+            <!-- Screen 1 -->
+            <div class="snap-center shrink-0 w-[280px]">
+                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                        <img src="screen1.jpg" alt="Home Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Screen 2 (Offset) -->
+            <div class="snap-center shrink-0 w-[280px] md:mt-16">
+                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                        <img src="screen2.jpg" alt="Timetable Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Screen 3 -->
+            <div class="snap-center shrink-0 w-[280px]">
+                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-green-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
+                        <img src="screen3.jpg" alt="Events Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bento Grid Features -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="features">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4">The Ecosystem</h2>
+            <p class="text-gray-400">Everything you need to survive and thrive on campus.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto">
+            <!-- Item 1: Print -->
+            <div class="col-span-1 md:col-span-2 row-span-2 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group transition duration-500 hoverable">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl group-hover:bg-orange-400/30 transition duration-500"></div>
+                <div class="relative z-10 h-full flex flex-col justify-between">
+                    <div>
+                        <div class="inline-flex items-center gap-2 bg-orange-500/20 px-3 py-1 rounded-full mb-4 border border-orange-500/30">
+                            <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                            <span class="text-xs font-bold text-orange-200 uppercase tracking-wide">Premium Feature</span>
+                        </div>
+                        <h3 class="text-3xl font-bold mb-2">Print & Deliver 🖨️</h3>
+                        <p class="text-gray-400 max-w-sm">Skip the long queues at the cafe. Upload your assignment, track the print job, and get it delivered to your hall.</p>
+                    </div>
+                    <div class="mt-8 bg-black/40 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-400 uppercase">Status</span>
+                            <span class="text-xs font-bold text-green-400">Out for Delivery 🚀</span>
+                        </div>
+                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full w-[80%] rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item 2: Leaderboard -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-yellow-500/30">
+                    <span class="material-symbols-outlined text-yellow-400 text-3xl">emoji_events</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">The Arena</h3>
+                <p class="text-sm text-gray-400">Earn XP. Rank up to "Academic Weapon". Flex on the leaderboard.</p>
+            </div>
+
+            <!-- Item 3: Course Circles -->
+            <div class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500">
+                <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-blue-500/30">
+                    <span class="material-symbols-outlined text-blue-400 text-3xl">groups</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Course Circles</h3>
+                <p class="text-sm text-gray-400">Automatic group chats for every course you take. Never miss info.</p>
+            </div>
+
+            <!-- Item 4: Events -->
+            <div onclick="openFeature('events')" class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500 cursor-pointer">
+                <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-purple-500/30">
+                    <span class="material-symbols-outlined text-purple-400 text-3xl">event</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Campus Events</h3>
+                <p class="text-sm text-gray-400">See what's popping on campus. Parties, seminars, and vibes.</p>
+            </div>
+
+            <!-- Item 5: GPA Calculator -->
+            <div onclick="openFeature('gpa')" class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500 cursor-pointer">
+                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-green-500/30">
+                    <span class="material-symbols-outlined text-green-400 text-3xl">calculate</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">GPA Calculator</h3>
+                <p class="text-sm text-gray-400">Simulate your results. Keep that GPA skyrocketing.</p>
+            </div>
+
+            <!-- Item 6: Past Questions -->
+            <div onclick="openFeature('pastquestions')" class="col-span-1 glass-panel glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center hoverable group transition duration-500 cursor-pointer">
+                <div class="w-16 h-16 bg-pink-500/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition border border-pink-500/30">
+                    <span class="material-symbols-outlined text-pink-400 text-3xl">menu_book</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">The Vault</h3>
+                <p class="text-sm text-gray-400">Access Past Questions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- The AZ Manifesto (EXPANDED) -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="vision">
+        <div class="text-center mb-20">
+            <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-6">
+                Where Ambition <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white">Meets Lifestyle.</span>
+            </h2>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto font-light">
+                AZ Learner isn't just a tool; it's a "Digital Exhale" for the busy student. 
+                We reject the formal. We embrace the vibrant.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 hover:bg-white/5 transition hoverable">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                        <span class="material-symbols-outlined">palette</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white">Vibrant Minimalism</h3>
+                </div>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    Our visual anchor is rooted in clarity. The <span class="text-white font-bold">Light Blue</span> represents a refreshing open sky—endless possibility and a calm mind. The bold <span class="text-white font-bold">White AZ</span> signifies the definitive start and end of your journey. Clean logo, wild promo.
+                </p>
+            </div>
+
+            <div class="glass-panel p-10 rounded-3xl border-l-4 border-l-purple-500 hover:bg-white/5 transition hoverable">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                        <span class="material-symbols-outlined">campaign</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white">Edutainment Vibe</h3>
+                </div>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    We reject the "serious and formal." Striving hard is a lifestyle choice, not a chore. We are your easy-going mentor, providing survival tools (timetables, CV revamps) with a vibe that says: <br> <span class="text-purple-300 font-bold">"You’ve got this, and you can look good doing it."</span>
+                </p>
+            </div>
+
+            <div class="md:col-span-2 glass-panel p-10 rounded-3xl border-l-4 border-l-orange-500 hover:bg-white/5 transition hoverable relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400">
+                                <span class="material-symbols-outlined">hub</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white">Beyond the Screen</h3>
+                        </div>
+                        <p class="text-gray-400 leading-relaxed mb-4">
+                            AZ Learner is a community builder. We create physical and social spaces where students connect, reflect, and grow.
+                        </p>
+                        <ul class="space-y-4 text-sm text-gray-300">
+                            <li class="flex items-center gap-3"><span class="text-orange-400 material-symbols-outlined text-sm">mic</span> <strong>The AZ Podcast:</strong> Relaxing, high-quality interviews with successful figures.</li>
+                            <li class="flex items-center gap-3"><span class="text-orange-400 material-symbols-outlined text-sm">nightlife</span> <strong>Boiler Room Events:</strong> High-energy parties with DJs and artists.</li>
+                            <li class="flex items-center gap-3"><span class="text-orange-400 material-symbols-outlined text-sm">health_and_safety</span> <strong>Wellness:</strong> Health walks and screenings with a relaxed vibe.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-black/30 p-6 rounded-2xl border border-white/5">
+                        <h4 class="text-xl font-bold text-white mb-2">The AZ Innovation Center</h4>
+                        <p class="text-gray-400 text-sm mb-4">A dedicated physical space where students don't just study—they build. This hub serves as a high-energy environment for idea incubation and collaborative networking.</p>
+                        <div class="mt-6 pt-4 border-t border-white/10">
+                            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">The Mission</p>
+                            <p class="text-white font-serif italic mt-1">"Building the country together. We are the change-makers."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Link Up Section -->
+    <section class="max-w-7xl mx-auto px-6 mb-32" id="contact">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4">Link Up 🔌</h2>
+            <p class="text-gray-400">Got ideas? Need support? Just want to vibe?</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <a href="mailto:info@azlearner.me" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-blue-500/30">
+                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
+                    <span class="material-symbols-outlined">mail</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">Email Us</h3>
+                    <p class="text-xs text-gray-400">info@azlearner.me</p>
+                </div>
+            </a>
+            <a href="https://wa.me/233557535673" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-green-500/30">
+                <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 group-hover:scale-110 transition">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">WhatsApp</h3>
+                    <p class="text-xs text-gray-400">Direct Line</p>
+                </div>
+            </a>
+            <a href="https://whatsapp.com/channel/0029VbBfNR8It5rz68xRrC20" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-teal-500/30">
+                <div class="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition">
+                    <span class="material-symbols-outlined text-2xl">campaign</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">The Channel</h3>
+                    <p class="text-xs text-gray-400">Updates & Lore</p>
+                </div>
+            </a>
+            <a href="https://twitter.com/az_learner" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-gray-500/30">
+                <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition">
+                     <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">X</h3>
+                    <p class="text-xs text-gray-400">@az_learner</p>
+                </div>
+            </a>
+            <a href="https://tiktok.com/@azlearner0" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-pink-500/30">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-400 to-pink-500 flex items-center justify-center text-white group-hover:scale-110 transition p-0.5">
+                     <div class="w-full h-full bg-black rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.35-1.17 1.09-1.07 1.93.03.58.49 1.13 1.07 1.3.87.22 1.89.18 2.73-.23.61-.3 1.15-.72 1.52-1.35.41-.7.55-1.56.54-2.38V.02z"/></svg>
+                     </div>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">TikTok</h3>
+                    <p class="text-xs text-gray-400">@azlearner0</p>
+                </div>
+            </a>
+            <a href="https://bsky.app/profile/azlearner.bsky.social" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-sky-500/30">
+                <div class="w-12 h-12 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-110 transition">
+                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.133 1.915 0 2.561 0 3.208c0 3.766 6.199 9.224 9.465 10.222-1.988 1.088-6.8 1.594-7.545 1.652-.271.021-.853.074-1.065.127-1.176.297-1.144 1.616-.277 1.947 1.53.582 3.86.693 5.485.49 4.354-.54 7.29-3.284 5.937-6.846 1.354 3.562 4.29 6.306 8.644 6.846 1.625.203 3.955.092 5.485-.49.867-.331.9-1.65.277-1.947-.212-.053-.794-.106-1.065-.127-.745-.058-5.557-.564-7.545-1.652 3.266-.998 9.465-6.456 9.465-10.222 0-.647-.133-1.293-.902-1.643-.659-.299-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.686 12 10.8z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">Bluesky</h3>
+                    <p class="text-xs text-gray-400">The New Wave</p>
+                </div>
+            </a>
+            <a href="https://www.youtube.com/@AZ-Learner-m6z" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-red-500/30">
+                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition">
+                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">YouTube</h3>
+                    <p class="text-xs text-gray-400">Watch the Vibe</p>
+                </div>
+            </a>
+            <a href="https://www.linkedin.com/in/company/az-learner" target="_blank" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/5 transition hoverable group border border-white/5 hover:border-blue-700/30">
+                <div class="w-12 h-12 rounded-full bg-blue-700/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
+                     <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-white">LinkedIn</h3>
+                    <p class="text-xs text-gray-400">Professional Network</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
+            <p class="text-gray-500 mb-8">UCC • Cape Coast • The World</p>
+            <div class="text-sm text-gray-600">
+                &copy; 2026 Francis Pwavwe Production. Powered by Sunlight & Ambition.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // --- PRE-LOADED UTILITIES ---
+        window.activeListeners = [];
+        window.closeTimer = null; // To track and cancel closing timeouts
+
+        // Global Toast Notification
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const color = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            const icon = type === 'success' ? 'check_circle' : 'error';
+            
+            toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter`;
+            toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span> <span class="font-bold text-sm">${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Animation In
+            requestAnimationFrame(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-enter-active');
+            });
+
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-exit-active');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Global Modal Logic - Refactored for Stability
+        window.cleanupListeners = () => {
+             if (window.activeListeners) {
+                window.activeListeners.forEach(unsub => { if(typeof unsub === 'function') unsub(); });
+                window.activeListeners = [];
+             }
+        }
+
+        window.closeFeature = () => {
+             // Detach listeners
+             window.cleanupListeners();
+
+             const featureModal = document.getElementById('featureModal');
+             const featureContent = document.getElementById('featureContent');
+             
+             if(featureContent) {
+                featureContent.classList.remove('scale-100', 'opacity-100');
+                featureContent.classList.add('scale-95', 'opacity-0');
+             }
+             
+             if(featureModal) {
+                 // Clear any existing timer to avoid double-firing
+                 if (window.closeTimer) clearTimeout(window.closeTimer);
+                 
+                 // Set new timer
+                 window.closeTimer = setTimeout(() => {
+                     featureModal.classList.add('hidden');
+                     window.closeTimer = null; // Clear ref
+                 }, 300);
+             }
+             
+             // Unlock scroll
+             document.body.classList.remove('scroll-locked');
+        }
+
+        window.forceCloseModal = () => {
+            const loginModal = document.getElementById('loginModal');
+            const loginContent = document.getElementById('loginContent');
+            if (loginContent) {
+                loginContent.classList.remove('scale-100', 'opacity-100');
+                loginContent.classList.add('scale-95', 'opacity-0');
+            }
+            if (loginModal) setTimeout(() => loginModal.classList.add('hidden'), 300);
+        }
+
+        window.toggleLogin = () => {
+            const btn = document.getElementById('loginBtn');
+            if (btn.innerText.includes('Welcome')) return; // Already logged in
+
+            const loginModal = document.getElementById('loginModal');
+            const loginContent = document.getElementById('loginContent');
+            if (loginModal.classList.contains('hidden')) {
+                loginModal.classList.remove('hidden');
+                setTimeout(() => {
+                    loginContent.classList.remove('scale-95', 'opacity-0');
+                    loginContent.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                window.forceCloseModal();
+            }
+        }
+        
+        // --- Sidebar Logic ---
+        const sidebar = document.getElementById('sidebar');
+        const openSidebarBtn = document.getElementById('openSidebar');
+        const closeSidebarBtn = document.getElementById('closeSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            const isHidden = sidebar.classList.contains('sidebar-hidden');
+            if (isHidden) {
+                sidebar.classList.remove('sidebar-hidden');
+                sidebar.classList.add('sidebar-visible');
+                sidebarOverlay.classList.remove('hidden');
+                setTimeout(() => sidebarOverlay.classList.remove('opacity-0'), 10);
+                document.body.classList.add('scroll-locked');
+            } else {
+                sidebar.classList.add('sidebar-hidden');
+                sidebar.classList.remove('sidebar-visible');
+                sidebarOverlay.classList.add('opacity-0');
+                setTimeout(() => sidebarOverlay.classList.add('hidden'), 500);
+                document.body.classList.remove('scroll-locked');
+            }
+        }
+
+        openSidebarBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Attach Login Handlers
+        const loginBtn = document.getElementById('loginBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalBg = document.getElementById('closeModalBg');
+        
+        if(loginBtn) loginBtn.onclick = window.toggleLogin;
+        if(closeModalBtn) closeModalBtn.onclick = window.toggleLogin;
+        if(closeModalBg) closeModalBg.onclick = window.toggleLogin;
+
+        // --- Custom Cursor Logic ---
+        const cursor = document.getElementById('cursor');
+        const glowOrb = document.getElementById('glowOrb');
+        if (cursor && glowOrb && window.matchMedia("(hover: hover)").matches) {
+            document.addEventListener('mousemove', (e) => {
+                const x = e.clientX; const y = e.clientY;
+                cursor.style.left = x + 'px'; cursor.style.top = y + 'px';
+                glowOrb.style.left = x + 'px'; glowOrb.style.top = y + 'px';
+            });
+            document.addEventListener('mousedown', () => cursor.style.transform = "translate(-50%, -50%) scale(0.8)");
+            document.addEventListener('mouseup', () => cursor.style.transform = "translate(-50%, -50%) scale(1)");
+        }
+    </script>
+    
+    <!-- Firebase Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, addDoc, updateDoc, increment, onSnapshot, where, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+        
+        // Initialize Firebase safely
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+            window.showToast("System Offline: Check Config", "error");
+        }
+
+        // --- GLOBAL VARIABLES ---
+        window.activeListeners = []; 
+        window.currentPQFiles = {}; // Cache for viewing
+
+        window.isAdmin = () => {
+            const user = auth.currentUser;
+            if(!user) return false;
+            return (user.email === "pwavwef@gmail.com") || (window.userData && window.userData.role === 'admin');
+        }
+
+        // --- AUTH STATE OBSERVER (FAILSAFE ADDED) ---
+        if(auth) {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    console.log("Squad Member detected:", user.email);
+                    
+                    // Force close modal on login state change
+                    window.forceCloseModal();
+
+                    try {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        window.userData = userDoc.exists() ? userDoc.data() : {};
+                        updateUIForUser(user, window.userData);
+                        checkUnreadNotifications(user.uid);
+                    } catch(e) { console.log(e); }
+                } else {
+                    console.log("No user signed in");
+                    resetUI();
+                }
+            });
+        }
+
+        // --- EMAIL LOGIN FUNCTION ---
+        window.handleEmailLogin = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('authSubmitBtn');
+            const originalContent = btn.innerHTML;
+
+            if (!email || !password) { window.showToast("Enter email & password", "error"); return; }
+
+            btn.innerHTML = `<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Verifying...`;
+            btn.classList.add('opacity-80', 'cursor-wait');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // Success UI handled by onAuthStateChanged
+            } catch (error) {
+                console.error("Login Error:", error);
+                window.showToast("Login Failed: " + error.message, "error");
+                btn.innerHTML = originalContent;
+                btn.classList.remove('opacity-80', 'cursor-wait');
+            }
+        }
+
+        window.logoutUser = () => {
+            if(confirm("Disconnect from the Squad?")) {
+                signOut(auth).catch((error) => console.error("Logout Error:", error));
+            }
+        }
+
+        function getRank(xp) {
+            if (xp >= 2000) return "God Tier ⚡";
+            if (xp >= 1000) return "Academic Weapon ⚔️";
+            if (xp >= 500) return "Main Character ✨";
+            if (xp >= 100) return "Scholar 📚";
+            return "Rookie 🥚";
+        }
+
+        // --- REAL FIREBASE DATA FETCHING ---
+        window.openFeature = async (type) => {
+            // STOP ORDER: Cancel any pending close operations
+            if (window.closeTimer) {
+                clearTimeout(window.closeTimer);
+                window.closeTimer = null;
+            }
+
+            const featureModal = document.getElementById('featureModal');
+            const featureBody = document.getElementById('featureBody');
+            const featureContent = document.getElementById('featureContent');
+            
+            // Clean up old listeners manually WITHOUT closing
+            window.cleanupListeners();
+
+            featureModal.classList.remove('hidden');
+            featureBody.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10">
+                    <span class="material-symbols-outlined animate-spin text-4xl text-blue-400 mb-4">settings_suggest</span>
+                    <p class="text-gray-400 animate-pulse">Syncing with AZ Cloud...</p>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                featureContent.classList.remove('scale-95', 'opacity-0');
+                featureContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            document.body.classList.add('scroll-locked'); // Lock background scroll
+
+            if(window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('sidebar-hidden')) {
+                    document.getElementById('openSidebar').click();
+                }
+            }
+
+            const user = auth.currentUser;
+
+            if (type === 'map') { renderMap(); return; }
+            if (type === 'events') { renderEvents(); return; }
+            if (type === 'gpa') { renderGPACalculator(); return; }
+
+            if (!user) {
+                featureBody.innerHTML = `
+                    <div class="text-center py-8">
+                        <span class="material-symbols-outlined text-4xl text-red-400 mb-2">lock</span>
+                        <h3 class="text-xl font-bold">Squad Access Only</h3>
+                        <p class="text-gray-400 mb-6">Log in to view your academic stats, blogs, and print queue.</p>
+                        <button onclick="document.getElementById('featureModal').classList.add('hidden'); document.getElementById('loginBtn').click()" class="px-6 py-2 bg-blue-600 rounded-full text-sm font-bold shadow-lg shadow-blue-500/30">Log In Now</button>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                let userData;
+
+                if (docSnap.exists()) {
+                    userData = docSnap.data();
+                } else {
+                    userData = {
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        userId: user.uid,
+                        school: "UCC",
+                        weeklyXp: 50, 
+                        role: "student",
+                        indexNumber: "SS/TMG/22/0014"
+                    };
+                    await setDoc(docRef, userData);
+                }
+
+                if (type === 'dashboard') renderDashboard(userData);
+                if (type === 'leaderboard') renderLeaderboard(userData);
+                if (type === 'print') renderPrintService(user); 
+                if (type === 'blog') renderBlog(userData);
+                if (type === 'grades') renderGrades(userData);
+                if (type === 'countdown') renderCountdown(userData);
+                if (type === 'notifications') renderNotifications(user);
+                if (type === 'pastquestions') renderPastQuestions(user); 
+
+            } catch (error) {
+                console.error("Error getting document:", error);
+                featureBody.innerHTML = `<div class="text-center text-red-400 py-8">Error fetching data: ${error.message}</div>`;
+            }
+        };
+
+        // --- PAST QUESTIONS RENDER LOGIC ---
+        async function renderPastQuestions(user) {
+            const featureBody = document.getElementById('featureBody');
+            const isAdmin = window.isAdmin();
+            
+            const showAdminControls = isAdmin ? '' : 'hidden';
+
+            featureBody.innerHTML = `
+                <div class="text-center mb-6 relative">
+                    <h2 class="text-2xl font-bold text-white">Past Questions 📚</h2>
+                    <p class="text-gray-400 text-sm">The ultimate cheat code.</p>
+                    <button onclick="window.renderAddCourse()" class="absolute right-0 top-0 bg-blue-500/20 p-2 rounded-full text-blue-300 hover:bg-blue-500 hover:text-white transition ${showAdminControls}">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <input type="text" id="pq-search" placeholder="Search courses (e.g. TMG 101)..." class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500 transition" oninput="window.filterCourses()">
+                </div>
+
+                <div id="pq-course-list" class="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 pb-10">
+                    <div class="animate-pulse flex flex-col gap-4 col-span-2">
+                        <div class="h-24 bg-white/5 rounded-xl"></div>
+                        <div class="h-24 bg-white/5 rounded-xl"></div>
+                    </div>
+                </div>
+            `;
+
+            const list = document.getElementById('pq-course-list');
+            // Query all courses directly (filtering client-side for speed/no-index)
+            const q = query(collection(db, "pq_courses")); 
+            const snap = await getDocs(q);
+            
+            list.innerHTML = '';
+
+            if (snap.empty) {
+                list.innerHTML = `<div class="col-span-2 text-center opacity-60 py-10"><span class="material-symbols-outlined text-4xl mb-2">folder_off</span><p>No courses found.</p></div>`;
+                return;
+            }
+
+            window.allPQCourses = [];
+            snap.forEach(d => {
+                const c = { id: d.id, ...d.data() };
+                window.allPQCourses.push(c);
+            });
+            window.filterCourses(); 
+        }
+
+        window.filterCourses = () => {
+            const search = document.getElementById('pq-search').value.toLowerCase();
+            const list = document.getElementById('pq-course-list');
+            list.innerHTML = '';
+            
+            const filtered = window.allPQCourses.filter(c => c.name.toLowerCase().includes(search) || c.code.toLowerCase().includes(search));
+            const isAdmin = window.isAdmin();
+
+            if (filtered.length === 0) {
+                 list.innerHTML = `<div class="col-span-2 text-center opacity-40 text-xs py-4">No matching courses.</div>`;
+                 return;
+            }
+
+            filtered.forEach(c => {
+                const deleteBtn = isAdmin ? `<button onclick="event.stopPropagation(); window.deletePQCourse('${c.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-500 p-1 bg-black/20 rounded-full"><span class="material-symbols-outlined text-sm">delete</span></button>` : '';
+
+                list.innerHTML += `
+                    <div onclick="window.openCoursePQ('${c.id}', '${c.name}')" class="relative bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 cursor-pointer transition flex flex-col justify-between h-28 group">
+                        ${deleteBtn}
+                        <div>
+                            <h3 class="font-bold text-white truncate pr-6">${c.code}</h3>
+                            <p class="text-xs text-gray-400 truncate">${c.name}</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">Level ${c.level}</span>
+                            <span class="material-symbols-outlined text-gray-500 group-hover:text-white transition text-lg">folder_open</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.deletePQCourse = async (id) => {
+            if(!confirm("Delete this course and ALL its files?")) return;
+            try {
+                await deleteDoc(doc(db, "pq_courses", id));
+                window.showToast("Course deleted.");
+                window.renderPastQuestions(auth.currentUser);
+            } catch(e) { window.showToast("Error deleting", "error"); }
+        }
+
+        window.renderAddCourse = () => {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <button onclick="openFeature('pastquestions')" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">arrow_back</span></button>
+                        <h2 class="text-xl font-bold text-white">Add New Course 📚</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    <form onsubmit="event.preventDefault(); window.saveNewCourse()" class="space-y-4">
+                        <input type="text" id="new-course-code" placeholder="Course Code (e.g. TMG 101)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                        <input type="text" id="new-course-name" placeholder="Course Name (e.g. Intro to Tourism)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                        <input type="number" id="new-course-level" placeholder="Level (e.g. 100)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg">Create Course</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        window.saveNewCourse = async () => {
+            const code = document.getElementById('new-course-code').value.toUpperCase();
+            const name = document.getElementById('new-course-name').value;
+            const level = document.getElementById('new-course-level').value;
+
+            if(!code || !name) return window.showToast("Fill details", "error");
+
+            try {
+                await addDoc(collection(db, "pq_courses"), { code, name, level });
+                window.showToast("Course Added! ✅");
+                openFeature('pastquestions');
+            } catch(e) { window.showToast("Error adding course", "error"); }
+        }
+
+        window.openCoursePQ = async (courseId, courseName) => {
+            const featureBody = document.getElementById('featureBody');
+            const isAdmin = window.isAdmin();
+            
+            const adminUploadBtn = isAdmin ? `
+                <div class="flex gap-2 mt-4 pt-4 border-t border-white/10">
+                    <input type="file" id="pq-file" class="hidden" onchange="window.handlePQUpload(this, '${courseId}')">
+                    <input type="text" id="pq-title" placeholder="Paper Title (e.g. Midsem 2024)" class="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-xs text-white outline-none">
+                    <button onclick="document.getElementById('pq-file').click()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap">Upload PDF/Img</button>
+                </div>
+            ` : '';
+
+            featureBody.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <button onclick="openFeature('pastquestions')" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">arrow_back</span></button>
+                        <h2 class="text-lg font-bold text-white truncate max-w-[200px]">${courseName}</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    
+                    <div id="pq-file-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                        <div class="animate-pulse h-12 bg-white/5 rounded-lg"></div>
+                    </div>
+
+                    ${adminUploadBtn}
+                </div>
+            `;
+
+            const list = document.getElementById('pq-file-list');
+            
+            // FIX: Remove orderBy to prevent index errors, filter by courseId only
+            const q = query(collection(db, "past_questions"), where("courseId", "==", courseId));
+            
+            const unsub = onSnapshot(q, (snap) => {
+                let html = '';
+                window.currentPQFiles = {}; // Reset cache
+                let files = [];
+
+                if(snap.empty) {
+                     html = '<div class="text-center opacity-40 text-sm mt-10">No past questions yet.</div>';
+                } else {
+                     snap.forEach(d => {
+                        const pq = d.data();
+                        pq.id = d.id;
+                        files.push(pq);
+                     });
+                     
+                     // Sort client-side by timestamp
+                     files.sort((a, b) => b.timestamp - a.timestamp);
+                     
+                     files.forEach(pq => {
+                        window.currentPQFiles[pq.id] = pq;
+                        const icon = pq.type && pq.type.includes('pdf') ? 'picture_as_pdf' : 'image';
+                        const color = pq.type && pq.type.includes('pdf') ? 'text-red-400' : 'text-blue-400';
+                        const deleteBtn = isAdmin ? `<button onclick="window.deletePQFile('${pq.id}')" class="text-gray-600 hover:text-red-500 transition ml-2"><span class="material-symbols-outlined text-sm">delete</span></button>` : '';
+
+                        html += `
+                            <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl hover:bg-white/10 transition border border-white/5 group">
+                                <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="window.viewPQFile('${pq.id}', '${pq.type}')">
+                                    <span class="material-symbols-outlined ${color}">${icon}</span>
+                                    <span class="text-sm text-gray-200 truncate hover:underline">${pq.title}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <button onclick="window.viewPQFile('${pq.id}', '${pq.type}')" class="text-gray-500 hover:text-white transition">
+                                        <span class="material-symbols-outlined text-lg">visibility</span>
+                                    </button>
+                                    ${deleteBtn}
+                                </div>
+                            </div>
+                        `;
+                     });
+                }
+                list.innerHTML = html;
+            });
+            window.activeListeners.push(unsub);
+        }
+
+        window.deletePQFile = async (id) => {
+             if(!confirm("Permanently delete this file?")) return;
+             try {
+                 await deleteDoc(doc(db, "past_questions", id));
+                 window.showToast("File deleted.");
+             } catch(e) { window.showToast("Error deleting file.", "error"); }
+        }
+
+        window.viewPQFile = (id, type) => {
+            const pq = window.currentPQFiles[id];
+            if (!pq || !pq.fileData) return window.showToast("File data missing", "error");
+            
+            // Robust Blob conversion for viewing
+            try {
+                const base64Parts = pq.fileData.split(',');
+                // If it's a pure base64 string without data URI scheme, handle it, else split
+                const base64 = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
+                const mime = type || 'application/pdf'; // Default to PDF if unknown
+
+                const byteCharacters = atob(base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], {type: mime});
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                
+                // Cleanup URL object after a delay to allow open to happen
+                setTimeout(() => URL.revokeObjectURL(url), 60000); 
+
+            } catch (e) {
+                console.error(e);
+                window.showToast("Error opening file. It might be corrupted.", "error");
+            }
+        }
+
+        window.handlePQUpload = (input, courseId) => {
+            const titleInput = document.getElementById('pq-title');
+            const title = titleInput.value.trim() || 'Untitled PQ';
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // --- SIZE CHECK ---
+                if (file.size > 1000000) { // 1MB Limit
+                     window.showToast("File too large! Max 1MB.", "error");
+                     input.value = ''; // Reset input
+                     return;
+                }
+
+                const reader = new FileReader();
+                
+                window.showToast(`Uploading ${file.name}...`, "success"); 
+
+                reader.onload = async (e) => {
+                    let base64 = e.target.result;
+                    
+                    // --- IMAGE COMPRESSION IF APPLICABLE ---
+                    if(file.type.startsWith('image/')) {
+                        try {
+                           base64 = await window.compressImage(base64);
+                        } catch(err) {
+                           console.log("Compression skipped", err);
+                        }
+                    }
+
+                    try {
+                        await addDoc(collection(db, "past_questions"), {
+                            courseId,
+                            title: title,
+                            fileData: base64,
+                            type: file.type,
+                            timestamp: Date.now()
+                        });
+                        window.showToast("Uploaded!", "success");
+                        titleInput.value = ''; 
+                    } catch(err) {
+                        console.error(err);
+                        window.showToast("Upload failed. Database limit.", "error");
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // --- HELPER: Image Compression ---
+        window.compressImage = (base64Str) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Resize logic
+                    const MAX_WIDTH = 800; 
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to JPEG 0.7
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+            });
+        }
+        
+        window.downloadFileBase64 = (base64, fileName) => {
+            const link = document.createElement('a');
+            link.href = base64;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderPrintService(user) {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `<div class="text-center py-10"><span class="material-symbols-outlined animate-spin text-3xl text-orange-400">sync</span></div>`;
+
+            const orderRef = doc(db, "print_orders", user.uid);
+            const unsubOrder = onSnapshot(orderRef, (snap) => {
+                if (!snap.exists()) { renderPrintIntro(); } else {
+                    const data = snap.data();
+                    if (data.status === 'completed' && !data.keepAlive) { renderPrintIntro(true); } else { renderActivePrintUI(data, user.uid); }
+                }
+            });
+            window.activeListeners.push(unsubOrder);
+        }
+
+        function renderPrintIntro(isRestart = false) {
+            const featureBody = document.getElementById('featureBody');
+            const title = isRestart ? "Job Delivered! ✅" : "Print & Deliver 🖨️";
+            const sub = isRestart ? "Need to print something else?" : "Skip the cafe queue. We handle it.";
+            
+            featureBody.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto mb-4 border border-orange-500/30">
+                        <span class="material-symbols-outlined text-4xl text-orange-400">print_add</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2">${title}</h2>
+                    <p class="text-gray-400 text-sm max-w-xs mx-auto mb-8">${sub}</p>
+                    <button onclick="window.startNewPrintJob()" class="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-orange-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"><span>Initiate Request</span> <span class="material-symbols-outlined">rocket_launch</span></button>
+                </div>
+            `;
+        }
+
+        function renderActivePrintUI(orderData, uid) {
+            const featureBody = document.getElementById('featureBody');
+            const steps = [{ id: 'received', icon: 'pending', label: 'Received' }, { id: 'printing', icon: 'print', label: 'Printing' }, { id: 'delivering', icon: 'local_shipping', label: 'Delivering' }, { id: 'completed', icon: 'check_circle', label: 'Done' }];
+            const currentIndex = steps.findIndex(s => s.id === orderData.status);
+            let stepperHTML = `<div class="flex justify-between items-center mb-8 px-2 relative"><div class="absolute top-1/2 left-0 w-full h-1 bg-gray-700 -z-10 rounded-full"></div><div class="absolute top-1/2 left-0 h-1 bg-orange-500 -z-10 rounded-full transition-all duration-500" style="width: ${(currentIndex / (steps.length - 1)) * 100}%"></div>`;
+
+            steps.forEach((step, idx) => {
+                const isActive = idx <= currentIndex;
+                const colorClass = isActive ? 'bg-orange-500 text-white border-orange-500' : 'bg-gray-800 text-gray-500 border-gray-700';
+                const pulse = (idx === currentIndex && orderData.status !== 'completed') ? 'animate-pulse' : '';
+                stepperHTML += `<div class="flex flex-col items-center gap-2"><div class="w-8 h-8 rounded-full ${colorClass} border-2 flex items-center justify-center z-10 ${pulse} transition-colors duration-300"><span class="material-symbols-outlined text-[16px]">${step.icon}</span></div><span class="text-[10px] font-bold ${isActive ? 'text-white' : 'text-gray-600'} uppercase">${step.label}</span></div>`;
+            });
+            stepperHTML += `</div>`;
+
+            featureBody.innerHTML = `<div class="flex flex-col h-[500px]"><div class="text-center mb-2"><h2 class="text-lg font-bold text-white">Order #${uid.slice(0,5)}</h2><p class="text-xs text-gray-400">Squad Agent is active</p></div>${stepperHTML}<div id="print-chat-box" class="flex-1 bg-black/20 rounded-xl p-4 overflow-y-auto mb-4 border border-white/5 space-y-3"><div class="flex justify-center"><span class="text-[10px] bg-white/5 px-2 py-1 rounded text-gray-500">Session Started</span></div></div><div class="flex items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/10"><input type="file" id="print-file-upload" class="hidden" onchange="window.handlePrintFileUpload(this)"><button onclick="document.getElementById('print-file-upload').click()" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"><span class="material-symbols-outlined">attach_file</span></button><input type="text" id="print-msg-input" placeholder="Type instructions..." class="flex-1 bg-transparent outline-none text-sm text-white placeholder-gray-500" onkeypress="if(event.key === 'Enter') window.sendPrintMessage()"><button onclick="window.sendPrintMessage()" class="p-2 rounded-lg bg-orange-600 text-white hover:bg-orange-500 shadow-lg"><span class="material-symbols-outlined text-sm">send</span></button></div>${orderData.status === 'completed' ? `<button onclick="window.startNewPrintJob()" class="mt-2 text-xs text-gray-400 hover:text-white underline text-center w-full">Start New Order</button>` : ''}</div>`;
+
+            const msgQuery = query(collection(db, "print_messages"), where("orderId", "==", uid), orderBy("timestamp", "asc"));
+            const unsubMsg = onSnapshot(msgQuery, (snap) => {
+                const chatBox = document.getElementById('print-chat-box');
+                if(!chatBox) return;
+                chatBox.innerHTML = '<div class="flex justify-center"><span class="text-[10px] bg-white/5 px-2 py-1 rounded text-gray-500">Session Started</span></div>';
+                snap.forEach(d => {
+                    const msg = d.data();
+                    const isMe = msg.senderId === uid;
+                    const align = isMe ? 'items-end' : 'items-start';
+                    const bg = isMe ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-200';
+                    const rounded = isMe ? 'rounded-l-xl rounded-tr-xl' : 'rounded-r-xl rounded-tl-xl';
+                    let content = `<p>${msg.text}</p>`;
+                    if(msg.fileData) { content += `<div class="mt-2 flex items-center gap-2 bg-black/20 p-2 rounded cursor-pointer hover:bg-black/30 transition" onclick="window.open('${msg.fileData}')"><span class="material-symbols-outlined text-sm">description</span><span class="text-xs underline truncate max-w-[150px]">${msg.fileName || 'File'}</span></div>`; }
+                    chatBox.innerHTML += `<div class="flex flex-col ${align} w-full"><div class="${bg} ${rounded} px-3 py-2 max-w-[85%] text-sm shadow-md break-words">${content}</div><span class="text-[9px] text-gray-500 mt-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></div>`;
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+            window.activeListeners.push(unsubMsg);
+        }
+
+        window.startNewPrintJob = async () => {
+            const user = auth.currentUser;
+            if(!user) return;
+            await setDoc(doc(db, "print_orders", user.uid), { userId: user.uid, status: 'received', lastUpdated: Date.now(), userName: user.displayName || 'Squad Member', keepAlive: true });
+            await addDoc(collection(db, "print_messages"), { orderId: user.uid, senderId: "system", text: "Print Request initialized. Please upload your document.", timestamp: Date.now() });
+        }
+
+        window.sendPrintMessage = async (fileData = null, fileName = null) => {
+            const input = document.getElementById('print-msg-input');
+            const text = input ? input.value.trim() : "";
+            const user = auth.currentUser;
+            if ((!text && !fileData) || !user) return;
+            await addDoc(collection(db, "print_messages"), { orderId: user.uid, senderId: user.uid, text: text || (fileData ? "Sent a file" : ""), fileData: fileData, fileName: fileName, timestamp: Date.now() });
+            if(input) input.value = '';
+        }
+
+        window.handlePrintFileUpload = (input) => {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                const chatBox = document.getElementById('print-chat-box');
+                const loadingDiv = document.createElement('div');
+                loadingDiv.innerHTML = `<div class="flex justify-center"><span class="text-xs text-orange-400 animate-pulse">Uploading ${file.name}...</span></div>`;
+                chatBox.appendChild(loadingDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                reader.onload = (e) => {
+                    const base64 = e.target.result;
+                    window.sendPrintMessage(base64, file.name);
+                    loadingDiv.remove();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderDashboard(data) {
+            const xp = data.weeklyXp || 0;
+            const rank = getRank(xp);
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `<div class="text-center mb-6"><h2 class="text-2xl font-bold text-white">Neural Dashboard</h2><div class="inline-flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full mt-2 border border-white/10"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span><p class="text-xs font-bold text-white uppercase tracking-wider">${rank}</p></div></div><div class="grid grid-cols-2 gap-4"><div class="bg-gradient-to-br from-blue-900/50 to-slate-900 p-4 rounded-xl border border-blue-500/20"><div class="text-xs text-blue-300 uppercase tracking-widest mb-1">Weekly XP</div><div class="text-4xl font-black text-white">${xp}</div><div class="text-[10px] text-gray-400 mt-1">Grind harder ⚔️</div></div><div class="bg-white/5 p-4 rounded-xl border border-white/5"><div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Institution</div><div class="text-xl font-bold text-white truncate">${data.school || 'UCC'}</div><div class="text-[10px] text-gray-400 mt-1">${data.program || 'General Arts'}</div></div><div onclick="openFeature('print')" class="col-span-2 bg-gradient-to-r from-orange-600/20 to-orange-900/20 p-4 rounded-xl border border-orange-500/30 cursor-pointer hover:bg-orange-600/10 transition"><div class="flex justify-between items-center"><div><div class="text-xs text-orange-300 uppercase font-bold mb-1"><i class="material-symbols-outlined text-[12px] align-middle">print</i> Print & Deliver</div><div class="text-sm font-medium text-white">Check Queue Status</div></div><span class="material-symbols-outlined text-orange-400">chevron_right</span></div></div></div>`;
+        }
+
+        async function renderLeaderboard(myData) {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `<div class="text-center mb-6"><h2 class="text-2xl font-bold text-white flex justify-center items-center gap-2">The Arena <span class="text-yellow-400 material-symbols-outlined">emoji_events</span></h2><p class="text-gray-400 text-sm">Top Performers this Week</p></div><div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="lb-list"><div class="animate-pulse flex space-x-4"><div class="rounded-full bg-white/10 h-10 w-10"></div><div class="flex-1 space-y-2 py-1"><div class="h-2 bg-white/10 rounded"></div></div></div></div>`;
+            const q = query(collection(db, "users"), orderBy("weeklyXp", "desc"), limit(10));
+            const snap = await getDocs(q);
+            const list = document.getElementById('lb-list');
+            list.innerHTML = '';
+            if (snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 text-sm">Arena is empty. Be the first.</p>'; return; }
+            snap.forEach((doc) => {
+                const u = doc.data();
+                const isMe = u.userId === myData.userId;
+                const border = isMe ? 'border-blue-500 bg-blue-500/10' : 'border-white/5 bg-white/5';
+                const rankTitle = getRank(u.weeklyXp || 0);
+                list.innerHTML += `<div class="flex items-center gap-3 p-3 rounded-xl border ${border}"><div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-xs">${u.name ? u.name[0] : '?'}</div><div class="flex-1 min-w-0"><p class="text-sm font-bold text-white truncate">${u.name || 'Unknown'} ${isMe ? '(You)' : ''}</p><p class="text-[10px] text-gray-400 uppercase tracking-wider">${rankTitle}</p></div><div class="text-right"><span class="text-sm font-black text-yellow-400">${u.weeklyXp || 0}</span> <span class="text-[10px] text-gray-500">XP</span></div></div>`;
+            });
+        }
+
+        async function renderEvents() {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `<div class="text-center mb-6"><h2 class="text-2xl font-bold text-white">Campus Events 🎟️</h2><p class="text-gray-400 text-sm">What's poppin' at UCC</p></div><div id="events-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-10"><div class="animate-pulse flex flex-col gap-4"><div class="h-32 bg-white/5 rounded-xl"></div><div class="h-32 bg-white/5 rounded-xl"></div></div></div>`;
+            const list = document.getElementById('events-list');
+            const q = query(collection(db, "events"), orderBy("timestamp", "desc"), limit(20));
+            const snap = await getDocs(q);
+            list.innerHTML = '';
+            if (snap.empty) { list.innerHTML = `<div class="text-center opacity-60 py-10"><span class="material-symbols-outlined text-4xl mb-2">event_busy</span><p>No upcoming events. Dry spell? 🏜️</p></div>`; return; }
+            snap.forEach(doc => {
+                const ev = doc.data();
+                list.innerHTML += `<div class="bg-white/5 rounded-xl overflow-hidden border border-white/10 group hover:border-blue-500/30 transition"><div class="h-32 bg-black/50 relative"><img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"><div class="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded">${ev.date}</div></div><div class="p-4"><h3 class="font-bold text-lg text-white mb-1 leading-tight">${ev.title}</h3><div class="flex items-center gap-2 text-xs text-gray-400 mb-2"><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> ${ev.venue}</span><span>•</span><span>${ev.time}</span></div><p class="text-sm text-gray-300 line-clamp-2">${ev.description}</p></div></div>`;
+            });
+        }
+
+        window.gpaCourses = []; 
+        function renderGPACalculator() {
+            const featureBody = document.getElementById('featureBody');
+            window.gpaCourses = []; 
+            featureBody.innerHTML = `<div class="text-center mb-6"><h2 class="text-2xl font-bold text-white">GPA Simulator 🧮</h2><p class="text-gray-400 text-sm">Predict your Academic Weapon status.</p></div><div class="bg-white/5 p-4 rounded-xl border border-white/10 mb-6"><div class="grid grid-cols-3 gap-3 mb-4"><input type="text" id="gpa-course" placeholder="Course (Opt)" class="col-span-3 bg-black/30 border border-white/10 rounded-lg p-2 text-white text-sm outline-none focus:border-blue-500 transition"><input type="number" id="gpa-credit" placeholder="Credits" class="bg-black/30 border border-white/10 rounded-lg p-2 text-white text-sm outline-none focus:border-blue-500 transition"><select id="gpa-grade" class="col-span-2 bg-black/30 border border-white/10 rounded-lg p-2 text-white text-sm outline-none focus:border-blue-500 transition"><option value="4.0">A (80-100)</option><option value="3.5">B+ (75-79)</option><option value="3.0">B (70-74)</option><option value="2.5">C+ (65-69)</option><option value="2.0">C (60-64)</option><option value="1.5">D+ (55-59)</option><option value="1.0">D (50-54)</option><option value="0.0">E (0-49)</option></select></div><button onclick="window.addGPACourse()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-sm transition shadow-lg shadow-blue-500/20">Add to Calculation</button></div><div id="gpa-list" class="space-y-2 mb-6 max-h-40 overflow-y-auto pr-2"><p class="text-center text-gray-500 text-xs italic">No courses added yet.</p></div><div class="bg-gradient-to-r from-green-500/20 to-blue-500/20 p-4 rounded-xl border border-white/10 text-center"><p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Projected GPA</p><div class="text-4xl font-black text-white" id="gpa-result">0.00</div></div>`;
+        }
+
+        window.addGPACourse = () => {
+            const course = document.getElementById('gpa-course').value || `Course ${window.gpaCourses.length + 1}`;
+            const credits = parseFloat(document.getElementById('gpa-credit').value);
+            const gradePoints = parseFloat(document.getElementById('gpa-grade').value);
+            const gradeText = document.getElementById('gpa-grade').options[document.getElementById('gpa-grade').selectedIndex].text.split(' ')[0];
+            if (!credits || isNaN(credits)) { window.showToast("Enter credit hours!", "error"); return; }
+            window.gpaCourses.push({ course, credits, gradePoints, gradeText });
+            updateGPAResults();
+            document.getElementById('gpa-course').value = ''; document.getElementById('gpa-credit').value = '';
+        }
+
+        function updateGPAResults() {
+            const list = document.getElementById('gpa-list');
+            const resultDisplay = document.getElementById('gpa-result');
+            list.innerHTML = '';
+            let totalPoints = 0; let totalCredits = 0;
+            window.gpaCourses.forEach((c, index) => {
+                totalPoints += (c.credits * c.gradePoints); totalCredits += c.credits;
+                list.innerHTML += `<div class="flex justify-between items-center bg-white/5 p-2 rounded-lg text-sm border border-white/5"><span class="truncate w-1/2 text-gray-300">${c.course}</span><div class="flex gap-3"><span class="text-xs text-gray-500">${c.credits} cr</span><span class="font-bold text-white w-8 text-right">${c.gradeText}</span></div><button onclick="window.removeGPACourse(${index})" class="text-red-400 hover:text-white ml-2"><span class="material-symbols-outlined text-sm">close</span></button></div>`;
+            });
+            const gpa = totalCredits === 0 ? 0.00 : (totalPoints / totalCredits).toFixed(2);
+            resultDisplay.innerText = gpa;
+        }
+
+        window.removeGPACourse = (index) => { window.gpaCourses.splice(index, 1); updateGPAResults(); }
+
+        function renderCountdown(data) {
+             const featureBody = document.getElementById('featureBody');
+             featureBody.innerHTML = `<div class="text-center py-4"><div class="w-16 h-16 bg-purple-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4"><span class="material-symbols-outlined text-3xl text-purple-400">hourglass_top</span></div><h2 class="text-2xl font-bold text-white mb-6">Final Exams Countdown</h2><div class="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-2">42<span class="text-2xl text-white font-sans">d</span> : 14<span class="text-2xl text-white font-sans">h</span></div><p class="text-gray-400 text-sm mb-8">Until Judgement Day</p><button class="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-semibold text-sm">Download Revision Schedule</button></div>`;
+        }
+
+        function renderMap() {
+            const featureBody = document.getElementById('featureBody');
+            let locStatus = "Locating...";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((p) => { locStatus = `GPS Locked: ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`; updateLocStatus(locStatus); }, () => { locStatus = "GPS Signal Lost"; updateLocStatus(locStatus); });
+            }
+            featureBody.innerHTML = `<div class="text-center mb-4"><h2 class="text-xl font-bold text-white">UCC Tactical Nav 🧭</h2><p class="text-gray-400 text-xs" id="map-status">${locStatus}</p></div><div class="w-full h-64 rounded-2xl overflow-hidden bg-gray-800 border border-white/10 relative group mb-4"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3974.229267926343!2d-1.292150685237894!3d5.105432396294784!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfde2e44a95447b9%3A0x2d05777402660d2b!2sUniversity%20of%20Cape%20Coast!5e0!3m2!1sen!2sgh!4v1705628543599!5m2!1sen!2sgh" width="100%" height="100%" style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(90%);" allowfullscreen="" loading="lazy"></iframe><div class="absolute inset-0 pointer-events-none border-[4px] border-blue-500/20 rounded-2xl"></div></div><div class="grid grid-cols-2 gap-3"><button onclick="window.startNavigation('Sam Jonah Library UCC')" class="py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-500/20"><span class="material-symbols-outlined text-lg">menu_book</span>Route to Library</button><button onclick="window.startNavigation('UCC Shuttle Station Old Site')" class="py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex flex-col items-center justify-center gap-1"><span class="material-symbols-outlined text-lg">directions_bus</span>Find Shuttle</button></div>`;
+        }
+
+        function updateLocStatus(msg) { const el = document.getElementById('map-status'); if(el) el.innerText = msg; }
+
+        window.startNavigation = (destinationName) => {
+            const btn = event.currentTarget; btn.classList.add('animate-pulse');
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude; const lng = position.coords.longitude;
+                    const url = `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${encodeURIComponent(destinationName)}&travelmode=walking`;
+                    window.open(url, '_blank'); btn.classList.remove('animate-pulse');
+                }, (err) => { window.showToast("Location denied. Enable GPS.", "error"); btn.classList.remove('animate-pulse'); });
+            } else { window.showToast("Geolocation not supported.", "error"); }
+        }
+
+        // --- BLOG RENDER & LOGIC ---
+        async function renderBlog(user) {
+            const featureBody = document.getElementById('featureBody');
+            
+            // Header
+            featureBody.innerHTML = `
+                <div class="text-center mb-6 relative">
+                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">The Vibe Check ✍️</h2>
+                    <p class="text-gray-400 text-sm">Chronicles of a Main Character.</p>
+                    <button onclick="renderWriteBlog()" class="absolute right-0 top-0 bg-blue-500/20 p-2 rounded-full text-blue-300 hover:bg-blue-500 hover:text-white transition">
+                        <span class="material-symbols-outlined text-lg">edit_square</span>
+                    </button>
+                </div>
+                <div id="blog-feed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-20">
+                    <div class="animate-pulse flex flex-col gap-4">
+                        <div class="h-32 bg-white/5 rounded-xl"></div>
+                        <div class="h-32 bg-white/5 rounded-xl"></div>
+                    </div>
+                </div>
+            `;
+
+            const feed = document.getElementById('blog-feed');
+            
+            // Fetch Blogs
+            const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
+            const snap = await getDocs(q);
+            
+            feed.innerHTML = ''; 
+
+            if (snap.empty) {
+                // Delusion-level placeholders if empty
+                const placeholders = [
+                    {
+                        id: 'fake-1',
+                        title: "Manifesting NYC 2027 🇺🇸",
+                        author: "Francis Pwavwe",
+                        content: "The goal isn't just to visit; it's to take over. Tourism Management is the key. Oguaa Hall is just the training ground.",
+                        likes: 104,
+                        replyCount: 12,
+                        tags: ["#Delusion", "#Ambition"]
+                    },
+                    {
+                        id: 'fake-2',
+                        title: "Why Drill Music is Therapy 🎶",
+                        author: "Squad Leader",
+                        content: "Nothing clears the head for a 7AM lecture like Kumerican Drill. Change my mind.",
+                        likes: 88,
+                        replyCount: 5,
+                        tags: ["#Music", "#Vibes"]
+                    }
+                ];
+
+                placeholders.forEach(p => {
+                    feed.innerHTML += createBlogCard(p, true);
+                });
+                feed.innerHTML += `<div class="text-center text-xs text-gray-500 mt-4 italic">Start writing to replace the simulation...</div>`;
+            } else {
+                snap.forEach(doc => {
+                    const post = doc.data();
+                    post.id = doc.id;
+                    feed.innerHTML += createBlogCard(post, false);
+                });
+            }
+        }
+
+        function createBlogCard(post, isFake) {
+            const tagsHtml = (post.tags || []).map(t => `<span class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-300">${t}</span>`).join(' ');
+            const likeAction = isFake ? '' : `onclick="window.toggleLike('${post.id}')"`;
+            const likeColor = isFake ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500';
+            const replies = post.replyCount || 0;
+            
+            // Only allow replies for real posts to keep it clean
+            const replyButton = isFake ? '' : `
+                <button onclick="window.toggleComments('${post.id}')" class="flex items-center gap-1 text-gray-400 hover:text-blue-400 transition group/btn ml-4">
+                    <span class="material-symbols-outlined text-sm">chat_bubble</span>
+                    <span class="text-xs font-bold">${replies}</span>
+                </button>
+            `;
+            
+            return `
+                <div class="glass-panel p-5 rounded-2xl border border-white/5 hover:border-blue-500/30 transition group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-lg font-bold text-white mb-1 leading-tight">${post.title}</h3>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xs font-bold text-blue-400">${post.author || 'Anonymous'}</span>
+                            <span class="text-[10px] text-gray-500">• ${isFake ? 'Just now' : new Date(post.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-sm text-gray-300 leading-relaxed mb-4 line-clamp-3">${post.content}</p>
+                        
+                        <div class="flex justify-between items-center border-t border-white/5 pt-3">
+                            <div class="flex gap-2">${tagsHtml}</div>
+                            <div class="flex items-center">
+                                <button ${likeAction} class="flex items-center gap-1 ${likeColor} transition group/btn">
+                                    <span class="material-symbols-outlined text-sm group-hover/btn:scale-125 transition-transform">favorite</span>
+                                    <span class="text-xs font-bold">${post.likes || 0}</span>
+                                </button>
+                                ${replyButton}
+                            </div>
+                        </div>
+
+                        <!-- Hidden Comments Section -->
+                        <div id="comments-section-${post.id}" class="hidden mt-4 pt-4 border-t border-white/5 space-y-3">
+                            <!-- Injected via JS -->
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+
+        window.toggleComments = async (id) => {
+            const section = document.getElementById(`comments-section-${id}`);
+            if(!section.classList.contains('hidden')) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            section.innerHTML = '<div class="text-center text-xs text-gray-500 animate-pulse">Loading the tea... ☕</div>';
+            
+            // FIX: Removed 'orderBy' from the query to prevent Index requirement errors
+            // We will sort the results in memory (JavaScript) instead.
+            const q = query(collection(db, "blog_comments"), where("blogId", "==", id));
+            
+            const unsub = onSnapshot(q, (snap) => {
+                let comments = [];
+                snap.forEach(d => {
+                    comments.push(d.data());
+                });
+
+                // Sort in memory: Oldest to Newest
+                comments.sort((a, b) => a.timestamp - b.timestamp);
+
+                let html = '';
+                comments.forEach(c => {
+                    // Initial fallback
+                    const initial = c.author ? c.author[0].toUpperCase() : '?';
+                    html += `
+                        <div class="flex gap-2 items-start animate-fade-in-up mb-3">
+                            <div class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-300 shrink-0 border border-white/5">
+                                ${initial}
+                            </div>
+                            <div class="bg-white/5 rounded-r-xl rounded-bl-xl p-2 text-xs text-gray-300 max-w-[90%] border border-white/5">
+                                <span class="font-bold text-blue-400 block text-[10px] mb-1">${c.author}</span>
+                                ${c.text}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if(comments.length === 0) html += '<div class="text-xs text-gray-600 italic text-center py-2">No replies yet. Be the first.</div>';
+                
+                // Input field
+                html += `
+                    <div class="flex gap-2 mt-3 pt-2 items-center border-t border-white/5">
+                        <input type="text" id="reply-input-${id}" placeholder="Add to the lore..." class="flex-1 bg-black/20 border border-white/10 rounded-full px-3 py-2 text-xs text-white outline-none focus:border-blue-500 transition placeholder-gray-600" onkeypress="if(event.key === 'Enter') window.saveReply('${id}')">
+                        <button onclick="window.saveReply('${id}')" class="bg-blue-600 p-2 rounded-full text-white hover:bg-blue-500 transition shadow-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[14px]">send</span>
+                        </button>
+                    </div>
+                `;
+                
+                section.innerHTML = html;
+            });
+            
+            window.activeListeners.push(unsub);
+        }
+
+        window.saveReply = async (blogId) => {
+            const input = document.getElementById(`reply-input-${blogId}`);
+            const text = input.value.trim();
+            const user = auth.currentUser;
+            
+            if(!text) return;
+            
+            let authorName = "Anonymous";
+            // Optimistic author name fetch
+            try {
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                if(docSnap.exists()) authorName = docSnap.data().name || user.email.split('@')[0];
+            } catch(e) {}
+            
+            // Get Blog Post Owner for Notification
+            let postOwnerId = null;
+            try {
+                const blogSnap = await getDoc(doc(db, "blogs", blogId));
+                if(blogSnap.exists()) postOwnerId = blogSnap.data().userId;
+            } catch(e) {}
+
+            try {
+                await addDoc(collection(db, "blog_comments"), {
+                    blogId: blogId,
+                    text: text,
+                    author: authorName,
+                    userId: user.uid,
+                    timestamp: Date.now()
+                });
+                
+                // Update Reply Count
+                await updateDoc(doc(db, "blogs", blogId), { replyCount: increment(1) });
+                
+                // Create Notification for Author (if not self)
+                if(postOwnerId && postOwnerId !== user.uid) {
+                    await addDoc(collection(db, "user_notifications"), {
+                        userId: postOwnerId,
+                        type: 'reply',
+                        title: 'New Reply 💬',
+                        body: `${authorName} commented: "${text.substring(0, 30)}..."`,
+                        timestamp: Date.now(),
+                        read: false
+                    });
+                }
+                
+                // Increment XP slightly for engagement
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { weeklyXp: increment(5) });
+                input.value = ''; // Clear input
+            } catch(e) {
+                console.error(e);
+                window.showToast("Failed to reply.", "error");
+            }
+        }
+
+        window.renderWriteBlog = () => {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <button onclick="openFeature('blog')" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">arrow_back</span></button>
+                        <h2 class="text-xl font-bold text-white">Drop a Gem 💎</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    
+                    <form onsubmit="event.preventDefault(); window.saveBlogPost()" class="space-y-4 flex-1">
+                        <input type="text" id="blog-title" placeholder="Title (Make it pop)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-blue-500 outline-none transition font-bold text-lg">
+                        
+                        <textarea id="blog-content" placeholder="What's on your mind? (Manifestations, Rants, Ideas...)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-blue-500 outline-none transition h-40 resize-none"></textarea>
+                        
+                        <input type="text" id="blog-tags" placeholder="Tags (e.g. #Drill #UCC #Vibes)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-blue-500 outline-none transition text-sm">
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
+                            <span>Manifest It</span> <span class="material-symbols-outlined">auto_awesome</span>
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        window.saveBlogPost = async () => {
+            const title = document.getElementById('blog-title').value;
+            const content = document.getElementById('blog-content').value;
+            const tagsStr = document.getElementById('blog-tags').value;
+            const user = auth.currentUser;
+
+            if(!title || !content) { window.showToast("Say something!", "error"); return; }
+
+            // Determine user name
+            let authorName = "Anonymous";
+            const docSnap = await getDoc(doc(db, "users", user.uid));
+            if(docSnap.exists()) authorName = docSnap.data().name || user.email.split('@')[0];
+
+            const tags = tagsStr.split(' ').filter(t => t.startsWith('#'));
+
+            try {
+                await addDoc(collection(db, "blogs"), {
+                    title,
+                    content,
+                    author: authorName,
+                    userId: user.uid,
+                    tags,
+                    likes: 0,
+                    replyCount: 0,
+                    timestamp: Date.now()
+                });
+                // Give XP for blogging
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { weeklyXp: increment(20) });
+                
+                window.showToast("Posted! +20 XP ⚡");
+                openFeature('blog'); // Go back to feed
+            } catch(e) {
+                console.error(e);
+                window.showToast("Failed to post.", "error");
+            }
+        }
+
+        window.toggleLike = async (id) => {
+            // Optimistic UI update not implemented for simplicity, just DB call
+            const ref = doc(db, "blogs", id);
+            await updateDoc(ref, { likes: increment(1) });
+            openFeature('blog'); // Refresh to see like
+        }
+
+        // --- NOTIFICATIONS SYSTEM ---
+        async function renderNotifications(user) {
+            const featureBody = document.getElementById('featureBody');
+            featureBody.innerHTML = `
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Notifications 🔔</h2>
+                    <p class="text-gray-400 text-sm">Stay in the loop.</p>
+                </div>
+                <div id="notif-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 pb-10">
+                    <div class="animate-pulse flex flex-col gap-3">
+                        <div class="h-20 bg-white/5 rounded-xl"></div>
+                        <div class="h-20 bg-white/5 rounded-xl"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Fetch Global Broadcasts (Admins)
+            const globalQ = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"), limit(10));
+            const globalSnap = await getDocs(globalQ);
+            
+            // Fetch Personal Notifications (Replies)
+            const userQ = query(collection(db, "user_notifications"), where("userId", "==", user.uid));
+            const userSnap = await getDocs(userQ);
+            
+            let allNotifs = [];
+            globalSnap.forEach(d => allNotifs.push({ ...d.data(), type: 'broadcast' }));
+            userSnap.forEach(d => allNotifs.push(d.data()));
+            
+            // Sort merged list
+            allNotifs.sort((a, b) => b.timestamp - a.timestamp);
+            
+            const list = document.getElementById('notif-list');
+            list.innerHTML = '';
+            
+            if(allNotifs.length === 0) {
+                list.innerHTML = '<div class="text-center py-10 opacity-50"><span class="material-symbols-outlined text-4xl mb-2">notifications_paused</span><p>All caught up!</p></div>';
+                return;
+            }
+            
+            allNotifs.forEach(n => {
+                const icon = n.type === 'broadcast' ? 'campaign' : 'chat_bubble';
+                const bg = n.type === 'broadcast' ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/5 border-white/10';
+                const iconColor = n.type === 'broadcast' ? 'text-orange-400' : 'text-blue-400';
+                
+                list.innerHTML += `
+                    <div class="${bg} border p-4 rounded-xl flex gap-3 items-start animate-fade-in-up">
+                        <div class="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined ${iconColor} text-lg">${icon}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-white">${n.title}</h4>
+                            <p class="text-xs text-gray-300 mt-1">${n.body}</p>
+                            <p class="text-[10px] text-gray-500 mt-2">${new Date(n.timestamp).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Clear red dot on view
+            localStorage.setItem('last_notif_check', Date.now());
+            document.getElementById('header-notif-dot').classList.add('hidden');
+        }
+
+        async function checkUnreadNotifications(uid) {
+            const lastCheck = localStorage.getItem('last_notif_check') || 0;
+            
+            // Check for unread personal notifications
+            const q = query(collection(db, "user_notifications"), where("userId", "==", uid));
+            const snap = await getDocs(q);
+            
+            let hasUnread = false;
+            snap.forEach(d => {
+                if (d.data().timestamp > lastCheck) hasUnread = true;
+            });
+            
+            // Also check for new global broadcasts
+            const globalQ = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"), limit(1));
+            const globalSnap = await getDocs(globalQ);
+            globalSnap.forEach(d => {
+                if (d.data().timestamp > lastCheck) hasUnread = true;
+            });
+            
+            if (hasUnread) {
+                document.getElementById('header-notif-dot').classList.remove('hidden');
+            }
+        }
+
+        // --- UI UPDATER ---
+        function updateUIForUser(user, userData) {
+            let displayName = userData.name || user.displayName;
+            if (!displayName && user.email) {
+                const namePart = user.email.split('@')[0];
+                displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+            } else if (!displayName) {
+                displayName = 'Student';
+            }
+
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                const firstName = displayName.split(' ')[0];
+                loginBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">verified</span> ${firstName}`;
+                loginBtn.classList.replace('bg-blue-600/20', 'bg-green-500/20');
+                loginBtn.classList.replace('text-blue-300', 'text-green-300');
+                loginBtn.classList.replace('border-blue-500/50', 'border-green-500/50');
+                loginBtn.onclick = window.logoutUser; 
+            }
+
+            const sidebarName = document.getElementById('sidebarName');
+            const sidebarEmail = document.getElementById('sidebarEmail');
+            // const sidebarAvatar = document.getElementById('sidebarAvatar'); // Already static
+
+            if (sidebarName) sidebarName.textContent = displayName;
+            if (sidebarEmail) sidebarEmail.textContent = user.email || "Squad Member";
+
+            if (sidebarAvatar) {
+                if (userData.profilePic || user.photoURL) {
+                    sidebarAvatar.innerHTML = `<img src="${userData.profilePic || user.photoURL}" alt="Profile" class="w-full h-full object-cover">`;
+                } else {
+                    const initials = displayName.charAt(0).toUpperCase();
+                    sidebarAvatar.innerHTML = `<span class="text-white font-bold text-lg">${initials}</span>`;
+                }
+            }
+        }
+
+        function resetUI() {
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">login</span> Login`;
+                loginBtn.className = "hoverable px-5 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] flex items-center gap-2";
+                loginBtn.onclick = window.toggleLogin; 
+            }
+
+            const sidebarName = document.getElementById('sidebarName');
+            const sidebarEmail = document.getElementById('sidebarEmail');
+            
+            if (sidebarName) sidebarName.textContent = "Guest";
+            if (sidebarEmail) sidebarEmail.textContent = "Join the Squad";
+            if (sidebarAvatar) sidebarAvatar.innerHTML = ""; 
+        }
+    </script>
+</body>
+</html>
