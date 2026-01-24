@@ -140,9 +140,13 @@
                         Admin
                     </button>
 
-                    <!-- Auth Button -->
+                    <!-- Auth Buttons -->
                     <button id="auth-btn" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors flex items-center gap-2">
                         <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
+                    </button>
+
+                    <button id="navbar-signup-btn" class="px-4 py-2 bg-brand-primary text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+                        Sign Up
                     </button>
 
                     <!-- Dark Mode Toggle -->
@@ -172,9 +176,56 @@
                 <a href="#projects" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Projects</a>
                 <a href="#podcast" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Blue Mind</a>
                 <button id="mobile-auth-btn" class="block w-full text-left px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-brand-primary">Sign In</button>
+                <button id="mobile-signup-btn" class="block w-full text-left px-3 py-3 text-base font-bold text-brand-primary bg-brand-light dark:bg-slate-800 rounded-md mt-2">Sign Up</button>
             </div>
         </div>
     </nav>
+
+    <!-- NEW: Auth Modal (Email/Password) -->
+    <div id="auth-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="close-auth-bg"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl animate-fade-in-up">
+            <button id="close-auth-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold mb-2">Welcome Back</h3>
+                <p class="text-slate-500 text-sm">Sign in to access admin features or manage your profile.</p>
+            </div>
+            
+            <form id="email-auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="auth-email" class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-primary" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="auth-password" class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-primary" placeholder="••••••••">
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" id="btn-login" class="flex-1 py-3 bg-brand-primary text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                        Log In
+                    </button>
+                    <button type="button" id="btn-signup" class="flex-1 py-3 bg-transparent border border-brand-primary text-brand-primary rounded-lg font-bold hover:bg-brand-light dark:hover:bg-slate-800 transition-colors">
+                        Sign Up
+                    </button>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                    <span class="flex-shrink-0 mx-4 text-slate-400 text-xs">Or continue with</span>
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                </div>
+
+                <button type="button" id="btn-google" class="w-full py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Sign in with Google
+                </button>
+
+                <p id="auth-error-msg" class="text-red-500 text-xs text-center hidden"></p>
+            </form>
+        </div>
+    </div>
 
     <!-- Admin Dashboard Modal -->
     <div id="admin-modal" class="fixed inset-0 z-[100] hidden">
@@ -255,7 +306,7 @@
                     </div>
                     <h1 class="font-display font-bold text-5xl md:text-7xl lg:text-8xl leading-tight mb-6">
                         Hey, I'm <br>
-                        <span class="text-gradient">Francis Pwavwe</span> 👋🏽
+                        <span class="text-gradient">Francis</span> 👋🏽
                     </h1>
                     <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-light mb-8 max-w-2xl leading-relaxed">
                         Forever curious. Globally-minded. <br class="hidden md:block">
@@ -274,8 +325,8 @@
                 <!-- Hero Image -->
                 <div class="flex-1 relative w-full max-w-lg reveal active" style="transition-delay: 200ms;">
                     <div class="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border-[8px] border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
-                        <!-- IMPORTANT: Replace 'assets/profile.jpg' with your actual image file path -->
-                        <img src="assets/profile.jpg" 
+                        <!-- IMPORTANT: Image name matches root file -->
+                        <img src="profile.jpg" 
                              onerror="this.src='https://placehold.co/600x800/1e293b/FFF?text=Francis+Pwavwe'"
                              alt="Francis Pwavwe" class="object-cover w-full h-full hover:scale-105 transition-transform duration-700">
                         
@@ -369,9 +420,10 @@
                     <span class="text-brand-accent font-bold tracking-widest uppercase text-sm">Professional Journey</span>
                     <h2 class="font-display text-4xl font-bold mt-2">Resume & Experience</h2>
                 </div>
-                <button onclick="alert('PDF Resume downloading...')" class="mt-6 md:mt-0 flex items-center gap-2 text-sm font-bold border-b-2 border-slate-900 dark:border-white pb-1 hover:text-brand-primary transition-colors">
+                <!-- Resume Download Link -->
+                <a href="resume.pdf" download class="mt-6 md:mt-0 flex items-center gap-2 text-sm font-bold border-b-2 border-slate-900 dark:border-white pb-1 hover:text-brand-primary transition-colors">
                     Download Full CV <i data-lucide="download" class="w-4 h-4"></i>
-                </button>
+                </a>
             </div>
 
             <div class="grid md:grid-cols-2 gap-12">
@@ -522,8 +574,8 @@
             <!-- Masonry-style Grid (CSS Grid) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px]">
                 <div class="col-span-2 row-span-2 relative group overflow-hidden rounded-2xl reveal">
-                    <!-- Replace 'assets/gallery1.jpg' with your image -->
-                    <img src="assets/gallery1.jpg" 
+                    <!-- CHANGED: Updated to root paths to match repository structure -->
+                    <img src="gallery1.jpg" 
                          onerror="this.src='https://placehold.co/800x800/1e293b/FFF?text=Cadet+Leadership'" 
                          alt="Cadet" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -531,17 +583,20 @@
                     </div>
                 </div>
                 <div class="col-span-1 row-span-1 relative group overflow-hidden rounded-2xl reveal">
-                    <img src="assets/gallery2.jpg" 
+                    <!-- CHANGED: Updated to root paths -->
+                    <img src="gallery2.jpg" 
                          onerror="this.src='https://placehold.co/400x400/6366f1/FFF?text=Travel'" 
                          alt="Travel" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                 </div>
                 <div class="col-span-1 row-span-2 relative group overflow-hidden rounded-2xl reveal">
-                    <img src="assets/gallery3.jpg" 
+                    <!-- CHANGED: Updated to root paths -->
+                    <img src="gallery3.jpg" 
                          onerror="this.src='https://placehold.co/400x800/fbbf24/000?text=Vibes'" 
                          alt="Portrait" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                 </div>
                 <div class="col-span-1 row-span-1 relative group overflow-hidden rounded-2xl reveal">
-                    <img src="assets/gallery4.jpg" 
+                    <!-- CHANGED: Updated to root paths -->
+                    <img src="gallery4.jpg" 
                          onerror="this.src='https://placehold.co/400x400/22c55e/FFF?text=Nature'" 
                          alt="Nature" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                 </div>
@@ -761,7 +816,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, limit, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // CHANGED: Imports for Email/Password Auth AND Google Auth
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB6lxgjNY4CRNHAe3pAgR5SYv1ohL8brOI",
@@ -776,7 +832,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+        const googleProvider = new GoogleAuthProvider();
 
         const ADMIN_EMAIL = 'pwavwef@gmail.com';
 
@@ -784,32 +840,103 @@
         const authBtn = document.getElementById('auth-btn');
         const mobileAuthBtn = document.getElementById('mobile-auth-btn');
         const adminDashboardBtn = document.getElementById('admin-dashboard-btn');
+        const navbarSignupBtn = document.getElementById('navbar-signup-btn');
+        const mobileSignupBtn = document.getElementById('mobile-signup-btn');
+        
+        // Modal Elements
+        const authModal = document.getElementById('auth-modal');
+        const closeAuthBtn = document.getElementById('close-auth-btn');
+        const closeAuthBg = document.getElementById('close-auth-bg');
+        const authForm = document.getElementById('email-auth-form');
+        const authErrorMsg = document.getElementById('auth-error-msg');
+        const btnSignup = document.getElementById('btn-signup');
+        const btnGoogle = document.getElementById('btn-google');
 
-        async function handleLogin() {
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Login failed", error);
-                alert("Login failed: " + error.message);
-            }
+        function toggleAuthModal() {
+            authModal.classList.toggle('hidden');
+            authErrorMsg.classList.add('hidden'); // clear errors on toggle
         }
 
         async function handleLogout() {
             try {
                 await signOut(auth);
+                alert("Signed out successfully.");
             } catch (error) {
                 console.error("Logout failed", error);
             }
         }
 
+        // Button Listeners
         authBtn.addEventListener('click', () => {
             if (auth.currentUser) handleLogout();
-            else handleLogin();
+            else toggleAuthModal();
         });
 
         mobileAuthBtn.addEventListener('click', () => {
             if (auth.currentUser) handleLogout();
-            else handleLogin();
+            else toggleAuthModal();
+        });
+
+        // Add Listeners for new Sign Up buttons
+        if(navbarSignupBtn) {
+            navbarSignupBtn.addEventListener('click', toggleAuthModal);
+        }
+        if(mobileSignupBtn) {
+            mobileSignupBtn.addEventListener('click', toggleAuthModal);
+        }
+
+        closeAuthBtn.addEventListener('click', toggleAuthModal);
+        closeAuthBg.addEventListener('click', toggleAuthModal);
+
+        // Google Auth Handler
+        if (btnGoogle) {
+            btnGoogle.addEventListener('click', async () => {
+                try {
+                    await signInWithPopup(auth, googleProvider);
+                    toggleAuthModal();
+                } catch (error) {
+                    console.error("Google Sign In Error", error);
+                    authErrorMsg.innerText = error.message;
+                    authErrorMsg.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Login Handler
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                toggleAuthModal(); // Close modal on success
+                // Alert removed for smoother UX, auth state listener handles UI update
+            } catch (error) {
+                authErrorMsg.innerText = error.message;
+                authErrorMsg.classList.remove('hidden');
+            }
+        });
+
+        // Signup Handler
+        btnSignup.addEventListener('click', async () => {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            if(!email || !password) {
+                authErrorMsg.innerText = "Please enter email and password to sign up.";
+                authErrorMsg.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                toggleAuthModal();
+                alert("Account created! You are now logged in.");
+            } catch (error) {
+                authErrorMsg.innerText = error.message;
+                authErrorMsg.classList.remove('hidden');
+            }
         });
 
         // Monitor Auth State
@@ -818,6 +945,10 @@
                 // User is signed in
                 authBtn.innerHTML = `<i data-lucide="log-out" class="w-4 h-4"></i> Sign Out`;
                 mobileAuthBtn.innerText = "Sign Out";
+                
+                // Hide Sign Up buttons when logged in
+                if(navbarSignupBtn) navbarSignupBtn.classList.add('hidden');
+                if(mobileSignupBtn) mobileSignupBtn.classList.add('hidden');
                 
                 // Check if Admin
                 if (user.email === ADMIN_EMAIL) {
@@ -831,6 +962,11 @@
                 // User is signed out
                 authBtn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i> Sign In`;
                 mobileAuthBtn.innerText = "Sign In";
+                
+                // Show Sign Up buttons when logged out
+                if(navbarSignupBtn) navbarSignupBtn.classList.remove('hidden');
+                if(mobileSignupBtn) mobileSignupBtn.classList.remove('hidden');
+                
                 adminDashboardBtn.classList.add('hidden');
                 lucide.createIcons();
             }
@@ -971,10 +1107,5 @@
         // Initial fetch
         fetchEpisodes();
     </script>
-</body>
-</html>
-        <p>&copy; 2025 Francis Pwavwe. Built with ambition.</p>
-    </footer>
-
 </body>
 </html>
