@@ -1197,6 +1197,19 @@
             }
         };
 
+        window.toggleReadMore = (id) => {
+            const content = document.getElementById(`thought-content-${id}`);
+            const btn = document.getElementById(`thought-btn-${id}`);
+            
+            if (content.classList.contains('line-clamp-3')) {
+                content.classList.remove('line-clamp-3');
+                btn.innerText = "Show Less";
+            } else {
+                content.classList.add('line-clamp-3');
+                btn.innerText = "Read More";
+            }
+        };
+
         window.submitComment = async (id) => {
             const input = document.getElementById(`comment-input-${id}`);
             const text = input.value;
@@ -1327,9 +1340,13 @@
                                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${date}</span>
                                     </div>
                                     <h3 class="text-xl font-bold mb-3 font-display">${data.title}</h3>
-                                    <p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-4 flex-1">
+                                    
+                                    <p id="thought-content-${id}" class="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-2 flex-1 transition-all duration-300">
                                         ${data.content}
                                     </p>
+                                    ${data.content.length > 120 ? 
+                                        `<button id="thought-btn-${id}" onclick="toggleReadMore('${id}')" class="text-xs text-brand-primary font-bold mb-4 hover:underline self-start">Read More</button>` 
+                                        : '<div class="mb-4"></div>'}
                                     
                                     <!-- Action Bar -->
                                     <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
