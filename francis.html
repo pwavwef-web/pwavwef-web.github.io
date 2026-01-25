@@ -60,6 +60,7 @@
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px; /* Added height for horizontal scrollbar */
         }
         ::-webkit-scrollbar-track {
             background: #f1f1f1; 
@@ -115,6 +116,17 @@
             color: #6366f1;
             font-weight: 700;
         }
+        
+        /* Comment Section Transition */
+        .comments-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .comments-section.open {
+            max-height: 500px; /* Arbitrary large height */
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="bg-brand-light text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans selection:bg-brand-accent selection:text-white">
@@ -132,6 +144,7 @@
                 <div class="hidden md:flex space-x-8 items-center">
                     <a href="#about" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">About</a>
                     <a href="#projects" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">Projects</a>
+                    <a href="#thoughts" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">Thoughts</a>
                     <a href="#podcast" class="text-sm font-medium hover:text-brand-primary dark:hover:text-brand-accent transition-colors">Blue Mind</a>
                     <a href="#contact" class="px-5 py-2.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-medium text-sm hover:shadow-lg hover:scale-105 transition-all">Let's Talk</a>
                     
@@ -174,6 +187,7 @@
             <div class="px-4 pt-2 pb-6 space-y-1">
                 <a href="#about" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">About</a>
                 <a href="#projects" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Projects</a>
+                <a href="#thoughts" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Thoughts</a>
                 <a href="#podcast" class="block px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">Blue Mind</a>
                 <button id="mobile-auth-btn" class="block w-full text-left px-3 py-3 text-base font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-brand-primary">Sign In</button>
                 <button id="mobile-signup-btn" class="block w-full text-left px-3 py-3 text-base font-bold text-brand-primary bg-brand-light dark:bg-slate-800 rounded-md mt-2">Sign Up</button>
@@ -181,10 +195,10 @@
         </div>
     </nav>
 
-    <!-- NEW: Auth Modal (Email/Password) -->
-    <div id="auth-modal" class="fixed inset-0 z-[100] hidden">
+    <!-- UPDATED: Auth Modal (Using Flexbox Centering) -->
+    <div id="auth-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="close-auth-bg"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl animate-fade-in-up">
+        <div class="relative w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl animate-fade-in-up">
             <button id="close-auth-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
@@ -227,10 +241,10 @@
         </div>
     </div>
 
-    <!-- Admin Dashboard Modal -->
-    <div id="admin-modal" class="fixed inset-0 z-[100] hidden">
+    <!-- UPDATED: Admin Dashboard Modal (Using Flexbox Centering) -->
+    <div id="admin-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="close-admin-bg"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[80vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        <div class="relative w-full max-w-4xl h-[80vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
             <!-- Header -->
             <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800">
                 <h2 class="text-2xl font-bold font-display">Admin Dashboard</h2>
@@ -242,10 +256,13 @@
             <!-- Tabs -->
             <div class="flex border-b border-slate-200 dark:border-slate-800">
                 <button id="tab-inbox" class="flex-1 py-4 text-center font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 tab-active transition-colors">
-                    Inbox (Messages)
+                    Inbox
+                </button>
+                <button id="tab-thoughts" class="flex-1 py-4 text-center font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Thoughts (Blog)
                 </button>
                 <button id="tab-studio" class="flex-1 py-4 text-center font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    Studio (Upload Episode)
+                    Podcast Studio
                 </button>
             </div>
 
@@ -256,12 +273,34 @@
                 <div id="view-inbox" class="space-y-4">
                     <h3 class="text-lg font-bold mb-4">Recent Messages</h3>
                     <div id="messages-list" class="space-y-3">
-                        <!-- Messages injected here -->
                         <div class="text-center text-slate-400 py-10">Loading messages...</div>
                     </div>
                 </div>
 
-                <!-- Studio View (Hidden) -->
+                <!-- Thoughts View (New) -->
+                <div id="view-thoughts" class="hidden">
+                    <h3 class="text-lg font-bold mb-4">Post a Thought</h3>
+                    <form id="upload-thought-form" class="space-y-4 max-w-xl mx-auto bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Headline</label>
+                            <input type="text" id="thought-title" required class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700" placeholder="What's on your mind?">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Image URL</label>
+                            <input type="url" id="thought-image" class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700" placeholder="https://example.com/image.jpg">
+                            <p class="text-xs text-slate-500 mt-1">Paste a link to an image.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Content</label>
+                            <textarea id="thought-content" rows="5" required class="w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700" placeholder="Write your thought here..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-brand-primary text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                            Publish Thought
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Studio View -->
                 <div id="view-studio" class="hidden">
                     <h3 class="text-lg font-bold mb-4">Upload New Episode</h3>
                     <form id="upload-episode-form" class="space-y-4 max-w-xl mx-auto">
@@ -504,8 +543,24 @@
         </div>
     </section>
 
+    <!-- UPDATED: Thoughts / Blog Section (Horizontal Scroll) -->
+    <section id="thoughts" class="py-24 bg-brand-light dark:bg-slate-950">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="text-brand-accent font-bold tracking-widest uppercase text-sm">The Blog</span>
+                <h2 class="font-display text-4xl font-bold mt-2">Thoughts & Musing</h2>
+                <p class="text-slate-500 mt-4">Snapshots of my mind. Interact, share, and connect.</p>
+            </div>
+            
+            <div id="thoughts-container" class="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory -mx-6 px-6 scrollbar-hide">
+                <!-- Blog cards will be injected here via JS -->
+                <div class="w-full text-center text-slate-400 py-10">Loading thoughts...</div>
+            </div>
+        </div>
+    </section>
+
     <!-- Projects -->
-    <section id="projects" class="py-24 bg-white dark:bg-slate-950">
+    <section id="projects" class="py-24 bg-white dark:bg-slate-900">
         <div class="container mx-auto px-6">
             <h2 class="font-display text-4xl font-bold mb-12 text-center reveal">Featured Work</h2>
             
@@ -574,7 +629,6 @@
             <!-- Masonry-style Grid (CSS Grid) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px]">
                 <div class="col-span-2 row-span-2 relative group overflow-hidden rounded-2xl reveal">
-                    <!-- CHANGED: Updated to root paths to match repository structure -->
                     <img src="gallery1.jpeg" 
                          onerror="this.src='https://placehold.co/800x800/1e293b/FFF?text=Cadet+Leadership'" 
                          alt="Cadet" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
@@ -583,19 +637,16 @@
                     </div>
                 </div>
                 <div class="col-span-1 row-span-1 relative group overflow-hidden rounded-2xl reveal">
-                    <!-- CHANGED: Updated to root paths -->
                     <img src="profile.jpg" 
                          onerror="this.src='https://placehold.co/400x400/6366f1/FFF?text=Travel'" 
                          alt="Travel" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                 </div>
                 <div class="col-span-1 row-span-2 relative group overflow-hidden rounded-2xl reveal">
-                    <!-- CHANGED: Updated to root paths -->
                     <img src="gallery3.jpg" 
                          onerror="this.src='https://placehold.co/400x800/fbbf24/000?text=Vibes'" 
                          alt="Portrait" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                 </div>
                 <div class="col-span-1 row-span-1 relative group overflow-hidden rounded-2xl reveal">
-                    <!-- CHANGED: Updated to root paths -->
                     <img src="gallery4.jpg" 
                          onerror="this.src='https://placehold.co/400x400/22c55e/FFF?text=Nature'" 
                          alt="Nature" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
@@ -643,18 +694,7 @@
                 <!-- List of Episodes -->
                 <div class="space-y-6" id="recent-notes-list">
                     <h3 class="text-2xl font-bold border-b border-white/20 pb-4">Recent Notes</h3>
-                    <a href="#" class="block group">
-                        <span class="text-xs text-brand-accent font-bold">PHILOSOPHY</span>
-                        <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">Why "Waiting" is an Action Verb</h4>
-                    </a>
-                    <a href="#" class="block group">
-                        <span class="text-xs text-brand-accent font-bold">TOURISM</span>
-                        <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">The Future of Eco-Tourism in West Africa</h4>
-                    </a>
-                    <a href="#" class="block group">
-                        <span class="text-xs text-brand-accent font-bold">LIFE</span>
-                        <h4 class="text-lg font-medium group-hover:text-brand-accent transition-colors">Balancing Uniforms and Creativity</h4>
-                    </a>
+                    <div class="text-center text-blue-200 py-4">Loading episodes...</div>
                 </div>
             </div>
         </div>
@@ -720,10 +760,10 @@
         </div>
     </footer>
 
-    <!-- Newsletter Modal -->
-    <div id="newsletter-modal" class="fixed inset-0 z-[100] hidden">
+    <!-- UPDATED: Newsletter Modal (Using Flexbox Centering) -->
+    <div id="newsletter-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('newsletter-modal').classList.add('hidden')"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl animate-fade-in-up">
+        <div class="relative w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl animate-fade-in-up">
             <button onclick="document.getElementById('newsletter-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
@@ -779,22 +819,26 @@
         // Tab Switching
         const tabInbox = document.getElementById('tab-inbox');
         const tabStudio = document.getElementById('tab-studio');
+        const tabThoughts = document.getElementById('tab-thoughts');
+        
         const viewInbox = document.getElementById('view-inbox');
         const viewStudio = document.getElementById('view-studio');
+        const viewThoughts = document.getElementById('view-thoughts');
 
-        tabInbox.addEventListener('click', () => {
-            tabInbox.classList.add('tab-active');
-            tabStudio.classList.remove('tab-active');
-            viewInbox.classList.remove('hidden');
-            viewStudio.classList.add('hidden');
-        });
+        function setActiveTab(tabBtn, viewDiv) {
+            // Remove active class from all tabs
+            [tabInbox, tabStudio, tabThoughts].forEach(t => t.classList.remove('tab-active'));
+            // Hide all views
+            [viewInbox, viewStudio, viewThoughts].forEach(v => v.classList.add('hidden'));
+            
+            // Activate clicked
+            tabBtn.classList.add('tab-active');
+            viewDiv.classList.remove('hidden');
+        }
 
-        tabStudio.addEventListener('click', () => {
-            tabStudio.classList.add('tab-active');
-            tabInbox.classList.remove('tab-active');
-            viewStudio.classList.remove('hidden');
-            viewInbox.classList.add('hidden');
-        });
+        tabInbox.addEventListener('click', () => setActiveTab(tabInbox, viewInbox));
+        tabStudio.addEventListener('click', () => setActiveTab(tabStudio, viewStudio));
+        tabThoughts.addEventListener('click', () => setActiveTab(tabThoughts, viewThoughts));
 
         // Scroll Reveal Animation
         function reveal() {
@@ -815,8 +859,7 @@
     <!-- Firebase Configuration & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, limit, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // CHANGED: Imports for Email/Password Auth AND Google Auth
+        import { getFirestore, collection, addDoc, getDocs, limit, query, orderBy, serverTimestamp, doc, updateDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -877,7 +920,6 @@
             else toggleAuthModal();
         });
 
-        // Add Listeners for new Sign Up buttons
         if(navbarSignupBtn) {
             navbarSignupBtn.addEventListener('click', toggleAuthModal);
         }
@@ -910,8 +952,7 @@
             
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                toggleAuthModal(); // Close modal on success
-                // Alert removed for smoother UX, auth state listener handles UI update
+                toggleAuthModal();
             } catch (error) {
                 authErrorMsg.innerText = error.message;
                 authErrorMsg.classList.remove('hidden');
@@ -946,14 +987,12 @@
                 authBtn.innerHTML = `<i data-lucide="log-out" class="w-4 h-4"></i> Sign Out`;
                 mobileAuthBtn.innerText = "Sign Out";
                 
-                // Hide Sign Up buttons when logged in
                 if(navbarSignupBtn) navbarSignupBtn.classList.add('hidden');
                 if(mobileSignupBtn) mobileSignupBtn.classList.add('hidden');
                 
-                // Check if Admin
                 if (user.email === ADMIN_EMAIL) {
                     adminDashboardBtn.classList.remove('hidden');
-                    fetchMessages(); // Load admin data
+                    fetchMessages();
                 } else {
                     adminDashboardBtn.classList.add('hidden');
                 }
@@ -963,7 +1002,6 @@
                 authBtn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i> Sign In`;
                 mobileAuthBtn.innerText = "Sign In";
                 
-                // Show Sign Up buttons when logged out
                 if(navbarSignupBtn) navbarSignupBtn.classList.remove('hidden');
                 if(mobileSignupBtn) mobileSignupBtn.classList.remove('hidden');
                 
@@ -1013,7 +1051,7 @@
                 if (querySnapshot.empty) {
                     listContainer.innerHTML = '<div class="text-center text-slate-400 py-10">No messages yet.</div>';
                 } else {
-                    listContainer.innerHTML = ''; // Clear loading
+                    listContainer.innerHTML = '';
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : 'Just now';
@@ -1034,7 +1072,6 @@
                 }
             } catch (error) {
                 console.error("Error fetching messages:", error);
-                // Likely permission error if rules aren't set up yet
             }
         }
 
@@ -1061,7 +1098,7 @@
                 });
                 alert("Episode published successfully!");
                 uploadForm.reset();
-                fetchEpisodes(); // Refresh list on page
+                fetchEpisodes();
             } catch (error) {
                 console.error("Error publishing episode: ", error);
                 alert("Failed to publish.");
@@ -1075,7 +1112,6 @@
         async function fetchEpisodes() {
             const listContainer = document.getElementById('recent-notes-list');
             try {
-                // Try to order by timestamp if index exists, else just fetch
                 let q;
                 try {
                      q = query(collection(db, "episodes"), orderBy("timestamp", "desc"), limit(5));
@@ -1100,12 +1136,248 @@
                     });
                 }
             } catch (error) {
-                console.log("Firebase not yet populated or accessible, showing default content.");
+                console.log("Firebase not yet populated for episodes.");
             }
         }
 
-        // Initial fetch
+        // --- ADMIN: UPLOAD THOUGHT (BLOG) ---
+        const thoughtForm = document.getElementById('upload-thought-form');
+        thoughtForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (auth.currentUser?.email !== ADMIN_EMAIL) return;
+
+            const submitBtn = thoughtForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = "Publishing...";
+            submitBtn.disabled = true;
+
+            const title = document.getElementById('thought-title').value;
+            const image = document.getElementById('thought-image').value;
+            const content = document.getElementById('thought-content').value;
+
+            try {
+                await addDoc(collection(db, "thoughts"), {
+                    title: title,
+                    image: image,
+                    content: content,
+                    likes: 0,
+                    timestamp: serverTimestamp()
+                });
+                alert("Thought published!");
+                thoughtForm.reset();
+                fetchThoughts(); // Refresh list
+            } catch (error) {
+                console.error("Error publishing thought: ", error);
+                alert("Failed to publish thought.");
+            } finally {
+                submitBtn.innerText = "Publish Thought";
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- PUBLIC: FETCH THOUGHTS & INTERACTIONS ---
+        
+        // Expose functions globally for HTML onclick handlers
+        window.likeThought = async (id) => {
+            try {
+                const docRef = doc(db, "thoughts", id);
+                await updateDoc(docRef, {
+                    likes: increment(1)
+                });
+                fetchThoughts(); // Optimistic update would be better, but re-fetching is safer for now
+            } catch(e) { console.error("Error liking:", e); }
+        };
+
+        window.toggleComments = (id) => {
+            const el = document.getElementById(`comments-${id}`);
+            if(el.classList.contains('open')) {
+                el.classList.remove('open');
+            } else {
+                el.classList.add('open');
+                fetchComments(id);
+            }
+        };
+
+        window.submitComment = async (id) => {
+            const input = document.getElementById(`comment-input-${id}`);
+            const text = input.value;
+            if(!text) return;
+
+            const userName = auth.currentUser ? (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]) : "Anonymous Visitor";
+
+            try {
+                await addDoc(collection(db, "comments"), {
+                    thoughtId: id,
+                    user: userName,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+                input.value = '';
+                fetchComments(id); // Refresh comments
+                // Also update comment count on the thought doc ideally, skipping for simplicity
+            } catch(e) { 
+                console.error("Error commenting:", e);
+                alert("Could not post comment."); 
+            }
+        };
+
+        window.downloadThought = (title, content, imageUrl) => {
+            const htmlContent = `
+                <html>
+                <head><title>${title} - Francis Pwavwe</title></head>
+                <body style="font-family: sans-serif; padding: 40px; line-height: 1.6;">
+                    <h1>${title}</h1>
+                    <p><em>By Francis Pwavwe</em></p>
+                    <hr>
+                    ${imageUrl ? `<img src="${imageUrl}" style="max-width:100%; border-radius: 10px; margin: 20px 0;">` : ''}
+                    <p>${content}</p>
+                    <hr>
+                    <p style="font-size: 0.8em; color: gray;">Downloaded from francispwavwe.com</p>
+                </body>
+                </html>
+            `;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title.replace(/\s+/g, '_')}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        window.shareThought = (title, text) => {
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    text: text,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(`${title} - ${text} \n ${window.location.href}`);
+                alert("Link copied to clipboard!");
+            }
+        };
+
+        async function fetchComments(thoughtId) {
+            const container = document.getElementById(`comments-list-${thoughtId}`);
+            container.innerHTML = '<div class="text-xs text-slate-400">Loading comments...</div>';
+            
+            try {
+                // Simplified query
+                const q = query(collection(db, "comments"), orderBy("timestamp", "asc"));
+                const snapshot = await getDocs(q);
+                
+                let html = '';
+                // Filter client side to avoid complex index requirements for now
+                const comments = [];
+                snapshot.forEach(doc => {
+                    if(doc.data().thoughtId === thoughtId) comments.push(doc.data());
+                });
+
+                if(comments.length === 0) {
+                    html = '<div class="text-xs text-slate-400 italic">No comments yet. Be the first!</div>';
+                } else {
+                    comments.forEach(data => {
+                        html += `
+                            <div class="mb-2 pb-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                                <span class="font-bold text-xs text-brand-primary dark:text-brand-accent">${data.user}</span>
+                                <p class="text-sm text-slate-600 dark:text-slate-300">${data.text}</p>
+                            </div>
+                        `;
+                    });
+                }
+                container.innerHTML = html;
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div class="text-xs text-red-400">Error loading comments.</div>';
+            }
+        }
+
+        async function fetchThoughts() {
+            const container = document.getElementById('thoughts-container');
+            try {
+                let q;
+                try {
+                     q = query(collection(db, "thoughts"), orderBy("timestamp", "desc"));
+                } catch {
+                     q = query(collection(db, "thoughts"));
+                }
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<div class="w-full text-center text-slate-400 py-10">No thoughts published yet.</div>';
+                } else {
+                    container.innerHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const id = doc.id;
+                        const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : 'Recent';
+                        // Safe strings for function calls
+                        const safeTitle = (data.title || '').replace(/'/g, "\\'");
+                        const safeContent = (data.content || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
+                        const safeImage = (data.image || '');
+
+                        const html = `
+                            <div class="min-w-[85vw] md:min-w-[350px] snap-center bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow flex flex-col h-full border border-slate-100 dark:border-slate-800">
+                                ${data.image ? `<div class="h-48 overflow-hidden"><img src="${data.image}" alt="${data.title}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" onerror="this.style.display='none'"></div>` : ''}
+                                <div class="p-6 flex-1 flex flex-col">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${date}</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold mb-3 font-display">${data.title}</h3>
+                                    <p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-4 flex-1">
+                                        ${data.content}
+                                    </p>
+                                    
+                                    <!-- Action Bar -->
+                                    <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <div class="flex gap-4">
+                                            <button onclick="likeThought('${id}')" class="flex items-center gap-1 text-slate-400 hover:text-red-500 transition-colors text-sm">
+                                                <i data-lucide="heart" class="w-4 h-4 ${data.likes > 0 ? 'fill-red-500 text-red-500' : ''}"></i> ${data.likes || 0}
+                                            </button>
+                                            <button onclick="toggleComments('${id}')" class="flex items-center gap-1 text-slate-400 hover:text-blue-500 transition-colors text-sm">
+                                                <i data-lucide="message-square" class="w-4 h-4"></i>
+                                            </button>
+                                            <button onclick="shareThought('${safeTitle}', '${safeContent.substring(0,50)}...')" class="flex items-center gap-1 text-slate-400 hover:text-green-500 transition-colors text-sm">
+                                                <i data-lucide="share-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                        <button onclick="downloadThought('${safeTitle}', '${safeContent}', '${safeImage}')" class="text-slate-400 hover:text-brand-primary transition-colors">
+                                            <i data-lucide="download" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Comments Section -->
+                                <div id="comments-${id}" class="comments-section bg-slate-50 dark:bg-slate-950 px-6">
+                                    <div class="py-4 space-y-3">
+                                        <div id="comments-list-${id}" class="space-y-2 mb-4">
+                                            <!-- Comments load here -->
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="comment-input-${id}" class="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:border-brand-primary" placeholder="Add a comment...">
+                                            <button onclick="submitComment('${id}')" class="p-2 bg-brand-primary text-white rounded-lg hover:bg-blue-700">
+                                                <i data-lucide="send" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += html;
+                    });
+                    lucide.createIcons(); // Re-init icons for new content
+                }
+            } catch (error) {
+                console.error("Fetch error", error);
+            }
+        }
+
+        // Initial Data Loads
         fetchEpisodes();
+        fetchThoughts();
     </script>
 </body>
 </html>
