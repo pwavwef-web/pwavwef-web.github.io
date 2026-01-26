@@ -2084,6 +2084,66 @@
             if (sidebarEmail) sidebarEmail.textContent = "Join the Squad";
             if (sidebarAvatar) sidebarAvatar.innerHTML = ""; 
         }
+        // --- ADD THIS CODE INSIDE YOUR <script type="module"> ---
+
+        async function loadHomeEvents() {
+            const container = document.getElementById('home-events-feed');
+            if (!container) return;
+
+            // Reuse your existing 'db' connection
+            try {
+                // Fetch latest 5 events
+                const q = query(collection(db, "events"), orderBy("timestamp", "desc"), limit(5));
+                const snap = await getDocs(q);
+
+                // Handle empty state
+                if (snap.empty) {
+                    container.innerHTML = `
+                        <div class="min-w-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-10">
+                            <span class="material-symbols-outlined text-4xl mb-2">event_busy</span>
+                            <p class="text-sm">No upcoming events found.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = ''; // Clear the "animate-pulse" placeholders
+
+                snap.forEach(doc => {
+                    const ev = doc.data();
+                    
+                    // Generate the Card HTML
+                    const card = `
+                        <div onclick="window.openFeature('events')" class="min-w-[280px] md:min-w-[320px] snap-center bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-blue-500/50 transition cursor-pointer group hover:-translate-y-1 duration-300">
+                            <div class="h-32 bg-gray-900 relative">
+                                <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition duration-500">
+                                <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10 shadow-xl">
+                                    ${ev.date}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-white text-lg truncate mb-1">${ev.title}</h3>
+                                <div class="flex items-center gap-2 text-xs text-gray-400">
+                                     <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[14px] text-blue-400">location_on</span> 
+                                        ${ev.venue}
+                                     </span>
+                                     <span>•</span>
+                                     <span class="text-gray-500">${ev.time}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+
+            } catch (e) {
+                console.error("Error loading home events:", e);
+                container.innerHTML = `<div class="text-red-400 text-xs p-10">System Error: Could not load events.</div>`;
+            }
+        }
+
+        // Automatically call this function to load data
+        loadHomeEvents();
     </script>
 </body>
 </html>
