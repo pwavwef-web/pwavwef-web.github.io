@@ -1160,6 +1160,7 @@
     const price = ev.price || 0;
     const total = ev.totalTickets || 0;
     const sold = ev.ticketsSold || 0;
+    const rsvpCount = (ev.rsvps || []).length;            
     
     if (total > 0) {
         // It is a paid/ticketed event
@@ -1192,6 +1193,15 @@
             btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
             btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
         }
+        document.getElementById('modal-event-desc').innerHTML = `
+            <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-500 dark:text-gray-400">People Going:</span>
+                <span class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users text-blueAccent text-sm"></i> ${rsvpCount}
+                </span>
+            </div>
+            ${ev.description}
+        `;
     }
 
     this.openModal('modal-event-details');
