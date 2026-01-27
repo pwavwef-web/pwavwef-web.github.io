@@ -1624,10 +1624,156 @@
 
         window.removeGPACourse = (index) => { window.gpaCourses.splice(index, 1); updateGPAResults(); }
 
-        function renderCountdown(data) {
-             const featureBody = document.getElementById('featureBody');
-             featureBody.innerHTML = `<div class="text-center py-4"><div class="w-16 h-16 bg-purple-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4"><span class="material-symbols-outlined text-3xl text-purple-400">hourglass_top</span></div><h2 class="text-2xl font-bold text-white mb-6">Final Exams Countdown</h2><div class="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-2">42<span class="text-2xl text-white font-sans">d</span> : 14<span class="text-2xl text-white font-sans">h</span></div><p class="text-gray-400 text-sm mb-8">Until Judgement Day</p><button class="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-semibold text-sm">Download Revision Schedule</button></div>`;
-        }
+        // --- UPDATED DYNAMIC COUNTDOWN LOGIC ---
+        window.renderCountdown = async (userData) => { 
+            const featureBody = document.getElementById('featureBody');
+            
+            // 1. Show Loading State while we fetch data
+            featureBody.innerHTML = `<div class="text-center py-10"><span class="material-symbols-outlined animate-spin text-3xl text-purple-400">hourglass_empty</span></div>`;
+
+            // 2. Fetch Exam Date from Firestore (Collection: system, Doc: config)
+            let targetDate = null;
+            let dateStr = "";
+            try {
+                const docRef = doc(db, "system", "config");
+                const snap = await getDoc(docRef);
+                if (snap.exists() && snap.data().examDate) {
+                    dateStr = snap.data().examDate; // Get saved date string
+                    targetDate = new Date(dateStr).getTime();
+                }
+            } catch (e) {
+                console.log("Config fetch error:", e);
+            }
+
+            // 3. Admin Control Panel (Only shows if you are Admin)
+            const isAdmin = window.isAdmin();
+            const adminPanel = isAdmin ? `
+                <div class="mt-8 pt-6 border-t border-white/10">
+                    <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
+                        <p class="text-xs text-blue-300 uppercase font-bold mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">admin_panel_settings</span> Admin Config
+                        </p>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] text-gray-400">Set Exam Date & Time</label>
+                            <input type="datetime-local" id="admin-exam-date" value="${dateStr}" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-blue-500 w-full mb-2 [color-scheme:dark]">
+                            <button onclick="window.saveExamDate()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-lg w-full flex justify-center items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">save</span> Update Countdown
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
+            // 4. Render The Interface
+            featureBody.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="w-20 h-20 bg-gradient-to-tr from-purple-500/20 to-blue-500/20 rounded-2xl mx-auto flex items-center justify-center mb-6 border border-white/5 shadow-[0_0_30px_rgba(168,85,247,0.15)]">
+                        <span class="material-symbols-outlined text-4xl text-purple-400">hourglass_top</span>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2">The Final Lap 🏁</h2>
+                    <p class="text-gray-400 text-sm mb-8" id="cd-status">Time remaining until judgement day.</p>
+
+                    <div id="countdown-ui" class="flex justify-center items-start gap-3 mb-10">
+                        <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/5 min-w-[75px]">
+                            <span class="text-4xl font-black text-white" id="cd-days">--</span>
+                            <span class="text-[10px] uppercase text-gray-500 font-bold mt-1 tracking-wider">Days</span>
+                        </div>
+                        <span class="text-2xl font-black text-gray-600 mt-4">:</span>
+                        <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/5 min-w-[75px]">
+                            <span class="text-4xl font-black text-white" id="cd-hours">--</span>
+                            <span class="text-[10px] uppercase text-gray-500 font-bold mt-1 tracking-wider">Hrs</span>
+                        </div>
+                        <span class="text-2xl font-black text-gray-600 mt-4">:</span>
+                        <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/5 min-w-[75px]">
+                            <span class="text-4xl font-black text-white" id="cd-mins">--</span>
+                            <span class="text-[10px] uppercase text-gray-500 font-bold mt-1 tracking-wider">Mins</span>
+                        </div>
+                    </div>
+
+                    <div id="cd-expired" class="hidden mb-8">
+                        <div class="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 font-bold animate-pulse flex items-center justify-center gap-2">
+                           <span class="material-symbols-outlined">warning</span> EXAMS IN PROGRESS
+                        </div>
+                    </div>
+
+                    <button class="w-full py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-bold text-sm flex items-center justify-center gap-2 group">
+                        <span class="material-symbols-outlined group-hover:text-blue-400 transition">download</span> Download Timetable
+                    </button>
+
+                    ${adminPanel}
+                </div>
+            `;
+
+            // 5. Timer Logic Calculation
+            if (targetDate) {
+                const tick = () => {
+                    const now = new Date().getTime();
+                    const distance = targetDate - now;
+
+                    if (distance < 0) {
+                        // Time is up
+                        const ui = document.getElementById('countdown-ui');
+                        const exp = document.getElementById('cd-expired');
+                        const stat = document.getElementById('cd-status');
+                        
+                        if(ui) ui.classList.add('hidden');
+                        if(exp) exp.classList.remove('hidden');
+                        if(stat) stat.innerText = "Good luck. You got this.";
+                        return;
+                    }
+
+                    // Math
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+                    // Update DOM
+                    const elD = document.getElementById('cd-days');
+                    const elH = document.getElementById('cd-hours');
+                    const elM = document.getElementById('cd-mins');
+
+                    if(elD) elD.innerText = days < 10 ? '0' + days : days;
+                    if(elH) elH.innerText = hours < 10 ? '0' + hours : hours;
+                    if(elM) elM.innerText = minutes < 10 ? '0' + minutes : minutes;
+                };
+
+                tick(); // Run immediately
+                const timerId = setInterval(tick, 60000); // Update every minute
+                
+                // Add to activeListeners to kill timer when modal closes (Memory Management)
+                window.activeListeners.push(() => clearInterval(timerId));
+            } else {
+                // No date set yet
+                const stat = document.getElementById('cd-status');
+                const days = document.getElementById('cd-days');
+                if(stat) stat.innerText = "Date to be announced soon.";
+                if(days) days.innerText = "00";
+            }
+       }
+
+       // --- NEW: FUNCTION TO SAVE EXAM DATE ---
+       window.saveExamDate = async () => {
+           const input = document.getElementById('admin-exam-date');
+           const btn = document.querySelector('#admin-exam-date + button'); // Get the button next to input
+           
+           if(!input || !input.value) return window.showToast("Please select a date", "error");
+           
+           // UI Feedback
+           const originalText = btn.innerHTML;
+           btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">sync</span> Saving...`;
+
+           try {
+               // Save to Firestore: Collection 'system', Document 'config'
+               await setDoc(doc(db, "system", "config"), { examDate: input.value }, { merge: true });
+               
+               window.showToast("Countdown Updated Successfully! ✅");
+               window.renderCountdown(); // Reload view to see new timer
+           } catch(e) {
+               console.error(e);
+               window.showToast("Failed to save. Check permissions.", "error");
+               btn.innerHTML = originalText;
+           }
+       }
 
         function renderMap() {
             const featureBody = document.getElementById('featureBody');
