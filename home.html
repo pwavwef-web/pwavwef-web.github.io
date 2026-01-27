@@ -1104,12 +1104,23 @@
                        const sold = ev.ticketsSold || 0;
                        const total = ev.totalTickets || 0;
                        const isSoldOut = total > 0 && sold >= total;
+                       const rsvpCount = (ev.rsvps || []).length;
             
                        let statusBadge = '';
                        if(total > 0) {
                            if(isSoldOut) statusBadge = `<div class="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">SOLD OUT</div>`;
                            else statusBadge = `<div class="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow">GHS ${price}</div>`;
-                       }
+                       } else {
+                            // Optional: Badge for free events
+                            statusBadge = `<div class="absolute top-2 right-2 bg-blueAccent text-white text-[10px] font-bold px-2 py-1 rounded shadow">FREE</div>`;
+                        }
+
+                       let bottomBadge = '';
+                        if (total > 0) {
+                             bottomBadge = `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 font-bold">${total - sold} left</div>`;
+                        } else {
+                             bottomBadge = `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 flex items-center gap-1 font-bold"><i class="fa-solid fa-user-group text-[8px]"></i> ${rsvpCount} Going</div>`;
+                        }
 
                        // Fixed width for horizontal scroll items (min-w-[280px])
                        feed.innerHTML += `
