@@ -1187,79 +1187,82 @@
 },
 
 buyTicket(ev) {
-    if(!currentUser) return alert("Please log in first.");
-    
-    const price = ev.price;
-    const email = currentUser.email;
-    const amountKobo = price * 100; // Paystack works in Kobo (cents)
+                if(!currentUser) return alert("Please log in first.");
+                
+                const price = ev.price;
+                const email = currentUser.email;
+                const amountKobo = price * 100;
 
-    const handler = PaystackPop.setup({
-        key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2', // REPLACE THIS WITH YOUR KEY
-        email: email,
-        amount: amountKobo,
-        currency: 'GHS',
-        metadata: {
-            custom_fields: [
-                { display_name: "Event", variable_name: "event_title", value: ev.title },
-                { display_name: "Student", variable_name: "student_name", value: app.data.user.name }
-            ]
-        },
-        callback: async function(response) {
-            // Payment Success!
-            document.getElementById('modal-overlay').classList.add('hidden'); // Close modal loading
-            
-            // 1. Generate Unique Ticket ID
-            const ticketId = 'AZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-            
-            // 2. Update Database (Reduce Stock)
-            // Note: In a real app, do this in a Cloud Function to prevent race conditions.
-            // For this prototype, we do it client-side.
-            const newSold = (ev.ticketsSold || 0) + 1;
-            await updateDoc(doc(db, "events", ev.id), { ticketsSold: newSold });
-            
-            // 3. Save Ticket to User's Subcollection
-            await addDoc(collection(db, `users/${currentUser.uid}/tickets`), {
-                eventId: ev.id,
-                eventTitle: ev.title,
-                ticketId: ticketId,
-                price: price,
-                purchaseDate: Date.now(),
-                status: 'valid'
-            });
+                const handler = PaystackPop.setup({
+                    key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2', // ⚠️ Note: This is a LIVE key. You will be charged real money.
+                    email: email,
+                    amount: amountKobo,
+                    currency: 'GHS',
+                    metadata: {
+                        custom_fields: [
+                            { display_name: "Event", variable_name: "event_title", value: ev.title },
+                            { display_name: "Student", variable_name: "student_name", value: app.data.user.name }
+                        ]
+                    },
+                    // FIX: Removed 'async' keyword here
+                    callback: function(response) {
+                        // FIX: We wrap the async logic inside an Immediately Invoked Function Expression (IIFE)
+                        (async () => {
+                            try {
+                                // Payment Success!
+                                document.getElementById('modal-overlay').classList.add('hidden'); 
+                                
+                                // 1. Generate Unique Ticket ID
+                                const ticketId = 'AZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                                
+                                // 2. Update Database (Reduce Stock)
+                                const newSold = (ev.ticketsSold || 0) + 1;
+                                await updateDoc(doc(db, "events", ev.id), { ticketsSold: newSold });
+                                
+                                // 3. Save Ticket to User's Subcollection
+                                await addDoc(collection(db, `users/${currentUser.uid}/tickets`), {
+                                    eventId: ev.id,
+                                    eventTitle: ev.title,
+                                    ticketId: ticketId,
+                                    price: price,
+                                    purchaseDate: Date.now(),
+                                    status: 'valid'
+                                });
 
-            // 4. Send Ticket to Chat (Simulating sending from Admin/System)
-            // We use the 'print_orders' collection or 'direct_messages' to send the ticket
-            // Let's send it to the Print/Admin Chat for safety
-            
-            const chatRef = doc(db, "print_orders", currentUser.uid);
-            // Ensure chat exists
-            await setDoc(chatRef, { 
-                userId: currentUser.uid, 
-                status: 'received', 
-                lastUpdated: Date.now(), 
-                userName: app.data.user.name,
-                hasUnread: true // Mark as unread for Admin
-            }, { merge: true });
+                                // 4. Send Ticket to Chat
+                                const chatRef = doc(db, "print_orders", currentUser.uid);
+                                await setDoc(chatRef, { 
+                                    userId: currentUser.uid, 
+                                    status: 'received', 
+                                    lastUpdated: Date.now(), 
+                                    userName: app.data.user.name,
+                                    hasUnread: true 
+                                }, { merge: true });
 
-            await addDoc(collection(db, "print_messages"), {
-                orderId: currentUser.uid,
-                senderId: "system", // Or admin ID
-                senderName: "AZ Ticket Bot 🤖",
-                text: `🎟️ **TICKET PURCHASED**\n\nEvent: ${ev.title}\nID: ${ticketId}\nPrice: GHS ${price}\n\nShow this ID at the entrance!`,
-                timestamp: Date.now()
-            });
+                                await addDoc(collection(db, "print_messages"), {
+                                    orderId: currentUser.uid,
+                                    senderId: "system", 
+                                    senderName: "AZ Ticket Bot 🤖",
+                                    text: `🎟️ **TICKET PURCHASED**\n\nEvent: ${ev.title}\nID: ${ticketId}\nPrice: GHS ${price}\n\nShow this ID at the entrance!`,
+                                    timestamp: Date.now()
+                                });
 
-            // 5. Success Alert
-            app.sendSystemNotification("Ticket Purchased! 🎟️", "Check your messages for the ticket ID.");
-            alert(`Payment Successful! Ticket ID: ${ticketId}\n\nWe have sent the ticket to your Chat.`);
-            history.back();
-        },
-        onClose: function() {
-            alert('Transaction was not completed.');
-        }
-    });
-    handler.openIframe();
-},
+                                // 5. Success Alert
+                                app.sendSystemNotification("Ticket Purchased! 🎟️", "Check your messages for the ticket ID.");
+                                alert(`Payment Successful! Ticket ID: ${ticketId}\n\nWe have sent the ticket to your Chat.`);
+                                history.back();
+                            } catch (error) {
+                                console.error("Ticket processing error:", error);
+                                alert("Payment successful, but there was an error generating the ticket. Please contact Admin.");
+                            }
+                        })(); // End of async wrapper
+                    },
+                    onClose: function() {
+                        alert('Transaction was not completed.');
+                    }
+                });
+                handler.openIframe();
+            },
 
             async toggleRsvp(eventId, currentRsvps) {
                 let newRsvps = [...currentRsvps];
