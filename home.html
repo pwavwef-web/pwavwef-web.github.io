@@ -686,6 +686,39 @@
             <textarea id="note-body" class="flex-1 bg-transparent outline-none resize-none text-lg" placeholder="Start typing..."></textarea>
         </div>
     </div>
+    <div id="modal-contacts" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
+    <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h1 class="text-xl font-bold">New Chat 💬</h1>
+        <div class="w-6"></div>
+    </header>
+    
+    <div class="p-6 flex-1 overflow-y-auto">
+        <div id="contact-sync-prompt" class="flex flex-col items-center justify-center h-64 text-center">
+            <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-solid fa-address-book text-3xl text-blueAccent"></i>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Find Friends</h2>
+            <p class="text-sm opacity-60 mb-6 max-w-xs">Sync your contacts to see who is already on AZ Learner and invite those who aren't.</p>
+            <button onclick="app.syncContacts()" class="bg-blueAccent text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
+                Sync Contacts 🔄
+            </button>
+            <p class="text-[10px] opacity-40 mt-4">Requires supported device (Android/Mobile)</p>
+        </div>
+
+        <div id="contact-results" class="hidden space-y-6">
+            <div id="section-on-app" class="hidden">
+                <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">On AZ Learner ✅</h3>
+                <div id="list-on-app" class="space-y-2"></div>
+            </div>
+
+            <div id="section-invite">
+                <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">Invite to App 📩</h3>
+                <div id="list-invite" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -833,6 +866,7 @@
                                 'modal-image-view',
                                 'modal-notifications',
                                 'modal-note-editor'
+                                'modal-contacts'
                             ];
 
                             let viewClosed = false;
@@ -2019,7 +2053,18 @@
                 const tabs = ['tab-home', 'tab-timetable', 'tab-assignments', 'tab-notes', 'tab-chat', 'tab-leaderboard']; 
                 if(tabs[index]) document.getElementById(tabs[index]).classList.remove('hidden'); 
                 document.querySelectorAll('.nav-item').forEach(el => { el.classList.toggle('text-blueAccent', parseInt(el.dataset.index) === index); el.classList.toggle('text-gray-400', parseInt(el.dataset.index) !== index); }); 
-                document.getElementById('fab').classList.toggle('hidden', index === 0 || (index > 2 && index !== 3)); 
+                document.getElementById('fab').classList.toggle('hidden', index === 0);
+                // Update FAB Icon/Label based on Tab
+                const fabIcon = document.getElementById('fab-icon');
+                const fabLabel = document.getElementById('fab-label');
+
+                if (index === 4) { // Chat Tab
+                fabIcon.className = "fa-solid fa-message";
+                fabLabel.innerText = "New Chat";
+                } else { // Others
+                fabIcon.className = "fa-solid fa-plus";
+                fabLabel.innerText = "Add";
+             }
                 
                 if (index === 0) this.renderHome();
                 if (index === 4) this.renderChatList();
@@ -2136,8 +2181,135 @@
                     document.getElementById('note-body').value = '';
                     document.getElementById('btn-delete-note').classList.add('hidden');
                     this.openModal('modal-note-editor');
+                } else if(!document.getElementById('tab-chat').classList.contains('hidden')) {
+                     // --- NEW: CHAT LOGIC ---
+                     // Reset the contact modal view
+                     document.getElementById('contact-sync-prompt').classList.remove('hidden');
+                     document.getElementById('contact-results').classList.add('hidden');
+                     document.getElementById('modal-contacts').classList.remove('hidden');
+                     history.pushState({ view: 'modal-contacts' }, null, "");
                 }
             },
+            // --- NEW: CONTACT SYNC LOGIC ---
+
+    async syncContacts() {
+        // check support
+        if (!('contacts' in navigator && 'ContactsManager' in window)) {
+            return alert("Contact Sync is not supported on this device/browser. Try using the Search bar to find users by email/phone.");
+        }
+
+        try {
+            const props = ['name', 'tel'];
+            const opts = { multiple: true };
+            const contacts = await navigator.contacts.select(props, opts);
+            
+            if (contacts.length === 0) return;
+
+            document.getElementById('contact-sync-prompt').classList.add('hidden');
+            document.getElementById('contact-results').classList.remove('hidden');
+            document.getElementById('list-on-app').innerHTML = '<div class="text-center opacity-50"><i class="fa-solid fa-spinner fa-spin"></i> Checking database...</div>';
+            
+            // 1. Fetch all users (Lightweight for prototype, scalable solution uses Cloud Functions)
+            const usersSnap = await getDocs(collection(db, "users"));
+            const registeredUsers = [];
+            usersSnap.forEach(doc => registeredUsers.push(doc.data()));
+
+            // 2. Process Contacts
+            const onAppList = [];
+            const inviteList = [];
+
+            contacts.forEach(contact => {
+                if (!contact.tel || contact.tel.length === 0) return;
+                
+                const name = contact.name[0];
+                const rawPhone = contact.tel[0];
+                const normalizedPhone = this.normalizePhone(rawPhone);
+
+                // Check match (Last 9 digits to account for country codes)
+                const match = registeredUsers.find(u => {
+                    const uPhone = this.normalizePhone(u.phone || '');
+                    return uPhone.includes(normalizedPhone) || normalizedPhone.includes(uPhone);
+                });
+
+                if (match && match.userId !== currentUser.uid) {
+                    onAppList.push({ ...match, contactName: name });
+                } else {
+                    inviteList.push({ name: name, phone: rawPhone });
+                }
+            });
+
+            this.renderContactResults(onAppList, inviteList);
+
+        } catch (ex) {
+            console.error(ex);
+            alert("Unable to sync contacts. Ensure permissions are granted.");
+        }
+    },
+
+    normalizePhone(phone) {
+        // Remove spaces, dashes, parentheses, + signs
+        const clean = phone.replace(/[^0-9]/g, '');
+        // Return last 9 digits for "fuzzy" matching
+        return clean.length > 9 ? clean.slice(-9) : clean;
+    },
+
+    renderContactResults(onApp, toInvite) {
+        const onAppDiv = document.getElementById('list-on-app');
+        const inviteDiv = document.getElementById('list-invite');
+        const onAppSection = document.getElementById('section-on-app');
+
+        // Render Registered Users
+        if (onApp.length > 0) {
+            onAppSection.classList.remove('hidden');
+            onAppDiv.innerHTML = '';
+            onApp.forEach(u => {
+                const pic = u.profilePic || '';
+                const avatar = pic ? `<img src="${pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold">${u.name[0]}</div>`;
+                
+                onAppDiv.innerHTML += `
+                <div onclick="app.startDirectChat('${u.userId}', '${u.name}', '${pic}'); history.back();" class="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex items-center justify-between cursor-pointer border border-green-500/30">
+                    <div class="flex items-center gap-3">
+                        ${avatar}
+                        <div>
+                            <h4 class="font-bold text-sm">${u.name}</h4>
+                            <p class="text-[10px] opacity-60">Via Contacts: ${u.contactName}</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-message text-blueAccent"></i>
+                </div>`;
+            });
+        } else {
+            onAppSection.classList.add('hidden');
+        }
+
+        // Render Invite List
+        inviteDiv.innerHTML = '';
+        toInvite.forEach(c => {
+             inviteDiv.innerHTML += `
+                <div class="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4 class="font-bold text-sm">${c.name}</h4>
+                            <p class="text-[10px] opacity-60">${c.phone}</p>
+                        </div>
+                    </div>
+                    <button onclick="app.sendSmsInvite('${c.phone}')" class="bg-gray-100 dark:bg-gray-700 hover:bg-blueAccent hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                        Invite
+                    </button>
+                </div>`;
+        });
+    },
+
+    sendSmsInvite(phone) {
+        const msg = encodeURIComponent("Hey! Join me on AZ Learner to manage classes and assignments easily. Download here: azlearner.me 🎓");
+        // Use generic sms: protocol (works on iOS and Android)
+        // Note: iOS uses separator '&', Android uses '?' usually, but modern behavior varies.
+        // Trying universally compatible approach
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const sep = isIOS ? '&' : '?';
+        window.open(`sms:${phone}${sep}body=${msg}`, '_self');
+    },
             openServiceModal(name) { this.data.selectedService = name; this.openModal('modal-service'); },
             setRating(n) {
                 this.data.rating = n;
