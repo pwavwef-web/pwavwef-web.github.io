@@ -1518,51 +1518,60 @@ buyTicket(ev) {
                 const q = query(collection(db, collName), where(idField, "==", idValue));
                 
                 activeChatListener = onSnapshot(q, (snap) => {
-                    if(snap.empty) { 
-                        msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60"><p>No messages yet.</p></div>`; 
-                        return; 
+                    try {
+                        if(snap.empty) { 
+                            msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60"><p>No messages yet.</p></div>`; 
+                            return; 
+                        }
+                        
+                        const messages = [];
+                        this.data.activeMsgCache = {}; 
+
+                        snap.forEach(d => {
+                            const m = d.data();
+                            m.id = d.id;
+                            messages.push(m);
+                            if(m.fileData) this.data.activeMsgCache[d.id] = m;
+                        });
+                        
+                        messages.sort((a,b) => a.timestamp - b.timestamp);
+
+                        let html = '';
+                        messages.forEach(msg => {
+                            const isSender = msg.senderId === currentUser.uid;
+                            const align = isSender ? 'items-end' : 'items-start';
+                            const bg = isSender ? 'bg-blueAccent text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-white';
+                            
+                            let senderNameHtml = '';
+                            if (activeChatType === 'course' && !isSender) {
+                                senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
+                            }
+
+                            let content = `<p>${msg.text || ''}</p>`; // Added safety check for empty text
+                            
+                            if (msg.fileData) {
+                                // FIX: Added check 'msg.fileType &&' to prevent crash if fileType is missing
+                                if (msg.fileType && msg.fileType.startsWith('image/')) {
+                                    content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px]" onclick="app.viewImage('${msg.fileData}')">`;
+                                } else {
+                                    content += `<div onclick="app.downloadFile('${msg.id}')" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center"><i class="fa-solid fa-file"></i> ${msg.fileName || 'Attachment'}</div>`;
+                                }
+                            }
+                            
+                            html += `
+                            <div class="flex flex-col ${align} mb-2 w-full msg-enter">
+                                ${senderNameHtml}
+                                <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
+                                <span class="text-[10px] opacity-40 mt-1 mr-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>`;
+                        });
+                        
+                        msgDiv.innerHTML = html;
+                        setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 100);
+                    } catch(err) {
+                        console.error("Error rendering messages:", err);
+                        msgDiv.innerHTML = `<div class="text-center text-red-500 mt-10"><p>Error loading chat.</p></div>`;
                     }
-                    
-                    const messages = [];
-                    this.data.activeMsgCache = {}; 
-
-                    snap.forEach(d => {
-                        const m = d.data();
-                        m.id = d.id;
-                        messages.push(m);
-                        if(m.fileData) this.data.activeMsgCache[d.id] = m;
-                    });
-                    
-                    messages.sort((a,b) => a.timestamp - b.timestamp);
-
-                    let html = '';
-                    messages.forEach(msg => {
-                        const isSender = msg.senderId === currentUser.uid;
-                        const align = isSender ? 'items-end' : 'items-start';
-                        const bg = isSender ? 'bg-blueAccent text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-white';
-                        
-                        let senderNameHtml = '';
-                        if (activeChatType === 'course' && !isSender) {
-                            senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
-                        }
-
-                        let content = `<p>${msg.text}</p>`;
-                        
-                        if (msg.fileData) {
-                            if (msg.fileType.startsWith('image/')) content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px]" onclick="app.viewImage('${msg.fileData}')">`;
-                            else content += `<div onclick="app.downloadFile('${msg.id}')" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center"><i class="fa-solid fa-file"></i> ${msg.fileName}</div>`;
-                        }
-                        
-                        html += `
-                        <div class="flex flex-col ${align} mb-2 w-full msg-enter">
-                            ${senderNameHtml}
-                            <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
-                            <span class="text-[10px] opacity-40 mt-1 mr-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>`;
-                    });
-                    
-                    msgDiv.innerHTML = html;
-                    setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 100);
                 });
             },
 
