@@ -24,6 +24,7 @@
             }
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 6px; }
@@ -64,6 +65,15 @@
         .rank-1 { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: 2px solid #fff; }
         .rank-2 { background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: black; border: 2px solid #fff; }
         .rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: white; border: 2px solid #fff; }
+        /* Ticket Perforation Effect */
+        .ticket-stub {
+            background-image: radial-gradient(circle at 0 50%, transparent 10px, white 11px);
+            background-position: 0 0;
+            background-size: 100% 100%;
+        }
+       .dark .ticket-stub {
+           background-image: radial-gradient(circle at 0 50%, transparent 10px, #424242 11px);
+       }
     </style>
 </head>
 <body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
@@ -127,6 +137,7 @@
                 <button onclick="app.switchAdminView('events')" id="adm-btn-events" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
                 <button onclick="app.switchAdminView('users')" id="adm-btn-users" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Users 👥</button>
                 <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
+                <button onclick="app.switchAdminView('tickets')" id="adm-btn-tickets" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
             </nav>
         </div>
 
@@ -246,6 +257,26 @@
                     <div id="adm-event-list" class="space-y-2"></div>
                 </div>
             </div>
+            <div id="adm-view-tickets" class="admin-view hidden space-y-6 pt-4">
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales Ledger</h2>
+        <div class="bg-black/20 rounded-lg overflow-hidden border border-gray-600">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3">Code</th>
+                        <th class="px-4 py-3">Event</th>
+                        <th class="px-4 py-3">Holder</th>
+                        <th class="px-4 py-3 text-right">Price</th>
+                    </tr>
+                </thead>
+                <tbody id="adm-ticket-list" class="divide-y divide-gray-700">
+                    <tr><td colspan="4" class="p-4 text-center">Loading sales...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
             <div id="adm-view-users" class="admin-view hidden space-y-8 pt-4">
                 <div>
                     <h2 class="text-xl font-bold mb-4">All Users Database</h2>
@@ -339,11 +370,20 @@
 
             <!-- Events Section -->
             <div>
-                <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">What's Poppin' 🎉</h3>
-                <div id="home-events-feed" class="space-y-4"></div>
-                <div id="home-no-events" class="hidden text-center opacity-40 py-8 text-sm">No upcoming events. Dry spell? 🏜️</div>
-            </div>
-        </div>
+               <div class="flex items-center justify-between mb-3 ml-1 mr-1">
+                   <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider" id="home-section-title">What's Poppin' 🎉</h3>
+        
+                   <div class="bg-gray-200 dark:bg-gray-700 p-1 rounded-lg flex text-[10px] font-bold">
+                       <button onclick="app.toggleHomeView('events')" id="btn-view-events" class="px-3 py-1 rounded-md bg-white dark:bg-darkCard shadow text-blueAccent transition-all">Events</button>
+                       <button onclick="app.toggleHomeView('tickets')" id="btn-view-tickets" class="px-3 py-1 rounded-md text-gray-500 transition-all flex items-center gap-1">My Tickets <span id="my-ticket-count" class="hidden w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px]">0</span></button>
+                   </div>
+               </div>
+
+               <div id="home-events-feed" class="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x"></div>
+               <div id="home-no-events" class="hidden text-center opacity-40 py-8 text-sm">No upcoming events. Dry spell? 🏜️</div>
+
+               <div id="home-tickets-view" class="hidden space-y-4"></div>
+          </div>
 
         <div id="tab-timetable" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">My Schedule 📅</h2><div id="course-list" class="space-y-3"></div><div id="empty-courses" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No classes yet! Tap + to add.</p></div></div>
         
@@ -727,7 +767,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
         const firebaseConfig = {
@@ -797,7 +837,7 @@
 
         window.app = {
             data: { 
-                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash',
+                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], currentHomeView: 'events', theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash',
                 badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
                 currentTabIndex: 0
             },
@@ -1207,6 +1247,146 @@
     this.openModal('modal-event-details');
 },
 
+            // --- TICKET SYSTEM LOGIC ---
+
+toggleHomeView(view) {
+    this.data.currentHomeView = view;
+    const btnEvents = document.getElementById('btn-view-events');
+    const btnTickets = document.getElementById('btn-view-tickets');
+    const feed = document.getElementById('home-events-feed');
+    const noEvents = document.getElementById('home-no-events');
+    const ticketView = document.getElementById('home-tickets-view');
+    const title = document.getElementById('home-section-title');
+
+    if (view === 'events') {
+        // UI Styles
+        btnEvents.classList.add('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnEvents.classList.remove('text-gray-500');
+        btnTickets.classList.remove('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnTickets.classList.add('text-gray-500');
+        
+        // Visibility
+        feed.classList.remove('hidden');
+        if(this.data.events.length === 0) noEvents.classList.remove('hidden');
+        ticketView.classList.add('hidden');
+        title.innerText = "What's Poppin' 🎉";
+    } else {
+        // UI Styles
+        btnTickets.classList.add('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnTickets.classList.remove('text-gray-500');
+        btnEvents.classList.remove('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnEvents.classList.add('text-gray-500');
+
+        // Visibility
+        feed.classList.add('hidden');
+        noEvents.classList.add('hidden');
+        ticketView.classList.remove('hidden');
+        title.innerText = "My Wallet 🎟️";
+        this.renderMyTickets();
+    }
+},
+
+renderMyTickets() {
+    const container = document.getElementById('home-tickets-view');
+    container.innerHTML = '';
+
+    if (this.data.myTickets.length === 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10 opacity-50">
+                <i class="fa-solid fa-ticket text-4xl mb-3"></i>
+                <p class="text-sm">You haven't bought any tickets yet.</p>
+            </div>`;
+        return;
+    }
+
+    this.data.myTickets.forEach(t => {
+        const dateStr = new Date(t.purchaseDate).toLocaleDateString();
+        // Generate a nice ticket card
+        container.innerHTML += `
+            <div class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row border border-gray-100 dark:border-gray-700 relative">
+                <div class="bg-blueAccent dark:bg-orangeAccent p-4 text-white flex flex-col justify-between w-full md:w-1/3 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-white/20 rounded-full blur-xl"></div>
+                    <div>
+                        <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest">Event Ticket</p>
+                        <h3 class="font-black text-xl leading-tight mt-1">${t.eventTitle}</h3>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs opacity-80">Price</p>
+                        <p class="font-bold">GHS ${t.price}</p>
+                    </div>
+                    <div class="absolute right-0 top-0 bottom-0 w-2 h-full ticket-stub"></div>
+                </div>
+
+                <div class="p-5 flex-1 flex flex-col justify-between bg-white dark:bg-darkCard">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase font-bold">Ticket ID</p>
+                            <p class="text-2xl font-black text-gray-800 dark:text-white tracking-wider font-mono">${t.ticketId}</p>
+                        </div>
+                        <div class="bg-green-100 text-green-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Valid</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mt-auto">
+                        <button onclick="app.downloadTicket('${t.id}')" class="flex-1 bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                            Download <i class="fa-solid fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="render-${t.id}" class="absolute top-0 left-0 w-[600px] bg-white text-black p-0 hidden pointer-events-none z-[-1]">
+                    <div class="flex border-2 border-black rounded-3xl overflow-hidden">
+                        <div class="bg-black text-white p-8 w-1/3 flex flex-col justify-between">
+                            <h1 class="text-3xl font-black uppercase">${t.eventTitle}</h1>
+                            <div><p class="text-sm opacity-60">PRICE</p><p class="text-2xl font-bold">GHS ${t.price}</p></div>
+                        </div>
+                        <div class="p-8 flex-1 bg-white flex flex-col justify-between relative">
+                             <div class="absolute left-0 top-0 bottom-0 w-px border-l-2 border-dashed border-gray-300"></div>
+                             <div>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Holder</p>
+                                <p class="text-xl font-bold mb-4">${app.data.user.name}</p>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Ticket Code</p>
+                                <p class="text-4xl font-black font-mono tracking-widest">${t.ticketId}</p>
+                             </div>
+                             <div class="flex justify-between items-end">
+                                <p class="text-xs text-gray-400">Purchased: ${dateStr}</p>
+                                <div class="text-right">
+                                    <p class="font-bold text-lg">AZ Learner 🎓</p>
+                                    <p class="text-[10px] uppercase">Official Pass</p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    });
+},
+
+async downloadTicket(ticketId) {
+    const element = document.getElementById(`render-${ticketId}`);
+    if (!element) return;
+    
+    // Temporarily show it off-screen to render
+    element.classList.remove('hidden');
+    element.style.position = 'fixed';
+    element.style.top = '-9999px';
+    element.style.zIndex = '9999';
+
+    try {
+        const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
+        const link = document.createElement('a');
+        link.download = `Ticket-${ticketId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        alert("Ticket saved to photos! 📸");
+    } catch (err) {
+        console.error(err);
+        alert("Could not generate ticket image.");
+    } finally {
+        element.classList.add('hidden');
+        element.style.position = 'absolute';
+    }
+},
+            
 buyTicket(ev) {
                 if(!currentUser) return alert("Please log in first.");
                 
@@ -1247,7 +1427,9 @@ buyTicket(ev) {
                                     ticketId: ticketId,
                                     price: price,
                                     purchaseDate: Date.now(),
-                                    status: 'valid'
+                                    status: 'valid',
+                                    userName: app.data.user.name, // <--- MAKE SURE THIS IS ADDED
+                                    userEmail: app.data.user.email
                                 });
 
                                 // 4. Send Ticket to Chat
@@ -1934,6 +2116,24 @@ buyTicket(ev) {
                         this.renderChatList();
                     }
                 }));
+                // Listener for My Tickets
+                const qTickets = query(collection(db, `users/${currentUser.uid}/tickets`), orderBy("purchaseDate", "desc"));
+                listeners.push(onSnapshot(qTickets, (snap) => {
+                    const t = [];
+                    snap.forEach(d => t.push({id: d.id, ...d.data()}));
+                    this.data.myTickets = t;
+    
+                    // Update badge count
+                    const badge = document.getElementById('my-ticket-count');
+                    if(t.length > 0) {
+                        badge.innerText = t.length;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+
+                    if(this.data.currentHomeView === 'tickets') this.renderMyTickets();
+               }));
             },
 
             stopListeners() { listeners.forEach(u => u()); listeners = []; },
@@ -1998,7 +2198,8 @@ buyTicket(ev) {
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
                 
-                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback'].forEach(v => {
+               
+                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback', 'tickets'].forEach(v => {
                     const btn = document.getElementById(`adm-btn-${v}`);
                     if (!btn) return; 
 
@@ -2014,6 +2215,36 @@ buyTicket(ev) {
                         btn.classList.remove('bg-blueAccent', 'text-white', 'bg-purple-600', 'shadow-lg', 'shadow-purple-500/50');
                         if (v === 'godmode') btn.classList.add('border', 'border-purple-400');
                     }
+                    // --- STEP 5.5: FETCH TICKETS LOGIC ---
+        if (viewName === 'tickets') {
+            const qAllTickets = query(collectionGroup(db, 'tickets'), orderBy('purchaseDate', 'desc'), limit(50));
+            
+            // Clear previous listener if it exists to avoid duplicates
+            if(this.ticketListener) this.ticketListener(); 
+            
+            this.ticketListener = onSnapshot(qAllTickets, (snap) => {
+                const list = document.getElementById('adm-ticket-list');
+                list.innerHTML = '';
+                if (snap.empty) {
+                    list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No tickets sold.</td></tr>';
+                    return;
+                }
+                
+                snap.forEach(d => {
+                    const t = d.data();
+                    list.innerHTML += `
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-3 font-mono font-bold text-yellow-400">${t.ticketId}</td>
+                            <td class="px-4 py-3 truncate max-w-[150px]">${t.eventTitle}</td>
+                            <td class="px-4 py-3 text-xs">
+                                <div class="font-bold text-white">${t.userName || 'Unknown'}</div>
+                                <div class="text-gray-500">${new Date(t.purchaseDate).toLocaleDateString()}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-bold">GHS ${t.price}</td>
+                        </tr>`;
+                });
+            });
+        }
                 });
             },
             
