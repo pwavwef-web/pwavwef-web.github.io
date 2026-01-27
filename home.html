@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -228,6 +229,10 @@
                         <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
                         <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
                     </div>
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-price" type="number" placeholder="Price (GHS) - 0 for Free" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-qty" type="number" placeholder="Total Tickets" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>    
                     <input id="event-venue" type="text" placeholder="Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
                     <textarea id="event-desc" placeholder="Details..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20"></textarea>
                     <div class="flex items-center gap-2 mb-4">
@@ -1082,64 +1087,179 @@
 
                 // Render Events
                 const feed = document.getElementById('home-events-feed');
+                // CSS CHANGE: Changed to flex row with overflow-x-auto for horizontal scroll
+                feed.className = "flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x"; 
+    
                 feed.innerHTML = '';
                 if (this.data.events.length === 0) {
+                    feed.className = "space-y-4"; // Revert to stack if empty message needed
                     document.getElementById('home-no-events').classList.remove('hidden');
-                } else {
-                    document.getElementById('home-no-events').classList.add('hidden');
-                    this.data.events.forEach(ev => {
-                        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
-                        const btnText = isRsvp ? 'Going ✅' : 'Details';
-                        const btnClass = isRsvp ? 'text-green-500' : 'text-blueAccent';
-                        
-                        feed.innerHTML += `
-                        <div onclick='app.openEventModal(${JSON.stringify(ev).replace(/'/g, "&apos;")})' class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-transform">
-                            <div class="h-32 bg-gray-200 relative">
-                                <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover">
-                                <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm font-bold">
-                                    ${ev.date}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-bold text-lg leading-tight mb-1">${ev.title}</h3>
-                                <p class="text-xs opacity-60 mb-3 line-clamp-2">${ev.venue} • ${ev.time}</p>
-                                <div class="flex justify-between items-center">
-                                    <div class="flex -space-x-2">
-                                        ${(ev.rsvps || []).slice(0,3).map(() => `<div class="w-6 h-6 rounded-full bg-gray-300 border-2 border-white dark:border-darkCard"></div>`).join('')}
-                                        ${(ev.rsvps || []).length > 3 ? `<div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[8px] border-2 border-white dark:border-darkCard font-bold">+${ev.rsvps.length - 3}</div>` : ''}
-                                    </div>
-                                    <span class="text-xs font-bold ${btnClass}">${btnText} <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i></span>
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                }
-            },
+               } else {
+                   document.getElementById('home-no-events').classList.add('hidden');
+                   this.data.events.forEach(ev => {
+                       const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+            
+                       // Ticket Logic
+                       const price = ev.price || 0;
+                       const sold = ev.ticketsSold || 0;
+                       const total = ev.totalTickets || 0;
+                       const isSoldOut = total > 0 && sold >= total;
+            
+                       let statusBadge = '';
+                       if(total > 0) {
+                           if(isSoldOut) statusBadge = `<div class="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">SOLD OUT</div>`;
+                           else statusBadge = `<div class="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow">GHS ${price}</div>`;
+                       }
+
+                       // Fixed width for horizontal scroll items (min-w-[280px])
+                       feed.innerHTML += `
+                       <div onclick='app.openEventModal(${JSON.stringify(ev).replace(/'/g, "&apos;")})' class="min-w-[280px] w-[280px] snap-center bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-transform relative">
+                           <div class="h-32 bg-gray-200 relative">
+                               <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover">
+                               ${statusBadge}
+                               <div class="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm font-bold">
+                                   ${ev.date}
+                               </div>
+                           </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg leading-tight mb-1 truncate">${ev.title}</h3>
+                            <p class="text-xs opacity-60 mb-3 truncate">${ev.venue} • ${ev.time}</p>
+                            <div class="flex justify-between items-center">
+                                <div class="text-xs font-bold text-blueAccent">Tap for details</div>
+                                ${total > 0 ? `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500">${total - sold} left</div>` : ''}
+                           </div>
+                       </div>
+                   </div>`;
+                });
+              }
+           },
 
             openEventModal(ev) {
-                const modal = document.getElementById('modal-event-details');
-                document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
-                document.getElementById('modal-event-title').innerText = ev.title;
-                document.getElementById('modal-event-date').innerText = ev.date;
-                document.getElementById('modal-event-time').innerText = ev.time;
-                document.getElementById('modal-event-venue').innerText = ev.venue;
-                document.getElementById('modal-event-desc').innerText = ev.description;
-                
-                const btn = document.getElementById('btn-rsvp');
-                const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
-                
-                btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
-                
-                if (isRsvp) {
-                    btn.innerHTML = `<span>You're Going! ✅</span>`;
-                    btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
-                } else {
-                    btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
-                    btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
-                }
+    const modal = document.getElementById('modal-event-details');
+    document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
+    document.getElementById('modal-event-title').innerText = ev.title;
+    document.getElementById('modal-event-date').innerText = ev.date;
+    document.getElementById('modal-event-time').innerText = ev.time;
+    document.getElementById('modal-event-venue').innerText = ev.venue;
+    document.getElementById('modal-event-desc').innerText = ev.description;
+    
+    const btn = document.getElementById('btn-rsvp');
+    
+    // TICKET LOGIC
+    const price = ev.price || 0;
+    const total = ev.totalTickets || 0;
+    const sold = ev.ticketsSold || 0;
+    
+    if (total > 0) {
+        // It is a paid/ticketed event
+        if (sold >= total) {
+            btn.innerHTML = `<span>SOLD OUT 🚫</span>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-gray-400 text-white cursor-not-allowed";
+            btn.onclick = null;
+        } else {
+            btn.innerHTML = `<span>Buy Ticket (GHS ${price})</span> <i class="fa-solid fa-ticket"></i>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-600 text-white hover:bg-green-500";
+            // Pass event details to buy function
+            btn.onclick = () => app.buyTicket(ev);
+        }
+        // Show counter in description
+        document.getElementById('modal-event-desc').innerHTML = `
+            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 flex justify-between items-center">
+                <span class="text-sm font-bold text-blue-800 dark:text-blue-300">Tickets Available:</span>
+                <span class="text-xl font-black text-blueAccent">${total - sold} / ${total}</span>
+            </div>
+            ${ev.description}
+        `;
+    } else {
+        // Standard RSVP Event
+        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+        btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
+        if (isRsvp) {
+            btn.innerHTML = `<span>You're Going! ✅</span>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
+        } else {
+            btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
+        }
+    }
 
-                this.openModal('modal-event-details');
-            },
+    this.openModal('modal-event-details');
+},
+
+buyTicket(ev) {
+    if(!currentUser) return alert("Please log in first.");
+    
+    const price = ev.price;
+    const email = currentUser.email;
+    const amountKobo = price * 100; // Paystack works in Kobo (cents)
+
+    const handler = PaystackPop.setup({
+        key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2', // REPLACE THIS WITH YOUR KEY
+        email: email,
+        amount: amountKobo,
+        currency: 'GHS',
+        metadata: {
+            custom_fields: [
+                { display_name: "Event", variable_name: "event_title", value: ev.title },
+                { display_name: "Student", variable_name: "student_name", value: app.data.user.name }
+            ]
+        },
+        callback: async function(response) {
+            // Payment Success!
+            document.getElementById('modal-overlay').classList.add('hidden'); // Close modal loading
+            
+            // 1. Generate Unique Ticket ID
+            const ticketId = 'AZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            // 2. Update Database (Reduce Stock)
+            // Note: In a real app, do this in a Cloud Function to prevent race conditions.
+            // For this prototype, we do it client-side.
+            const newSold = (ev.ticketsSold || 0) + 1;
+            await updateDoc(doc(db, "events", ev.id), { ticketsSold: newSold });
+            
+            // 3. Save Ticket to User's Subcollection
+            await addDoc(collection(db, `users/${currentUser.uid}/tickets`), {
+                eventId: ev.id,
+                eventTitle: ev.title,
+                ticketId: ticketId,
+                price: price,
+                purchaseDate: Date.now(),
+                status: 'valid'
+            });
+
+            // 4. Send Ticket to Chat (Simulating sending from Admin/System)
+            // We use the 'print_orders' collection or 'direct_messages' to send the ticket
+            // Let's send it to the Print/Admin Chat for safety
+            
+            const chatRef = doc(db, "print_orders", currentUser.uid);
+            // Ensure chat exists
+            await setDoc(chatRef, { 
+                userId: currentUser.uid, 
+                status: 'received', 
+                lastUpdated: Date.now(), 
+                userName: app.data.user.name,
+                hasUnread: true // Mark as unread for Admin
+            }, { merge: true });
+
+            await addDoc(collection(db, "print_messages"), {
+                orderId: currentUser.uid,
+                senderId: "system", // Or admin ID
+                senderName: "AZ Ticket Bot 🤖",
+                text: `🎟️ **TICKET PURCHASED**\n\nEvent: ${ev.title}\nID: ${ticketId}\nPrice: GHS ${price}\n\nShow this ID at the entrance!`,
+                timestamp: Date.now()
+            });
+
+            // 5. Success Alert
+            app.sendSystemNotification("Ticket Purchased! 🎟️", "Check your messages for the ticket ID.");
+            alert(`Payment Successful! Ticket ID: ${ticketId}\n\nWe have sent the ticket to your Chat.`);
+            history.back();
+        },
+        onClose: function() {
+            alert('Transaction was not completed.');
+        }
+    });
+    handler.openIframe();
+},
 
             async toggleRsvp(eventId, currentRsvps) {
                 let newRsvps = [...currentRsvps];
@@ -1160,6 +1280,9 @@
                 const time = document.getElementById('event-time').value;
                 const venue = document.getElementById('event-venue').value;
                 const desc = document.getElementById('event-desc').value;
+                // NEW FIELDS
+                const price = document.getElementById('event-price').value || "0";
+                const qty = document.getElementById('event-qty').value || "0";
                 const fileInput = document.getElementById('event-file');
 
                 if (!title || !date || !venue) return alert("Fill in the basics!");
@@ -1169,16 +1292,22 @@
                     image = await this.compressImage(fileInput.files[0]);
                 }
 
-                await addDoc(collection(db, "events"), {
-                    title, date, time, venue, description: desc, image,
-                    rsvps: [], timestamp: Date.now()
-                });
+               // Save strictly as numbers
+               await addDoc(collection(db, "events"), {
+                   title, date, time, venue, description: desc, image,
+                   price: parseFloat(price),
+                   totalTickets: parseInt(qty),
+                   ticketsSold: 0,
+                   rsvps: [], timestamp: Date.now()
+               });
 
-                alert("Event Posted! 🎉");
-                // Reset form
-                document.getElementById('event-title').value = '';
-                document.getElementById('event-desc').value = '';
-                document.getElementById('event-file').value = '';
+               alert("Event Posted! 🎉");
+               // Reset form logic...
+               document.getElementById('event-title').value = '';
+               document.getElementById('event-desc').value = '';
+               document.getElementById('event-price').value = ''; 
+               document.getElementById('event-qty').value = '';
+               document.getElementById('event-file').value = '';
             },
 
             async deleteEvent(id) {
