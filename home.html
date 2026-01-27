@@ -2166,30 +2166,35 @@
             },
             
             handleFabClick() { 
-                if(!document.getElementById('tab-timetable').classList.contains('hidden')) {
-                    this.data.editingCourseId = null; 
-                    document.getElementById('new-course-name').value = ''; 
-                    document.getElementById('new-course-venue').value = ''; 
-                    document.getElementById('course-modal-title').innerText = "Add Class";
-                    this.openModal('modal-add-course');
-                } else if(!document.getElementById('tab-assignments').classList.contains('hidden')) {
-                    this.openModal('modal-add-assignment');
-                } else if{
-                    this.data.editingNoteId = null;
-                    document.getElementById('note-title').value = '';
-                    document.getElementById('note-subtitle').value = '';
-                    document.getElementById('note-body').value = '';
-                    document.getElementById('btn-delete-note').classList.add('hidden');
-                    this.openModal('modal-note-editor');
-                } else if(!document.getElementById('tab-chat').classList.contains('hidden')) {
-                     // --- NEW: CHAT LOGIC ---
-                     // Reset the contact modal view
-                     document.getElementById('contact-sync-prompt').classList.remove('hidden');
-                     document.getElementById('contact-results').classList.add('hidden');
-                     document.getElementById('modal-contacts').classList.remove('hidden');
-                     history.pushState({ view: 'modal-contacts' }, null, "");
-                }
-            },
+    // 1. Timetable Tab
+    if(!document.getElementById('tab-timetable').classList.contains('hidden')) {
+        this.data.editingCourseId = null; 
+        document.getElementById('new-course-name').value = ''; 
+        document.getElementById('new-course-venue').value = ''; 
+        document.getElementById('course-modal-title').innerText = "Add Class";
+        this.openModal('modal-add-course');
+
+    // 2. Assignments Tab
+    } else if(!document.getElementById('tab-assignments').classList.contains('hidden')) {
+        this.openModal('modal-add-assignment');
+
+    // 3. Notes Tab (Changed from 'else' to 'else if' to keep the chain alive)
+    } else if(!document.getElementById('tab-notes').classList.contains('hidden')) {
+        this.data.editingNoteId = null;
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-subtitle').value = '';
+        document.getElementById('note-body').value = '';
+        document.getElementById('btn-delete-note').classList.add('hidden');
+        this.openModal('modal-note-editor');
+
+    // 4. Chat Tab (Now this works validly!)
+    } else if(!document.getElementById('tab-chat').classList.contains('hidden')) {
+         document.getElementById('contact-sync-prompt').classList.remove('hidden');
+         document.getElementById('contact-results').classList.add('hidden');
+         document.getElementById('modal-contacts').classList.remove('hidden');
+         history.pushState({ view: 'modal-contacts' }, null, "");
+    }
+},
             // --- NEW: CONTACT SYNC LOGIC ---
 
     async syncContacts() {
