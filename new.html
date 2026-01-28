@@ -684,6 +684,36 @@
             <button onclick="history.back()" class="text-sm opacity-60">Close</button>
         </div>
 
+        <div id="modal-ai-help" class="bg-black/60 fixed inset-0 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkCard w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[80vh]">
+        <div class="p-4 bg-blueAccent dark:bg-orangeAccent text-white flex justify-between items-center">
+            <div>
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-robot mr-2"></i>Assignment AI</h3>
+                <p id="ai-assignment-context" class="text-xs opacity-80 truncate max-w-[200px]">...</p>
+            </div>
+            <button onclick="document.getElementById('modal-ai-help').classList.add('hidden')" class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="ai-chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-[#2a2a2a]">
+            <div class="flex gap-2 items-start">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs"><i class="fa-solid fa-robot"></i></div>
+                <div class="bg-white dark:bg-darkCard p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-sm max-w-[85%]">
+                    Hello! I've read the details for this assignment. What are you stuck on?
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 bg-white dark:bg-darkCard border-t border-gray-100 dark:border-gray-700 flex gap-2">
+            <input id="ai-user-input" type="text" placeholder="Ask about this task..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-3 outline-none text-sm">
+            <button onclick="app.sendAIQuery()" id="btn-send-ai" class="bg-blueAccent dark:bg-orangeAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
         <div id="modal-event-details" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-0 shadow-2xl hidden overflow-hidden flex flex-col max-h-[85vh]">
             <div class="relative h-48 bg-gray-200">
                 <img id="modal-event-img" class="w-full h-full object-cover">
