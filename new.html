@@ -2463,9 +2463,8 @@ listeners.push(onSnapshot(qTickets, (snap) => {
         const style = a.isCompleted ? 'task-done' : ''; 
         const check = a.isCompleted ? 'checked' : ''; 
         
-        // We pass the assignment object safely to the openAIHelp function
-        const safeAssignment = JSON.stringify(a).replace(/"/g, '&quot;');
-
+        // --- FIX STARTS HERE ---
+        // Instead of stringifying the object, we just pass the ID
         list.innerHTML += `
         <div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex flex-col gap-3 border-l-4 border-blueAccent relative">
             <div class="flex justify-between items-start">
@@ -2479,10 +2478,11 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 <button onclick="app.deleteAssignment('${a.id}')"><i class="fa-solid fa-trash text-gray-300 hover:text-red-500"></i></button>
             </div>
             
-            <button onclick='app.openAIHelp(${safeAssignment})' class="w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blueAccent dark:text-blue-300 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
+            <button onclick="app.openAIHelp('${a.id}')" class="w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blueAccent dark:text-blue-300 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
                 <i class="fa-solid fa-sparkles"></i> Ask AI for Help
             </button>
         </div>`; 
+        // --- FIX ENDS HERE ---
     }); 
 },
             // --- AI INTEGRATION LOGIC ---
