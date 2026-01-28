@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -112,6 +113,7 @@
         </div>
     </div>
 
+    <!-- ADMIN PANEL -->
     <div id="admin-panel" class="hidden fixed inset-0 z-[60] bg-gray-900 text-white flex flex-col pt-safe">
         <div class="sticky top-0 bg-gray-900 z-10 px-6 pb-2">
             <div class="flex justify-between items-center py-4">
@@ -227,6 +229,10 @@
                         <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
                         <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
                     </div>
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-price" type="number" placeholder="Price (GHS) - 0 for Free" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-qty" type="number" placeholder="Total Tickets" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>    
                     <input id="event-venue" type="text" placeholder="Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
                     <textarea id="event-desc" placeholder="Details..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20"></textarea>
                     <div class="flex items-center gap-2 mb-4">
@@ -304,6 +310,7 @@
                 </div>
             </div>
 
+            <!-- Premium Services Grid -->
             <div>
                 <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">Quick Access ⚡</h3>
                 <div class="grid grid-cols-2 gap-3">
@@ -330,6 +337,7 @@
                 </div>
             </div>
 
+            <!-- Events Section -->
             <div>
                 <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">What's Poppin' 🎉</h3>
                 <div id="home-events-feed" class="space-y-4"></div>
@@ -684,38 +692,38 @@
         </div>
     </div>
     <div id="modal-contacts" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
-        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
-            <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
-            <h1 class="text-xl font-bold">New Chat 💬</h1>
-            <div class="w-6"></div>
-        </header>
-        
-        <div class="p-6 flex-1 overflow-y-auto">
-            <div id="contact-sync-prompt" class="flex flex-col items-center justify-center h-64 text-center">
-                <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-address-book text-3xl text-blueAccent"></i>
-                </div>
-                <h2 class="text-xl font-bold mb-2">Find Friends</h2>
-                <p class="text-sm opacity-60 mb-6 max-w-xs">Sync your contacts to see who is already on AZ Learner and invite those who aren't.</p>
-                <button onclick="app.syncContacts()" class="bg-blueAccent text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
-                    Sync Contacts 🔄
-                </button>
-                <p class="text-[10px] opacity-40 mt-4">Requires supported device (Android/Mobile)</p>
+    <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h1 class="text-xl font-bold">New Chat 💬</h1>
+        <div class="w-6"></div>
+    </header>
+    
+    <div class="p-6 flex-1 overflow-y-auto">
+        <div id="contact-sync-prompt" class="flex flex-col items-center justify-center h-64 text-center">
+            <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-solid fa-address-book text-3xl text-blueAccent"></i>
             </div>
-    
-            <div id="contact-results" class="hidden space-y-6">
-                <div id="section-on-app" class="hidden">
-                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">On AZ Learner ✅</h3>
-                    <div id="list-on-app" class="space-y-2"></div>
-                </div>
-    
-                <div id="section-invite">
-                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">Invite to App 📩</h3>
-                    <div id="list-invite" class="space-y-2"></div>
-                </div>
+            <h2 class="text-xl font-bold mb-2">Find Friends</h2>
+            <p class="text-sm opacity-60 mb-6 max-w-xs">Sync your contacts to see who is already on AZ Learner and invite those who aren't.</p>
+            <button onclick="app.syncContacts()" class="bg-blueAccent text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
+                Sync Contacts 🔄
+            </button>
+            <p class="text-[10px] opacity-40 mt-4">Requires supported device (Android/Mobile)</p>
+        </div>
+
+        <div id="contact-results" class="hidden space-y-6">
+            <div id="section-on-app" class="hidden">
+                <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">On AZ Learner ✅</h3>
+                <div id="list-on-app" class="space-y-2"></div>
+            </div>
+
+            <div id="section-invite">
+                <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">Invite to App 📩</h3>
+                <div id="list-invite" class="space-y-2"></div>
             </div>
         </div>
     </div>
+</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -1079,63 +1087,202 @@
 
                 // Render Events
                 const feed = document.getElementById('home-events-feed');
+                // CSS CHANGE: Changed to flex row with overflow-x-auto for horizontal scroll
+                feed.className = "flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x"; 
+    
                 feed.innerHTML = '';
                 if (this.data.events.length === 0) {
+                    feed.className = "space-y-4"; // Revert to stack if empty message needed
                     document.getElementById('home-no-events').classList.remove('hidden');
-                } else {
-                    document.getElementById('home-no-events').classList.add('hidden');
-                    this.data.events.forEach(ev => {
-                        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
-                        const btnText = isRsvp ? 'Going ✅' : 'Details';
-                        const btnClass = isRsvp ? 'text-green-500' : 'text-blueAccent';
-                        
-                        feed.innerHTML += `
-                        <div onclick='app.openEventModal(${JSON.stringify(ev).replace(/'/g, "&apos;")})' class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-transform">
-                            <div class="h-32 bg-gray-200 relative">
-                                <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover">
-                                <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm font-bold">
-                                    ${ev.date}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-bold text-lg leading-tight mb-1">${ev.title}</h3>
-                                <p class="text-xs opacity-60 mb-3 line-clamp-2">${ev.venue} • ${ev.time}</p>
-                                <div class="flex justify-between items-center">
-                                    <div class="flex -space-x-2">
-                                        ${(ev.rsvps || []).slice(0,3).map(() => `<div class="w-6 h-6 rounded-full bg-gray-300 border-2 border-white dark:border-darkCard"></div>`).join('')}
-                                        ${(ev.rsvps || []).length > 3 ? `<div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[8px] border-2 border-white dark:border-darkCard font-bold">+${ev.rsvps.length - 3}</div>` : ''}
-                                    </div>
-                                    <span class="text-xs font-bold ${btnClass}">${btnText} <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i></span>
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                }
-            },
+               } else {
+                   document.getElementById('home-no-events').classList.add('hidden');
+                   this.data.events.forEach(ev => {
+                       const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+            
+                       // Ticket Logic
+                       const price = ev.price || 0;
+                       const sold = ev.ticketsSold || 0;
+                       const total = ev.totalTickets || 0;
+                       const isSoldOut = total > 0 && sold >= total;
+                       const rsvpCount = (ev.rsvps || []).length;
+            
+                       let statusBadge = '';
+                       if(total > 0) {
+                           if(isSoldOut) statusBadge = `<div class="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">SOLD OUT</div>`;
+                           else statusBadge = `<div class="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow">GHS ${price}</div>`;
+                       } else {
+                            // Optional: Badge for free events
+                            statusBadge = `<div class="absolute top-2 right-2 bg-blueAccent text-white text-[10px] font-bold px-2 py-1 rounded shadow">FREE</div>`;
+                        }
+
+                       let bottomBadge = '';
+                        if (total > 0) {
+                             bottomBadge = `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 font-bold">${total - sold} left</div>`;
+                        } else {
+                             bottomBadge = `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 flex items-center gap-1 font-bold"><i class="fa-solid fa-user-group text-[8px]"></i> ${rsvpCount} Going</div>`;
+                        }
+
+                       // Fixed width for horizontal scroll items (min-w-[280px])
+                       feed.innerHTML += `
+                       <div onclick='app.openEventModal(${JSON.stringify(ev).replace(/'/g, "&apos;")})' class="min-w-[280px] w-[280px] snap-center bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-transform relative">
+                           <div class="h-32 bg-gray-200 relative">
+                               <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover">
+                               ${statusBadge}
+                               <div class="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm font-bold">
+                                   ${ev.date}
+                               </div>
+                           </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg leading-tight mb-1 truncate">${ev.title}</h3>
+                            <p class="text-xs opacity-60 mb-3 truncate">${ev.venue} • ${ev.time}</p>
+                            <div class="flex justify-between items-center">
+                                <div class="text-xs font-bold text-blueAccent">Tap for details</div>
+                                ${total > 0 ? `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500">${total - sold} left</div>` : ''}
+                           </div>
+                       </div>
+                   </div>`;
+                });
+              }
+           },
 
             openEventModal(ev) {
-                const modal = document.getElementById('modal-event-details');
-                document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
-                document.getElementById('modal-event-title').innerText = ev.title;
-                document.getElementById('modal-event-date').innerText = ev.date;
-                document.getElementById('modal-event-time').innerText = ev.time;
-                document.getElementById('modal-event-venue').innerText = ev.venue;
-                document.getElementById('modal-event-desc').innerText = ev.description;
-                
-                const btn = document.getElementById('btn-rsvp');
-                const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
-                
-                btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
-                
-                if (isRsvp) {
-                    btn.innerHTML = `<span>You're Going! ✅</span>`;
-                    btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
-                } else {
-                    btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
-                    btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
-                }
+    const modal = document.getElementById('modal-event-details');
+    document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
+    document.getElementById('modal-event-title').innerText = ev.title;
+    document.getElementById('modal-event-date').innerText = ev.date;
+    document.getElementById('modal-event-time').innerText = ev.time;
+    document.getElementById('modal-event-venue').innerText = ev.venue;
+    document.getElementById('modal-event-desc').innerText = ev.description;
+    
+    const btn = document.getElementById('btn-rsvp');
+    
+    // TICKET LOGIC
+    const price = ev.price || 0;
+    const total = ev.totalTickets || 0;
+    const sold = ev.ticketsSold || 0;
+    const rsvpCount = (ev.rsvps || []).length;            
+    
+    if (total > 0) {
+        // It is a paid/ticketed event
+        if (sold >= total) {
+            btn.innerHTML = `<span>SOLD OUT 🚫</span>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-gray-400 text-white cursor-not-allowed";
+            btn.onclick = null;
+        } else {
+            btn.innerHTML = `<span>Buy Ticket (GHS ${price})</span> <i class="fa-solid fa-ticket"></i>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-600 text-white hover:bg-green-500";
+            // Pass event details to buy function
+            btn.onclick = () => app.buyTicket(ev);
+        }
+        // Show counter in description
+        document.getElementById('modal-event-desc').innerHTML = `
+            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 flex justify-between items-center">
+                <span class="text-sm font-bold text-blue-800 dark:text-blue-300">Tickets Available:</span>
+                <span class="text-xl font-black text-blueAccent">${total - sold} / ${total}</span>
+            </div>
+            ${ev.description}
+        `;
+    } else {
+        // Standard RSVP Event
+        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+        btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
+        if (isRsvp) {
+            btn.innerHTML = `<span>You're Going! ✅</span>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
+        } else {
+            btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
+        }
+        document.getElementById('modal-event-desc').innerHTML = `
+            <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-500 dark:text-gray-400">People Going:</span>
+                <span class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users text-blueAccent text-sm"></i> ${rsvpCount}
+                </span>
+            </div>
+            ${ev.description}
+        `;
+    }
 
-                this.openModal('modal-event-details');
+    this.openModal('modal-event-details');
+},
+
+buyTicket(ev) {
+                if(!currentUser) return alert("Please log in first.");
+                
+                const price = ev.price;
+                const email = currentUser.email;
+                const amountKobo = price * 100;
+
+                const handler = PaystackPop.setup({
+                    key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2', // ⚠️ Note: This is a LIVE key. You will be charged real money.
+                    email: email,
+                    amount: amountKobo,
+                    currency: 'GHS',
+                    metadata: {
+                        custom_fields: [
+                            { display_name: "Event", variable_name: "event_title", value: ev.title },
+                            { display_name: "Student", variable_name: "student_name", value: app.data.user.name }
+                        ]
+                    },
+                    // FIX: Removed 'async' keyword here
+                    callback: function(response) {
+                        // FIX: We wrap the async logic inside an Immediately Invoked Function Expression (IIFE)
+                        (async () => {
+                            try {
+                                // Payment Success!
+                                document.getElementById('modal-overlay').classList.add('hidden'); 
+                                
+                                // 1. Generate Unique Ticket ID
+                                const ticketId = 'AZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                                
+                                // 2. Update Database (Reduce Stock)
+                                const newSold = (ev.ticketsSold || 0) + 1;
+                                await updateDoc(doc(db, "events", ev.id), { ticketsSold: newSold });
+                                
+                                // 3. Save Ticket to User's Subcollection
+                                await addDoc(collection(db, `users/${currentUser.uid}/tickets`), {
+                                    eventId: ev.id,
+                                    eventTitle: ev.title,
+                                    ticketId: ticketId,
+                                    price: price,
+                                    purchaseDate: Date.now(),
+                                    status: 'valid'
+                                });
+
+                                // 4. Send Ticket to Chat
+                                const chatRef = doc(db, "print_orders", currentUser.uid);
+                                await setDoc(chatRef, { 
+                                    userId: currentUser.uid, 
+                                    status: 'received', 
+                                    lastUpdated: Date.now(), 
+                                    userName: app.data.user.name,
+                                    hasUnread: true 
+                                }, { merge: true });
+
+                                await addDoc(collection(db, "print_messages"), {
+                                    orderId: currentUser.uid,
+                                    senderId: "system", 
+                                    senderName: "AZ Ticket Bot 🤖",
+                                    text: `🎟️ **TICKET PURCHASED**\n\nEvent: ${ev.title}\nID: ${ticketId}\nPrice: GHS ${price}\n\nShow this ID at the entrance!`,
+                                    timestamp: Date.now()
+                                });
+
+                                // 5. Success Alert
+                                app.sendSystemNotification("Ticket Purchased! 🎟️", "Check your messages for the ticket ID.");
+                                alert(`Payment Successful! Ticket ID: ${ticketId}\n\nWe have sent the ticket to your Chat.`);
+                                history.back();
+                            } catch (error) {
+                                console.error("Ticket processing error:", error);
+                                alert("Payment successful, but there was an error generating the ticket. Please contact Admin.");
+                            }
+                        })(); // End of async wrapper
+                    },
+                    onClose: function() {
+                        alert('Transaction was not completed.');
+                    }
+                });
+                handler.openIframe();
             },
 
             async toggleRsvp(eventId, currentRsvps) {
@@ -1157,6 +1304,9 @@
                 const time = document.getElementById('event-time').value;
                 const venue = document.getElementById('event-venue').value;
                 const desc = document.getElementById('event-desc').value;
+                // NEW FIELDS
+                const price = document.getElementById('event-price').value || "0";
+                const qty = document.getElementById('event-qty').value || "0";
                 const fileInput = document.getElementById('event-file');
 
                 if (!title || !date || !venue) return alert("Fill in the basics!");
@@ -1166,16 +1316,22 @@
                     image = await this.compressImage(fileInput.files[0]);
                 }
 
-                await addDoc(collection(db, "events"), {
-                    title, date, time, venue, description: desc, image,
-                    rsvps: [], timestamp: Date.now()
-                });
+               // Save strictly as numbers
+               await addDoc(collection(db, "events"), {
+                   title, date, time, venue, description: desc, image,
+                   price: parseFloat(price),
+                   totalTickets: parseInt(qty),
+                   ticketsSold: 0,
+                   rsvps: [], timestamp: Date.now()
+               });
 
-                alert("Event Posted! 🎉");
-                // Reset form
-                document.getElementById('event-title').value = '';
-                document.getElementById('event-desc').value = '';
-                document.getElementById('event-file').value = '';
+               alert("Event Posted! 🎉");
+               // Reset form logic...
+               document.getElementById('event-title').value = '';
+               document.getElementById('event-desc').value = '';
+               document.getElementById('event-price').value = ''; 
+               document.getElementById('event-qty').value = '';
+               document.getElementById('event-file').value = '';
             },
 
             async deleteEvent(id) {
@@ -1383,51 +1539,60 @@
                 const q = query(collection(db, collName), where(idField, "==", idValue));
                 
                 activeChatListener = onSnapshot(q, (snap) => {
-                    if(snap.empty) { 
-                        msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60"><p>No messages yet.</p></div>`; 
-                        return; 
+                    try {
+                        if(snap.empty) { 
+                            msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60"><p>No messages yet.</p></div>`; 
+                            return; 
+                        }
+                        
+                        const messages = [];
+                        this.data.activeMsgCache = {}; 
+
+                        snap.forEach(d => {
+                            const m = d.data();
+                            m.id = d.id;
+                            messages.push(m);
+                            if(m.fileData) this.data.activeMsgCache[d.id] = m;
+                        });
+                        
+                        messages.sort((a,b) => a.timestamp - b.timestamp);
+
+                        let html = '';
+                        messages.forEach(msg => {
+                            const isSender = msg.senderId === currentUser.uid;
+                            const align = isSender ? 'items-end' : 'items-start';
+                            const bg = isSender ? 'bg-blueAccent text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-white';
+                            
+                            let senderNameHtml = '';
+                            if (activeChatType === 'course' && !isSender) {
+                                senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
+                            }
+
+                            let content = `<p>${msg.text || ''}</p>`; // Added safety check for empty text
+                            
+                            if (msg.fileData) {
+                                // FIX: Added check 'msg.fileType &&' to prevent crash if fileType is missing
+                                if (msg.fileType && msg.fileType.startsWith('image/')) {
+                                    content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px]" onclick="app.viewImage('${msg.fileData}')">`;
+                                } else {
+                                    content += `<div onclick="app.downloadFile('${msg.id}')" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center"><i class="fa-solid fa-file"></i> ${msg.fileName || 'Attachment'}</div>`;
+                                }
+                            }
+                            
+                            html += `
+                            <div class="flex flex-col ${align} mb-2 w-full msg-enter">
+                                ${senderNameHtml}
+                                <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
+                                <span class="text-[10px] opacity-40 mt-1 mr-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>`;
+                        });
+                        
+                        msgDiv.innerHTML = html;
+                        setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 100);
+                    } catch(err) {
+                        console.error("Error rendering messages:", err);
+                        msgDiv.innerHTML = `<div class="text-center text-red-500 mt-10"><p>Error loading chat.</p></div>`;
                     }
-                    
-                    const messages = [];
-                    this.data.activeMsgCache = {}; 
-
-                    snap.forEach(d => {
-                        const m = d.data();
-                        m.id = d.id;
-                        messages.push(m);
-                        if(m.fileData) this.data.activeMsgCache[d.id] = m;
-                    });
-                    
-                    messages.sort((a,b) => a.timestamp - b.timestamp);
-
-                    let html = '';
-                    messages.forEach(msg => {
-                        const isSender = msg.senderId === currentUser.uid;
-                        const align = isSender ? 'items-end' : 'items-start';
-                        const bg = isSender ? 'bg-blueAccent text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-white';
-                        
-                        let senderNameHtml = '';
-                        if (activeChatType === 'course' && !isSender) {
-                            senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
-                        }
-
-                        let content = `<p>${msg.text}</p>`;
-                        
-                        if (msg.fileData) {
-                            if (msg.fileType.startsWith('image/')) content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px]" onclick="app.viewImage('${msg.fileData}')">`;
-                            else content += `<div onclick="app.downloadFile('${msg.id}')" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center"><i class="fa-solid fa-file"></i> ${msg.fileName}</div>`;
-                        }
-                        
-                        html += `
-                        <div class="flex flex-col ${align} mb-2 w-full msg-enter">
-                            ${senderNameHtml}
-                            <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
-                            <span class="text-[10px] opacity-40 mt-1 mr-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>`;
-                    });
-                    
-                    msgDiv.innerHTML = html;
-                    setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 100);
                 });
             },
 
@@ -2025,6 +2190,322 @@
             },
             renderAssignments() { const list = document.getElementById('assignment-list'); list.innerHTML = ''; if(this.data.assignments.length === 0) { document.getElementById('empty-assignments').classList.remove('hidden'); return; } document.getElementById('empty-assignments').classList.add('hidden'); this.data.assignments.forEach(a => { const style = a.isCompleted ? 'task-done' : ''; const check = a.isCompleted ? 'checked' : ''; list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex justify-between items-center border-l-4 border-blueAccent"><div class="flex items-center gap-3"><input type="checkbox" ${check} onclick="app.toggleAssignment('${a.id}', ${a.isCompleted})" class="w-5 h-5 cursor-pointer"><div class="${style}"><h3 class="font-bold">${a.title}</h3><p class="text-xs opacity-60">${a.course} • ${a.dueDate}</p></div></div><button onclick="app.deleteAssignment('${a.id}')"><i class="fa-solid fa-trash text-gray-400"></i></button></div>`; }); },
             renderNotes() { const list = document.getElementById('notes-list'); list.innerHTML = ''; if(this.data.notes.length === 0) { document.getElementById('empty-notes').classList.remove('hidden'); return; } document.getElementById('empty-notes').classList.add('hidden'); this.data.notes.forEach(n => { const card = document.createElement('div'); card.className = "bg-noteYellow dark:bg-darkCard rounded-xl p-4 shadow-sm h-32 flex flex-col cursor-pointer"; card.onclick = () => { this.data.editingNoteId = n.id; document.getElementById('note-title').value = n.title; document.getElementById('note-subtitle').value = n.subtitle; document.getElementById('note-body').value = n.body; document.getElementById('btn-delete-note').classList.remove('hidden'); app.openModal('modal-note-editor'); }; card.innerHTML = `<h3 class="font-bold line-clamp-1">${n.title}</h3><p class="text-xs opacity-80 line-clamp-2">${n.subtitle}</p>`; list.appendChild(card); }); },
+            
+            renderNotifications() {
+                const list = document.getElementById('notifications-list'); list.innerHTML = '';
+                if(this.data.notifications.length === 0) { document.getElementById('empty-notifications').classList.remove('hidden'); return; }
+                document.getElementById('empty-notifications').classList.add('hidden');
+                this.data.notifications.forEach(n => {
+                    let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage('${n.image}')" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
+                    let cardClass = "bg-white dark:bg-darkCard";
+                    let titleClass = "text-blueAccent";
+                    let border = "";
+                    if(n.isVIP) {
+                        cardClass = "vip-gradient text-black";
+                        titleClass = "text-black";
+                        border = "border-2 border-yellow-300";
+                    }
+                    list.innerHTML += `<div class="${cardClass} p-4 rounded-xl shadow mb-2 relative ${border}"><h3 class="font-bold ${titleClass}">${n.title} ${n.isVIP ? '👑' : ''}</h3><p class="text-sm opacity-80">${n.body}</p>${imgHtml}<p class="text-[10px] opacity-40 mt-1">${new Date(n.timestamp).toLocaleDateString()}</p></div>`;
+                });
+            },
+
+            switchTab(index, fromHistory = false) { 
+                window.scrollTo(0,0);
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
+                const tabs = ['tab-home', 'tab-timetable', 'tab-assignments', 'tab-notes', 'tab-chat', 'tab-leaderboard']; 
+                if(tabs[index]) document.getElementById(tabs[index]).classList.remove('hidden'); 
+                document.querySelectorAll('.nav-item').forEach(el => { el.classList.toggle('text-blueAccent', parseInt(el.dataset.index) === index); el.classList.toggle('text-gray-400', parseInt(el.dataset.index) !== index); }); 
+                document.getElementById('fab').classList.toggle('hidden', index === 0);
+                // Update FAB Icon/Label based on Tab
+                const fabIcon = document.getElementById('fab-icon');
+                const fabLabel = document.getElementById('fab-label');
+
+                if (index === 4) { // Chat Tab
+                fabIcon.className = "fa-solid fa-message";
+                fabLabel.innerText = "New Chat";
+                } else { // Others
+                fabIcon.className = "fa-solid fa-plus";
+                fabLabel.innerText = "Add";
+             }
+                
+                if (index === 0) this.renderHome();
+                if (index === 4) this.renderChatList();
+                // Leaderboard is now its own full screen view
+
+                if (!fromHistory) {
+                    history.pushState({ tab: index }, null, "");
+                }
+                this.data.currentTabIndex = index;
+            },
+            toggleSidebar() { const d = document.getElementById('sidebar-drawer'); const o = document.getElementById('sidebar-overlay'); if(d.classList.contains('-translate-x-full')) { d.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { d.classList.add('-translate-x-full'); o.classList.add('hidden'); } },
+            toggleTheme() { this.data.theme = this.data.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('az_theme', this.data.theme); this.applyTheme(); },
+            applyTheme() { const isDark = this.data.theme === 'dark'; document.documentElement.classList.toggle('dark', isDark); this.updateToggleUI('theme-toggle-btn', isDark); },
+            
+            toggleSystemNotifications() {
+                if (!this.data.systemNotifications) {
+                    Notification.requestPermission().then(perm => {
+                        if (perm === 'granted') { 
+                            this.data.systemNotifications = true; 
+                            localStorage.setItem('az_sys_notif', true); 
+                            this.updateToggleUI('notif-toggle-btn', true); 
+                            const audio = document.getElementById('alert-sound');
+                            audio.play().then(() => {
+                                audio.pause();
+                                audio.currentTime = 0;
+                            });
+                            this.sendSystemNotification("Alerts Active 🔔", "Sound and Vibration enabled!"); 
+                        } else {
+                            alert("We need permission to send alerts! Please allow them in your browser settings.");
+                        }
+                    });
+                } else { 
+                    this.data.systemNotifications = false; 
+                    localStorage.setItem('az_sys_notif', false); 
+                    this.updateToggleUI('notif-toggle-btn', false); 
+                }
+            },
+
+            updateToggleUI(btnId, isActive) { const btn = document.getElementById(btnId); const knob = btn.firstElementChild; if (isActive) { btn.classList.remove('bg-gray-400'); btn.classList.add('bg-blueAccent'); knob.classList.add('translate-x-5'); } else { btn.classList.add('bg-gray-400'); btn.classList.remove('bg-blueAccent'); knob.classList.remove('translate-x-5'); } },
+            
+            setupSwipeNavigation() {
+                let touchStartX = 0;
+                let touchStartY = 0;
+
+                document.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    // Guard clauses: Don't swipe if overlays are open
+                    const overlays = [
+                        'auth-overlay', 'splash-screen', 'admin-panel', 
+                        'full-screen-leaderboard', 'full-screen-feedback', 
+                        'full-screen-chat', 'full-screen-profile', 
+                        'full-screen-settings', 'modal-overlay'
+                    ];
+                    
+                    const isOverlayOpen = overlays.some(id => !document.getElementById(id).classList.contains('hidden'));
+                    if(isOverlayOpen) return;
+
+                    // Don't swipe if interacting with a horizontal slider (like course circles)
+                    if(e.target.closest('.overflow-x-auto')) return;
+
+                    const touchEndX = e.changedTouches[0].screenX;
+                    const touchEndY = e.changedTouches[0].screenY;
+                    
+                    const diffX = touchEndX - touchStartX;
+                    const diffY = touchEndY - touchStartY;
+
+                    // Threshold: 50px, and horizontal movement must dominate vertical
+                    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                        const currentIndex = this.data.currentTabIndex;
+                        
+                        // Swipe Left (finger moves left) -> Go Next (Index + 1)
+                        if (diffX < 0) {
+                            if (currentIndex < 4) this.switchTab(currentIndex + 1);
+                        } 
+                        // Swipe Right (finger moves right) -> Go Prev (Index - 1)
+                        else {
+                            if (currentIndex > 0) this.switchTab(currentIndex - 1);
+                        }
+                    }
+                }, { passive: true });
+            },
+
+            openModal(id) { 
+                history.pushState({ view: 'modal' }, null, ""); // Push State
+                document.getElementById('modal-overlay').classList.remove('hidden'); 
+                document.getElementById(id).classList.remove('hidden'); 
+            },
+            
+            closeModals() { 
+                // Just visual hiding, but in the new system we should prefer history.back()
+                document.getElementById('modal-overlay').classList.add('hidden'); 
+                document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden')); 
+                document.getElementById('modal-note-editor').classList.add('hidden'); 
+                document.getElementById('modal-notifications').classList.add('hidden'); 
+            },
+            
+            handleFabClick() { 
+    // 1. Timetable Tab
+    if(!document.getElementById('tab-timetable').classList.contains('hidden')) {
+        this.data.editingCourseId = null; 
+        document.getElementById('new-course-name').value = ''; 
+        document.getElementById('new-course-venue').value = ''; 
+        document.getElementById('course-modal-title').innerText = "Add Class";
+        this.openModal('modal-add-course');
+
+    // 2. Assignments Tab
+    } else if(!document.getElementById('tab-assignments').classList.contains('hidden')) {
+        this.openModal('modal-add-assignment');
+
+    // 3. Notes Tab (Changed from 'else' to 'else if' to keep the chain alive)
+    } else if(!document.getElementById('tab-notes').classList.contains('hidden')) {
+        this.data.editingNoteId = null;
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-subtitle').value = '';
+        document.getElementById('note-body').value = '';
+        document.getElementById('btn-delete-note').classList.add('hidden');
+        this.openModal('modal-note-editor');
+
+    // 4. Chat Tab (Now this works validly!)
+    } else if(!document.getElementById('tab-chat').classList.contains('hidden')) {
+         document.getElementById('contact-sync-prompt').classList.remove('hidden');
+         document.getElementById('contact-results').classList.add('hidden');
+         document.getElementById('modal-contacts').classList.remove('hidden');
+         history.pushState({ view: 'modal-contacts' }, null, "");
+    }
+},
+            // --- NEW: CONTACT SYNC LOGIC ---
+
+    async syncContacts() {
+        // check support
+        if (!('contacts' in navigator && 'ContactsManager' in window)) {
+            return alert("Contact Sync is not supported on this device/browser. Try using the Search bar to find users by email/phone.");
+        }
+
+        try {
+            const props = ['name', 'tel'];
+            const opts = { multiple: true };
+            const contacts = await navigator.contacts.select(props, opts);
+            
+            if (contacts.length === 0) return;
+
+            document.getElementById('contact-sync-prompt').classList.add('hidden');
+            document.getElementById('contact-results').classList.remove('hidden');
+            document.getElementById('list-on-app').innerHTML = '<div class="text-center opacity-50"><i class="fa-solid fa-spinner fa-spin"></i> Checking database...</div>';
+            
+            // 1. Fetch all users (Lightweight for prototype, scalable solution uses Cloud Functions)
+            const usersSnap = await getDocs(collection(db, "users"));
+            const registeredUsers = [];
+            usersSnap.forEach(doc => registeredUsers.push(doc.data()));
+
+            // 2. Process Contacts
+            const onAppList = [];
+            const inviteList = [];
+
+            contacts.forEach(contact => {
+                if (!contact.tel || contact.tel.length === 0) return;
+                
+                const name = contact.name[0];
+                const rawPhone = contact.tel[0];
+                const normalizedPhone = this.normalizePhone(rawPhone);
+
+                // Check match (Last 9 digits to account for country codes)
+                const match = registeredUsers.find(u => {
+                    const uPhone = this.normalizePhone(u.phone || '');
+                    return uPhone.includes(normalizedPhone) || normalizedPhone.includes(uPhone);
+                });
+
+                if (match && match.userId !== currentUser.uid) {
+                    onAppList.push({ ...match, contactName: name });
+                } else {
+                    inviteList.push({ name: name, phone: rawPhone });
+                }
+            });
+
+            this.renderContactResults(onAppList, inviteList);
+
+        } catch (ex) {
+            console.error(ex);
+            alert("Unable to sync contacts. Ensure permissions are granted.");
+        }
+    },
+
+    normalizePhone(phone) {
+        // Remove spaces, dashes, parentheses, + signs
+        const clean = phone.replace(/[^0-9]/g, '');
+        // Return last 9 digits for "fuzzy" matching
+        return clean.length > 9 ? clean.slice(-9) : clean;
+    },
+
+    renderContactResults(onApp, toInvite) {
+        const onAppDiv = document.getElementById('list-on-app');
+        const inviteDiv = document.getElementById('list-invite');
+        const onAppSection = document.getElementById('section-on-app');
+
+        // Render Registered Users
+        if (onApp.length > 0) {
+            onAppSection.classList.remove('hidden');
+            onAppDiv.innerHTML = '';
+            onApp.forEach(u => {
+                const pic = u.profilePic || '';
+                const avatar = pic ? `<img src="${pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold">${u.name[0]}</div>`;
+                
+                onAppDiv.innerHTML += `
+                <div onclick="app.startDirectChat('${u.userId}', '${u.name}', '${pic}'); history.back();" class="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex items-center justify-between cursor-pointer border border-green-500/30">
+                    <div class="flex items-center gap-3">
+                        ${avatar}
+                        <div>
+                            <h4 class="font-bold text-sm">${u.name}</h4>
+                            <p class="text-[10px] opacity-60">Via Contacts: ${u.contactName}</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-message text-blueAccent"></i>
+                </div>`;
+            });
+        } else {
+            onAppSection.classList.add('hidden');
+        }
+
+        // Render Invite List
+        inviteDiv.innerHTML = '';
+        toInvite.forEach(c => {
+             inviteDiv.innerHTML += `
+                <div class="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4 class="font-bold text-sm">${c.name}</h4>
+                            <p class="text-[10px] opacity-60">${c.phone}</p>
+                        </div>
+                    </div>
+                    <button onclick="app.sendSmsInvite('${c.phone}')" class="bg-gray-100 dark:bg-gray-700 hover:bg-blueAccent hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                        Invite
+                    </button>
+                </div>`;
+        });
+    },
+
+    sendSmsInvite(phone) {
+        const msg = encodeURIComponent("Hey! Join me on AZ Learner to manage classes and assignments easily. Download here: azlearner.me 🎓");
+        // Use generic sms: protocol (works on iOS and Android)
+        // Note: iOS uses separator '&', Android uses '?' usually, but modern behavior varies.
+        // Trying universally compatible approach
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const sep = isIOS ? '&' : '?';
+        window.open(`sms:${phone}${sep}body=${msg}`, '_self');
+    },
+            openServiceModal(name) { this.data.selectedService = name; this.openModal('modal-service'); },
+            setRating(n) {
+                this.data.rating = n;
+                const stars = document.getElementById('star-rating-container').children;
+                for(let i=0; i<5; i++) { stars[i].classList.toggle('text-yellow-400', i < n); stars[i].classList.toggle('text-gray-300', i >= n); }
+            },
+            addTag(tag) { 
+                const area = document.getElementById('fb-experience'); 
+                area.value = (area.value ? area.value + " " : "") + tag; 
+                area.focus(); 
+            },
+            async sendFeedback() { 
+                const msg = document.getElementById('fb-experience').value;
+                if(!msg) return alert("Please type something!");
+                try {
+                    await addDoc(collection(db, "feedback"), {
+                        userId: currentUser.uid,
+                        userName: this.data.user.name || "Anonymous",
+                        message: msg,
+                        rating: this.data.rating || 5,
+                        timestamp: Date.now()
+                    });
+                    document.getElementById('feedback-form-content').classList.add('hidden');
+                    document.getElementById('feedback-success').classList.remove('hidden');
+                    document.getElementById('fb-experience').value = ""; // Clear form
+                } catch(e) {
+                    alert("Error sending feedback: " + e.message);
+                }
+            },
             
             // --- FULL SCREEN LEADERBOARD ---
             openLeaderboard() {
