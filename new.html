@@ -1905,6 +1905,24 @@ buyTicket(ev) {
                             this.renderChatList();
                         }
                     }));
+                    // Listener for My Tickets
+const qTickets = query(collection(db, `users/${currentUser.uid}/tickets`), orderBy("purchaseDate", "desc"));
+listeners.push(onSnapshot(qTickets, (snap) => {
+    const t = [];
+    snap.forEach(d => t.push({id: d.id, ...d.data()}));
+    this.data.myTickets = t;
+    
+    // Update badge count
+    const badge = document.getElementById('my-ticket-count');
+    if(t.length > 0) {
+        badge.innerText = t.length;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+
+    if(this.data.currentHomeView === 'tickets') this.renderMyTickets();
+}));
                 });
                 
                 const qEvents = query(collection(db, "events"), orderBy("timestamp", "desc"));
