@@ -65,6 +65,15 @@
         .rank-1 { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: 2px solid #fff; }
         .rank-2 { background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: black; border: 2px solid #fff; }
         .rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: white; border: 2px solid #fff; }
+        /* Ticket Perforation Effect */
+        .ticket-stub {
+        background-image: radial-gradient(circle at 0 50%, transparent 10px, white 11px);
+        background-position: 0 0;
+        background-size: 100% 100%;
+        }
+        .dark .ticket-stub {
+        background-image: radial-gradient(circle at 0 50%, transparent 10px, #424242 11px);
+        }
     </style>
 </head>
 <body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
