@@ -2464,7 +2464,8 @@ buyTicket(ev) {
                     const check = a.isCompleted ? 'checked' : ''; 
         
         // We pass the assignment object safely to the openAIHelp function
-                    const safeAssignment = JSON.stringify(a).replace(/"/g, '&quot;');
+                    // Fix: Escape single quotes so titles like "Monday's Task" don't break the code
+                    const safeAssignment = JSON.stringify(a).replace(/"/g, '&quot;').replace(/'/g, "\\'");
 
                     list.innerHTML += `
                     <div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex flex-col gap-3 border-l-4 border-blueAccent relative">
@@ -2581,6 +2582,7 @@ async sendAIQuery() {
     
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+            
             renderNotes() { const list = document.getElementById('notes-list'); list.innerHTML = ''; if(this.data.notes.length === 0) { document.getElementById('empty-notes').classList.remove('hidden'); return; } document.getElementById('empty-notes').classList.add('hidden'); this.data.notes.forEach(n => { const card = document.createElement('div'); card.className = "bg-noteYellow dark:bg-darkCard rounded-xl p-4 shadow-sm h-32 flex flex-col cursor-pointer"; card.onclick = () => { this.data.editingNoteId = n.id; document.getElementById('note-title').value = n.title; document.getElementById('note-subtitle').value = n.subtitle; document.getElementById('note-body').value = n.body; document.getElementById('btn-delete-note').classList.remove('hidden'); app.openModal('modal-note-editor'); }; card.innerHTML = `<h3 class="font-bold line-clamp-1">${n.title}</h3><p class="text-xs opacity-80 line-clamp-2">${n.subtitle}</p>`; list.appendChild(card); }); },
             
             renderNotifications() {
