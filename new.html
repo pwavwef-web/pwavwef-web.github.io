@@ -2216,6 +2216,36 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                         if (v === 'godmode') btn.classList.add('border', 'border-purple-400');
                     }
                 });
+            // --- STEP 5.5 LOGIC: FETCH TICKETS ---
+    if (viewName === 'tickets') {
+        const qAllTickets = query(collectionGroup(db, 'tickets'), orderBy('purchaseDate', 'desc'), limit(50));
+        
+        // Clear previous listener if it exists to avoid duplicates
+        if(this.ticketListener) this.ticketListener(); 
+        
+        this.ticketListener = onSnapshot(qAllTickets, (snap) => {
+            const list = document.getElementById('adm-ticket-list');
+            list.innerHTML = '';
+            if (snap.empty) {
+                list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No tickets sold.</td></tr>';
+                return;
+            }
+            
+            snap.forEach(d => {
+                const t = d.data();
+                list.innerHTML += `
+                    <tr class="border-b border-gray-700">
+                        <td class="px-4 py-3 font-mono font-bold text-yellow-400">${t.ticketId}</td>
+                        <td class="px-4 py-3 truncate max-w-[150px]">${t.eventTitle}</td>
+                        <td class="px-4 py-3 text-xs">
+                            <div class="font-bold text-white">${t.userName || 'Unknown'}</div>
+                            <div class="text-gray-500">${new Date(t.purchaseDate).toLocaleDateString()}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold">GHS ${t.price}</td>
+                    </tr>`;
+            });
+        });
+    }
             },
             
             injectCapital() {
