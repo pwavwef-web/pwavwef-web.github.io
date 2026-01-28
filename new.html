@@ -2488,8 +2488,19 @@ listeners.push(onSnapshot(qTickets, (snap) => {
             // --- AI INTEGRATION LOGIC ---
 
 // 1. Open the Modal and set context
-openAIHelp(assignment) {
+// 1. Open the Modal and set context
+openAIHelp(id) {
+    // Look up the assignment object using the ID
+    const assignment = this.data.assignments.find(a => a.id === id);
+    
+    if (!assignment) {
+        console.error("Assignment not found");
+        return;
+    }
+
     this.data.activeAssignment = assignment; // Store current assignment in data
+    
+    // Reset the chat UI
     document.getElementById('ai-assignment-context').innerText = assignment.title;
     document.getElementById('ai-chat-box').innerHTML = `
         <div class="flex gap-2 items-start">
