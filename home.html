@@ -796,10 +796,10 @@
 </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+       
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
             authDomain: "az-learner.firebaseapp.com",
@@ -2456,9 +2456,11 @@ buyTicket(ev) {
         const tCheck = c.time ? c.time : '??:??';
         const safeDay = c.day ? c.day.substring(0,3).toUpperCase() : '???';
 
-        // Safe Element Creation
+        // 1. Create Element (Safe way)
         const div = document.createElement('div');
         div.className = `bg-white dark:bg-darkCard rounded-xl shadow p-4 flex items-center gap-4 ${isToday} relative overflow-hidden`;
+        
+        // 2. Set HTML content (without the broken button logic)
         div.innerHTML = `
             <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">${safeDay}</div>
             <div class="flex-1 min-w-0">
@@ -2469,12 +2471,12 @@ buyTicket(ev) {
             <div class="flex gap-3" id="actions-${c.id}"></div>
         `;
 
-        // Safely attach buttons (This fixes the quoting crash)
+        // 3. Attach Buttons Manually (This prevents the "Quoting Crash")
         const actionContainer = div.querySelector(`#actions-${c.id}`);
         
         const editBtn = document.createElement('button');
         editBtn.innerHTML = '<i class="fa-solid fa-pen text-gray-400 hover:text-blueAccent"></i>';
-        editBtn.onclick = () => app.editCourse(c); // Passing the object directly works perfectly
+        editBtn.onclick = () => app.editCourse(c); // Pass object directly
 
         const delBtn = document.createElement('button');
         delBtn.innerHTML = '<i class="fa-solid fa-trash text-gray-400 hover:text-red-500"></i>';
