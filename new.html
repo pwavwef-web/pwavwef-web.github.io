@@ -1248,6 +1248,146 @@
     this.openModal('modal-event-details');
 },
 
+            // --- TICKET SYSTEM LOGIC ---
+
+toggleHomeView(view) {
+    this.data.currentHomeView = view;
+    const btnEvents = document.getElementById('btn-view-events');
+    const btnTickets = document.getElementById('btn-view-tickets');
+    const feed = document.getElementById('home-events-feed');
+    const noEvents = document.getElementById('home-no-events');
+    const ticketView = document.getElementById('home-tickets-view');
+    const title = document.getElementById('home-section-title');
+
+    if (view === 'events') {
+        // UI Styles
+        btnEvents.classList.add('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnEvents.classList.remove('text-gray-500');
+        btnTickets.classList.remove('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnTickets.classList.add('text-gray-500');
+        
+        // Visibility
+        feed.classList.remove('hidden');
+        if(this.data.events.length === 0) noEvents.classList.remove('hidden');
+        ticketView.classList.add('hidden');
+        title.innerText = "What's Poppin' 🎉";
+    } else {
+        // UI Styles
+        btnTickets.classList.add('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnTickets.classList.remove('text-gray-500');
+        btnEvents.classList.remove('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnEvents.classList.add('text-gray-500');
+
+        // Visibility
+        feed.classList.add('hidden');
+        noEvents.classList.add('hidden');
+        ticketView.classList.remove('hidden');
+        title.innerText = "My Wallet 🎟️";
+        this.renderMyTickets();
+    }
+},
+
+renderMyTickets() {
+    const container = document.getElementById('home-tickets-view');
+    container.innerHTML = '';
+
+    if (this.data.myTickets.length === 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10 opacity-50">
+                <i class="fa-solid fa-ticket text-4xl mb-3"></i>
+                <p class="text-sm">You haven't bought any tickets yet.</p>
+            </div>`;
+        return;
+    }
+
+    this.data.myTickets.forEach(t => {
+        const dateStr = new Date(t.purchaseDate).toLocaleDateString();
+        // Generate a nice ticket card
+        container.innerHTML += `
+            <div class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row border border-gray-100 dark:border-gray-700 relative">
+                <div class="bg-blueAccent dark:bg-orangeAccent p-4 text-white flex flex-col justify-between w-full md:w-1/3 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-white/20 rounded-full blur-xl"></div>
+                    <div>
+                        <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest">Event Ticket</p>
+                        <h3 class="font-black text-xl leading-tight mt-1">${t.eventTitle}</h3>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs opacity-80">Price</p>
+                        <p class="font-bold">GHS ${t.price}</p>
+                    </div>
+                    <div class="absolute right-0 top-0 bottom-0 w-2 h-full ticket-stub"></div>
+                </div>
+
+                <div class="p-5 flex-1 flex flex-col justify-between bg-white dark:bg-darkCard">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase font-bold">Ticket ID</p>
+                            <p class="text-2xl font-black text-gray-800 dark:text-white tracking-wider font-mono">${t.ticketId}</p>
+                        </div>
+                        <div class="bg-green-100 text-green-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Valid</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mt-auto">
+                        <button onclick="app.downloadTicket('${t.id}')" class="flex-1 bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                            Download <i class="fa-solid fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="render-${t.id}" class="absolute top-0 left-0 w-[600px] bg-white text-black p-0 hidden pointer-events-none z-[-1]">
+                    <div class="flex border-2 border-black rounded-3xl overflow-hidden">
+                        <div class="bg-black text-white p-8 w-1/3 flex flex-col justify-between">
+                            <h1 class="text-3xl font-black uppercase">${t.eventTitle}</h1>
+                            <div><p class="text-sm opacity-60">PRICE</p><p class="text-2xl font-bold">GHS ${t.price}</p></div>
+                        </div>
+                        <div class="p-8 flex-1 bg-white flex flex-col justify-between relative">
+                             <div class="absolute left-0 top-0 bottom-0 w-px border-l-2 border-dashed border-gray-300"></div>
+                             <div>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Holder</p>
+                                <p class="text-xl font-bold mb-4">${app.data.user.name}</p>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Ticket Code</p>
+                                <p class="text-4xl font-black font-mono tracking-widest">${t.ticketId}</p>
+                             </div>
+                             <div class="flex justify-between items-end">
+                                <p class="text-xs text-gray-400">Purchased: ${dateStr}</p>
+                                <div class="text-right">
+                                    <p class="font-bold text-lg">AZ Learner 🎓</p>
+                                    <p class="text-[10px] uppercase">Official Pass</p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    });
+},
+
+async downloadTicket(ticketId) {
+    const element = document.getElementById(`render-${ticketId}`);
+    if (!element) return;
+    
+    // Temporarily show it off-screen to render
+    element.classList.remove('hidden');
+    element.style.position = 'fixed';
+    element.style.top = '-9999px';
+    element.style.zIndex = '9999';
+
+    try {
+        const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
+        const link = document.createElement('a');
+        link.download = `Ticket-${ticketId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        alert("Ticket saved to photos! 📸");
+    } catch (err) {
+        console.error(err);
+        alert("Could not generate ticket image.");
+    } finally {
+        element.classList.add('hidden');
+        element.style.position = 'absolute';
+    }
+},
+            
 buyTicket(ev) {
                 if(!currentUser) return alert("Please log in first.");
                 
