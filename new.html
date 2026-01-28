@@ -2199,7 +2199,7 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
                 
-                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback'].forEach(v => {
+                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback', 'tickets'].forEach(v => {
                     const btn = document.getElementById(`adm-btn-${v}`);
                     if (!btn) return; 
 
