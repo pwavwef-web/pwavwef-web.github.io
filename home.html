@@ -661,36 +661,6 @@
             <div class="flex justify-end gap-2"><button onclick="history.back()" class="px-4 py-2 text-sm font-bold opacity-60">Cancel</button><button onclick="app.saveCourse()" class="bg-blueAccent text-white px-6 py-2 rounded-lg font-bold shadow">Save</button></div>
         </div>
 
-        <div id="modal-ai-help" class="bg-black/60 fixed inset-0 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-darkCard w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[80vh]">
-        <div class="p-4 bg-blueAccent dark:bg-orangeAccent text-white flex justify-between items-center">
-            <div>
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-robot mr-2"></i>Assignment AI</h3>
-                <p id="ai-assignment-context" class="text-xs opacity-80 truncate max-w-[200px]">...</p>
-            </div>
-            <button onclick="document.getElementById('modal-ai-help').classList.add('hidden')" class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-
-        <div id="ai-chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-[#2a2a2a]">
-            <div class="flex gap-2 items-start">
-                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs"><i class="fa-solid fa-robot"></i></div>
-                <div class="bg-white dark:bg-darkCard p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-sm max-w-[85%]">
-                    Hello! I've read the details for this assignment. What are you stuck on?
-                </div>
-            </div>
-        </div>
-
-        <div class="p-3 bg-white dark:bg-darkCard border-t border-gray-100 dark:border-gray-700 flex gap-2">
-            <input id="ai-user-input" type="text" placeholder="Ask about this task..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-3 outline-none text-sm">
-            <button onclick="app.sendAIQuery()" id="btn-send-ai" class="bg-blueAccent dark:bg-orangeAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
         <div id="modal-add-assignment" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl hidden">
             <h3 class="text-xl font-bold mb-4">Add Assignment</h3>
             <input id="new-assign-title" type="text" placeholder="Title" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
@@ -796,10 +766,10 @@
 </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-       
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
             authDomain: "az-learner.firebaseapp.com",
@@ -2436,233 +2406,39 @@ buyTicket(ev) {
             },
             async deleteNote() { if(confirm('Delete?')) { await deleteDoc(doc(db, "notes", this.data.editingNoteId)); this.closeModals(); history.back(); } },
 
-            renderCourses() {
-    const list = document.getElementById('course-list'); 
-    list.innerHTML = ''; 
-    
-    if(this.data.courses.length === 0) { 
-        document.getElementById('empty-courses').classList.remove('hidden'); 
-        return; 
-    } 
-    document.getElementById('empty-courses').classList.add('hidden'); 
-    
-    const days = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":7}; 
-    const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    
-    this.data.courses.sort((a,b) => days[a.day] - days[b.day]); 
-    
-    this.data.courses.forEach(c => { 
-        const isToday = c.day === currentDay ? 'today-highlight' : '';
-        const tCheck = c.time ? c.time : '??:??';
-        const safeDay = c.day ? c.day.substring(0,3).toUpperCase() : '???';
-
-        // 1. Create Element (Safe way)
-        const div = document.createElement('div');
-        div.className = `bg-white dark:bg-darkCard rounded-xl shadow p-4 flex items-center gap-4 ${isToday} relative overflow-hidden`;
-        
-        // 2. Set HTML content (without the broken button logic)
-        div.innerHTML = `
-            <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">${safeDay}</div>
-            <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-lg truncate">${c.name}</h3>
-                <p class="text-sm font-medium text-blueAccent dark:text-orangeAccent"><i class="fa-regular fa-clock mr-1"></i>${tCheck}</p>
-                <p class="text-xs opacity-60 truncate">${c.venue}</p>
-            </div>
-            <div class="flex gap-3" id="actions-${c.id}"></div>
-        `;
-
-        // 3. Attach Buttons Manually (This prevents the "Quoting Crash")
-        const actionContainer = div.querySelector(`#actions-${c.id}`);
-        
-        const editBtn = document.createElement('button');
-        editBtn.innerHTML = '<i class="fa-solid fa-pen text-gray-400 hover:text-blueAccent"></i>';
-        editBtn.onclick = () => app.editCourse(c); // Pass object directly
-
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = '<i class="fa-solid fa-trash text-gray-400 hover:text-red-500"></i>';
-        delBtn.onclick = () => app.deleteCourse(c.id);
-
-        actionContainer.appendChild(editBtn);
-        actionContainer.appendChild(delBtn);
-        list.appendChild(div);
-    }); 
-},
-            renderAssignments() {
-    const list = document.getElementById('assignment-list');
-    list.innerHTML = '';
-
-    if (this.data.assignments.length === 0) {
-        document.getElementById('empty-assignments').classList.remove('hidden');
-        return;
-    }
-    document.getElementById('empty-assignments').classList.add('hidden');
-
-    this.data.assignments.forEach(a => {
-        const style = a.isCompleted ? 'task-done' : '';
-        const check = a.isCompleted ? 'checked' : '';
-
-        const div = document.createElement('div');
-        div.className = "bg-white dark:bg-darkCard rounded-xl shadow p-4 flex flex-col gap-3 border-l-4 border-blueAccent relative";
-        
-        div.innerHTML = `
-            <div class="flex justify-between items-start">
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" ${check} class="w-5 h-5 cursor-pointer accent-blueAccent" id="check-${a.id}">
-                    <div class="${style}">
-                        <h3 class="font-bold text-gray-800 dark:text-white">${a.title}</h3>
-                        <p class="text-xs opacity-60">${a.course} • ${a.dueDate}</p>
-                    </div>
-                </div>
-                <button id="del-${a.id}"><i class="fa-solid fa-trash text-gray-300 hover:text-red-500"></i></button>
-            </div>
-            <button id="ai-${a.id}" class="w-full py-2 bg-blue-50 dark:bg-blue-900/20 text-blueAccent dark:text-blue-300 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
-                <i class="fa-solid fa-sparkles"></i> Ask AI for Help
-            </button>
-        `;
-
-        // Safely attach listeners
-        div.querySelector(`#check-${a.id}`).onclick = () => app.toggleAssignment(a.id, a.isCompleted);
-        div.querySelector(`#del-${a.id}`).onclick = () => app.deleteAssignment(a.id);
-        div.querySelector(`#ai-${a.id}`).onclick = () => app.openAIHelp(a);
-
-        list.appendChild(div);
-    });
-},
-            // --- AI INTEGRATION LOGIC ---
-
-// 1. Open the Modal and set context
-openAIHelp(assignment) {
-    this.data.activeAssignment = assignment; // Store current assignment in data
-    document.getElementById('ai-assignment-context').innerText = assignment.title;
-    document.getElementById('ai-chat-box').innerHTML = `
-        <div class="flex gap-2 items-start">
-            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs"><i class="fa-solid fa-robot"></i></div>
-            <div class="bg-white dark:bg-darkCard p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-sm max-w-[85%]">
-                I'm ready to help with <b>"${assignment.title}"</b>. What do you need?
-            </div>
-        </div>
-    `;
-    document.getElementById('modal-ai-help').classList.remove('hidden');
-},
-
-// 2. Send Query to Gemini API
-async sendAIQuery() {
-    const input = document.getElementById('ai-user-input');
-    const text = input.value.trim();
-    const chatBox = document.getElementById('ai-chat-box');
-    const assignment = this.data.activeAssignment;
-    
-    if(!text) return;
-
-    // A. Add User Message to UI
-    chatBox.innerHTML += `
-        <div class="flex gap-2 items-start justify-end msg-enter">
-            <div class="bg-blueAccent text-white p-3 rounded-tl-xl rounded-br-xl rounded-bl-xl shadow-sm text-sm max-w-[85%]">
-                ${text}
-            </div>
-        </div>
-    `;
-    input.value = '';
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // B. Show Loading Spinner
-    const loadingId = 'loading-' + Date.now();
-    chatBox.innerHTML += `
-        <div id="${loadingId}" class="flex gap-2 items-start msg-enter">
-            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs"><i class="fa-solid fa-robot fa-bounce"></i></div>
-            <div class="bg-white dark:bg-darkCard p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-sm opacity-50">
-                Thinking...
-            </div>
-        </div>
-    `;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // C. Prepare the Payload for Gemini
-    // ⚠️ REPLACE 'YOUR_API_KEY' WITH THE KEY FROM PHASE 1
-    const API_KEY = "AIzaSyDLLCff-FioA1VmrBrelsan4J9Z-6-wUpg"; 
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-
-    const prompt = `
-    Context: The user is a university student working on an assignment titled "${assignment.title}" for the course "${assignment.course}".
-    User's Question: ${text}
-    
-    Instruction: Provide a helpful, academic, and concise answer. If they ask for a draft, provide an outline. Keep formatting simple.
-    `;
-
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-
-        const data = await response.json();
-        const aiResponse = data.candidates[0].content.parts[0].text;
-
-        // D. Remove Loading and Add AI Response
-        document.getElementById(loadingId).remove();
-        
-        // Convert **bold** markdown to HTML bold for better reading
-        const formattedResponse = aiResponse.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-
-        chatBox.innerHTML += `
-            <div class="flex gap-2 items-start msg-enter">
-                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs"><i class="fa-solid fa-robot"></i></div>
-                <div class="bg-white dark:bg-darkCard p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm text-sm max-w-[85%] leading-relaxed">
-                    ${formattedResponse}
-                </div>
-            </div>
-        `;
-
-    } catch (error) {
-        document.getElementById(loadingId).remove();
-        chatBox.innerHTML += `<div class="text-center text-red-500 text-xs mt-2">Error connecting to AI. Check connection.</div>`;
-        console.error(error);
-    }
-    
-    chatBox.scrollTop = chatBox.scrollHeight;
-},
+            renderCourses() { 
+                const list = document.getElementById('course-list'); list.innerHTML = ''; 
+                if(this.data.courses.length === 0) { document.getElementById('empty-courses').classList.remove('hidden'); return; } 
+                document.getElementById('empty-courses').classList.add('hidden'); 
+                const days = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":7}; 
+                const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                this.data.courses.sort((a,b) => days[a.day] - days[b.day]); 
+                this.data.courses.forEach(c => { 
+                    const isToday = c.day === currentDay ? 'today-highlight' : '';
+                    const tCheck = c.time ? c.time : '??:??';
+                    list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex items-center gap-4 ${isToday} relative overflow-hidden"><div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">${c.day.substring(0,3).toUpperCase()}</div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg truncate">${c.name}</h3><p class="text-sm font-medium text-blueAccent dark:text-orangeAccent"><i class="fa-regular fa-clock mr-1"></i>${tCheck}</p><p class="text-xs opacity-60 truncate">${c.venue}</p></div><div class="flex gap-3"><button onclick='app.editCourse(${JSON.stringify(c)})'><i class="fa-solid fa-pen text-gray-400 hover:text-blueAccent"></i></button><button onclick="app.deleteCourse('${c.id}')"><i class="fa-solid fa-trash text-gray-400 hover:text-red-500"></i></button></div></div>`;
+                }); 
+            },
+            renderAssignments() { const list = document.getElementById('assignment-list'); list.innerHTML = ''; if(this.data.assignments.length === 0) { document.getElementById('empty-assignments').classList.remove('hidden'); return; } document.getElementById('empty-assignments').classList.add('hidden'); this.data.assignments.forEach(a => { const style = a.isCompleted ? 'task-done' : ''; const check = a.isCompleted ? 'checked' : ''; list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex justify-between items-center border-l-4 border-blueAccent"><div class="flex items-center gap-3"><input type="checkbox" ${check} onclick="app.toggleAssignment('${a.id}', ${a.isCompleted})" class="w-5 h-5 cursor-pointer"><div class="${style}"><h3 class="font-bold">${a.title}</h3><p class="text-xs opacity-60">${a.course} • ${a.dueDate}</p></div></div><button onclick="app.deleteAssignment('${a.id}')"><i class="fa-solid fa-trash text-gray-400"></i></button></div>`; }); },
+            renderNotes() { const list = document.getElementById('notes-list'); list.innerHTML = ''; if(this.data.notes.length === 0) { document.getElementById('empty-notes').classList.remove('hidden'); return; } document.getElementById('empty-notes').classList.add('hidden'); this.data.notes.forEach(n => { const card = document.createElement('div'); card.className = "bg-noteYellow dark:bg-darkCard rounded-xl p-4 shadow-sm h-32 flex flex-col cursor-pointer"; card.onclick = () => { this.data.editingNoteId = n.id; document.getElementById('note-title').value = n.title; document.getElementById('note-subtitle').value = n.subtitle; document.getElementById('note-body').value = n.body; document.getElementById('btn-delete-note').classList.remove('hidden'); app.openModal('modal-note-editor'); }; card.innerHTML = `<h3 class="font-bold line-clamp-1">${n.title}</h3><p class="text-xs opacity-80 line-clamp-2">${n.subtitle}</p>`; list.appendChild(card); }); },
             
-            renderNotes() { 
-    const list = document.getElementById('notes-list'); 
-    list.innerHTML = ''; 
-    
-    if(this.data.notes.length === 0) { 
-        document.getElementById('empty-notes').classList.remove('hidden'); 
-        return; 
-    } 
-    document.getElementById('empty-notes').classList.add('hidden'); 
-    
-    this.data.notes.forEach(n => { 
-        const card = document.createElement('div'); 
-        card.className = "bg-noteYellow dark:bg-darkCard rounded-xl p-4 shadow-sm h-32 flex flex-col cursor-pointer"; 
-        
-        // Use onclick function instead of string
-        card.onclick = () => { 
-            this.data.editingNoteId = n.id; 
-            document.getElementById('note-title').value = n.title; 
-            document.getElementById('note-subtitle').value = n.subtitle; 
-            document.getElementById('note-body').value = n.body; 
-            document.getElementById('btn-delete-note').classList.remove('hidden'); 
-            app.openModal('modal-note-editor'); 
-        }; 
-        
-        // Safe innerHTML for text content
-        const h3 = document.createElement('h3');
-        h3.className = "font-bold line-clamp-1";
-        h3.textContent = n.title; // Safely sets text
-
-        const p = document.createElement('p');
-        p.className = "text-xs opacity-80 line-clamp-2";
-        p.textContent = n.subtitle;
-
-        card.appendChild(h3);
-        card.appendChild(p);
-        list.appendChild(card); 
-    }); 
-},
+            renderNotifications() {
+                const list = document.getElementById('notifications-list'); list.innerHTML = '';
+                if(this.data.notifications.length === 0) { document.getElementById('empty-notifications').classList.remove('hidden'); return; }
+                document.getElementById('empty-notifications').classList.add('hidden');
+                this.data.notifications.forEach(n => {
+                    let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage('${n.image}')" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
+                    let cardClass = "bg-white dark:bg-darkCard";
+                    let titleClass = "text-blueAccent";
+                    let border = "";
+                    if(n.isVIP) {
+                        cardClass = "vip-gradient text-black";
+                        titleClass = "text-black";
+                        border = "border-2 border-yellow-300";
+                    }
+                    list.innerHTML += `<div class="${cardClass} p-4 rounded-xl shadow mb-2 relative ${border}"><h3 class="font-bold ${titleClass}">${n.title} ${n.isVIP ? '👑' : ''}</h3><p class="text-sm opacity-80">${n.body}</p>${imgHtml}<p class="text-[10px] opacity-40 mt-1">${new Date(n.timestamp).toLocaleDateString()}</p></div>`;
+                });
+            },
 
             switchTab(index, fromHistory = false) { 
                 window.scrollTo(0,0);
@@ -2972,7 +2748,7 @@ async sendAIQuery() {
             deleteAccount() { if(confirm('PERMANENTLY DELETE ACCOUNT?')) { deleteUser(currentUser); } }
         };
 
-        app.init();
+        window.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
 </html>
