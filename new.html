@@ -1429,6 +1429,8 @@ buyTicket(ev) {
                                     price: price,
                                     purchaseDate: Date.now(),
                                     status: 'valid'
+                                    userName: app.data.user.name, // <--- MAKE SURE THIS IS ADDED
+    userEmail: app.data.user.email
                                 });
 
                                 // 4. Send Ticket to Chat
