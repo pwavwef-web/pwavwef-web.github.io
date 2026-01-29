@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wardrobe | Francis Pwavwe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,900&family=Inter:wght@300&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: #020617;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .font-serif { font-family: 'Playfair Display', serif; }
+
+        /* Magic Snow Effect */
+        #snow-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Floating Parallax Elements */
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            animation: move 20s infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes move {
+            from { transform: translate(0, 0); }
+            to { transform: translate(100px, 100px); }
+        }
+
+        /* Portal Entrance */
+        #portal-overlay {
+            position: fixed;
+            inset: 0;
+            background: black;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1.5s ease;
+        }
+
+        .wardrobe-door {
+            width: 120px;
+            height: 200px;
+            border: 2px solid #fbbf24;
+            cursor: pointer;
+            transition: all 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wardrobe-door:hover {
+            box-shadow: 0 0 30px #fbbf24;
+            transform: scale(1.1);
+        }
+
+        /* The Oracle UI */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <canvas id="snow-canvas"></canvas>
+
+    <div id="portal-overlay">
+        <div class="text-center">
+            <div class="wardrobe-door rounded-t-full mb-4" onclick="enterNarnia()">
+                <i data-lucide="key" class="text-brand-gold animate-pulse"></i>
+            </div>
+            <p class="text-xs tracking-[0.3em] uppercase opacity-50">Step through the wardrobe</p>
+        </div>
+    </div>
+
+    <div class="floating-orb w-96 h-96 bg-blue-600 top-[-10%] left-[-10%]"></div>
+    <div class="floating-orb w-80 h-80 bg-indigo-900 bottom-[-10%] right-[-10%]" style="animation-delay: -5s;"></div>
+
+    <main class="relative z-10 container mx-auto px-6 max-w-2xl text-center">
+        <div class="glass-card p-12 space-y-8">
+            <div class="space-y-2">
+                <span class="text-amber-400 font-bold tracking-widest text-xs uppercase">Secret Archive 001</span>
+                <h1 class="text-5xl md:text-7xl font-serif italic">Beyond the <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Visible</span></h1>
+            </div>
+
+            <p class="text-slate-400 leading-relaxed text-lg italic">
+                "We do not need magic to change the world, we carry all the power we need inside ourselves already."
+            </p>
+
+            <div class="pt-8">
+                <button onclick="getOracle()" class="group relative px-8 py-4 bg-transparent border border-white/20 rounded-full overflow-hidden transition-all hover:border-amber-400">
+                    <span class="relative z-10 font-bold group-hover:text-black transition-colors">Consult the Oracle</span>
+                    <div class="absolute inset-0 bg-amber-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                </button>
+            </div>
+
+            <div id="oracle-output" class="min-h-[60px] text-amber-200 font-serif text-xl opacity-0 transition-opacity duration-1000"></div>
+        </div>
+
+        <div class="mt-12 flex justify-center gap-6">
+            <a href="index.html" class="text-xs uppercase tracking-widest opacity-30 hover:opacity-100 transition-opacity flex items-center gap-2">
+                <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Reality
+            </a>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // 1. Portal Entrance
+        function enterNarnia() {
+            const overlay = document.getElementById('portal-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 1500);
+        }
+
+        // 2. The Oracle Wisdom (Customized for Francis)
+        const wisdom = [
+            "Tourism is the study of how the world breathes.",
+            "A leader is a servant in a cleaner uniform.",
+            "Digital innovation is the new frontier of Ghanaian hospitality.",
+            "Philosophy is not in books; it is in the way you hold the mic.",
+            "The best destination is the version of yourself you haven't met yet.",
+            "Discipline is the bridge between goals and accomplishment."
+        ];
+
+        function getOracle() {
+            const output = document.getElementById('oracle-output');
+            output.style.opacity = '0';
+            setTimeout(() => {
+                output.innerText = wisdom[Math.floor(Math.random() * wisdom.length)];
+                output.style.opacity = '1';
+            }, 500);
+        }
+
+        // 3. Snowfall Engine
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, snowflakes;
+
+        function initSnow() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            snowflakes = Array.from({ length: 150 }, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                r: Math.random() * 3 + 1,
+                d: Math.random() * 1
+            }));
+        }
+
+        function drawSnow() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            snowflakes.forEach(p => {
+                ctx.moveTo(p.x, p.y);
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, true);
+            });
+            ctx.fill();
+            updateSnow();
+        }
+
+        function updateSnow() {
+            snowflakes.forEach(p => {
+                p.y += Math.cos(p.d) + 1 + p.r / 2;
+                p.x += Math.sin(0) * 2;
+                if (p.x > width + 5 || p.x < -5 || p.y > height) {
+                    p.x = Math.random() * width;
+                    p.y = -10;
+                }
+            });
+        }
+
+        window.addEventListener('resize', initSnow);
+        initSnow();
+        setInterval(drawSnow, 30);
+    </script>
+</body>
+</html>
