@@ -1245,66 +1245,79 @@
 
             openEventModal(ev) {
     const modal = document.getElementById('modal-event-details');
-    document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
+    document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200';
     document.getElementById('modal-event-title').innerText = ev.title;
-    document.getElementById('modal-event-date').innerText = ev.date;
-    document.getElementById('modal-event-time').innerText = ev.time;
-    document.getElementById('modal-event-venue').innerText = ev.venue;
-    document.getElementById('modal-event-desc').innerText = ev.description;
     
-    const btn = document.getElementById('btn-rsvp');
-    
-    // TICKET LOGIC
-    const price = ev.price || 0;
-    const total = ev.totalTickets || 0;
-    const sold = ev.ticketsSold || 0;
-    const rsvpCount = (ev.rsvps || []).length;            
-    
-    if (total > 0) {
-        // It is a paid/ticketed event
-        if (sold >= total) {
-            btn.innerHTML = `<span>SOLD OUT 🚫</span>`;
-            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-gray-400 text-white cursor-not-allowed";
-            btn.onclick = null;
-        } else {
-            btn.innerHTML = `<span>Buy Ticket (GHS ${price})</span> <i class="fa-solid fa-ticket"></i>`;
-            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-600 text-white hover:bg-green-500";
-            // Pass event details to buy function
-            btn.onclick = () => app.buyTicket(ev);
-        }
-        // Show counter in description
-        document.getElementById('modal-event-desc').innerHTML = `
-            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 flex justify-between items-center">
-                <span class="text-sm font-bold text-blue-800 dark:text-blue-300">Tickets Available:</span>
-                <span class="text-xl font-black text-blueAccent">${total - sold} / ${total}</span>
-            </div>
-            ${ev.description}
-        `;
-    } else {
-        // Standard RSVP Event
-        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
-        btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
-        if (isRsvp) {
-            btn.innerHTML = `<span>You're Going! ✅</span>`;
-            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
-        } else {
-            btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
-            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
-        }
-        document.getElementById('modal-event-desc').innerHTML = `
-            <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <span class="text-sm font-bold text-gray-500 dark:text-gray-400">People Going:</span>
-                <span class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-users text-blueAccent text-sm"></i> ${rsvpCount}
-                </span>
-            </div>
-            ${ev.description}
-        `;
+    let ticketHtml = '';
+    if (ev.ticketTypes && ev.ticketTypes.length > 0) {
+        ticketHtml = `<div class="space-y-2 mb-6">`;
+        ev.ticketTypes.forEach((t, index) => {
+            const isSoldOut = t.sold >= t.totalQty;
+            ticketHtml += `
+                <button 
+                    onclick="${isSoldOut ? '' : `app.buySpecificTicket(${JSON.stringify(ev).replace(/'/g, "&apos;")}, ${index})`}"
+                    class="w-full p-4 rounded-xl border-2 flex justify-between items-center transition-all ${isSoldOut ? 'opacity-50 grayscale border-gray-200 cursor-not-allowed' : 'border-blue-100 hover:border-blueAccent active:scale-95'}">
+                    <div class="text-left">
+                        <span class="block font-black text-blueAccent uppercase text-xs">${t.name}</span>
+                        <span class="text-xs opacity-60">${t.totalQty - t.sold} tickets left</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="block font-bold">GHS ${t.price}</span>
+                        <span class="text-[10px] font-bold text-green-500">${isSoldOut ? 'SOLD OUT' : 'SELECT'}</span>
+                    </div>
+                </button>
+            `;
+        });
+        ticketHtml += `</div>`;
     }
 
+    document.getElementById('modal-event-desc').innerHTML = `
+        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs opacity-70 italic">
+            Select a ticket type below to proceed to payment.
+        </div>
+        ${ticketHtml}
+        <p class="text-sm leading-relaxed">${ev.description}</p>
+    `;
+    
+    // Hide the default RSVP button as we now use the individual ticket buttons
+    document.getElementById('btn-rsvp').classList.add('hidden');
     this.openModal('modal-event-details');
 },
 
+            async buySpecificTicket(ev, ticketIndex) {
+    const ticket = ev.ticketTypes[ticketIndex];
+    const amountKobo = ticket.price * 100;
+    
+    // Standard Paystack setup using the 'ticket.price' and 'ticket.name'
+    const handler = PaystackPop.setup({
+        key: 'pk_live_YOUR_KEY', 
+        email: currentUser.email,
+        amount: amountKobo,
+        currency: 'GHS',
+        metadata: { custom_fields: [{ display_name: "Ticket Type", value: ticket.name }] },
+        callback: async (response) => {
+            // Success Logic:
+            // 1. Update the specific ticket index in Firestore
+            const updatedTypes = [...ev.ticketTypes];
+            updatedTypes[ticketIndex].sold += 1;
+            await updateDoc(doc(db, "events", ev.id), { ticketTypes: updatedTypes });
+            
+            // 2. Save ticket to user subcollection
+            const ticketId = 'AZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            await addDoc(collection(db, `users/${currentUser.uid}/tickets`), {
+                eventTitle: ev.title,
+                ticketType: ticket.name,
+                price: ticket.price,
+                ticketId: ticketId,
+                purchaseDate: Date.now()
+            });
+            
+            alert(`Enjoy the event! ${ticket.name} ticket confirmed.`);
+            history.back();
+        }
+    });
+    handler.openIframe();
+},
             // --- TICKET SYSTEM LOGIC ---
 
 toggleHomeView(view) {
@@ -1343,7 +1356,21 @@ toggleHomeView(view) {
         this.renderMyTickets();
     }
 },
-
+            
+addTicketTypeRow() {
+    const container = document.getElementById('admin-ticket-types-container');
+    const row = document.createElement('div');
+    row.className = "flex gap-2 ticket-type-row animate-pulse";
+    row.innerHTML = `
+        <input type="text" placeholder="Type" class="t-name flex-1 p-2 rounded bg-gray-900 border border-gray-600 text-sm text-white">
+        <input type="number" placeholder="Price" class="t-price w-20 p-2 rounded bg-gray-900 border border-gray-600 text-sm text-white">
+        <input type="number" placeholder="Qty" class="t-qty w-20 p-2 rounded bg-gray-900 border border-gray-600 text-sm text-white">
+        <button onclick="this.parentElement.remove()" class="text-red-500 px-1"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    container.appendChild(row);
+    setTimeout(() => row.classList.remove('animate-pulse'), 500);
+},
+            
 renderMyTickets() {
     const container = document.getElementById('home-tickets-view');
     container.innerHTML = '';
@@ -1539,41 +1566,39 @@ buyTicket(ev) {
             },
 
             async saveEvent() {
-                const title = document.getElementById('event-title').value;
-                const date = document.getElementById('event-date').value;
-                const time = document.getElementById('event-time').value;
-                const venue = document.getElementById('event-venue').value;
-                const desc = document.getElementById('event-desc').value;
-                // NEW FIELDS
-                const price = document.getElementById('event-price').value || "0";
-                const qty = document.getElementById('event-qty').value || "0";
-                const fileInput = document.getElementById('event-file');
+    const title = document.getElementById('event-title').value;
+    const date = document.getElementById('event-date').value;
+    const venue = document.getElementById('event-venue').value;
+    const desc = document.getElementById('event-desc').value;
+    const fileInput = document.getElementById('event-file');
 
-                if (!title || !date || !venue) return alert("Fill in the basics!");
+    // Collect all ticket types
+    const ticketRows = document.querySelectorAll('.ticket-type-row');
+    let ticketTypes = [];
+    ticketRows.forEach(row => {
+        const name = row.querySelector('.t-name').value;
+        const price = parseFloat(row.querySelector('.t-price').value);
+        const qty = parseInt(row.querySelector('.t-qty').value);
+        if(name && !isNaN(price)) {
+            ticketTypes.push({ name, price, totalQty: qty, sold: 0 });
+        }
+    });
 
-                let image = null;
-                if (fileInput.files.length > 0) {
-                    image = await this.compressImage(fileInput.files[0]);
-                }
+    if (!title || ticketTypes.length === 0) return alert("Please add at least one ticket type.");
 
-               // Save strictly as numbers
-               await addDoc(collection(db, "events"), {
-                   title, date, time, venue, description: desc, image,
-                   price: parseFloat(price),
-                   totalTickets: parseInt(qty),
-                   ticketsSold: 0,
-                   rsvps: [], timestamp: Date.now()
-               });
+    let image = null;
+    if (fileInput.files.length > 0) image = await this.compressImage(fileInput.files[0]);
 
-               alert("Event Posted! 🎉");
-               // Reset form logic...
-               document.getElementById('event-title').value = '';
-               document.getElementById('event-desc').value = '';
-               document.getElementById('event-price').value = ''; 
-               document.getElementById('event-qty').value = '';
-               document.getElementById('event-file').value = '';
-            },
+    await addDoc(collection(db, "events"), {
+        title, date, venue, description: desc, image,
+        ticketTypes: ticketTypes, // Saving the array instead of a single price
+        timestamp: Date.now(),
+        rsvps: []
+    });
 
+    alert("Multi-tier Event Posted! 🎟️");
+    location.reload(); // Refresh to clear form
+},
             async deleteEvent(id) {
                 if(confirm("Delete this event?")) await deleteDoc(doc(db, "events", id));
             },
