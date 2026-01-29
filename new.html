@@ -99,9 +99,18 @@
             <h1 class="text-3xl font-bold text-blueAccent dark:text-orangeAccent mb-2">AZ Learner 🎓</h1>
             <p class="text-sm opacity-60 mb-6">Welcome back, Learner</p>
             <input type="email" id="login-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors">
-            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors">
-            <button onclick="authManager.login()" class="w-full py-3 bg-blueAccent dark:bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Secure Login 🔐</button>
-            <p class="text-xs opacity-60">First time here?</p>
+            <div class="relative w-full mb-2">
+    <input type="password" id="login-pass" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors pr-10">
+    <button onclick="app.togglePassword('login-pass', 'login-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="login-eye" class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
+<div class="flex justify-end mb-6">
+    <button onclick="authManager.forgotPassword()" class="text-xs text-blueAccent dark:text-orangeAccent font-bold hover:underline">Forgot Password?</button>
+</div>
+
+<button onclick="authManager.login()" class="w-full py-3 bg-blueAccent dark:bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Secure Login 🔐</button>
             <button onclick="authManager.toggleView('signup')" class="text-blueAccent dark:text-orangeAccent font-bold text-sm mt-1 hover:underline">Create an Account</button>
             <p id="login-msg" class="text-red-500 text-xs mt-4 h-4"></p>
         </div>
@@ -116,8 +125,19 @@
 
             <input type="tel" id="signup-phone" placeholder="Phone Number" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
             <input type="email" id="signup-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
-            <input type="password" id="signup-pass" placeholder="Create Password (6+ chars)" class="w-full mb-6 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
-            <button onclick="authManager.signup()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Create Account ✨</button>
+<div class="relative w-full mb-3">
+    <input type="password" id="signup-pass" placeholder="Create Password (6+ chars)" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
+    <button onclick="app.togglePassword('signup-pass', 'signup-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="signup-eye" class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
+<div class="relative w-full mb-6">
+    <input type="password" id="signup-pass-confirm" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
+    <button onclick="app.togglePassword('signup-pass-confirm', 'signup-eye-confirm')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="signup-eye-confirm" class="fa-solid fa-eye"></i>
+    </button>
+</div>            <button onclick="authManager.signup()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Create Account ✨</button>
             <button onclick="authManager.toggleView('login')" class="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white">Back to Login</button>
             <p id="signup-msg" class="text-red-500 text-xs mt-4 h-4"></p>
         </div>
@@ -769,8 +789,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
             authDomain: "az-learner.firebaseapp.com",
@@ -795,6 +815,16 @@
 
         window.authManager = {
             async login() { try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch (err) { document.getElementById('login-msg').innerText = err.message; } },
+            async forgotPassword() {
+        const email = document.getElementById('login-email').value;
+        if (!email) return alert("Please enter your email address in the box above first.");
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert("Reset link sent! Check your email (and spam folder). 📧");
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
+    },
             async signup() {
                 try {
                     const email = document.getElementById('signup-email').value;
@@ -804,6 +834,11 @@
                     
                     const school = document.getElementById('signup-school').value.trim();
                     const program = document.getElementById('signup-program').value;
+                    const confirmPass = document.getElementById('signup-pass-confirm').value;
+            if (pass !== confirmPass) {
+                throw new Error("Passwords do not match!");
+            }
+                    const name = document.getElementById('signup-name').value;
 
                     if(!name || !phone || !school || !program) throw new Error("All fields including School and Program are required.");
                     
@@ -842,6 +877,19 @@
                 badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
                 currentTabIndex: 0
             },
+            togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    },
 
             init() {
                 onAuthStateChanged(auth, async (user) => {
