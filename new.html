@@ -1,88 +1,267 @@
-from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner Mission Debrief</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Anton', 'sans-serif'],
+                    },
+                    colors: {
+                        azBlue: '#001F3F',
+                        azCyan: '#00FFFF',
+                        azGold: '#FFD700',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            background-color: #e5e7eb; /* Grey bg for screen viewing */
+        }
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            margin: 20px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .form-card {
+            flex: 1;
+            padding: 10mm 15mm; /* Reduced top/bottom padding to 10mm */
+            position: relative;
+        }
+        .cut-line {
+            height: 1px;
+            background-image: linear-gradient(to right, #9ca3af 50%, transparent 50%);
+            background-size: 10px 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .checkbox {
+            width: 14px; /* Slightly smaller */
+            height: 14px;
+            border: 2px solid #001F3F;
+            display: inline-block;
+            margin-right: 6px;
+            border-radius: 3px;
+        }
+        .writing-line {
+            border-bottom: 1px solid #d1d5db;
+            height: 18px; /* Slightly shorter */
+            width: 100%;
+            margin-bottom: 4px;
+        }
 
-# Initialize Presentation
-prs = Presentation()
+        /* PRINT STYLES */
+        @media print {
+            body { background: none; }
+            .a4-page { margin: 0; box-shadow: none; width: 100%; height: 100%; }
+            button { display: none; }
+        }
+    </style>
+</head>
+<body>
 
-# Function to set Blue Background (Blue-Themed Serenity)
-def set_blue_background(slide):
-    background = slide.background
-    fill = background.fill
-    fill.solid()
-    fill.fore_color.rgb = RGBColor(0, 51, 102) # Deep Blue
+    <!-- Floating Print Button for Screen -->
+    <div class="fixed bottom-8 right-8 z-50 print:hidden">
+        <button onclick="window.print()" class="bg-blue-900 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-blue-800 transition flex items-center gap-2">
+            <i class="fa-solid fa-print"></i> Print Debrief Cards
+        </button>
+    </div>
 
-# Function to add a slide with title and content
-def create_slide(title_text, content_text_list):
-    slide_layout = prs.slide_layouts[1] # Bullet layout
-    slide = prs.slides.add_slide(slide_layout)
-    set_blue_background(slide)
-    
-    # Title styling
-    title = slide.shapes.title
-    title.text = title_text
-    title.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255) # White text
-    title.text_frame.paragraphs[0].font.bold = True
+    <div class="a4-page">
+        
+        <!-- FORM 1 (TOP HALF) -->
+        <div class="form-card">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-4 border-l-4 border-azBlue pl-4">
+                <div>
+                    <h1 class="font-display text-4xl text-azBlue tracking-wide leading-none">MISSION DEBRIEF</h1>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Official Launch Protocol • Oguaa Hall JCR</p>
+                </div>
+                <div class="text-right">
+                    <div class="bg-azBlue text-white px-2 py-1 font-bold text-lg inline-block mb-1">AZ LEARNER</div>
+                    <p class="text-[10px] font-mono text-gray-400">REF: AZ/LNCH/001</p>
+                </div>
+            </div>
 
-    # Content styling
-    tf = slide.placeholders[1].text_frame
-    tf.text = content_text_list[0]
-    
-    for item in content_text_list[1:]:
-        p = tf.add_paragraph()
-        p.text = item
-        p.font.color.rgb = RGBColor(230, 230, 230) # Light grey text for bullets
+            <p class="text-xs text-gray-600 italic mb-4 leading-tight">"Greetings, Intellectual. Massive respect for pulling up. Help us recalibrate the ecosystem by dropping your unfiltered intel below."</p>
 
-# --- SLIDE 1: Title ---
-title_slide_layout = prs.slide_layouts[0]
-slide1 = prs.slides.add_slide(title_slide_layout)
-set_blue_background(slide1)
-slide1.shapes.title.text = "AZ LEARNER"
-slide1.shapes.title.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
-subtitle = slide1.placeholders[1]
-subtitle.text = "The Academic Ecosystem\nFrancis Pwavwe"
-subtitle.text_frame.paragraphs[0].font.color.rgb = RGBColor(200, 200, 200)
+            <!-- Questions -->
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+                
+                <!-- Q1 -->
+                <div class="col-span-1">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-star text-azGold mr-1"></i> 1. Vibe & Pitch</h3>
+                    <div class="text-[10px] space-y-1">
+                        <div class="flex items-center"><span class="checkbox"></span> Event: Historic / Fire 🔥</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Event: Mid / Decent</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Pitch: Engaging 🗣️</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Pitch: Too Long</div>
+                    </div>
+                </div>
 
-# --- SLIDE 2: Problem ---
-create_slide("The Problem (The 'Ick')", [
-    "Fragmentation: Students juggle 5+ apps (WhatsApp, Telegram, Portals).",
-    "Cognitive Overload: Too much noise, zero organization.",
-    "The Result: Missed deadlines, lost files, and burnout.",
-    "The Reality: Existing tools are ugly and outdated."
-])
+                <!-- Q2 -->
+                <div class="col-span-1">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-bolt text-azCyan mr-1"></i> 2. Feature Audit</h3>
+                    <div class="text-[10px] space-y-1">
+                        <div class="flex items-center"><span class="checkbox"></span> Smart Timetable</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Print & Deliver</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Course Circles</div>
+                        <div class="flex items-center"><span class="checkbox"></span> The Vault (Past Qs)</div>
+                    </div>
+                </div>
 
-# --- SLIDE 3: Solution ---
-create_slide("The Solution (The 'Glow Up')", [
-    "One App, All Tools: A centralized 'habitat' for student life.",
-    "Seamless UI: Built for Gen Z—intuitive and aesthetic.",
-    "The Fix: We handle the organization; you handle the learning.",
-    "Value: Bridging academic obligation with lifestyle."
-])
+                <!-- Q3 -->
+                <div class="col-span-2">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-download mr-1"></i> 3. Conversion Protocol</h3>
+                    <div class="flex gap-4 text-[10px]">
+                        <div class="flex items-center"><span class="checkbox"></span> Downloaded (Android)</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Web App (iOS)</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Not yet</div>
+                    </div>
+                </div>
 
-# --- SLIDE 4: Evidence ---
-create_slide("Evidence (Receipts)", [
-    "Current Behavior: Reliance on chaotic WhatsApp groups.",
-    "Pain Point: 'Where is that handout?' is a daily struggle.",
-    "Validation: High demand for a 'Second Brain'.",
-    "Verdict: The market is desperate for clarity."
-])
+                <!-- Q4 -->
+                <div class="col-span-2">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-brain mr-1"></i> 4. Delusion-Level Feedback</h3>
+                    <p class="text-[9px] text-gray-500 mb-1">What is one crazy feature you wish existed?</p>
+                    <div class="writing-line"></div>
+                    <div class="writing-line"></div>
+                </div>
 
-# --- SLIDE 5: Market Potential ---
-create_slide("Market Potential (Infinite Scalability)", [
-    "Primary Target: UCC & Ghanaian Universities.",
-    "The 'Fresher' Cycle: Market renews every September.",
-    "Expansion: Start in Ghana -> Scale to Africa -> Aim for the US.",
-    "Vision: A borderless academic tool."
-])
+                <!-- Q5 -->
+                <div class="col-span-2 bg-gray-100 p-2 rounded-lg flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-azBlue text-xs uppercase">5. Squad Invitation</h3>
+                        <p class="text-[9px] text-gray-500">Join our Campus Ambassador team?</p>
+                    </div>
+                    <div class="text-right w-1/2">
+                         <div class="flex items-end gap-2 mb-1">
+                            <span class="text-[9px] font-bold">Name:</span> <div class="border-b border-gray-400 w-full"></div>
+                         </div>
+                         <div class="flex items-end gap-2">
+                            <span class="text-[9px] font-bold">Phone:</span> <div class="border-b border-gray-400 w-full"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
 
-# --- SLIDE 6: Revenue ---
-create_slide("Revenue Model (Securing the Bag)", [
-    "Subscriptions: Freemium model with premium features.",
-    "Ads: Targeted, non-intrusive ads.",
-    "Partnerships: Hostels, bookshops, tech vendors.",
-    "Commissions: Monetizing project assistance."
-])
+            <!-- Footer -->
+            <div class="absolute bottom-4 left-15mm right-15mm text-center border-t-2 border-azBlue pt-2">
+                <h2 class="font-display text-lg text-azBlue">SECURE THE BAG. DOMINATE THE SEMESTER.</h2>
+                <p class="text-[10px] font-mono text-gray-500">Download now: azlearner.me</p>
+            </div>
+        </div>
 
-# Save the file
-prs.save('AZ_Learner_Pitch_Deck.pptx')
-print("Deck created successfully with Blue Serenity vibes.")
+        <!-- CUT LINE -->
+        <div class="cut-line bg-white"><i class="fa-solid fa-scissors mr-2"></i> CUT HERE --------------------------------------------</div>
+
+        <!-- FORM 2 (BOTTOM HALF - DUPLICATE) -->
+        <div class="form-card">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-4 border-l-4 border-azBlue pl-4">
+                <div>
+                    <h1 class="font-display text-4xl text-azBlue tracking-wide leading-none">MISSION DEBRIEF</h1>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Official Launch Protocol • Oguaa Hall JCR</p>
+                </div>
+                <div class="text-right">
+                    <div class="bg-azBlue text-white px-2 py-1 font-bold text-lg inline-block mb-1">AZ LEARNER</div>
+                    <p class="text-[10px] font-mono text-gray-400">REF: AZ/LNCH/001</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-600 italic mb-4 leading-tight">"Greetings, Intellectual. Massive respect for pulling up. Help us recalibrate the ecosystem by dropping your unfiltered intel below."</p>
+
+            <!-- Questions -->
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+                
+                <!-- Q1 -->
+                <div class="col-span-1">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-star text-azGold mr-1"></i> 1. Vibe & Pitch</h3>
+                    <div class="text-[10px] space-y-1">
+                        <div class="flex items-center"><span class="checkbox"></span> Event: Historic / Fire 🔥</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Event: Mid / Decent</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Pitch: Engaging 🗣️</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Pitch: Too Long</div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="col-span-1">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-bolt text-azCyan mr-1"></i> 2. Feature Audit</h3>
+                    <div class="text-[10px] space-y-1">
+                        <div class="flex items-center"><span class="checkbox"></span> Smart Timetable</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Print & Deliver</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Course Circles</div>
+                        <div class="flex items-center"><span class="checkbox"></span> The Vault (Past Qs)</div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="col-span-2">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-download mr-1"></i> 3. Conversion Protocol</h3>
+                    <div class="flex gap-4 text-[10px]">
+                        <div class="flex items-center"><span class="checkbox"></span> Downloaded (Android)</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Web App (iOS)</div>
+                        <div class="flex items-center"><span class="checkbox"></span> Not yet</div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="col-span-2">
+                    <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-brain mr-1"></i> 4. Delusion-Level Feedback</h3>
+                    <p class="text-[9px] text-gray-500 mb-1">What is one crazy feature you wish existed?</p>
+                    <div class="writing-line"></div>
+                    <div class="writing-line"></div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="col-span-2 bg-gray-100 p-2 rounded-lg flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-azBlue text-xs uppercase">5. Squad Invitation</h3>
+                        <p class="text-[9px] text-gray-500">Join our Campus Ambassador team?</p>
+                    </div>
+                    <div class="text-right w-1/2">
+                         <div class="flex items-end gap-2 mb-1">
+                            <span class="text-[9px] font-bold">Name:</span> <div class="border-b border-gray-400 w-full"></div>
+                         </div>
+                         <div class="flex items-end gap-2">
+                            <span class="text-[9px] font-bold">Phone:</span> <div class="border-b border-gray-400 w-full"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="absolute bottom-4 left-15mm right-15mm text-center border-t-2 border-azBlue pt-2">
+                <h2 class="font-display text-lg text-azBlue">SECURE THE BAG. DOMINATE THE SEMESTER.</h2>
+                <p class="text-[10px] font-mono text-gray-500">Download now: azlearner.me</p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
