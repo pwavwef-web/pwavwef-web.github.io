@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner Field Log</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        @page { size: A4; margin: 0; }
+        body { -webkit-print-color-adjust: exact; background-color: white; font-family: 'Inter', sans-serif; }
+        .sheet { width: 210mm; height: 297mm; padding: 15mm; margin: 0 auto; display: flex; flex-direction: column; }
+        .row { border-bottom: 1px solid #e5e7eb; height: 12mm; display: flex; align-items: center; }
+        .col-1 { width: 35%; border-right: 1px solid #e5e7eb; height: 100%; display: flex; align-items: center; padding-left: 8px; }
+        .col-2 { width: 25%; border-right: 1px solid #e5e7eb; height: 100%; display: flex; align-items: center; padding-left: 8px; }
+        .col-3 { width: 20%; border-right: 1px solid #e5e7eb; height: 100%; display: flex; align-items: center; padding-left: 8px; }
+        .col-4 { width: 20%; height: 100%; display: flex; align-items: center; padding-left: 8px; }
+        .header-cell { background-color: #001F3F; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        
+        @media print {
+            .no-print { display: none; }
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fixed bottom-10 right-10 no-print">
+        <button onclick="window.print()" class="bg-blue-900 text-white font-bold py-3 px-6 rounded-full shadow-xl">🖨️ Print Log Sheet</button>
+    </div>
+
+    <div class="sheet">
+        <!-- HEADER -->
+        <div class="flex justify-between items-end border-b-4 border-blue-900 pb-4 mb-4">
+            <div>
+                <h1 class="font-['Anton'] text-5xl text-blue-900 uppercase tracking-wide">FIELD OPS LOG</h1>
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mt-1">Operation: Campus Storm • Lead Capture Protocol</p>
+            </div>
+            <div class="text-right">
+                <div class="bg-blue-900 text-white px-3 py-1 font-bold text-xl inline-block">AZ LEARNER</div>
+                <div class="text-xs text-gray-400 font-mono mt-1">AGENT: ___________________</div>
+            </div>
+        </div>
+
+        <!-- INSTRUCTIONS -->
+        <div class="bg-gray-100 p-3 rounded-lg mb-6 border-l-4 border-yellow-500">
+            <p class="text-xs font-bold text-gray-700 uppercase flex items-center gap-2">
+                <span>⚠️ PROTOCOL:</span> 
+                <span class="font-normal normal-case">Use this sheet to record <b>Class Reps</b>, Potential <b>Ambassadors</b>, or Users requesting a <b>Direct Link</b>.</span>
+            </p>
+        </div>
+
+        <!-- TABLE HEADER -->
+        <div class="row header-cell rounded-t-lg">
+            <div class="col-1 border-white/20">NAME</div>
+            <div class="col-2 border-white/20">PHONE / WHATSAPP</div>
+            <div class="col-3 border-white/20">PROGRAM / LEVEL</div>
+            <div class="col-4">CATEGORY (Rep/User)</div>
+        </div>
+
+        <!-- ROWS (20 Slots) -->
+        <!-- Just repeating rows for manual entry -->
+        <script>
+            for(let i=0; i<18; i++) {
+                document.write(`
+                <div class="row">
+                    <div class="col-1"></div>
+                    <div class="col-2"></div>
+                    <div class="col-3"></div>
+                    <div class="col-4"></div>
+                </div>
+                `);
+            }
+        </script>
+
+        <!-- FOOTER -->
+        <div class="mt-auto pt-6 text-center border-t border-gray-300">
+            <p class="font-['Anton'] text-xl text-blue-900">SECURE THE BAG. DOMINATE THE SEMESTER.</p>
+            <p class="text-xs font-mono text-gray-400">Data collected is subject to AZ Learner Privacy Protocols.</p>
+        </div>
+    </div>
+
+</body>
+</html>
