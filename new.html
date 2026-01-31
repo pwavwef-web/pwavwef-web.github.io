@@ -27,10 +27,12 @@
     <style>
         @page {
             size: A4;
-            margin: 0;
+            margin: 0; /* Note: If edges still cut off, try setting this to 5mm */
         }
         body {
-            background-color: #e5e7eb; /* Grey bg for screen viewing */
+            background-color: #e5e7eb;
+            -webkit-print-color-adjust: exact; /* Ensures colors print accurately */
+            print-color-adjust: exact;
         }
         .a4-page {
             width: 210mm;
@@ -43,8 +45,9 @@
         }
         .form-card {
             flex: 1;
-            padding: 10mm 15mm; /* Reduced top/bottom padding to 10mm */
+            padding: 8mm 15mm; /* Reduced top/bottom padding slightly (10mm -> 8mm) */
             position: relative;
+            overflow: hidden; /* Prevents bleed */
         }
         .cut-line {
             height: 1px;
@@ -59,7 +62,7 @@
             letter-spacing: 2px;
         }
         .checkbox {
-            width: 14px; /* Slightly smaller */
+            width: 14px;
             height: 14px;
             border: 2px solid #001F3F;
             display: inline-block;
@@ -68,7 +71,7 @@
         }
         .writing-line {
             border-bottom: 1px solid #d1d5db;
-            height: 18px; /* Slightly shorter */
+            height: 18px;
             width: 100%;
             margin-bottom: 4px;
         }
@@ -83,7 +86,6 @@
 </head>
 <body>
 
-    <!-- Floating Print Button for Screen -->
     <div class="fixed bottom-8 right-8 z-50 print:hidden">
         <button onclick="window.print()" class="bg-blue-900 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-blue-800 transition flex items-center gap-2">
             <i class="fa-solid fa-print"></i> Print Debrief Cards
@@ -92,10 +94,8 @@
 
     <div class="a4-page">
         
-        <!-- FORM 1 (TOP HALF) -->
         <div class="form-card">
-            <!-- Header -->
-            <div class="flex justify-between items-start mb-4 border-l-4 border-azBlue pl-4">
+            <div class="flex justify-between items-start mb-2 border-l-4 border-azBlue pl-4">
                 <div>
                     <h1 class="font-display text-4xl text-azBlue tracking-wide leading-none">MISSION DEBRIEF</h1>
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Official Launch Protocol • Oguaa Hall JCR</p>
@@ -106,12 +106,10 @@
                 </div>
             </div>
 
-            <p class="text-xs text-gray-600 italic mb-4 leading-tight">"Greetings, Intellectual. Massive respect for pulling up. Help us recalibrate the ecosystem by dropping your unfiltered intel below."</p>
+            <p class="text-xs text-gray-600 italic mb-2 leading-tight">"Greetings, Intellectual. Massive respect for pulling up. Help us recalibrate the ecosystem by dropping your unfiltered intel below."</p>
 
-            <!-- Questions -->
-            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div class="grid grid-cols-2 gap-x-6 gap-y-2">
                 
-                <!-- Q1 -->
                 <div class="col-span-1">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-star text-azGold mr-1"></i> 1. Vibe & Pitch</h3>
                     <div class="text-[10px] space-y-1">
@@ -122,7 +120,6 @@
                     </div>
                 </div>
 
-                <!-- Q2 -->
                 <div class="col-span-1">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-bolt text-azCyan mr-1"></i> 2. Feature Audit</h3>
                     <div class="text-[10px] space-y-1">
@@ -133,7 +130,6 @@
                     </div>
                 </div>
 
-                <!-- Q3 -->
                 <div class="col-span-2">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-download mr-1"></i> 3. Conversion Protocol</h3>
                     <div class="flex gap-4 text-[10px]">
@@ -143,7 +139,6 @@
                     </div>
                 </div>
 
-                <!-- Q4 -->
                 <div class="col-span-2">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-brain mr-1"></i> 4. Delusion-Level Feedback</h3>
                     <p class="text-[9px] text-gray-500 mb-1">What is one crazy feature you wish existed?</p>
@@ -151,7 +146,6 @@
                     <div class="writing-line"></div>
                 </div>
 
-                <!-- Q5 -->
                 <div class="col-span-2 bg-gray-100 p-2 rounded-lg flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-azBlue text-xs uppercase">5. Squad Invitation</h3>
@@ -168,20 +162,16 @@
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="absolute bottom-4 left-15mm right-15mm text-center border-t-2 border-azBlue pt-2">
+            <div class="absolute bottom-4 left-15mm right-15mm text-center border-t-2 border-azBlue pt-2 bg-white">
                 <h2 class="font-display text-lg text-azBlue">SECURE THE BAG. DOMINATE THE SEMESTER.</h2>
                 <p class="text-[10px] font-mono text-gray-500">Download now: azlearner.me</p>
             </div>
         </div>
 
-        <!-- CUT LINE -->
         <div class="cut-line bg-white"><i class="fa-solid fa-scissors mr-2"></i> CUT HERE --------------------------------------------</div>
 
-        <!-- FORM 2 (BOTTOM HALF - DUPLICATE) -->
         <div class="form-card">
-            <!-- Header -->
-            <div class="flex justify-between items-start mb-4 border-l-4 border-azBlue pl-4">
+            <div class="flex justify-between items-start mb-2 border-l-4 border-azBlue pl-4">
                 <div>
                     <h1 class="font-display text-4xl text-azBlue tracking-wide leading-none">MISSION DEBRIEF</h1>
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Official Launch Protocol • Oguaa Hall JCR</p>
@@ -192,12 +182,10 @@
                 </div>
             </div>
 
-            <p class="text-xs text-gray-600 italic mb-4 leading-tight">"Greetings, Intellectual. Massive respect for pulling up. Help us recalibrate the ecosystem by dropping your unfiltered intel below."</p>
+            <p class="text-xs text-gray-600 italic mb-2 leading-tight">"Greetings, Intellectual. Massive respect for pulling up. Help us recalibrate the ecosystem by dropping your unfiltered intel below."</p>
 
-            <!-- Questions -->
-            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div class="grid grid-cols-2 gap-x-6 gap-y-2">
                 
-                <!-- Q1 -->
                 <div class="col-span-1">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-star text-azGold mr-1"></i> 1. Vibe & Pitch</h3>
                     <div class="text-[10px] space-y-1">
@@ -208,7 +196,6 @@
                     </div>
                 </div>
 
-                <!-- Q2 -->
                 <div class="col-span-1">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-bolt text-azCyan mr-1"></i> 2. Feature Audit</h3>
                     <div class="text-[10px] space-y-1">
@@ -219,7 +206,6 @@
                     </div>
                 </div>
 
-                <!-- Q3 -->
                 <div class="col-span-2">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-download mr-1"></i> 3. Conversion Protocol</h3>
                     <div class="flex gap-4 text-[10px]">
@@ -229,7 +215,6 @@
                     </div>
                 </div>
 
-                <!-- Q4 -->
                 <div class="col-span-2">
                     <h3 class="font-bold text-azBlue text-xs mb-1 uppercase"><i class="fa-solid fa-brain mr-1"></i> 4. Delusion-Level Feedback</h3>
                     <p class="text-[9px] text-gray-500 mb-1">What is one crazy feature you wish existed?</p>
@@ -237,7 +222,6 @@
                     <div class="writing-line"></div>
                 </div>
 
-                <!-- Q5 -->
                 <div class="col-span-2 bg-gray-100 p-2 rounded-lg flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-azBlue text-xs uppercase">5. Squad Invitation</h3>
@@ -254,8 +238,7 @@
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="absolute bottom-4 left-15mm right-15mm text-center border-t-2 border-azBlue pt-2">
+            <div class="absolute bottom-4 left-15mm right-15mm text-center border-t-2 border-azBlue pt-2 bg-white">
                 <h2 class="font-display text-lg text-azBlue">SECURE THE BAG. DOMINATE THE SEMESTER.</h2>
                 <p class="text-[10px] font-mono text-gray-500">Download now: azlearner.me</p>
             </div>
