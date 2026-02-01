@@ -78,6 +78,7 @@
 </head>
 <body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
 
+    <div id="recaptcha-container"></div>
     <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
     <audio id="xp-sound" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
 
@@ -784,6 +785,22 @@
             <textarea id="note-body" class="flex-1 bg-transparent outline-none resize-none text-lg" placeholder="Start typing..."></textarea>
         </div>
     </div>
+
+    <div id="modal-reauth" class="fixed inset-0 bg-black/80 z-[210] hidden flex items-center justify-center p-6 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fa-solid fa-lock text-yellow-600 text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Security Check 🔒</h3>
+        <p class="text-sm opacity-60 mb-4">Please verify your password to continue setting up 2FA.</p>
+        
+        <input type="password" id="reauth-pass" placeholder="Enter Password" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none focus:ring-2 ring-yellow-500">
+        
+        <button onclick="mfaManager.confirmReauth()" class="w-full py-3 bg-blueAccent text-white font-bold rounded-xl shadow-lg mb-2">Verify</button>
+        <button onclick="document.getElementById('modal-reauth').classList.add('hidden')" class="py-2 text-sm opacity-60 hover:opacity-100">Cancel</button>
+    </div>
+</div>
+    
     <div id="modal-contacts" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
     <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
         <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
@@ -821,7 +838,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -2836,54 +2853,73 @@ listeners.push(onSnapshot(qTickets, (snap) => {
         window.mfaManager = {
     verificationId: null,
     resolver: null,
-    recaptchaVerifier: null,
+    recaptchaVerifier: null, // We will store the instance here
 
     initRecaptcha() {
-        if (!this.recaptchaVerifier) {
-            this.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible'
-            });
+        // 1. CHECK: If it already exists, DO NOTHING. Reuse it!
+        if (this.recaptchaVerifier) {
+            return; 
         }
+
+        // 2. Ensure the container exists and is EMPTY
+        const container = document.getElementById('recaptcha-container');
+        if (!container) {
+            const div = document.createElement('div');
+            div.id = 'recaptcha-container';
+            document.body.appendChild(div);
+        } else {
+            // Safety clear: make sure the div is empty before we attach
+            container.innerHTML = ''; 
+        }
+
+        // 3. Create the single instance
+        this.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                console.log("Recaptcha verified");
+            },
+            'expired-callback': () => {
+                console.log("Recaptcha expired - user must retry");
+                // Optional: reset logic here
+            }
+        });
+        
+        // 4. Render it immediately to "warm it up"
+        this.recaptchaVerifier.render();
     },
 
-    // 1. START ENROLLMENT (User clicks "Enable" in Settings)
     async startEnrollment() {
         if (!currentUser) return alert("Must be logged in.");
 
-        // 1. Force refresh the user to get the latest emailVerified status
+        // Force refresh user status
         await currentUser.reload();
 
-        // 2. CHECK: Is email verified?
         if (!currentUser.emailVerified) {
-            const proceed = confirm(
-                "Security Requirement 🛡️\n\n" +
-                "You must verify your email address before enabling 2FA.\n\n" +
-                "Click OK to send a verification link to: " + currentUser.email
-            );
-
+            const proceed = confirm("Security Check 🛡️\n\nPlease verify your email (" + currentUser.email + ") before adding a phone number.\n\nClick OK to send the link.");
             if (proceed) {
                 try {
                     await sendEmailVerification(currentUser);
-                    alert("Verification link sent! 📨\n\nPlease check your email (and spam folder), click the link, and then return here to enable 2FA.");
-                } catch (err) {
-                    // Handle "Too many requests" or other errors
-                    alert("Error sending link: " + err.message);
-                }
+                    alert("Link sent! Check your inbox.");
+                } catch (e) { alert(e.message); }
             }
-            return; // Stop here. Do not show the MFA modal.
+            return;
         }
 
-        // 3. If verified, proceed as normal
+        // Initialize Recaptcha ONCE here
+        this.initRecaptcha();
+
         document.getElementById('modal-mfa').classList.remove('hidden');
         document.getElementById('mfa-step-phone').classList.remove('hidden');
         document.getElementById('mfa-step-code').classList.add('hidden');
-        this.initRecaptcha();
     },
 
-    // 2. SEND SMS (For Enrollment)
+    // Inside window.mfaManager...
+
     async sendCode() {
         const phone = document.getElementById('mfa-phone-input').value;
         if (!phone) return alert("Enter phone number");
+
+        document.getElementById('mfa-msg').innerText = "Sending code...";
 
         try {
             const multiFactorSession = await multiFactor(currentUser).getSession();
@@ -2892,65 +2928,91 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 session: multiFactorSession
             };
             const phoneAuthProvider = new PhoneAuthProvider(auth);
+            
             this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneOptions, this.recaptchaVerifier);
             
-            // Switch UI to Code Input
             document.getElementById('mfa-step-phone').classList.add('hidden');
             document.getElementById('mfa-step-code').classList.remove('hidden');
-            document.getElementById('mfa-msg').innerText = "Code sent!";
+            document.getElementById('mfa-msg').innerText = "";
+            
         } catch (err) {
+            console.error("SMS Error:", err);
+            
+            // --- NEW: CATCH RECENT LOGIN ERROR ---
+            if (err.code === 'auth/requires-recent-login') {
+                document.getElementById('modal-reauth').classList.remove('hidden'); // Show password modal
+                document.getElementById('mfa-msg').innerText = "";
+                return;
+            }
+            // -------------------------------------
+
             document.getElementById('mfa-msg').innerText = err.message;
+            if(err.code === 'auth/captcha-check-failed' && this.recaptchaVerifier) {
+                this.recaptchaVerifier.clear();
+                this.recaptchaVerifier = null;
+            }
         }
     },
 
-    // 3. HANDLE LOGIN CHALLENGE (When user logs in and MFA is on)
+    // --- NEW FUNCTION ---
+    async confirmReauth() {
+        const pass = document.getElementById('reauth-pass').value;
+        if(!pass) return;
+
+        const cred = EmailAuthProvider.credential(currentUser.email, pass);
+        
+        try {
+            await reauthenticateWithCredential(currentUser, cred);
+            document.getElementById('modal-reauth').classList.add('hidden');
+            document.getElementById('reauth-pass').value = '';
+            alert("Verified! Resending code now...");
+            this.sendCode(); // RETRY the SMS sending automatically
+        } catch(e) {
+            alert("Incorrect password. Please try again.");
+        }
+    },
     async handleLoginChallenge(error) {
-        this.resolver = getMultiFactorResolver(auth, error);
+        // Initialize Recaptcha ONCE here too
         this.initRecaptcha();
 
-        // Use the first registered phone number hint
+        this.resolver = getMultiFactorResolver(auth, error);
+        
+        // ... (Rest of your handleLoginChallenge logic stays the same)
         const phoneInfoOptions = {
             multiFactorHint: this.resolver.hints[0],
             session: this.resolver.session
         };
-
         const phoneAuthProvider = new PhoneAuthProvider(auth);
         try {
             this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, this.recaptchaVerifier);
-            
-            // Show UI
-            document.getElementById('auth-overlay').classList.add('hidden'); // Hide login
+            document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('modal-mfa').classList.remove('hidden');
             document.getElementById('mfa-step-phone').classList.add('hidden');
             document.getElementById('mfa-step-code').classList.remove('hidden');
-            document.getElementById('mfa-msg').innerText = "Enter code sent to your phone ending in " + this.resolver.hints[0].phoneNumber.slice(-4);
         } catch(err) {
-            alert("Could not send SMS: " + err.message);
+            alert("Login SMS Error: " + err.message);
         }
     },
 
-    // 4. VERIFY CODE (Handles both Enrollment and Login)
     async verifyCode() {
+        // ... (Your existing verifyCode logic stays the same)
         const code = document.getElementById('mfa-code-input').value;
         const cred = PhoneAuthProvider.credential(this.verificationId, code);
         const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
 
         try {
             if (this.resolver) {
-                // We are completing a LOGIN
                 await this.resolver.resolveSignIn(multiFactorAssertion);
                 this.close();
             } else {
-                // We are completing ENROLLMENT
                 await multiFactor(currentUser).enroll(multiFactorAssertion, "My Phone Number");
                 alert("2FA Enabled Successfully! 🛡️");
                 this.close();
-                // Update UI button to show enabled
                 document.getElementById('btn-enroll-mfa').innerText = "Active ✅";
                 document.getElementById('btn-enroll-mfa').disabled = true;
             }
         } catch (err) {
-            document.getElementById('mfa-msg').innerText = "Invalid Code or Error: " + err.message;
+            document.getElementById('mfa-msg').innerText = err.message;
         }
     },
 
@@ -2960,6 +3022,9 @@ listeners.push(onSnapshot(qTickets, (snap) => {
         document.getElementById('mfa-code-input').value = '';
         this.resolver = null;
         this.verificationId = null;
+        
+        // IMPORTANT: We do NOT clear the recaptchaVerifier here. 
+        // We keep it alive for next time.
     }
 };
     </script>
