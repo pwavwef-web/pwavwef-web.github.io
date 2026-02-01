@@ -785,6 +785,22 @@
             <textarea id="note-body" class="flex-1 bg-transparent outline-none resize-none text-lg" placeholder="Start typing..."></textarea>
         </div>
     </div>
+
+    <div id="modal-reauth" class="fixed inset-0 bg-black/80 z-[210] hidden flex items-center justify-center p-6 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fa-solid fa-lock text-yellow-600 text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Security Check 🔒</h3>
+        <p class="text-sm opacity-60 mb-4">Please verify your password to continue setting up 2FA.</p>
+        
+        <input type="password" id="reauth-pass" placeholder="Enter Password" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none focus:ring-2 ring-yellow-500">
+        
+        <button onclick="mfaManager.confirmReauth()" class="w-full py-3 bg-blueAccent text-white font-bold rounded-xl shadow-lg mb-2">Verify</button>
+        <button onclick="document.getElementById('modal-reauth').classList.add('hidden')" class="py-2 text-sm opacity-60 hover:opacity-100">Cancel</button>
+    </div>
+</div>
+    
     <div id="modal-contacts" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
     <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
         <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
@@ -822,7 +838,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -2897,11 +2913,12 @@ listeners.push(onSnapshot(qTickets, (snap) => {
         document.getElementById('mfa-step-code').classList.add('hidden');
     },
 
+    // Inside window.mfaManager...
+
     async sendCode() {
         const phone = document.getElementById('mfa-phone-input').value;
         if (!phone) return alert("Enter phone number");
 
-        // Clear any old errors
         document.getElementById('mfa-msg').innerText = "Sending code...";
 
         try {
@@ -2912,27 +2929,48 @@ listeners.push(onSnapshot(qTickets, (snap) => {
             };
             const phoneAuthProvider = new PhoneAuthProvider(auth);
             
-            // Pass the EXISTING verifier instance
             this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneOptions, this.recaptchaVerifier);
             
             document.getElementById('mfa-step-phone').classList.add('hidden');
             document.getElementById('mfa-step-code').classList.remove('hidden');
             document.getElementById('mfa-msg').innerText = "";
-            alert("Code sent! Check your SMS."); // Helpful debug alert
+            
         } catch (err) {
             console.error("SMS Error:", err);
-            document.getElementById('mfa-msg').innerText = err.message;
             
-            // If we get a 400 or Captcha error, we might need to reset the captcha
-            if(err.code === 'auth/captcha-check-failed') {
-                if(this.recaptchaVerifier) {
-                    this.recaptchaVerifier.clear();
-                    this.recaptchaVerifier = null;
-                }
+            // --- NEW: CATCH RECENT LOGIN ERROR ---
+            if (err.code === 'auth/requires-recent-login') {
+                document.getElementById('modal-reauth').classList.remove('hidden'); // Show password modal
+                document.getElementById('mfa-msg').innerText = "";
+                return;
+            }
+            // -------------------------------------
+
+            document.getElementById('mfa-msg').innerText = err.message;
+            if(err.code === 'auth/captcha-check-failed' && this.recaptchaVerifier) {
+                this.recaptchaVerifier.clear();
+                this.recaptchaVerifier = null;
             }
         }
     },
 
+    // --- NEW FUNCTION ---
+    async confirmReauth() {
+        const pass = document.getElementById('reauth-pass').value;
+        if(!pass) return;
+
+        const cred = EmailAuthProvider.credential(currentUser.email, pass);
+        
+        try {
+            await reauthenticateWithCredential(currentUser, cred);
+            document.getElementById('modal-reauth').classList.add('hidden');
+            document.getElementById('reauth-pass').value = '';
+            alert("Verified! Resending code now...");
+            this.sendCode(); // RETRY the SMS sending automatically
+        } catch(e) {
+            alert("Incorrect password. Please try again.");
+        }
+    },
     async handleLoginChallenge(error) {
         // Initialize Recaptcha ONCE here too
         this.initRecaptcha();
