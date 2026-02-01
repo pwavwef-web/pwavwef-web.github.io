@@ -821,7 +821,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -2847,8 +2847,33 @@ listeners.push(onSnapshot(qTickets, (snap) => {
     },
 
     // 1. START ENROLLMENT (User clicks "Enable" in Settings)
-    startEnrollment() {
+    async startEnrollment() {
         if (!currentUser) return alert("Must be logged in.");
+
+        // 1. Force refresh the user to get the latest emailVerified status
+        await currentUser.reload();
+
+        // 2. CHECK: Is email verified?
+        if (!currentUser.emailVerified) {
+            const proceed = confirm(
+                "Security Requirement 🛡️\n\n" +
+                "You must verify your email address before enabling 2FA.\n\n" +
+                "Click OK to send a verification link to: " + currentUser.email
+            );
+
+            if (proceed) {
+                try {
+                    await sendEmailVerification(currentUser);
+                    alert("Verification link sent! 📨\n\nPlease check your email (and spam folder), click the link, and then return here to enable 2FA.");
+                } catch (err) {
+                    // Handle "Too many requests" or other errors
+                    alert("Error sending link: " + err.message);
+                }
+            }
+            return; // Stop here. Do not show the MFA modal.
+        }
+
+        // 3. If verified, proceed as normal
         document.getElementById('modal-mfa').classList.remove('hidden');
         document.getElementById('mfa-step-phone').classList.remove('hidden');
         document.getElementById('mfa-step-code').classList.add('hidden');
