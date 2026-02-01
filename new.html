@@ -645,7 +645,13 @@
                     <button onclick="app.toggleSystemNotifications()" id="notif-toggle-btn" class="w-12 h-7 rounded-full bg-gray-400 relative transition-colors duration-200"><div class="w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200"></div></button>
                 </div>
             </div>
-            
+            <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+    <div>
+        <h3 class="font-bold text-lg">Two-Factor Auth (SMS)</h3>
+        <p class="text-xs opacity-60">Secure your account.</p>
+    </div>
+    <button onclick="mfaManager.startEnrollment()" id="btn-enroll-mfa" class="bg-gray-200 dark:bg-gray-700 text-xs font-bold px-4 py-2 rounded-lg">Enable</button>
+</div>
             <div class="text-center opacity-40 text-xs mt-10">
                 <p>AZ Learner v2.2</p>
                 <p>Built for the Squad 🇬🇭</p>
@@ -740,6 +746,32 @@
         <div id="empty-notifications" class="hidden h-full flex flex-col items-center justify-center opacity-60"><p>All clear!</p></div>
     </div>
 
+    <div id="recaptcha-container"></div>
+
+<div id="modal-mfa" class="fixed inset-0 bg-black/80 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center">
+        <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-shield-halved text-2xl text-blueAccent"></i>
+        </div>
+        
+        <div id="mfa-step-phone" class="hidden">
+            <h3 class="text-xl font-bold mb-2">Protect Account</h3>
+            <p class="text-sm opacity-60 mb-6">Enter your number to enable 2-Factor Auth.</p>
+            <input type="tel" id="mfa-phone-input" placeholder="+233 XX XXX XXXX" class="w-full bg-gray-100 dark:bg-gray-700 p-4 rounded-xl mb-4 text-center font-mono text-lg outline-none focus:ring-2 ring-blueAccent">
+            <button onclick="mfaManager.sendCode()" class="w-full py-3 bg-blueAccent text-white font-bold rounded-xl shadow-lg">Send SMS Code 📩</button>
+        </div>
+
+        <div id="mfa-step-code" class="hidden">
+            <h3 class="text-xl font-bold mb-2">Verify It's You</h3>
+            <p class="text-sm opacity-60 mb-6">Enter the 6-digit code sent to your phone.</p>
+            <input type="text" id="mfa-code-input" placeholder="123456" maxlength="6" class="w-full bg-gray-100 dark:bg-gray-700 p-4 rounded-xl mb-4 text-center font-mono text-2xl tracking-widest outline-none focus:ring-2 ring-blueAccent">
+            <button onclick="mfaManager.verifyCode()" class="w-full py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg mb-2">Verify & Login 🔐</button>
+        </div>
+
+        <button onclick="mfaManager.close()" class="mt-4 text-sm text-gray-500 hover:text-red-500">Cancel</button>
+        <p id="mfa-msg" class="text-xs text-red-500 mt-2 h-4"></p>
+    </div>
+</div>
     <div id="modal-note-editor" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
         <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3">
             <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-lg"></i></button>
@@ -789,7 +821,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, MultiFactor, RecaptchaVerifier } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -814,16 +846,21 @@
         let valuation = 1000000000;
 
         window.authManager = {
-            async login() { try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch (err) { document.getElementById('login-msg').innerText = err.message; } },
-            async forgotPassword() {
+            async login() { 
         const email = document.getElementById('login-email').value;
-        if (!email) return alert("Please enter your email address in the box above first.");
-        try {
-            await sendPasswordResetEmail(auth, email);
-            alert("Reset link sent! Check your email (and spam folder). 📧");
-        } catch (err) {
-            alert("Error: " + err.message);
-        }
+        const password = document.getElementById('login-pass').value;
+        
+        try { 
+            await signInWithEmailAndPassword(auth, email, password); 
+            // Normal login success handled by onAuthStateChanged
+        } catch (err) { 
+            if (err.code === 'auth/multi-factor-auth-required') {
+                // MFA IS REQUIRED - TRIGGER CHALLENGE
+                mfaManager.handleLoginChallenge(err);
+            } else {
+                document.getElementById('login-msg').innerText = "Error: " + err.message; 
+            }
+        } 
     },
             async signup() {
                 try {
@@ -2796,6 +2833,110 @@ listeners.push(onSnapshot(qTickets, (snap) => {
         };
 
         window.addEventListener('DOMContentLoaded', () => app.init());
+        window.mfaManager = {
+    verificationId: null,
+    resolver: null,
+    recaptchaVerifier: null,
+
+    initRecaptcha() {
+        if (!this.recaptchaVerifier) {
+            this.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible'
+            });
+        }
+    },
+
+    // 1. START ENROLLMENT (User clicks "Enable" in Settings)
+    startEnrollment() {
+        if (!currentUser) return alert("Must be logged in.");
+        document.getElementById('modal-mfa').classList.remove('hidden');
+        document.getElementById('mfa-step-phone').classList.remove('hidden');
+        document.getElementById('mfa-step-code').classList.add('hidden');
+        this.initRecaptcha();
+    },
+
+    // 2. SEND SMS (For Enrollment)
+    async sendCode() {
+        const phone = document.getElementById('mfa-phone-input').value;
+        if (!phone) return alert("Enter phone number");
+
+        try {
+            const multiFactorSession = await multiFactor(currentUser).getSession();
+            const phoneOptions = {
+                phoneNumber: phone,
+                session: multiFactorSession
+            };
+            const phoneAuthProvider = new PhoneAuthProvider(auth);
+            this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneOptions, this.recaptchaVerifier);
+            
+            // Switch UI to Code Input
+            document.getElementById('mfa-step-phone').classList.add('hidden');
+            document.getElementById('mfa-step-code').classList.remove('hidden');
+            document.getElementById('mfa-msg').innerText = "Code sent!";
+        } catch (err) {
+            document.getElementById('mfa-msg').innerText = err.message;
+        }
+    },
+
+    // 3. HANDLE LOGIN CHALLENGE (When user logs in and MFA is on)
+    async handleLoginChallenge(error) {
+        this.resolver = getMultiFactorResolver(auth, error);
+        this.initRecaptcha();
+
+        // Use the first registered phone number hint
+        const phoneInfoOptions = {
+            multiFactorHint: this.resolver.hints[0],
+            session: this.resolver.session
+        };
+
+        const phoneAuthProvider = new PhoneAuthProvider(auth);
+        try {
+            this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, this.recaptchaVerifier);
+            
+            // Show UI
+            document.getElementById('auth-overlay').classList.add('hidden'); // Hide login
+            document.getElementById('modal-mfa').classList.remove('hidden');
+            document.getElementById('mfa-step-phone').classList.add('hidden');
+            document.getElementById('mfa-step-code').classList.remove('hidden');
+            document.getElementById('mfa-msg').innerText = "Enter code sent to your phone ending in " + this.resolver.hints[0].phoneNumber.slice(-4);
+        } catch(err) {
+            alert("Could not send SMS: " + err.message);
+        }
+    },
+
+    // 4. VERIFY CODE (Handles both Enrollment and Login)
+    async verifyCode() {
+        const code = document.getElementById('mfa-code-input').value;
+        const cred = PhoneAuthProvider.credential(this.verificationId, code);
+        const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+
+        try {
+            if (this.resolver) {
+                // We are completing a LOGIN
+                await this.resolver.resolveSignIn(multiFactorAssertion);
+                this.close();
+            } else {
+                // We are completing ENROLLMENT
+                await multiFactor(currentUser).enroll(multiFactorAssertion, "My Phone Number");
+                alert("2FA Enabled Successfully! 🛡️");
+                this.close();
+                // Update UI button to show enabled
+                document.getElementById('btn-enroll-mfa').innerText = "Active ✅";
+                document.getElementById('btn-enroll-mfa').disabled = true;
+            }
+        } catch (err) {
+            document.getElementById('mfa-msg').innerText = "Invalid Code or Error: " + err.message;
+        }
+    },
+
+    close() {
+        document.getElementById('modal-mfa').classList.add('hidden');
+        document.getElementById('mfa-phone-input').value = '';
+        document.getElementById('mfa-code-input').value = '';
+        this.resolver = null;
+        this.verificationId = null;
+    }
+};
     </script>
 </body>
 </html>
