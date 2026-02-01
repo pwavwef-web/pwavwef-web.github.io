@@ -839,6 +839,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -852,6 +853,7 @@
         const appInstance = initializeApp(firebaseConfig);
         const db = getFirestore(appInstance);
         const auth = getAuth(appInstance);
+        const storage = getStorage(appInstance);
 
         let currentUser = null;
         let listeners = [];
@@ -1882,10 +1884,16 @@ buyTicket(ev) {
 
             downloadFile(msgId) {
                 const msg = this.data.activeMsgCache[msgId];
-                if(!msg || !msg.fileData) return alert("File not found locally.");
+                if(!msg || !msg.fileData) return alert("File not found.");
                 
+                // NEW: Handle Firebase Storage URLs (starts with http)
+                if (msg.fileData.startsWith('http')) {
+                    window.open(msg.fileData, '_blank');
+                    return;
+                }
+
+                // OLD: Handle Legacy Base64 files (Backward Compatibility)
                 try {
-                    // Mobile-friendly Blob download strategy
                     const splitData = msg.fileData.split(',');
                     const byteString = atob(splitData[1]);
                     const mimeString = splitData[0].split(':')[1].split(';')[0];
@@ -1911,7 +1919,7 @@ buyTicket(ev) {
                     }, 100);
                     
                 } catch(e) { 
-                    console.log("Blob download failed, trying direct link", e);
+                    console.log("Download error", e);
                     // Fallback
                     const link = document.createElement('a');
                     link.href = msg.fileData;
@@ -1927,14 +1935,55 @@ buyTicket(ev) {
                 const input = document.getElementById('chat-input');
                 const txt = input.value.trim();
                 const fileInput = document.getElementById('chat-file-input');
+                
+                // Prevent empty messages
                 if(!txt && fileInput.files.length === 0) return;
 
-                let fileData = null; let fileName = null; let fileType = null;
+                let fileData = null; 
+                let fileName = null; 
+                let fileType = null;
+
+                // --- FILE UPLOAD LOGIC ---
                 if(fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    if(file.size > 2000000) return alert("File too big! Max 2MB."); 
-                    fileData = await this.compressImage(file); 
-                    fileName = file.name; fileType = file.type;
+                    
+                    // 1. LIMIT CHECK: Increased to 50MB (since you are on Blaze)
+                    if(file.size > 50 * 1024 * 1024) return alert("File too big! Max 50MB."); 
+
+                    // 2. UX: Disable input while uploading
+                    const sendBtn = document.querySelector('#chat-input + button');
+                    const originalIcon = sendBtn.innerHTML;
+                    sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                    sendBtn.disabled = true;
+                    input.placeholder = "Uploading file... please wait...";
+
+                    try {
+                        // 3. Create a Storage Reference
+                        // Path: chat_uploads / UserID / Timestamp_Filename
+                        const storageRef = ref(storage, `chat_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
+                        
+                        // 4. Upload the raw file
+                        const snapshot = await uploadBytes(storageRef, file);
+                        
+                        // 5. Get the public download URL
+                        fileData = await getDownloadURL(snapshot.ref);
+                        fileName = file.name;
+                        fileType = file.type;
+
+                    } catch(e) {
+                        console.error(e);
+                        alert("Upload failed: " + e.message);
+                        // Reset UI
+                        sendBtn.innerHTML = originalIcon;
+                        sendBtn.disabled = false;
+                        input.placeholder = "Type a message...";
+                        return;
+                    }
+
+                    // Reset UI after success
+                    sendBtn.innerHTML = originalIcon;
+                    sendBtn.disabled = false;
+                    input.placeholder = "Type a message...";
                 }
 
                 // DETERMINE COLLECTION & ID
@@ -1947,7 +1996,7 @@ buyTicket(ev) {
                     [idField]: activeChatId, 
                     senderId: currentUser.uid, 
                     text: txt, 
-                    fileData, fileName, fileType, 
+                    fileData, fileName, fileType, // fileData is now a URL!
                     timestamp: Date.now()
                 };
 
@@ -1957,6 +2006,7 @@ buyTicket(ev) {
 
                 await addDoc(collection(db, coll), msgData);
 
+                // Update Chat Metadata
                 if(activeChatType === 'print') {
                     const isStudentOwner = (currentUser.uid === activeChatId); 
                     const updateData = { lastUpdated: Date.now() };
@@ -1965,7 +2015,7 @@ buyTicket(ev) {
                 } else if(activeChatType === 'direct') {
                     await updateDoc(doc(db, "direct_chats", activeChatId), { 
                         lastUpdated: Date.now(), 
-                        lastSenderId: currentUser.uid,
+                        lastSenderId: currentUser.uid, 
                         readBy: [currentUser.uid] 
                     });
                 }
