@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner - Admin HQ 👑</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF', orangeAccent: '#FFAB40', darkBg: '#1a1a1a', darkCard: '#2d2d2d'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <h1 class="text-3xl font-bold text-orangeAccent mb-2">Admin HQ 👑</h1>
+            <p class="text-sm text-gray-400 mb-6">Restricted Access</p>
+            <input type="email" id="login-email" placeholder="Admin Email" class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent">
+            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent">
+            <button onclick="authManager.login()" class="w-full py-3 bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Enter HQ 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0">
+            <div>
+                <h1 class="text-2xl font-bold text-orangeAccent">AZ Admin HQ</h1>
+                <p id="admin-name-display" class="text-xs text-gray-400">Welcome, Admin</p>
+            </div>
+            <button onclick="authManager.logout()" class="bg-gray-700 hover:bg-red-900 text-white px-4 py-2 rounded-lg text-xs font-bold transition">Log Out <i class="fa-solid fa-right-from-bracket ml-2"></i></button>
+        </div>
+
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0">
+            <button onclick="app.switchView('dash')" id="nav-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
+            <button onclick="app.switchView('tickets')" id="nav-tickets" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
+            <button onclick="app.switchView('events')" id="nav-events" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
+            <button onclick="app.switchView('broadcast')" id="nav-broadcast" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
+            <button onclick="app.switchView('users')" id="nav-users" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Users 👥</button>
+            <button onclick="app.switchView('godmode')" id="nav-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse">God Mode ⚡</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-gray-900">
+            
+            <div id="view-dash" class="admin-view space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Total Users</h3><p class="text-3xl font-bold" id="stat-users">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Service Reqs</h3><p class="text-3xl font-bold" id="stat-reqs">0</p></div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i class="fa-solid fa-print"></i> Live Print/Service Queue</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
+                            <tbody id="list-print-jobs" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading jobs...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <button onclick="app.flushRequests()" class="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 mt-8">Purge Service Logs 🧹</button>
+            </div>
+
+             <div id="view-tickets" class="admin-view hidden space-y-6">
+                <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales Ledger</h2>
+                <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
+                            <tr><th class="px-4 py-3">Code</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Holder</th><th class="px-4 py-3 text-right">Price</th></tr>
+                        </thead>
+                        <tbody id="list-tickets" class="divide-y divide-gray-700">
+                            <tr><td colspan="4" class="p-4 text-center">Loading sales...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-events" class="admin-view hidden space-y-6">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h2 class="text-xl font-bold mb-4 text-orangeAccent">Post New Event</h2>
+                    <input id="event-title" type="text" placeholder="Event Name" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-price" type="number" placeholder="Price (GHS) - 0 for Free" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-qty" type="number" placeholder="Total Tickets" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>    
+                    <input id="event-venue" type="text" placeholder="Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    <textarea id="event-desc" placeholder="Details..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20"></textarea>
+                    <div class="flex items-center gap-2 mb-4">
+                         <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Flyer Image <input type="file" id="event-file" accept="image/*" class="hidden" onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
+                         <span id="event-file-name" class="text-xs text-gray-400">No file selected</span>
+                    </div>
+                    <button onclick="app.saveEvent()" class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110">Post Event 📅</button>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Active Events</h3>
+                    <div id="list-active-events" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <div id="view-broadcast" class="admin-view hidden space-y-6">
+                <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700">
+                    <h2 class="text-xl font-bold mb-4">Global Announcement</h2>
+                    <input id="broadcast-title" type="text" placeholder="Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
+                    <textarea id="broadcast-body" placeholder="Message content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
+                    <div class="flex gap-2">
+                        <button onclick="app.sendBroadcast()" class="bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 flex-1 shadow-lg">Send Blast 🚀</button>
+                    </div>
+                </div>
+                <div id="list-broadcasts" class="space-y-2"></div>
+            </div>
+
+            <div id="view-users" class="admin-view hidden space-y-8">
+                <div>
+                    <h2 class="text-xl font-bold mb-4">User Database</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Role</th></tr></thead>
+                            <tbody id="list-users" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="bg-red-900/20 border border-red-500/50 p-6 rounded-xl">
+                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2"><i class="fa-solid fa-gavel"></i> The Ban Hammer</h3>
+                    <div class="flex gap-2">
+                      <input id="ban-email-input" type="email" placeholder="Bad actor's email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                      <button onclick="app.banUser()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                    </div>
+               </div>
+            </div>
+
+             <div id="view-godmode" class="admin-view hidden space-y-8">
+                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order 📜</h2>
+                    <input id="vip-title" type="text" placeholder="Subject of Order" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Your message to the people..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish Gold Alert 🔔</button>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">Admin Circle ⭕</h2>
+                    <div class="flex gap-2 mb-4">
+                        <input id="admin-email-input" type="email" placeholder="Email to promote..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="app.addAdminByEmail()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
+                    </div>
+                    <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-purple-900/30 text-xs uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
+                            <tbody id="list-admins" class="divide-y divide-purple-900/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit, collectionGroup } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+
+        window.authManager = {
+            async login() {
+                try {
+                    await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
+                } catch (err) { document.getElementById('login-msg').innerText = err.message; }
+            },
+            logout() { signOut(auth); }
+        };
+
+        window.app = {
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if(userDoc.exists()) {
+                            const userData = userDoc.data();
+                            if(userData.role !== 'admin') {
+                                alert("ACCESS DENIED. You are not an Admin.");
+                                signOut(auth);
+                                return;
+                            }
+                            // Authorized
+                            currentUser = userData;
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('admin-name-display').innerText = `Welcome, ${userData.name}`;
+                            
+                            if(user.email === "pwavwef@gmail.com") {
+                                document.getElementById('nav-godmode').classList.remove('hidden');
+                            }
+                            this.startListeners();
+                            this.switchView('dash');
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchView(view) {
+                document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${view}`).classList.remove('hidden');
+                
+                // Update Nav Tabs
+                const views = ['dash', 'tickets', 'events', 'broadcast', 'users', 'godmode'];
+                views.forEach(v => {
+                    const btn = document.getElementById(`nav-${v}`);
+                    if(!btn) return;
+                    if(v === view) {
+                        btn.classList.remove('bg-gray-700', 'text-gray-400');
+                        btn.classList.add('bg-blueAccent', 'text-white');
+                        if(v === 'godmode') btn.classList.add('bg-purple-600', 'border-purple-400');
+                    } else {
+                        btn.classList.add('bg-gray-700', 'text-gray-400');
+                        btn.classList.remove('bg-blueAccent', 'text-white', 'bg-purple-600');
+                    }
+                });
+
+                if(view === 'tickets') this.fetchTickets();
+            },
+
+            async startListeners() {
+                // Users Count & List
+                const usersSnap = await getDocs(query(collection(db, "users"), limit(100)));
+                document.getElementById('stat-users').innerText = usersSnap.size + "+";
+                let userHtml = ''; let adminHtml = '';
+                usersSnap.forEach(doc => {
+                    const u = doc.data();
+                    userHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3">${u.role}</td></tr>`;
+                    if(u.role === 'admin') {
+                        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`;
+                    }
+                });
+                document.getElementById('list-users').innerHTML = userHtml;
+                document.getElementById('list-admins').innerHTML = adminHtml;
+
+                // Service Requests Listener
+                const qReqs = query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50));
+                onSnapshot(qReqs, (snap) => {
+                    document.getElementById('stat-reqs').innerText = snap.size;
+                    let html = '';
+                    if(snap.empty) html = '<tr><td colspan="3" class="p-4 text-center">No active jobs.</td></tr>';
+                    else {
+                        snap.forEach(doc => {
+                            const job = doc.data();
+                            const unreadIndicator = job.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse">NEW</span>' : '';
+                            html += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white">${job.userName || 'Student'} ${unreadIndicator}<span class="text-xs text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-xs font-bold text-blue-300">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">Update</button></td></tr>`;
+                        });
+                    }
+                    document.getElementById('list-print-jobs').innerHTML = html;
+                });
+
+                // Events Listener
+                const qEvents = query(collection(db, "events"), orderBy("timestamp", "desc"));
+                onSnapshot(qEvents, (snap) => {
+                    const list = document.getElementById('list-active-events');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const ev = d.data();
+                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><div class="flex items-center gap-3"><img src="${ev.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-xs text-gray-400">${ev.date} • ${ev.ticketsSold}/${ev.totalTickets} Sold</p></div></div><button onclick="app.deleteEvent('${d.id}')" class="text-red-400 text-xs font-bold hover:text-red-300">DELETE</button></div>`;
+                    });
+                });
+
+                // Broadcast Listener
+                const qBroadcast = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"));
+                onSnapshot(qBroadcast, (snap) => {
+                    const list = document.getElementById('list-broadcasts');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const b = d.data();
+                        list.innerHTML += `<div class="bg-gray-800 p-2 rounded flex justify-between items-center"><span class="truncate text-sm w-1/2">${b.title}</span><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs">Delete</button></div>`;
+                    });
+                });
+            },
+
+            fetchTickets() {
+                const list = document.getElementById('list-tickets');
+                list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>';
+                const q = query(collectionGroup(db, 'tickets'), orderBy('purchaseDate', 'desc'), limit(50));
+                onSnapshot(q, (snap) => {
+                    list.innerHTML = '';
+                    if(snap.empty) { list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No tickets sold.</td></tr>'; return; }
+                    snap.forEach(d => {
+                        const t = d.data();
+                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-mono font-bold text-yellow-400">${t.ticketId}</td><td class="px-4 py-3 truncate max-w-[150px]">${t.eventTitle}</td><td class="px-4 py-3 text-xs"><div class="font-bold text-white">${t.userName || 'Unknown'}</div><div class="text-gray-500">${new Date(t.purchaseDate).toLocaleDateString()}</div></td><td class="px-4 py-3 text-right font-bold">GHS ${t.price}</td></tr>`;
+                    });
+                });
+            },
+
+            async manageJob(id, currentStatus) {
+                const newStatus = prompt(`Change status from '${currentStatus}' to (received/printing/delivering/completed):`, currentStatus);
+                if(newStatus && newStatus !== currentStatus) {
+                    await updateDoc(doc(db, "print_orders", id), { status: newStatus.toLowerCase(), lastUpdated: Date.now() });
+                }
+            },
+
+            async saveEvent() {
+                const title = document.getElementById('event-title').value;
+                const date = document.getElementById('event-date').value;
+                const time = document.getElementById('event-time').value;
+                const venue = document.getElementById('event-venue').value;
+                const desc = document.getElementById('event-desc').value;
+                const price = document.getElementById('event-price').value || "0";
+                const qty = document.getElementById('event-qty').value || "0";
+                const fileInput = document.getElementById('event-file');
+
+                if (!title || !date) return alert("Missing details!");
+                let image = null;
+                if (fileInput.files.length > 0) {
+                     image = await this.compressImage(fileInput.files[0]);
+                }
+
+                await addDoc(collection(db, "events"), {
+                    title, date, time, venue, description: desc, image,
+                    price: parseFloat(price), totalTickets: parseInt(qty), ticketsSold: 0, rsvps: [], timestamp: Date.now()
+                });
+                alert("Event Posted! 🎉");
+                document.getElementById('event-title').value = '';
+            },
+
+            async deleteEvent(id) { if(confirm("Delete event?")) await deleteDoc(doc(db, "events", id)); },
+            
+            async sendBroadcast() {
+                const title = document.getElementById('broadcast-title').value;
+                const body = document.getElementById('broadcast-body').value;
+                if(!title) return;
+                await addDoc(collection(db, "global_announcements"), { title, body, timestamp: Date.now() });
+                alert("Sent!");
+                document.getElementById('broadcast-title').value = '';
+                document.getElementById('broadcast-body').value = '';
+            },
+            async deleteBroadcast(id) { if(confirm("Delete announcement?")) await deleteDoc(doc(db, "global_announcements", id)); },
+
+            async sendVIPBroadcast() {
+                const title = document.getElementById('vip-title').value;
+                const body = document.getElementById('vip-body').value;
+                await addDoc(collection(db, "global_announcements"), { title, body, isVIP: true, timestamp: Date.now() });
+                alert("VIP Order Published 📜");
+            },
+
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value.trim();
+                if(!email) return;
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if(snap.empty) return alert("User not found.");
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
+                alert("User Banned 🔨");
+            },
+
+            async flushRequests() {
+                if(!confirm("Delete ALL service logs?")) return;
+                const q = query(collection(db, "print_orders")); // Adjusted to clear print orders
+                const snap = await getDocs(q);
+                snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
+                alert("Cleaned 🧹");
+            },
+
+            async addAdminByEmail() { 
+                const email = document.getElementById('admin-email-input').value.trim(); 
+                if(!email) return; 
+                const q = query(collection(db, "users"), where("email", "==", email)); 
+                const snap = await getDocs(q); 
+                if(snap.empty) { alert("User not found!"); return; } 
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); 
+                alert(`Promoted ${email}`); 
+            },
+            
+            async toggleUserRole(uid, currentRole) { 
+                if(confirm(`Change role from ${currentRole}?`)) { 
+                    const newRole = currentRole === 'admin' ? 'student' : 'admin'; 
+                    await updateDoc(doc(db, "users", uid), { role: newRole }); 
+                } 
+            },
+
+            async compressImage(file) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader(); reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        const img = new Image(); img.src = e.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                            let w = img.width; let h = img.height;
+                            if (w > 600) { h *= 600 / w; w = 600; }
+                            canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                    };
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
