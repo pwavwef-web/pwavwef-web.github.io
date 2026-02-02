@@ -30,6 +30,7 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         
+        /* --- NOTCH & SAFE AREA HANDLING --- */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         
@@ -45,21 +46,26 @@
         @keyframes popIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .today-highlight { background-color: rgba(72,187,120,0.1) !important; border: 1px solid #48bb78 !important; }
         
+        /* Star Rating Hover Effect */
         .star-rating i:hover, .star-rating i.active { color: #FFAB40; transform: scale(1.2); }
         
+        /* Heartbeat Animation for Thank You */
         @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         .heart-beat { animation: heartbeat 1.5s infinite; }
         
+        /* Profile Gradient */
         .profile-gradient { background: linear-gradient(135deg, #448AFF 0%, #00d2ff 100%); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* Gold Gradient for VIP */
         .vip-gradient { background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); }
         
+        /* Leaderboard Ranks */
         .rank-1 { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: 2px solid #fff; }
         .rank-2 { background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: black; border: 2px solid #fff; }
         .rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: white; border: 2px solid #fff; }
-        
+        /* Ticket Perforation Effect */
         .ticket-stub {
         background-image: radial-gradient(circle at 0 50%, transparent 10px, white 11px);
         background-position: 0 0;
@@ -95,42 +101,223 @@
             <p class="text-sm opacity-60 mb-6">Welcome back, Learner</p>
             <input type="email" id="login-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors">
             <div class="relative w-full mb-2">
-                <input type="password" id="login-pass" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors pr-10">
-                <button onclick="app.togglePassword('login-pass', 'login-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
-                    <i id="login-eye" class="fa-solid fa-eye"></i>
-                </button>
-            </div>
-            <div class="flex justify-end mb-6">
-                <button onclick="authManager.forgotPassword()" class="text-xs text-blueAccent dark:text-orangeAccent font-bold hover:underline">Forgot Password?</button>
-            </div>
-            <button onclick="authManager.login()" class="w-full py-3 bg-blueAccent dark:bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Secure Login 🔐</button>
+    <input type="password" id="login-pass" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors pr-10">
+    <button onclick="app.togglePassword('login-pass', 'login-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="login-eye" class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
+<div class="flex justify-end mb-6">
+    <button onclick="authManager.forgotPassword()" class="text-xs text-blueAccent dark:text-orangeAccent font-bold hover:underline">Forgot Password?</button>
+</div>
+
+<button onclick="authManager.login()" class="w-full py-3 bg-blueAccent dark:bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Secure Login 🔐</button>
             <button onclick="authManager.toggleView('signup')" class="text-blueAccent dark:text-orangeAccent font-bold text-sm mt-1 hover:underline">Create an Account</button>
             <p id="login-msg" class="text-red-500 text-xs mt-4 h-4"></p>
         </div>
-        
         <div id="view-signup" class="hidden w-full max-w-sm bg-white dark:bg-darkCard p-8 rounded-2xl shadow-2xl text-center my-auto transition-all">
             <h1 class="text-2xl font-bold text-blueAccent dark:text-orangeAccent mb-2">Join the Squad 🚀</h1>
             <p class="text-sm opacity-60 mb-6">Let's get you set up.</p>
             <input type="text" id="signup-name" placeholder="Full Name" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            
             <input type="text" id="signup-school" placeholder="University / High School" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+
             <input type="text" id="signup-program" placeholder="Program of Study (e.g. Tourism)" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+
             <input type="tel" id="signup-phone" placeholder="Phone Number" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
             <input type="email" id="signup-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
-            <div class="relative w-full mb-3">
-                <input type="password" id="signup-pass" placeholder="Create Password (6+ chars)" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
-                <button onclick="app.togglePassword('signup-pass', 'signup-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
-                    <i id="signup-eye" class="fa-solid fa-eye"></i>
-                </button>
-            </div>
-            <div class="relative w-full mb-6">
-                <input type="password" id="signup-pass-confirm" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
-                <button onclick="app.togglePassword('signup-pass-confirm', 'signup-eye-confirm')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
-                    <i id="signup-eye-confirm" class="fa-solid fa-eye"></i>
-                </button>
-            </div>
-            <button onclick="authManager.signup()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Create Account ✨</button>
+<div class="relative w-full mb-3">
+    <input type="password" id="signup-pass" placeholder="Create Password (6+ chars)" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
+    <button onclick="app.togglePassword('signup-pass', 'signup-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="signup-eye" class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
+<div class="relative w-full mb-6">
+    <input type="password" id="signup-pass-confirm" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
+    <button onclick="app.togglePassword('signup-pass-confirm', 'signup-eye-confirm')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="signup-eye-confirm" class="fa-solid fa-eye"></i>
+    </button>
+</div>            <button onclick="authManager.signup()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Create Account ✨</button>
             <button onclick="authManager.toggleView('login')" class="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white">Back to Login</button>
             <p id="signup-msg" class="text-red-500 text-xs mt-4 h-4"></p>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" class="hidden fixed inset-0 z-[60] bg-gray-900 text-white flex flex-col pt-safe">
+        <div class="sticky top-0 bg-gray-900 z-10 px-6 pb-2">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl font-bold text-orangeAccent">👑 Admin HQ</h1>
+                <button onclick="app.closeAdmin()" class="bg-gray-800 px-4 py-2 rounded-full text-sm font-bold hover:bg-gray-700">Exit</button>
+            </div>
+            <nav class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                <button onclick="app.switchAdminView('dash')" id="adm-btn-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
+                <button onclick="app.switchAdminView('godmode')" id="adm-btn-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition animate-pulse border border-purple-400">God Mode ⚡</button>
+                <button onclick="app.switchAdminView('broadcast')" id="adm-btn-broadcast" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
+                <button onclick="app.switchAdminView('events')" id="adm-btn-events" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
+                <button onclick="app.switchAdminView('users')" id="adm-btn-users" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Users 👥</button>
+                <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
+                <button onclick="app.switchAdminView('tickets')" id="adm-btn-tickets" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
+            </nav>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-20">
+            <div id="adm-view-dash" class="admin-view space-y-6 pt-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Total Users</h3><p class="text-3xl font-bold" id="adm-count-users">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Requests</h3><p class="text-3xl font-bold" id="adm-count-reqs">0</p></div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i class="fa-solid fa-print"></i> Live Print Queue</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-green-600/30">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
+                            <tbody id="adm-print-list" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading jobs...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-godmode" class="admin-view hidden space-y-8 pt-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 relative overflow-hidden group cursor-pointer" onclick="app.injectCapital()">
+                        <div class="absolute -right-4 -top-4 text-8xl opacity-10 text-green-500"><i class="fa-solid fa-money-bill-wave"></i></div>
+                        <h3 class="text-lg font-bold text-white mb-2 relative z-10">App Valuation 💰</h3>
+                        <p class="text-4xl font-black text-green-400 relative z-10">$<span id="ceo-valuation">1,000,000,000</span></p>
+                        <p class="text-xs text-gray-400 mt-1 relative z-10 animate-pulse">Tap to inject capital 💉</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-white mb-2">US Career Status 🇺🇸</h3>
+                        <div class="w-full bg-gray-700 rounded-full h-4 mt-2">
+                            <div class="bg-blueAccent h-4 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <p class="text-xs text-right text-blue-400 mt-1 font-bold">Manifesting... 85%</p>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order 📜</h2>
+                    <input id="vip-title" type="text" placeholder="Subject of Order" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Your message to the people..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish Gold Alert 🔔</button>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">The Circle ⭕</h2>
+                    <p class="text-purple-300 text-xs mb-6">Manage the inner circle. Only you have this power.</p>
+                    <div class="flex gap-2 mb-4">
+                        <input id="admin-email-input" type="email" placeholder="Enter email to promote..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="app.addAdminByEmail()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
+                    </div>
+                    <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-purple-900/30 text-xs uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
+                            <tbody id="admin-team-list" class="divide-y divide-purple-900/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-red-900/20 border border-red-500/50 p-6 rounded-xl">
+                         <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2"><i class="fa-solid fa-gavel"></i> The Ban Hammer</h3>
+                         <p class="text-xs text-red-300 mb-4">Enter a user's email to permanently ban them.</p>
+                         <div class="flex gap-2">
+                            <input id="ban-email-input" type="email" placeholder="Bad actor's email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                            <button onclick="app.banUser()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                         </div>
+                    </div>
+                    <div class="bg-gray-800 border border-gray-600 p-6 rounded-xl flex flex-col justify-between">
+                         <div>
+                             <h3 class="text-white font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-broom text-blueAccent"></i> System Flush</h3>
+                             <p class="text-xs text-gray-400 mb-4">Clear all service requests logs to keep the dashboard clean. Use with caution.</p>
+                         </div>
+                         <button onclick="app.flushRequests()" class="w-full bg-gray-700 hover:bg-blueAccent hover:text-white text-gray-300 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">Purge Logs 🧹</button>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-broadcast" class="admin-view hidden space-y-6 pt-4">
+                <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700">
+                    <h2 class="text-xl font-bold mb-4">Standard Announcement</h2>
+                    <input id="broadcast-title" type="text" placeholder="Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
+                    <textarea id="broadcast-body" placeholder="Message content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                             <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Add Image <input type="file" id="broadcast-file" accept="image/*" class="hidden" onchange="document.getElementById('broadcast-file-name').innerText = this.files[0].name"></label>
+                             <span id="broadcast-file-name" class="text-xs text-gray-400">No image selected</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.sendBroadcast()" id="btn-send-broadcast" class="bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 flex-1 shadow-lg">Send Blast 🚀</button>
+                        <button onclick="app.cancelBroadcastEdit()" id="btn-cancel-broadcast" class="hidden bg-red-500 text-white px-4 py-3 rounded-lg font-bold">Cancel</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">History</h3>
+                    <div id="adm-broadcast-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div id="adm-view-events" class="admin-view hidden space-y-6 pt-4">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h2 class="text-xl font-bold mb-4 text-orangeAccent">Create Event / Flyer</h2>
+                    <input id="event-title" type="text" placeholder="Event Name" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input id="event-price" type="number" placeholder="Price (GHS) - 0 for Free" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-qty" type="number" placeholder="Total Tickets" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    </div>    
+                    <input id="event-venue" type="text" placeholder="Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                    <textarea id="event-desc" placeholder="Details..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20"></textarea>
+                    <div class="flex items-center gap-2 mb-4">
+                         <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Flyer Image <input type="file" id="event-file" accept="image/*" class="hidden" onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
+                         <span id="event-file-name" class="text-xs text-gray-400">No file selected</span>
+                    </div>
+                    <button onclick="app.saveEvent()" class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110">Post Event 📅</button>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Active Events</h3>
+                    <div id="adm-event-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div id="adm-view-tickets" class="admin-view hidden space-y-6 pt-4">
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales Ledger</h2>
+        <div class="bg-black/20 rounded-lg overflow-hidden border border-gray-600">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3">Code</th>
+                        <th class="px-4 py-3">Event</th>
+                        <th class="px-4 py-3">Holder</th>
+                        <th class="px-4 py-3 text-right">Price</th>
+                    </tr>
+                </thead>
+                <tbody id="adm-ticket-list" class="divide-y divide-gray-700">
+                    <tr><td colspan="4" class="p-4 text-center">Loading sales...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+            <div id="adm-view-users" class="admin-view hidden space-y-8 pt-4">
+                <div>
+                    <h2 class="text-xl font-bold mb-4">All Users Database</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Role</th></tr></thead>
+                            <tbody id="adm-user-list" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-feedback" class="admin-view hidden pt-4">
+                <h2 class="text-xl font-bold mb-4 text-pink-400">User Reviews</h2>
+                <div class="bg-gray-800 rounded-xl overflow-hidden border border-pink-600/30">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">User</th><th class="px-4 py-3">Message</th><th class="px-4 py-3">Rating</th></tr></thead>
+                        <tbody id="adm-feedback-list" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading feedback...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -140,6 +327,7 @@
             <h1 class="text-xl font-bold">AZ Learner 🎓</h1>
         </div>
         <div class="flex items-center gap-4">
+            <button id="header-admin-btn" onclick="app.openAdmin()" class="hidden bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">ADMIN</button>
             <div class="relative cursor-pointer" onclick="app.showNotifications()">
                 <i class="fa-solid fa-bell text-xl"></i>
                 <div id="notification-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center border border-white dark:border-gray-800">0</div>
@@ -174,6 +362,7 @@
                 </div>
             </div>
 
+            <!-- Premium Services Grid -->
             <div>
                 <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">Quick Access ⚡</h3>
                 <div class="grid grid-cols-2 gap-3">
@@ -200,6 +389,7 @@
                 </div>
             </div>
 
+            <!-- Events Section -->
             <div>
     <div class="flex items-center justify-between mb-3 ml-1 mr-1">
         <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider" id="home-section-title">What's Poppin' 🎉</h3>
@@ -667,8 +857,10 @@
         let listeners = [];
         let alertInterval = null;
         let activeChatListener = null;
+        let activeJobListener = null; 
         let activeChatType = null; 
         let activeChatId = null; 
+        let valuation = 1000000000;
 
         window.authManager = {
             async login() { 
@@ -734,7 +926,7 @@
 
         window.app = {
             data: { 
-                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentHomeView: 'events',
+                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
                 badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
                 currentTabIndex: 0
             },
@@ -791,8 +983,13 @@
                                 return;
                             }
 
-                            // REMOVED ADMIN CHECK LOGIC HERE - STUDENT APP ONLY
+                            if(user.email === "pwavwef@gmail.com" && this.data.user.role !== 'admin') { await updateDoc(doc(db, "users", user.uid), { role: "admin" }); this.data.user.role = 'admin'; }
                             this.updateProfileUI(this.data.user);
+                            if(this.data.user.role === 'admin') document.getElementById('header-admin-btn').classList.remove('hidden');
+                            
+                            if(user.email === "pwavwef@gmail.com") {
+                                document.getElementById('adm-btn-godmode').classList.remove('hidden');
+                            }
                         }
                         const read = localStorage.getItem('az_read_notifs');
                         if(read) this.data.readNotifications = JSON.parse(read);
@@ -1034,7 +1231,7 @@
                 const feed = document.getElementById('home-events-feed');
                 // CSS CHANGE: Changed to flex row with overflow-x-auto for horizontal scroll
                 feed.className = "flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x"; 
-   
+    
                 feed.innerHTML = '';
                 if (this.data.events.length === 0) {
                     feed.className = "space-y-4"; // Revert to stack if empty message needed
@@ -1043,21 +1240,21 @@
                    document.getElementById('home-no-events').classList.add('hidden');
                    this.data.events.forEach(ev => {
                        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
-           
+            
                        // Ticket Logic
                        const price = ev.price || 0;
                        const sold = ev.ticketsSold || 0;
                        const total = ev.totalTickets || 0;
                        const isSoldOut = total > 0 && sold >= total;
                        const rsvpCount = (ev.rsvps || []).length;
-           
+            
                        let statusBadge = '';
                        if(total > 0) {
                            if(isSoldOut) statusBadge = `<div class="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">SOLD OUT</div>`;
                            else statusBadge = `<div class="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow">GHS ${price}</div>`;
                        } else {
-                           // Optional: Badge for free events
-                           statusBadge = `<div class="absolute top-2 right-2 bg-blueAccent text-white text-[10px] font-bold px-2 py-1 rounded shadow">FREE</div>`;
+                            // Optional: Badge for free events
+                            statusBadge = `<div class="absolute top-2 right-2 bg-blueAccent text-white text-[10px] font-bold px-2 py-1 rounded shadow">FREE</div>`;
                         }
 
                        let bottomBadge = '';
@@ -1385,10 +1582,47 @@ buyTicket(ev) {
                 history.back(); // Manually pop history here since closeModals is just visual
             },
 
-            // REMOVED ADMIN FUNCTION (saveEvent) HERE
+            async saveEvent() {
+                const title = document.getElementById('event-title').value;
+                const date = document.getElementById('event-date').value;
+                const time = document.getElementById('event-time').value;
+                const venue = document.getElementById('event-venue').value;
+                const desc = document.getElementById('event-desc').value;
+                // NEW FIELDS
+                const price = document.getElementById('event-price').value || "0";
+                const qty = document.getElementById('event-qty').value || "0";
+                const fileInput = document.getElementById('event-file');
 
-            // REMOVED ADMIN FUNCTION (deleteEvent) HERE
+                if (!title || !date || !venue) return alert("Fill in the basics!");
 
+                let image = null;
+                if (fileInput.files.length > 0) {
+                    image = await this.compressImage(fileInput.files[0]);
+                }
+
+               // Save strictly as numbers
+               await addDoc(collection(db, "events"), {
+                   title, date, time, venue, description: desc, image,
+                   price: parseFloat(price),
+                   totalTickets: parseInt(qty),
+                   ticketsSold: 0,
+                   rsvps: [], timestamp: Date.now()
+               });
+
+               alert("Event Posted! 🎉");
+               // Reset form logic...
+               document.getElementById('event-title').value = '';
+               document.getElementById('event-desc').value = '';
+               document.getElementById('event-price').value = ''; 
+               document.getElementById('event-qty').value = '';
+               document.getElementById('event-file').value = '';
+            },
+
+            async deleteEvent(id) {
+                if(confirm("Delete this event?")) await deleteDoc(doc(db, "events", id));
+            },
+
+            // --- EXISTING CHAT & PRINT LOGIC ---
             async openPrintChat(targetUserId = null) {
                 history.pushState({ view: 'chat' }, null, ""); // Push State
                 activeChatType = 'print';
@@ -1404,7 +1638,7 @@ buyTicket(ev) {
                 if (!chatSnap.exists()) {
                     await setDoc(chatRef, { userId: activeChatId, status: 'received', lastUpdated: Date.now(), userName: isMe ? (this.data.user.name || 'Student') : 'Unknown' });
                 } else {
-                    // REMOVED ADMIN UNREAD UPDATE LOGIC HERE
+                    if (this.data.user.role === 'admin' && chatSnap.data().hasUnread) await updateDoc(chatRef, { hasUnread: false });
                     this.updatePrintStatusUI(chatSnap.data().status);
                 }
                 this.loadMessages("print_messages", "orderId", activeChatId);
@@ -1742,8 +1976,11 @@ buyTicket(ev) {
             async handleFileUpload(input) { if(input.files.length > 0) { this.sendMessage(); } },
 
             async updatePrintStatus(newStatus) {
-                // REMOVED ADMIN LOGIC HERE - Only keeps UI update for student view
-                this.updatePrintStatusUI(newStatus);
+                if(!currentUser || this.data.user.role !== 'admin') return;
+                if(confirm(`Change status to: ${newStatus}?`)) {
+                    await updateDoc(doc(db, "print_orders", activeChatId), { status: newStatus });
+                    this.updatePrintStatusUI(newStatus);
+                }
             },
 
             updatePrintStatusUI(status) {
@@ -1779,7 +2016,7 @@ buyTicket(ev) {
                     btnNew.classList.add('hidden');
                 }
 
-                // REMOVED ADMIN CLICK HANDLERS
+                if(this.data.user.role === 'admin') [s1, s2, s3, s4].forEach(s => s.classList.add('cursor-pointer', 'hover:scale-110'));
             },
 
             async startNewPrintOrder() {
@@ -1934,9 +2171,21 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 const qEvents = query(collection(db, "events"), orderBy("timestamp", "desc"));
                 listeners.push(onSnapshot(qEvents, (snap) => {
                     const events = [];
+                    const adminEventList = document.getElementById('adm-event-list');
+                    adminEventList.innerHTML = '';
+                    
                     snap.forEach(d => {
                         const ev = {id: d.id, ...d.data()};
                         events.push(ev);
+                        // Admin Panel Render
+                        adminEventList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded flex justify-between items-center border border-gray-700">
+                            <div class="flex items-center gap-3">
+                                <img src="${ev.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover">
+                                <div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-xs text-gray-400">${ev.date}</p></div>
+                            </div>
+                            <button onclick="app.deleteEvent('${ev.id}')" class="text-red-400 text-xs font-bold hover:text-red-300">DELETE</button>
+                        </div>`;
                     });
                     this.data.events = events;
                     if(!document.getElementById('tab-home').classList.contains('hidden')) this.renderHome();
@@ -1991,7 +2240,201 @@ listeners.push(onSnapshot(qTickets, (snap) => {
 
             stopListeners() { listeners.forEach(u => u()); listeners = []; },
 
-            // REMOVED ADMIN PANEL FUNCTIONS (openAdmin, closeAdmin, switchAdminView, sendBroadcast, etc.)
+            async openAdmin() {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                this.switchAdminView('dash'); 
+                
+                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('adm-broadcast-list');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const b = d.data();
+                        list.innerHTML += `<div class="bg-gray-900 p-2 rounded flex justify-between items-center"><span class="truncate text-sm w-1/2">${b.title}</span><div><button onclick="app.editBroadcast('${d.id}', '${b.title}', '${b.body}')" class="text-blue-400 text-xs mr-2">Edit</button><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs">Delete</button></div></div>`;
+                    });
+                });
+
+                const usersSnap = await getDocs(query(collection(db, "users"), limit(50)));
+                const reqSnap = await getDocs(query(collection(db, "service_requests"), orderBy("timestamp", "desc"), limit(50)));
+                const feedbackSnap = await getDocs(query(collection(db, "feedback"), orderBy("timestamp", "desc"), limit(50)));
+                
+                document.getElementById('adm-count-users').innerText = usersSnap.size + "+";
+                document.getElementById('adm-count-reqs').innerText = reqSnap.size + "+";
+                
+                let feedbackHtml = '';
+                feedbackSnap.forEach(d => {
+                    const f = d.data();
+                    feedbackHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${f.userName}</td><td class="px-4 py-3 truncate max-w-xs text-xs">${f.message}</td><td class="px-4 py-3 font-bold text-yellow-400">${f.rating} ★</td></tr>`;
+                });
+                document.getElementById('adm-feedback-list').innerHTML = feedbackHtml || '<tr><td colspan="3" class="p-4 text-center">No feedback yet.</td></tr>';
+
+                let userHtml = ''; let adminHtml = ''; 
+                usersSnap.forEach(doc => { 
+                    const u = doc.data(); 
+                    userHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3">${u.role}</td><td class="px-4 py-3 text-xs text-gray-500">View</td></tr>`;
+                    
+                    if(u.role === 'admin') {
+                        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.email}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`; 
+                    }
+                });
+                
+                document.getElementById('adm-user-list').innerHTML = userHtml || '<tr><td colspan="4" class="p-4 text-center">No users.</td></tr>';
+                document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No admins found.</td></tr>';
+
+                if(activeJobListener) activeJobListener(); 
+                const q = query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50));
+                
+                activeJobListener = onSnapshot(q, (snap) => {
+                    let printHtml = '';
+                    if(snap.empty) { document.getElementById('adm-print-list').innerHTML = '<tr><td colspan="3" class="p-4 text-center">No active jobs.</td></tr>'; return; }
+                    snap.forEach(doc => {
+                        const job = doc.data();
+                        const unreadIndicator = job.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse shadow-sm shadow-red-500/50">NEW</span>' : '';
+                        printHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white">${job.userName || 'Student'} ${unreadIndicator}<span class="text-xs text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-xs font-bold text-blue-300">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.openPrintChat('${doc.id}')" class="bg-blueAccent hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">Chat</button></td></tr>`;
+                    });
+                    document.getElementById('adm-print-list').innerHTML = printHtml;
+                });
+            },
+            
+            switchAdminView(viewName) {
+                this.data.currentAdminView = viewName;
+                document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
+                
+                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback', 'tickets'].forEach(v => {
+                    const btn = document.getElementById(`adm-btn-${v}`);
+                    if (!btn) return; 
+
+                    if(v === viewName) {
+                        btn.classList.remove('bg-gray-800', 'text-gray-400');
+                        if(v === 'godmode') {
+                            btn.classList.add('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-500/50');
+                        } else {
+                            btn.classList.add('bg-blueAccent', 'text-white');
+                        }
+                    } else {
+                        btn.classList.add('bg-gray-800', 'text-gray-400');
+                        btn.classList.remove('bg-blueAccent', 'text-white', 'bg-purple-600', 'shadow-lg', 'shadow-purple-500/50');
+                        if (v === 'godmode') btn.classList.add('border', 'border-purple-400');
+                    }
+                });
+            // --- STEP 5.5 LOGIC: FETCH TICKETS ---
+    if (viewName === 'tickets') {
+        const qAllTickets = query(collectionGroup(db, 'tickets'), orderBy('purchaseDate', 'desc'), limit(50));
+        
+        // Clear previous listener if it exists to avoid duplicates
+        if(this.ticketListener) this.ticketListener(); 
+        
+        this.ticketListener = onSnapshot(qAllTickets, (snap) => {
+            const list = document.getElementById('adm-ticket-list');
+            list.innerHTML = '';
+            if (snap.empty) {
+                list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No tickets sold.</td></tr>';
+                return;
+            }
+            
+            snap.forEach(d => {
+                const t = d.data();
+                list.innerHTML += `
+                    <tr class="border-b border-gray-700">
+                        <td class="px-4 py-3 font-mono font-bold text-yellow-400">${t.ticketId}</td>
+                        <td class="px-4 py-3 truncate max-w-[150px]">${t.eventTitle}</td>
+                        <td class="px-4 py-3 text-xs">
+                            <div class="font-bold text-white">${t.userName || 'Unknown'}</div>
+                            <div class="text-gray-500">${new Date(t.purchaseDate).toLocaleDateString()}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold">GHS ${t.price}</td>
+                    </tr>`;
+            });
+        });
+    }
+            },
+            
+            injectCapital() {
+                valuation += Math.floor(Math.random() * 50000000) + 1000000;
+                document.getElementById('ceo-valuation').innerText = valuation.toLocaleString();
+                const ticker = document.getElementById('ceo-valuation');
+                ticker.classList.add('text-yellow-400');
+                setTimeout(() => ticker.classList.remove('text-yellow-400'), 200);
+            },
+            
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value.trim();
+                if(!email) return;
+                if(!confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY BAN ${email}?`)) return;
+                
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                
+                if(snap.empty) { alert("User not found."); return; }
+                
+                snap.forEach(async (d) => {
+                    await updateDoc(doc(db, "users", d.id), { role: "banned" });
+                });
+                alert(`${email} has been exiled from the kingdom. 🔨`);
+                document.getElementById('ban-email-input').value = '';
+            },
+
+            async flushRequests() {
+                if(!confirm("⚠️ FLUSH SYSTEM?\n\nThis will permanently delete ALL service request logs. This cannot be undone.")) return;
+                const q = query(collection(db, "service_requests"));
+                const snap = await getDocs(q);
+                if(snap.empty) return alert("System is already clean. ✨");
+                const deletePromises = snap.docs.map(d => deleteDoc(doc(db, "service_requests", d.id)));
+                await Promise.all(deletePromises);
+                alert(`System Flushed. ${snap.size} records purged. 🧹`);
+            },
+
+            async sendVIPBroadcast() {
+                const title = document.getElementById('vip-title').value;
+                const body = document.getElementById('vip-body').value;
+                if(!title || !body) return alert("Enter content for the Executive Order.");
+                await addDoc(collection(db, "global_announcements"), { 
+                    title, body, isVIP: true, timestamp: Date.now() 
+                });
+                alert("Executive Order Published. 📜");
+                document.getElementById('vip-title').value = '';
+                document.getElementById('vip-body').value = '';
+            },
+
+            closeAdmin() { document.getElementById('admin-panel').classList.add('hidden'); if(activeJobListener) { activeJobListener(); activeJobListener = null; } },
+            async addAdminByEmail() { const email = document.getElementById('admin-email-input').value.trim(); if(!email) return; const q = query(collection(db, "users"), where("email", "==", email)); const snap = await getDocs(q); if(snap.empty) { alert("User not found!"); return; } snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); alert(`Success! ${email} promoted.`); this.openAdmin(); },
+            async toggleUserRole(uid, currentRole) { if(confirm(`Change role from ${currentRole}?`)) { const newRole = currentRole === 'admin' ? 'student' : 'admin'; await updateDoc(doc(db, "users", uid), { role: newRole }); this.openAdmin(); } },
+
+            async sendBroadcast() {
+                const title = document.getElementById('broadcast-title').value;
+                const body = document.getElementById('broadcast-body').value;
+                const fileInput = document.getElementById('broadcast-file');
+                if(!title || !body) return alert("Enter Title and Body");
+
+                let imgData = null;
+                if (fileInput.files.length > 0) { imgData = await this.compressImage(fileInput.files[0]); }
+                
+                if(this.data.editingBroadcastId) {
+                    const updateData = { title, body };
+                    if(imgData) updateData.image = imgData;
+                    await updateDoc(doc(db, "global_announcements", this.data.editingBroadcastId), updateData);
+                    alert("Broadcast Updated!");
+                } else {
+                    await addDoc(collection(db, "global_announcements"), { title, body, image: imgData, timestamp: Date.now() });
+                    alert("Broadcast Sent!");
+                }
+                this.cancelBroadcastEdit();
+            },
+            editBroadcast(id, title, body) {
+                this.data.editingBroadcastId = id;
+                document.getElementById('broadcast-title').value = title;
+                document.getElementById('broadcast-body').value = body;
+                document.getElementById('btn-send-broadcast').innerText = "Update Broadcast";
+                document.getElementById('btn-cancel-broadcast').classList.remove('hidden');
+            },
+            async deleteBroadcast(id) { if(confirm("Delete this broadcast?")) await deleteDoc(doc(db, "global_announcements", id)); },
+            cancelBroadcastEdit() {
+                this.data.editingBroadcastId = null;
+                document.getElementById('broadcast-title').value = '';
+                document.getElementById('broadcast-body').value = '';
+                document.getElementById('btn-send-broadcast').innerText = "Send Blast 🚀";
+                document.getElementById('btn-cancel-broadcast').classList.add('hidden');
+            },
 
             async contactAdmin(adminName, phone) {
                 const safeName = (this.data.user && this.data.user.name) ? this.data.user.name : "Guest";
@@ -2115,7 +2558,7 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 } else { // Others
                 fabIcon.className = "fa-solid fa-plus";
                 fabLabel.innerText = "Add";
-              }
+             }
                 
                 if (index === 0) this.renderHome();
                 if (index === 4) this.renderChatList();
@@ -2396,7 +2839,7 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 }
             },
             
-            // ---FULL SCREEN LEADERBOARD ---
+            // --- FULL SCREEN LEADERBOARD ---
             openLeaderboard() {
                 history.pushState({ view: 'leaderboard' }, null, ""); // Push State
                 this.renderLeaderboard();
@@ -2407,6 +2850,183 @@ listeners.push(onSnapshot(qTickets, (snap) => {
         };
 
         window.addEventListener('DOMContentLoaded', () => app.init());
+        window.mfaManager = {
+    verificationId: null,
+    resolver: null,
+    recaptchaVerifier: null, // We will store the instance here
+
+    initRecaptcha() {
+        // 1. CHECK: If it already exists, DO NOTHING. Reuse it!
+        if (this.recaptchaVerifier) {
+            return; 
+        }
+
+        // 2. Ensure the container exists and is EMPTY
+        const container = document.getElementById('recaptcha-container');
+        if (!container) {
+            const div = document.createElement('div');
+            div.id = 'recaptcha-container';
+            document.body.appendChild(div);
+        } else {
+            // Safety clear: make sure the div is empty before we attach
+            container.innerHTML = ''; 
+        }
+
+        // 3. Create the single instance
+        this.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                console.log("Recaptcha verified");
+            },
+            'expired-callback': () => {
+                console.log("Recaptcha expired - user must retry");
+                // Optional: reset logic here
+            }
+        });
+        
+        // 4. Render it immediately to "warm it up"
+        this.recaptchaVerifier.render();
+    },
+
+    async startEnrollment() {
+        if (!currentUser) return alert("Must be logged in.");
+
+        // Force refresh user status
+        await currentUser.reload();
+
+        if (!currentUser.emailVerified) {
+            const proceed = confirm("Security Check 🛡️\n\nPlease verify your email (" + currentUser.email + ") before adding a phone number.\n\nClick OK to send the link.");
+            if (proceed) {
+                try {
+                    await sendEmailVerification(currentUser);
+                    alert("Link sent! Check your inbox.");
+                } catch (e) { alert(e.message); }
+            }
+            return;
+        }
+
+        // Initialize Recaptcha ONCE here
+        this.initRecaptcha();
+
+        document.getElementById('modal-mfa').classList.remove('hidden');
+        document.getElementById('mfa-step-phone').classList.remove('hidden');
+        document.getElementById('mfa-step-code').classList.add('hidden');
+    },
+
+    // Inside window.mfaManager...
+
+    async sendCode() {
+        const phone = document.getElementById('mfa-phone-input').value;
+        if (!phone) return alert("Enter phone number");
+
+        document.getElementById('mfa-msg').innerText = "Sending code...";
+
+        try {
+            const multiFactorSession = await multiFactor(currentUser).getSession();
+            const phoneOptions = {
+                phoneNumber: phone,
+                session: multiFactorSession
+            };
+            const phoneAuthProvider = new PhoneAuthProvider(auth);
+            
+            this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneOptions, this.recaptchaVerifier);
+            
+            document.getElementById('mfa-step-phone').classList.add('hidden');
+            document.getElementById('mfa-step-code').classList.remove('hidden');
+            document.getElementById('mfa-msg').innerText = "";
+            
+        } catch (err) {
+            console.error("SMS Error:", err);
+            
+            // --- NEW: CATCH RECENT LOGIN ERROR ---
+            if (err.code === 'auth/requires-recent-login') {
+                document.getElementById('modal-reauth').classList.remove('hidden'); // Show password modal
+                document.getElementById('mfa-msg').innerText = "";
+                return;
+            }
+            // -------------------------------------
+
+            document.getElementById('mfa-msg').innerText = err.message;
+            if(err.code === 'auth/captcha-check-failed' && this.recaptchaVerifier) {
+                this.recaptchaVerifier.clear();
+                this.recaptchaVerifier = null;
+            }
+        }
+    },
+
+    // --- NEW FUNCTION ---
+    async confirmReauth() {
+        const pass = document.getElementById('reauth-pass').value;
+        if(!pass) return;
+
+        const cred = EmailAuthProvider.credential(currentUser.email, pass);
+        
+        try {
+            await reauthenticateWithCredential(currentUser, cred);
+            document.getElementById('modal-reauth').classList.add('hidden');
+            document.getElementById('reauth-pass').value = '';
+            alert("Verified! Resending code now...");
+            this.sendCode(); // RETRY the SMS sending automatically
+        } catch(e) {
+            alert("Incorrect password. Please try again.");
+        }
+    },
+    async handleLoginChallenge(error) {
+        // Initialize Recaptcha ONCE here too
+        this.initRecaptcha();
+
+        this.resolver = getMultiFactorResolver(auth, error);
+        
+        // ... (Rest of your handleLoginChallenge logic stays the same)
+        const phoneInfoOptions = {
+            multiFactorHint: this.resolver.hints[0],
+            session: this.resolver.session
+        };
+        const phoneAuthProvider = new PhoneAuthProvider(auth);
+        try {
+            this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, this.recaptchaVerifier);
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('modal-mfa').classList.remove('hidden');
+            document.getElementById('mfa-step-phone').classList.add('hidden');
+            document.getElementById('mfa-step-code').classList.remove('hidden');
+        } catch(err) {
+            alert("Login SMS Error: " + err.message);
+        }
+    },
+
+    async verifyCode() {
+        // ... (Your existing verifyCode logic stays the same)
+        const code = document.getElementById('mfa-code-input').value;
+        const cred = PhoneAuthProvider.credential(this.verificationId, code);
+        const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+
+        try {
+            if (this.resolver) {
+                await this.resolver.resolveSignIn(multiFactorAssertion);
+                this.close();
+            } else {
+                await multiFactor(currentUser).enroll(multiFactorAssertion, "My Phone Number");
+                alert("2FA Enabled Successfully! 🛡️");
+                this.close();
+                document.getElementById('btn-enroll-mfa').innerText = "Active ✅";
+                document.getElementById('btn-enroll-mfa').disabled = true;
+            }
+        } catch (err) {
+            document.getElementById('mfa-msg').innerText = err.message;
+        }
+    },
+
+    close() {
+        document.getElementById('modal-mfa').classList.add('hidden');
+        document.getElementById('mfa-phone-input').value = '';
+        document.getElementById('mfa-code-input').value = '';
+        this.resolver = null;
+        this.verificationId = null;
+        
+        // IMPORTANT: We do NOT clear the recaptchaVerifier here. 
+        // We keep it alive for next time.
+    }
+};
     </script>
 </body>
 </html>
