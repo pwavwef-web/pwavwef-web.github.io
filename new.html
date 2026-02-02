@@ -532,12 +532,6 @@
         
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24"></div>
 
-        <div id="upload-progress-container" class="hidden fixed bottom-[70px] left-4 right-4 bg-gray-200 rounded-full h-2 overflow-hidden z-50">
-            <div id="upload-progress-bar" class="bg-blueAccent h-full width-0 transition-all duration-300"></div>
-        </div>
-
-        <div class="bg-white dark:bg-[#303030] p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2 fixed bottom-0 w-full max-w-3xl pb-safe">
-
         <div class="bg-white dark:bg-[#303030] p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2 fixed bottom-0 w-full max-w-3xl pb-safe">
             <input type="file" id="chat-file-input" class="hidden" onchange="app.handleFileUpload(this)">
             <button onclick="document.getElementById('chat-file-input').click()" class="text-gray-500 hover:text-blueAccent p-2"><i class="fa-solid fa-paperclip text-xl"></i></button>
@@ -845,7 +839,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -859,7 +852,6 @@
         const appInstance = initializeApp(firebaseConfig);
         const db = getFirestore(appInstance);
         const auth = getAuth(appInstance);
-        const storage = getStorage(appInstance);
 
         let currentUser = null;
         let listeners = [];
@@ -1632,7 +1624,6 @@ buyTicket(ev) {
 
             // --- EXISTING CHAT & PRINT LOGIC ---
             async openPrintChat(targetUserId = null) {
-                this.resetChatUI();
                 history.pushState({ view: 'chat' }, null, ""); // Push State
                 activeChatType = 'print';
                 activeChatId = targetUserId || currentUser.uid;
@@ -1654,7 +1645,6 @@ buyTicket(ev) {
             },
 
             async openCourseChat(courseName) {
-                this.resetChatUI();
                 history.pushState({ view: 'chat' }, null, ""); // Push State
                 const normalizedId = courseName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
                 activeChatType = 'course';
@@ -1775,7 +1765,6 @@ buyTicket(ev) {
             },
 
             async startDirectChat(otherUserId, otherName, otherPic = null) {
-                this.resetChatUI();
                 history.pushState({ view: 'chat' }, null, ""); // Push State
                 activeChatType = 'direct';
                 const sortedIds = [currentUser.uid, otherUserId].sort();
@@ -1893,16 +1882,10 @@ buyTicket(ev) {
 
             downloadFile(msgId) {
                 const msg = this.data.activeMsgCache[msgId];
-                if(!msg || !msg.fileData) return alert("File not found.");
+                if(!msg || !msg.fileData) return alert("File not found locally.");
                 
-                // NEW: Handle Firebase Storage URLs (starts with http)
-                if (msg.fileData.startsWith('http')) {
-                    window.open(msg.fileData, '_blank');
-                    return;
-                }
-
-                // OLD: Handle Legacy Base64 files (Backward Compatibility)
                 try {
+                    // Mobile-friendly Blob download strategy
                     const splitData = msg.fileData.split(',');
                     const byteString = atob(splitData[1]);
                     const mimeString = splitData[0].split(':')[1].split(';')[0];
@@ -1928,7 +1911,7 @@ buyTicket(ev) {
                     }, 100);
                     
                 } catch(e) { 
-                    console.log("Download error", e);
+                    console.log("Blob download failed, trying direct link", e);
                     // Fallback
                     const link = document.createElement('a');
                     link.href = msg.fileData;
@@ -1940,81 +1923,21 @@ buyTicket(ev) {
                 }
             },
 
-           async sendMessage() {
+            async sendMessage() {
                 const input = document.getElementById('chat-input');
                 const txt = input.value.trim();
                 const fileInput = document.getElementById('chat-file-input');
-                const sendBtn = document.querySelector('#chat-input + button'); // Select the send button
-                const progressBar = document.getElementById('upload-progress-bar');
-                const progressContainer = document.getElementById('upload-progress-container');
-
                 if(!txt && fileInput.files.length === 0) return;
 
-                // --- 1. HANDLE FILE UPLOAD ---
+                let fileData = null; let fileName = null; let fileType = null;
                 if(fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    
-                    // Limit check (50MB)
-                    if(file.size > 50 * 1024 * 1024) return alert("File too big! Max 50MB."); 
-
-                    // UI: Show Progress
-                    progressContainer.classList.remove('hidden');
-                    progressBar.style.width = '0%';
-                    input.placeholder = `Uploading ${file.name}...`;
-                    input.disabled = true;
-                    sendBtn.disabled = true;
-
-                    try {
-                        const storageRef = ref(storage, `chat_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
-                        
-                        // Use Resumable Upload
-                        const uploadTask = uploadBytesResumable(storageRef, file);
-
-                        // Promise wrapper to handle the events
-                        const fileData = await new Promise((resolve, reject) => {
-                            uploadTask.on('state_changed', 
-                                (snapshot) => {
-                                    // Get task progress
-                                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                                    progressBar.style.width = progress + '%';
-                                }, 
-                                (error) => {
-                                    reject(error);
-                                }, 
-                                async () => {
-                                    // Upload complete
-                                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                                    resolve(downloadURL);
-                                }
-                            );
-                        });
-
-                        // Proceed to send message with the URL
-                        await this.dispatchMessageToDb(txt, fileData, file.name, file.type);
-
-                    } catch(e) {
-                        console.error(e);
-                        alert("Upload failed: " + e.message);
-                    } finally {
-                        // ALWAYS RESET UI
-                        progressContainer.classList.add('hidden');
-                        progressBar.style.width = '0%';
-                        input.placeholder = "Type a message...";
-                        input.disabled = false;
-                        sendBtn.disabled = false;
-                        fileInput.value = ''; // Clear the file selection
-                        input.value = ''; // Clear text
-                        input.focus();
-                    }
-                } else {
-                    // --- 2. TEXT ONLY MESSAGE ---
-                    await this.dispatchMessageToDb(txt, null, null, null);
-                    input.value = '';
+                    if(file.size > 2000000) return alert("File too big! Max 2MB."); 
+                    fileData = await this.compressImage(file); 
+                    fileName = file.name; fileType = file.type;
                 }
-            },
 
-            // Helper to keep sendMessage clean
-            async dispatchMessageToDb(text, fileUrl, fileName, fileType) {
+                // DETERMINE COLLECTION & ID
                 let coll, idField;
                 if (activeChatType === 'print') { coll = 'print_messages'; idField = 'orderId'; }
                 else if (activeChatType === 'course') { coll = 'course_messages'; idField = 'courseId'; }
@@ -2023,10 +1946,8 @@ buyTicket(ev) {
                 const msgData = {
                     [idField]: activeChatId, 
                     senderId: currentUser.uid, 
-                    text: text, 
-                    fileData: fileUrl, 
-                    fileName: fileName, 
-                    fileType: fileType,
+                    text: txt, 
+                    fileData, fileName, fileType, 
                     timestamp: Date.now()
                 };
 
@@ -2036,7 +1957,6 @@ buyTicket(ev) {
 
                 await addDoc(collection(db, coll), msgData);
 
-                // Update Chat Metadata
                 if(activeChatType === 'print') {
                     const isStudentOwner = (currentUser.uid === activeChatId); 
                     const updateData = { lastUpdated: Date.now() };
@@ -2045,11 +1965,14 @@ buyTicket(ev) {
                 } else if(activeChatType === 'direct') {
                     await updateDoc(doc(db, "direct_chats", activeChatId), { 
                         lastUpdated: Date.now(), 
-                        lastSenderId: currentUser.uid, 
+                        lastSenderId: currentUser.uid,
                         readBy: [currentUser.uid] 
                     });
                 }
+
+                input.value = ''; fileInput.value = ''; 
             },
+
             async handleFileUpload(input) { if(input.files.length > 0) { this.sendMessage(); } },
 
             async updatePrintStatus(newStatus) {
@@ -2821,22 +2744,6 @@ listeners.push(onSnapshot(qTickets, (snap) => {
             alert("Unable to sync contacts. Ensure permissions are granted.");
         }
     },
-
-            resetChatUI() {
-    const input = document.getElementById('chat-input');
-    const sendBtn = document.querySelector('#chat-input + button');
-    const progressContainer = document.getElementById('upload-progress-container');
-    const fileInput = document.getElementById('chat-file-input');
-
-    if(input) {
-        input.disabled = false;
-        input.placeholder = "Type a message...";
-        input.value = '';
-    }
-    if(sendBtn) sendBtn.disabled = false;
-    if(progressContainer) progressContainer.classList.add('hidden');
-    if(fileInput) fileInput.value = '';
-},
 
     normalizePhone(phone) {
         // Remove spaces, dashes, parentheses, + signs
