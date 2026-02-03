@@ -30,6 +30,9 @@
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .chat-bubble { max-width: 75%; }
+        /* Smooth dropdown animation */
+        .ticket-dropdown { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
+        .ticket-dropdown.open { max-height: 500px; opacity: 1; overflow-y: auto; }
     </style>
 </head>
 <body class="font-sans antialiased h-screen flex flex-col">
@@ -159,12 +162,12 @@
             </div>
 
             <div id="view-tickets" class="admin-view hidden space-y-6">
-                <h2 class="text-xl font-bold mb-4 text-green-400">Sales Ledger</h2>
-                <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
-                    <table class="w-full text-left text-sm text-gray-400">
-                        <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]"><tr><th class="px-4 py-3">Ref</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Holder</th><th class="px-4 py-3 text-right">GHS</th></tr></thead>
-                        <tbody id="list-tickets" class="divide-y divide-gray-700"><tr><td colspan="4" class="p-4 text-center">Loading ledger...</td></tr></tbody>
-                    </table>
+                <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-wave"></i> Revenue Streams
+                </h2>
+                <!-- Accordion Container -->
+                <div id="sales-accordion-container" class="space-y-4">
+                    <div class="text-center text-gray-500 py-10 animate-pulse">Scanning Events...</div>
                 </div>
             </div>
 
@@ -327,7 +330,6 @@
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`view-${view}`).classList.remove('hidden');
                 
-                // Style Nav
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.classList.remove('bg-blueAccent', 'text-white', 'bg-gray-700', 'text-gray-400');
                     if(btn.id === `nav-${view}`) {
@@ -337,8 +339,8 @@
                     }
                 });
 
-                if(view === 'tickets') this.fetchTickets();
-                if(view === 'workspace') this.switchWorkspaceTab('personal'); // Default sub-tab
+                if(view === 'tickets') this.fetchSalesOverview(); // Changed to new function
+                if(view === 'workspace') this.switchWorkspaceTab('personal');
             },
 
             // WORKSPACE LOGIC
@@ -431,7 +433,6 @@
 
             async deleteVaultFile(id, path) {
                 if(!confirm("Destroy this artifact?")) return;
-                // Delete from Storage then Firestore
                 const storageRef = ref(storage, path);
                 try { await deleteObject(storageRef); } catch(e) { console.log("Storage delete error, cleaning DB anyway"); }
                 await deleteDoc(doc(db, "admin_vault_files", id));
@@ -577,19 +578,112 @@
                 });
             },
 
-            fetchTickets() {
-                const list = document.getElementById('list-tickets');
-                list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Syncing...</td></tr>';
-                const q = query(collectionGroup(db, 'tickets'), orderBy('purchaseDate', 'desc'), limit(50));
-                onSnapshot(q, (snap) => {
-                    list.innerHTML = '';
-                    if(snap.empty) { list.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-xs text-gray-500">No records found.</td></tr>'; return; }
-                    snap.forEach(d => {
-                        const t = d.data();
-                        list.innerHTML += `<tr class="border-b border-gray-700 hover:bg-white/5 transition"><td class="px-4 py-3 font-mono text-xs font-bold text-yellow-500">${t.ticketId.substring(0,8)}...</td><td class="px-4 py-3 truncate max-w-[100px] text-xs">${t.eventTitle}</td><td class="px-4 py-3 text-xs"><div class="font-bold text-white">${t.userName || 'Unknown'}</div><div class="text-gray-500 text-[10px]">${new Date(t.purchaseDate).toLocaleDateString()}</div></td><td class="px-4 py-3 text-right font-bold text-green-400 text-sm">${t.price}</td></tr>`;
+            // --- RE-ENGINEERED SALES VIEW LOGIC ---
+            
+            fetchSalesOverview() {
+                const container = document.getElementById('sales-accordion-container');
+                container.innerHTML = '<div class="text-center text-gray-500 py-10 animate-pulse">Scanning Events...</div>';
+                
+                // 1. Fetch Events first (Fast)
+                getDocs(query(collection(db, "events"), orderBy("timestamp", "desc"))).then(eventSnap => {
+                    if(eventSnap.empty) {
+                        container.innerHTML = '<div class="text-center text-gray-500 py-10">No active events found in database.</div>';
+                        return;
+                    }
+
+                    container.innerHTML = '';
+                    eventSnap.forEach(doc => {
+                        const ev = doc.data();
+                        const eventId = doc.id;
+                        // Calculate quick stats locally if possible, or start with defaults
+                        const revenue = (ev.ticketsSold || 0) * (ev.price || 0);
+                        
+                        // Create Accordion HTML
+                        const html = `
+                        <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-md">
+                            <div onclick="app.toggleEventSales('${eventId}')" class="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/50 transition bg-gradient-to-r from-gray-800 to-gray-800 hover:to-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-orangeAccent/10 p-2 rounded-lg text-orangeAccent"><i class="fa-solid fa-calendar-day"></i></div>
+                                    <div>
+                                        <h3 class="font-bold text-white text-sm">${ev.title}</h3>
+                                        <p class="text-[10px] text-gray-400">${ev.date || 'No Date'} • <span class="text-green-400 font-mono">GHS ${revenue}</span> Est. Rev</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="bg-blueAccent text-white text-xs font-bold px-2 py-1 rounded-full">${ev.ticketsSold || 0} Sold</span>
+                                    <i class="fa-solid fa-chevron-down text-gray-500 ml-2 transition-transform duration-300" id="icon-${eventId}"></i>
+                                </div>
+                            </div>
+                            <!-- Dropdown Area -->
+                            <div id="dropdown-${eventId}" class="ticket-dropdown bg-gray-900/50">
+                                <div class="p-4" id="content-${eventId}">
+                                    <div class="text-center text-xs text-gray-500">Decrypting Sales Data...</div>
+                                </div>
+                            </div>
+                        </div>`;
+                        container.innerHTML += html;
                     });
                 });
             },
+
+            async toggleEventSales(eventId) {
+                const dropdown = document.getElementById(`dropdown-${eventId}`);
+                const icon = document.getElementById(`icon-${eventId}`);
+                const contentDiv = document.getElementById(`content-${eventId}`);
+                
+                // Toggle UI
+                const isOpen = dropdown.classList.contains('open');
+                if(isOpen) {
+                    dropdown.classList.remove('open');
+                    icon.classList.remove('rotate-180');
+                    return; // Close and exit
+                } else {
+                    dropdown.classList.add('open');
+                    icon.classList.add('rotate-180');
+                }
+
+                // Fetch Data only if opening
+                // NOTE: We use collectionGroup without complex sorting to avoid Index errors that caused the hang
+                try {
+                    const q = query(collectionGroup(db, 'tickets'), where('eventId', '==', eventId));
+                    const snap = await getDocs(q);
+                    
+                    if(snap.empty) {
+                        contentDiv.innerHTML = '<div class="text-center text-xs text-gray-500 py-2">No tickets sold yet.</div>';
+                        return;
+                    }
+
+                    let tableHtml = `
+                    <table class="w-full text-left text-xs text-gray-400">
+                        <thead class="uppercase text-[9px] text-gray-500 border-b border-gray-700"><tr><th class="py-2">Ticket ID</th><th class="py-2">Holder</th><th class="py-2 text-right">Paid</th></tr></thead>
+                        <tbody class="divide-y divide-gray-700/50">`;
+                    
+                    let totalActualRevenue = 0;
+
+                    snap.forEach(d => {
+                        const t = d.data();
+                        totalActualRevenue += (parseFloat(t.price) || 0);
+                        tableHtml += `
+                        <tr>
+                            <td class="py-2 font-mono text-orangeAccent">${t.ticketId ? t.ticketId.substring(0,6) : '???'}...</td>
+                            <td class="py-2 text-white font-bold">${t.userName || 'Unknown'} <span class="block text-[9px] font-normal text-gray-500">${t.userEmail || ''}</span></td>
+                            <td class="py-2 text-right text-green-400">GHS ${t.price}</td>
+                        </tr>`;
+                    });
+                    
+                    tableHtml += `</tbody></table>
+                    <div class="mt-2 pt-2 border-t border-gray-700 text-right text-xs font-bold text-white">
+                        Total Verified Revenue: <span class="text-green-400 text-sm">GHS ${totalActualRevenue}</span>
+                    </div>`;
+
+                    contentDiv.innerHTML = tableHtml;
+
+                } catch(err) {
+                    console.error(err);
+                    contentDiv.innerHTML = `<div class="text-center text-xs text-red-400 py-2">Error loading data. <br> <span class="text-[9px] opacity-70">Check console for Firestore Index link.</span></div>`;
+                }
+            },
+
 
             async manageJob(id, currentStatus) {
                 const newStatus = prompt(`Update Status (received/printing/delivering/completed):`, currentStatus);
