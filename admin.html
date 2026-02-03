@@ -25,6 +25,9 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* Chat Bubble Animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-enter { animation: fadeIn 0.3s ease-out forwards; }
     </style>
 </head>
 <body class="font-sans antialiased h-screen flex flex-col">
@@ -51,6 +54,7 @@
 
         <div class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0">
             <button onclick="app.switchView('dash')" id="nav-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
+            <button onclick="app.switchView('workspace')" id="nav-workspace" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Workspace 💼</button>
             <button onclick="app.switchView('tickets')" id="nav-tickets" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
             <button onclick="app.switchView('events')" id="nav-events" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
             <button onclick="app.switchView('broadcast')" id="nav-broadcast" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
@@ -58,7 +62,7 @@
             <button onclick="app.switchView('godmode')" id="nav-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse">God Mode ⚡</button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6 bg-gray-900">
+        <div class="flex-1 overflow-y-auto p-6 bg-gray-900 relative">
             
             <div id="view-dash" class="admin-view space-y-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -77,7 +81,31 @@
                 <button onclick="app.flushRequests()" class="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 mt-8">Purge Service Logs 🧹</button>
             </div>
 
-             <div id="view-tickets" class="admin-view hidden space-y-6">
+            <div id="view-workspace" class="admin-view hidden h-full flex flex-col">
+                <div class="flex gap-2 mb-4 overflow-x-auto pb-2 shrink-0">
+                    <button onclick="workspace.enterRoom('general')" id="room-btn-general" class="room-tab px-4 py-2 rounded-full bg-gray-800 border border-gray-600 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-700"># General 📣</button>
+                    <button onclick="workspace.enterRoom('tech')" id="room-btn-tech" class="room-tab px-4 py-2 rounded-full bg-gray-800 border border-gray-600 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-700"># Tech Ops 💻</button>
+                    <button onclick="workspace.enterRoom('ceo')" id="room-btn-ceo" class="room-tab px-4 py-2 rounded-full bg-gray-900 border border-yellow-600/50 text-xs font-bold uppercase tracking-wider text-yellow-500 hover:bg-yellow-900/20"><i class="fa-solid fa-lock mr-1"></i> CEO Suite 🦁</button>
+                </div>
+                
+                <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 flex flex-col overflow-hidden">
+                    <div class="p-3 bg-gray-700/50 border-b border-gray-700 flex justify-between items-center">
+                        <span id="current-room-name" class="font-bold text-gray-300 uppercase text-sm">Select a room</span>
+                        <span class="text-[10px] text-gray-500">End-to-End Encrypted</span>
+                    </div>
+                    
+                    <div id="workspace-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-900/50">
+                        <div class="text-center text-gray-500 text-sm mt-10">Select a room above to start collaborating.</div>
+                    </div>
+
+                    <div class="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
+                        <input id="workspace-input" type="text" placeholder="Type a note..." class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white focus:border-blueAccent outline-none" onkeypress="if(event.key === 'Enter') workspace.sendMessage()">
+                        <button onclick="workspace.sendMessage()" class="bg-blueAccent text-white px-4 py-2 rounded-lg hover:bg-blue-600"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-tickets" class="admin-view hidden space-y-6">
                 <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales Ledger</h2>
                 <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
                     <table class="w-full text-left text-sm text-gray-400">
@@ -148,7 +176,7 @@
                </div>
             </div>
 
-             <div id="view-godmode" class="admin-view hidden space-y-8">
+            <div id="view-godmode" class="admin-view hidden space-y-8">
                 <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
                     <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order 📜</h2>
                     <input id="vip-title" type="text" placeholder="Subject of Order" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
@@ -191,6 +219,8 @@
         const db = getFirestore(appInstance);
         const auth = getAuth(appInstance);
         let currentUser = null;
+        let currentWorkspaceUnsub = null;
+        let activeRoomId = null;
 
         window.authManager = {
             async login() {
@@ -215,6 +245,7 @@
                             }
                             // Authorized
                             currentUser = userData;
+                            currentUser.email = user.email; // Ensure email is attached
                             document.getElementById('auth-overlay').classList.add('hidden');
                             document.getElementById('app-content').classList.remove('hidden');
                             document.getElementById('admin-name-display').innerText = `Welcome, ${userData.name}`;
@@ -237,7 +268,7 @@
                 document.getElementById(`view-${view}`).classList.remove('hidden');
                 
                 // Update Nav Tabs
-                const views = ['dash', 'tickets', 'events', 'broadcast', 'users', 'godmode'];
+                const views = ['dash', 'workspace', 'tickets', 'events', 'broadcast', 'users', 'godmode'];
                 views.forEach(v => {
                     const btn = document.getElementById(`nav-${v}`);
                     if(!btn) return;
@@ -252,6 +283,7 @@
                 });
 
                 if(view === 'tickets') this.fetchTickets();
+                if(view === 'workspace' && !activeRoomId) window.workspace.enterRoom('general');
             },
 
             async startListeners() {
@@ -342,7 +374,7 @@
                 if (!title || !date) return alert("Missing details!");
                 let image = null;
                 if (fileInput.files.length > 0) {
-                     image = await this.compressImage(fileInput.files[0]);
+                      image = await this.compressImage(fileInput.files[0]);
                 }
 
                 await addDoc(collection(db, "events"), {
@@ -385,7 +417,7 @@
 
             async flushRequests() {
                 if(!confirm("Delete ALL service logs?")) return;
-                const q = query(collection(db, "print_orders")); // Adjusted to clear print orders
+                const q = query(collection(db, "print_orders"));
                 const snap = await getDocs(q);
                 snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
                 alert("Cleaned 🧹");
@@ -421,6 +453,69 @@
                             resolve(canvas.toDataURL('image/jpeg', 0.6));
                         };
                     };
+                });
+            }
+        };
+
+        // WORKSPACE MODULE
+        window.workspace = {
+            async enterRoom(roomName) {
+                if(roomName === 'ceo' && currentUser.email !== 'pwavwef@gmail.com') {
+                    return alert("⛔ RESTRICTED: CEO Access Only.");
+                }
+
+                // UI Updates
+                activeRoomId = roomName;
+                document.querySelectorAll('.room-tab').forEach(b => b.classList.remove('ring-2', 'ring-white', 'scale-105'));
+                document.getElementById(`room-btn-${roomName}`).classList.add('ring-2', 'ring-white', 'scale-105');
+                
+                const labels = { 'general': 'General Channel', 'tech': 'Tech Operations', 'ceo': 'CEO Office' };
+                document.getElementById('current-room-name').innerText = labels[roomName];
+                
+                // Clear old listener
+                if(currentWorkspaceUnsub) currentWorkspaceUnsub();
+
+                // Listen to room messages
+                const q = query(collection(db, "workspace_messages"), where("room", "==", roomName), orderBy("timestamp", "asc"));
+                currentWorkspaceUnsub = onSnapshot(q, (snap) => {
+                    const container = document.getElementById('workspace-messages');
+                    container.innerHTML = '';
+                    if(snap.empty) {
+                        container.innerHTML = `<div class="text-center text-gray-500 text-xs mt-10">Room is empty. Be the first!</div>`;
+                    }
+                    snap.forEach(d => {
+                        const msg = d.data();
+                        const isMe = msg.email === currentUser.email;
+                        const align = isMe ? 'ml-auto bg-blueAccent/20 border-blue-500/50' : 'mr-auto bg-gray-700/50 border-gray-600';
+                        const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        
+                        container.innerHTML += `
+                            <div class="msg-enter max-w-[85%] ${align} p-3 rounded-xl border mb-2">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <span class="text-[10px] font-bold ${isMe ? 'text-blue-300' : 'text-orange-300'}">${msg.sender}</span>
+                                    <span class="text-[9px] text-gray-500 ml-2">${time}</span>
+                                </div>
+                                <p class="text-sm text-gray-200 leading-relaxed">${msg.text}</p>
+                            </div>
+                        `;
+                    });
+                    // Auto scroll to bottom
+                    container.scrollTop = container.scrollHeight;
+                });
+            },
+
+            async sendMessage() {
+                const input = document.getElementById('workspace-input');
+                const text = input.value.trim();
+                if(!text || !activeRoomId) return;
+
+                input.value = ''; // Instant clear
+                await addDoc(collection(db, "workspace_messages"), {
+                    room: activeRoomId,
+                    text: text,
+                    sender: currentUser.name,
+                    email: currentUser.email,
+                    timestamp: Date.now()
                 });
             }
         };
