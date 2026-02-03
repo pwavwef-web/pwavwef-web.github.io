@@ -243,7 +243,7 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
 // ... inside your code after initializing firestore ...
-const storage = getStorage(appInstance);
+
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -257,6 +257,7 @@ const storage = getStorage(appInstance);
         const appInstance = initializeApp(firebaseConfig);
         const db = getFirestore(appInstance);
         const auth = getAuth(appInstance);
+        const storage = getStorage(appInstance);
         let currentUser = null;
         let currentWorkspaceUnsub = null;
         let activeRoomId = null;
