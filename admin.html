@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AZ Learner - Admin HQ 👑</title>
+    <title>AZ Learner - Admin Command 👑</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -14,7 +14,11 @@
                 extend: {
                     fontFamily: { sans: ['Roboto', 'sans-serif'] },
                     colors: {
-                        blueAccent: '#448AFF', orangeAccent: '#FFAB40', darkBg: '#1a1a1a', darkCard: '#2d2d2d'
+                        blueAccent: '#448AFF', 
+                        orangeAccent: '#FFAB40', 
+                        darkBg: '#1a1a1a', 
+                        darkCard: '#2d2d2d',
+                        success: '#00E676'
                     }
                 }
             }
@@ -25,225 +29,244 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* Chat Bubble Animation */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-enter { animation: fadeIn 0.3s ease-out forwards; }
+        .chat-bubble { max-width: 75%; }
     </style>
 </head>
 <body class="font-sans antialiased h-screen flex flex-col">
 
     <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
-            <h1 class="text-3xl font-bold text-orangeAccent mb-2">Admin HQ 👑</h1>
-            <p class="text-sm text-gray-400 mb-6">Restricted Access</p>
-            <input type="email" id="login-email" placeholder="Admin Email" class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent">
-            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent">
-            <button onclick="authManager.login()" class="w-full py-3 bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Enter HQ 🔐</button>
+            <h1 class="text-3xl font-black text-orangeAccent mb-2 tracking-tighter">Admin HQ 👑</h1>
+            <p class="text-sm text-gray-400 mb-6">Restricted Access • Clearance Required</p>
+            <input type="email" id="login-email" placeholder="Admin Email" class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="authManager.login()" class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Initialize Session 🔐</button>
             <p id="login-msg" class="text-red-500 text-xs h-4"></p>
         </div>
     </div>
 
     <div id="app-content" class="hidden flex-1 flex flex-col h-full">
-        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0">
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
             <div>
-                <h1 class="text-2xl font-bold text-orangeAccent">AZ Admin HQ</h1>
-                <p id="admin-name-display" class="text-xs text-gray-400">Welcome, Admin</p>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">AZ COMMAND</h1>
+                <p id="admin-name-display" class="text-xs text-gray-400 font-mono">System Standby...</p>
             </div>
-            <button onclick="authManager.logout()" class="bg-gray-700 hover:bg-red-900 text-white px-4 py-2 rounded-lg text-xs font-bold transition">Log Out <i class="fa-solid fa-right-from-bracket ml-2"></i></button>
+            <button onclick="authManager.logout()" class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">Abort <i class="fa-solid fa-power-off"></i></button>
         </div>
 
-        <div class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0">
-            <button onclick="app.switchView('dash')" id="nav-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
-            <button onclick="app.switchView('workspace')" id="nav-workspace" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Workspace 💼</button>
-            <button onclick="app.switchView('tickets')" id="nav-tickets" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
-            <button onclick="app.switchView('events')" id="nav-events" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
-            <button onclick="app.switchView('broadcast')" id="nav-broadcast" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
-            <button onclick="app.switchView('users')" id="nav-users" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Users 👥</button>
-            <button onclick="app.switchView('godmode')" id="nav-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse">God Mode ⚡</button>
-            <button onclick="app.switchView('tasks')" id="nav-tasks" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tasks ✅</button>
-<button onclick="app.switchView('files')" id="nav-files" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Files 📂</button>
-<button onclick="app.switchView('logs')" id="nav-logs" class="px-4 py-2 rounded-lg bg-gray-700 text-gray-400 font-bold text-sm whitespace-nowrap transition">Logs 📜</button>
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0 items-center">
+            <button onclick="app.switchView('dash')" id="nav-dash" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-chart-pie mr-2"></i>Dash</button>
+            <button onclick="app.switchView('workspace')" id="nav-workspace" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-blue-500/30 text-blue-400"><i class="fa-solid fa-briefcase mr-2"></i>Ops Center</button>
+            <button onclick="app.switchView('tickets')" id="nav-tickets" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-ticket mr-2"></i>Sales</button>
+            <button onclick="app.switchView('events')" id="nav-events" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-calendar mr-2"></i>Events</button>
+            <button onclick="app.switchView('broadcast')" id="nav-broadcast" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-bullhorn mr-2"></i>Comms</button>
+            <button onclick="app.switchView('users')" id="nav-users" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-users mr-2"></i>DB</button>
+            <button onclick="app.switchView('godmode')" id="nav-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i class="fa-solid fa-bolt mr-2"></i>God Mode</button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6 bg-gray-900 relative">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f1115]">
             
             <div id="view-dash" class="admin-view space-y-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Total Users</h3><p class="text-3xl font-bold" id="stat-users">0</p></div>
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Service Reqs</h3><p class="text-3xl font-bold" id="stat-reqs">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg"><h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Users</h3><p class="text-3xl font-black text-white" id="stat-users">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg"><h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Pending Reqs</h3><p class="text-3xl font-black text-blueAccent" id="stat-reqs">0</p></div>
                 </div>
                 <div>
-                    <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i class="fa-solid fa-print"></i> Live Print/Service Queue</h2>
-                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                    <h2 class="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2"><i class="fa-solid fa-print text-blueAccent"></i> Service Queue</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
                         <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
-                            <tbody id="list-print-jobs" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading jobs...</td></tr></tbody>
+                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px] tracking-wider"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Ops</th></tr></thead>
+                            <tbody id="list-print-jobs" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Scanning queue...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
-                <button onclick="app.flushRequests()" class="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 mt-8">Purge Service Logs 🧹</button>
+                <button onclick="app.flushRequests()" class="w-full bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-900/50 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 mt-8 text-sm uppercase tracking-wide">Purge Logs 🧹</button>
             </div>
 
             <div id="view-workspace" class="admin-view hidden h-full flex flex-col">
-                <div class="flex gap-2 mb-4 overflow-x-auto pb-2 shrink-0">
-                    <button onclick="workspace.enterRoom('general')" id="room-btn-general" class="room-tab px-4 py-2 rounded-full bg-gray-800 border border-gray-600 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-700"># General 📣</button>
-                    <button onclick="workspace.enterRoom('tech')" id="room-btn-tech" class="room-tab px-4 py-2 rounded-full bg-gray-800 border border-gray-600 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-700"># Tech Ops 💻</button>
-                    <button onclick="workspace.enterRoom('ceo')" id="room-btn-ceo" class="room-tab px-4 py-2 rounded-full bg-gray-900 border border-yellow-600/50 text-xs font-bold uppercase tracking-wider text-yellow-500 hover:bg-yellow-900/20"><i class="fa-solid fa-lock mr-1"></i> CEO Suite 🦁</button>
+                <div class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700">
+                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white">My Zone</button>
+                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">The Hub 💬</button>
+                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Mission Board 📌</button>
+                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Vault 📂</button>
                 </div>
-                
-                <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 flex flex-col overflow-hidden">
-                    <div class="p-3 bg-gray-700/50 border-b border-gray-700 flex justify-between items-center">
-                        <span id="current-room-name" class="font-bold text-gray-300 uppercase text-sm">Select a room</span>
-                        <span class="text-[10px] text-gray-500">End-to-End Encrypted</span>
+
+                <div id="ws-view-personal" class="ws-view flex-1 space-y-4">
+                    <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
+                        <h2 class="text-xl font-bold text-blue-300 mb-1">Private Protocol</h2>
+                        <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.</p>
+                        <div class="flex gap-2 mb-4">
+                            <input id="personal-task-input" type="text" placeholder="Add a new directive..." class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
+                            <button onclick="app.addPersonalTask()" class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <ul id="personal-task-list" class="space-y-2"></ul>
+                    </div>
+                </div>
+
+                <div id="ws-view-chat" class="ws-view hidden flex-1 flex flex-col h-[calc(100vh-220px)]">
+                    <div id="chat-container" class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
+                        <div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>
+                    </div>
+                    <form onsubmit="app.sendChatMessage(event)" class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2">
+                        <input id="chat-input" type="text" placeholder="Broadcast to team..." class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
+                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                </div>
+
+                <div id="ws-view-board" class="ws-view hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-gray-300">Team Directives</h2>
+                        <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')" class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i class="fa-solid fa-plus"></i> New Task</button>
                     </div>
                     
-                    <div id="workspace-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-900/50">
-                        <div class="text-center text-gray-500 text-sm mt-10">Select a room above to start collaborating.</div>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
+                            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span></h3>
+                            <div id="board-todo" class="space-y-2 min-h-[100px]"></div>
+                        </div>
+                        <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20">
+                            <h3 class="text-xs font-bold text-blue-400 uppercase mb-3 flex justify-between">In Progress <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span></h3>
+                            <div id="board-prog" class="space-y-2 min-h-[100px]"></div>
+                        </div>
+                        <div class="bg-green-900/10 p-3 rounded-xl border border-green-500/20">
+                            <h3 class="text-xs font-bold text-green-400 uppercase mb-3 flex justify-between">Completed <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span></h3>
+                            <div id="board-done" class="space-y-2 min-h-[100px]"></div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
-                        <input id="workspace-input" type="text" placeholder="Type a note..." class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white focus:border-blueAccent outline-none" onkeypress="if(event.key === 'Enter') workspace.sendMessage()">
-                        <button onclick="workspace.sendMessage()" class="bg-blueAccent text-white px-4 py-2 rounded-lg hover:bg-blue-600"><i class="fa-solid fa-paper-plane"></i></button>
+                <div id="ws-view-vault" class="ws-view hidden space-y-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i> Digital Repository</h2>
+                        <div class="flex gap-2 items-center mb-6">
+                            <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-import"></i> Upload Artifact
+                                <input type="file" id="vault-upload" class="hidden" onchange="app.uploadToVault(this)">
+                            </label>
+                            <span id="vault-status" class="text-xs text-gray-500 animate-pulse"></span>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
+                                <div class="col-span-2">Filename</div>
+                                <div>Uploader</div>
+                                <div class="text-right">Action</div>
+                            </div>
+                            <div id="vault-list" class="space-y-2 pt-2">
+                                </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div id="view-tickets" class="admin-view hidden space-y-6">
-                <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales Ledger</h2>
-                <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                <h2 class="text-xl font-bold mb-4 text-green-400">Sales Ledger</h2>
+                <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
                     <table class="w-full text-left text-sm text-gray-400">
-                        <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
-                            <tr><th class="px-4 py-3">Code</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Holder</th><th class="px-4 py-3 text-right">Price</th></tr>
-                        </thead>
-                        <tbody id="list-tickets" class="divide-y divide-gray-700">
-                            <tr><td colspan="4" class="p-4 text-center">Loading sales...</td></tr>
-                        </tbody>
+                        <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]"><tr><th class="px-4 py-3">Ref</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Holder</th><th class="px-4 py-3 text-right">GHS</th></tr></thead>
+                        <tbody id="list-tickets" class="divide-y divide-gray-700"><tr><td colspan="4" class="p-4 text-center">Loading ledger...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="view-events" class="admin-view hidden space-y-6">
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                    <h2 class="text-xl font-bold mb-4 text-orangeAccent">Post New Event</h2>
-                    <input id="event-title" type="text" placeholder="Event Name" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 text-orangeAccent">Initiate Event</h2>
+                    <input id="event-title" type="text" placeholder="Event Designation" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
                     <div class="flex gap-2 mb-2">
-                        <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
-                        <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                        <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
                     </div>
                     <div class="flex gap-2 mb-2">
-                        <input id="event-price" type="number" placeholder="Price (GHS) - 0 for Free" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
-                        <input id="event-qty" type="number" placeholder="Total Tickets" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
+                        <input id="event-price" type="number" placeholder="Fee (GHS)" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                        <input id="event-qty" type="number" placeholder="Capacity" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
                     </div>    
-                    <input id="event-venue" type="text" placeholder="Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
-                    <textarea id="event-desc" placeholder="Details..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20"></textarea>
+                    <input id="event-venue" type="text" placeholder="Coordinates/Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                    <textarea id="event-desc" placeholder="Briefing..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20 focus:border-orangeAccent"></textarea>
                     <div class="flex items-center gap-2 mb-4">
-                         <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Flyer Image <input type="file" id="event-file" accept="image/*" class="hidden" onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
-                         <span id="event-file-name" class="text-xs text-gray-400">No file selected</span>
+                         <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Upload Visual <input type="file" id="event-file" accept="image/*" class="hidden" onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
+                         <span id="event-file-name" class="text-xs text-gray-400">No data selected</span>
                     </div>
-                    <button onclick="app.saveEvent()" class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110">Post Event 📅</button>
+                    <button onclick="app.saveEvent()" class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110 shadow-lg shadow-orange-500/20">Launch Event 🚀</button>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Active Events</h3>
+                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Active Operations</h3>
                     <div id="list-active-events" class="space-y-2"></div>
                 </div>
             </div>
 
             <div id="view-broadcast" class="admin-view hidden space-y-6">
-                <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700">
-                    <h2 class="text-xl font-bold mb-4">Global Announcement</h2>
-                    <input id="broadcast-title" type="text" placeholder="Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
-                    <textarea id="broadcast-body" placeholder="Message content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
-                    <div class="flex gap-2">
-                        <button onclick="app.sendBroadcast()" class="bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 flex-1 shadow-lg">Send Blast 🚀</button>
-                    </div>
+                <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4">Global Network Broadcast</h2>
+                    <input id="broadcast-title" type="text" placeholder="Headline" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
+                    <textarea id="broadcast-body" placeholder="Transmission content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
+                    <button onclick="app.sendBroadcast()" class="w-full bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 shadow-lg shadow-blue-500/30">Transmit 📡</button>
                 </div>
                 <div id="list-broadcasts" class="space-y-2"></div>
             </div>
 
             <div id="view-users" class="admin-view hidden space-y-8">
                 <div>
-                    <h2 class="text-xl font-bold mb-4">User Database</h2>
-                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                    <h2 class="text-xl font-bold mb-4">Personnel Database</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
                         <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Role</th></tr></thead>
+                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]"><tr><th class="px-4 py-3">Identity</th><th class="px-4 py-3">Comms</th><th class="px-4 py-3">Clearance</th></tr></thead>
                             <tbody id="list-users" class="divide-y divide-gray-700"></tbody>
                         </table>
                     </div>
                 </div>
-                <div class="bg-red-900/20 border border-red-500/50 p-6 rounded-xl">
-                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2"><i class="fa-solid fa-gavel"></i> The Ban Hammer</h3>
+                <div class="bg-red-900/10 border border-red-500/30 p-6 rounded-xl">
+                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest"><i class="fa-solid fa-gavel"></i> Disciplinary Action</h3>
                     <div class="flex gap-2">
-                      <input id="ban-email-input" type="email" placeholder="Bad actor's email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                      <input id="ban-email-input" type="email" placeholder="Target Email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
                       <button onclick="app.banUser()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
                     </div>
                </div>
             </div>
 
             <div id="view-godmode" class="admin-view hidden space-y-8">
-                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
-                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order 📜</h2>
-                    <input id="vip-title" type="text" placeholder="Subject of Order" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
-                    <textarea id="vip-body" placeholder="Your message to the people..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
+                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order</h2>
+                    <input id="vip-title" type="text" placeholder="Subject" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Direct command..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
                     <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish Gold Alert 🔔</button>
                 </div>
                 <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
-                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">Admin Circle ⭕</h2>
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">Inner Circle ⭕</h2>
                     <div class="flex gap-2 mb-4">
-                        <input id="admin-email-input" type="email" placeholder="Email to promote..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <input id="admin-email-input" type="email" placeholder="Promote Email..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
                         <button onclick="app.addAdminByEmail()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
                     </div>
                     <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
                         <table class="w-full text-left text-sm text-gray-300">
-                            <thead class="bg-purple-900/30 text-xs uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
+                            <thead class="bg-purple-900/30 text-[10px] uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
                             <tbody id="list-admins" class="divide-y divide-purple-900/20"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <div id="view-tasks" class="admin-view hidden space-y-6">
-    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        <h2 class="text-xl font-bold mb-4 text-blueAccent">Assign New Task</h2>
-        <input id="task-title" type="text" placeholder="Task description..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white">
-        <select id="task-assignee" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white outline-none">
-            <option value="All Admins">All Admins</option>
-        </select>
-        <button onclick="taskManager.addTask()" class="w-full bg-blueAccent text-white font-bold py-3 rounded-lg hover:brightness-110">Create Task ✅</button>
-    </div>
-    <div id="list-tasks" class="space-y-3"></div>
-</div>
-
-<div id="view-files" class="admin-view hidden space-y-6">
-    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        <h2 class="text-xl font-bold mb-4 text-orangeAccent">Cloud Drive</h2>
-        <div class="flex items-center gap-2">
-            <label class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-center py-3 rounded-lg cursor-pointer font-bold">
-                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Upload Document
-                <input type="file" id="file-upload-input" class="hidden" onchange="fileManager.upload(this)">
-            </label>
         </div>
     </div>
-    <div id="list-files" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-</div>
 
-<div id="view-logs" class="admin-view hidden">
-    <h2 class="text-xl font-bold mb-4 text-red-400">System Activity Logs</h2>
-    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
-        <div id="list-logs" class="divide-y divide-gray-700 max-h-[500px] overflow-y-auto text-xs p-4 space-y-2">
+    <div id="new-task-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-md rounded-xl border border-gray-600 p-6">
+            <h3 class="text-xl font-bold text-white mb-4">Assign Directive</h3>
+            <input id="team-task-title" type="text" placeholder="Task Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white">
+            <select id="team-task-assignee" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white">
+                <option value="Unassigned">Anyone</option>
+                </select>
+            <div class="flex gap-2">
+                <button onclick="app.addTeamTask()" class="flex-1 bg-blueAccent text-white py-2 rounded font-bold">Deploy</button>
+                <button onclick="document.getElementById('new-task-modal').classList.add('hidden')" class="px-4 py-2 rounded text-gray-400 font-bold">Cancel</button>
             </div>
-    </div>
-</div>
-
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit, collectionGroup } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
-// ... inside your code after initializing firestore ...
-
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -259,14 +282,13 @@
         const auth = getAuth(appInstance);
         const storage = getStorage(appInstance);
         let currentUser = null;
-        let currentWorkspaceUnsub = null;
-        let activeRoomId = null;
+        let adminList = [];
 
         window.authManager = {
             async login() {
                 try {
                     await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
-                } catch (err) { document.getElementById('login-msg').innerText = err.message; }
+                } catch (err) { document.getElementById('login-msg').innerText = "Auth Failed: " + err.message; }
             },
             logout() { signOut(auth); }
         };
@@ -279,16 +301,14 @@
                         if(userDoc.exists()) {
                             const userData = userDoc.data();
                             if(userData.role !== 'admin') {
-                                alert("ACCESS DENIED. You are not an Admin.");
+                                alert("SECURITY ALERT: Unauthorized access attempt logged.");
                                 signOut(auth);
                                 return;
                             }
-                            // Authorized
-                            currentUser = userData;
-                            currentUser.email = user.email; // Ensure email is attached
+                            currentUser = { ...userData, uid: user.uid };
                             document.getElementById('auth-overlay').classList.add('hidden');
                             document.getElementById('app-content').classList.remove('hidden');
-                            document.getElementById('admin-name-display').innerText = `Welcome, ${userData.name}`;
+                            document.getElementById('admin-name-display').innerText = `Officer ${userData.name}`;
                             
                             if(user.email === "pwavwef@gmail.com") {
                                 document.getElementById('nav-godmode').classList.remove('hidden');
@@ -307,143 +327,272 @@
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`view-${view}`).classList.remove('hidden');
                 
-                // Update Nav Tabs
-                const views = ['dash', 'workspace', 'tickets', 'events', 'broadcast', 'users', 'godmode', 'tasks', 'files', 'logs'];
-                views.forEach(v => {
-                    const btn = document.getElementById(`nav-${v}`);
-                    if(!btn) return;
-                    if(v === view) {
-                        btn.classList.remove('bg-gray-700', 'text-gray-400');
+                // Style Nav
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('bg-blueAccent', 'text-white', 'bg-gray-700', 'text-gray-400');
+                    if(btn.id === `nav-${view}`) {
                         btn.classList.add('bg-blueAccent', 'text-white');
-                        if(v === 'godmode') btn.classList.add('bg-purple-600', 'border-purple-400');
                     } else {
                         btn.classList.add('bg-gray-700', 'text-gray-400');
-                        btn.classList.remove('bg-blueAccent', 'text-white', 'bg-purple-600');
                     }
                 });
 
                 if(view === 'tickets') this.fetchTickets();
-                if(view === 'workspace' && !activeRoomId) window.workspace.enterRoom('general');
+                if(view === 'workspace') this.switchWorkspaceTab('personal'); // Default sub-tab
             },
 
-            async startListeners() {
-                // Tasks Listener
-onSnapshot(query(collection(db, "tasks"), orderBy("timestamp", "desc")), (snap) => {
-    let html = '';
-    snap.forEach(d => {
-        const t = d.data();
-        const isDone = t.status === 'completed';
-        html += `
-            <div class="bg-gray-800 p-4 rounded-xl border ${isDone ? 'border-green-900 opacity-50' : 'border-gray-700'} flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <button onclick="taskManager.toggleTask('${d.id}', '${t.status}')" class="w-6 h-6 rounded-full border-2 border-blueAccent flex items-center justify-center">
-                        ${isDone ? '<i class="fa-solid fa-check text-xs text-blueAccent"></i>' : ''}
-                    </button>
-                    <span class="${isDone ? 'line-through text-gray-500' : 'text-white'} font-medium">${t.title}</span>
-                </div>
-                <button onclick="taskManager.deleteTask('${d.id}')" class="text-red-500 text-xs"><i class="fa-solid fa-trash"></i></button>
-            </div>`;
-    });
-    document.getElementById('list-tasks').innerHTML = html || '<p class="text-center text-gray-500">No tasks found.</p>';
-});
+            // WORKSPACE LOGIC
+            switchWorkspaceTab(tab) {
+                document.querySelectorAll('.ws-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`ws-view-${tab}`).classList.remove('hidden');
 
-// Files Listener
-onSnapshot(query(collection(db, "files"), orderBy("timestamp", "desc")), (snap) => {
-    let html = '';
-    snap.forEach(d => {
-        const f = d.data();
-        html += `
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-2">
-                <div class="flex justify-between items-start">
-                    <i class="fa-solid fa-file-lines text-2xl text-blue-400"></i>
-                    <button onclick="fileManager.deleteFile('${d.id}')" class="text-red-500 text-xs"><i class="fa-solid fa-x"></i></button>
-                </div>
-                <p class="text-sm font-bold truncate">${f.name}</p>
-                <p class="text-[10px] text-gray-500">${f.size} • By ${f.uploadedBy}</p>
-                <a href="${f.url}" target="_blank" class="mt-2 text-center bg-gray-700 py-1 rounded text-xs font-bold hover:bg-gray-600">Download</a>
-            </div>`;
-    });
-    document.getElementById('list-files').innerHTML = html;
-});
-
-// Logs Listener
-onSnapshot(query(collection(db, "activity_logs"), orderBy("timestamp", "desc"), limit(50)), (snap) => {
-    let html = '';
-    snap.forEach(d => {
-        const l = d.data();
-        html += `<div class="py-1"><span class="text-blue-400 font-bold">${l.admin}:</span> <span class="text-gray-300">${l.action}</span> <span class="text-[9px] text-gray-600 float-right">${new Date(l.timestamp).toLocaleTimeString()}</span></div>`;
-    });
-    document.getElementById('list-logs').innerHTML = html;
-});
-                // Users Count & List
-                const usersSnap = await getDocs(query(collection(db, "users"), limit(100)));
-                document.getElementById('stat-users').innerText = usersSnap.size + "+";
-                let userHtml = ''; let adminHtml = '';
-                usersSnap.forEach(doc => {
-                    const u = doc.data();
-                    userHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3">${u.role}</td></tr>`;
-                    if(u.role === 'admin') {
-                        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`;
-                    }
+                document.querySelectorAll('.ws-tab').forEach(btn => {
+                    btn.classList.remove('bg-blueAccent', 'text-white', 'text-gray-400');
+                    if(btn.id === `ws-tab-${tab}`) btn.classList.add('bg-blueAccent', 'text-white');
+                    else btn.classList.add('text-gray-400');
                 });
-                document.getElementById('list-users').innerHTML = userHtml;
-                document.getElementById('list-admins').innerHTML = adminHtml;
 
-                // Service Requests Listener
-                const qReqs = query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50));
-                onSnapshot(qReqs, (snap) => {
+                if(tab === 'chat') this.scrollToChatBottom();
+            },
+
+            async addPersonalTask() {
+                const input = document.getElementById('personal-task-input');
+                if(!input.value.trim()) return;
+                await addDoc(collection(db, `users/${currentUser.uid}/private_tasks`), {
+                    text: input.value, createdAt: serverTimestamp(), done: false
+                });
+                input.value = '';
+            },
+
+            async togglePersonalTask(id, currentStatus) {
+                await updateDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id), { done: !currentStatus });
+            },
+
+            async deletePersonalTask(id) {
+                await deleteDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id));
+            },
+
+            async sendChatMessage(e) {
+                e.preventDefault();
+                const input = document.getElementById('chat-input');
+                if(!input.value.trim()) return;
+                await addDoc(collection(db, "admin_hq_chat"), {
+                    text: input.value, sender: currentUser.name, senderId: currentUser.uid, timestamp: serverTimestamp()
+                });
+                input.value = '';
+            },
+
+            scrollToChatBottom() {
+                const container = document.getElementById('chat-container');
+                container.scrollTop = container.scrollHeight;
+            },
+
+            async addTeamTask() {
+                const title = document.getElementById('team-task-title').value;
+                const assignee = document.getElementById('team-task-assignee').value;
+                if(!title) return;
+                await addDoc(collection(db, "admin_team_tasks"), {
+                    title, assignee, status: 'todo', createdBy: currentUser.name, createdAt: serverTimestamp()
+                });
+                document.getElementById('new-task-modal').classList.add('hidden');
+                document.getElementById('team-task-title').value = '';
+            },
+
+            async moveTeamTask(id, currentStatus) {
+                const next = currentStatus === 'todo' ? 'prog' : (currentStatus === 'prog' ? 'done' : 'todo');
+                await updateDoc(doc(db, "admin_team_tasks", id), { status: next });
+            },
+
+            async deleteTeamTask(id) {
+                if(confirm("Archive this directive?")) await deleteDoc(doc(db, "admin_team_tasks", id));
+            },
+
+            async uploadToVault(input) {
+                const file = input.files[0];
+                if(!file) return;
+                const status = document.getElementById('vault-status');
+                status.innerText = "Encrypting & Uploading...";
+                
+                try {
+                    const storageRef = ref(storage, `admin_vault/${Date.now()}_${file.name}`);
+                    await uploadBytes(storageRef, file);
+                    const url = await getDownloadURL(storageRef);
+                    
+                    await addDoc(collection(db, "admin_vault_files"), {
+                        name: file.name, url, uploader: currentUser.name, size: file.size, timestamp: serverTimestamp(), path: storageRef.fullPath
+                    });
+                    status.innerText = "";
+                    input.value = "";
+                } catch(e) {
+                    status.innerText = "Upload Failed.";
+                    console.error(e);
+                }
+            },
+
+            async deleteVaultFile(id, path) {
+                if(!confirm("Destroy this artifact?")) return;
+                // Delete from Storage then Firestore
+                const storageRef = ref(storage, path);
+                try { await deleteObject(storageRef); } catch(e) { console.log("Storage delete error, cleaning DB anyway"); }
+                await deleteDoc(doc(db, "admin_vault_files", id));
+            },
+
+            startListeners() {
+                // 1. Personal Tasks Listener
+                onSnapshot(query(collection(db, `users/${currentUser.uid}/private_tasks`), orderBy('createdAt', 'desc')), (snap) => {
+                    const list = document.getElementById('personal-task-list');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const t = d.data();
+                        list.innerHTML += `<li class="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700 hover:border-blue-500/50 transition group">
+                            <span class="${t.done ? 'line-through text-gray-600' : 'text-gray-300'} cursor-pointer flex-1" onclick="app.togglePersonalTask('${d.id}', ${t.done})">${t.text}</span>
+                            <button onclick="app.deletePersonalTask('${d.id}')" class="text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                        </li>`;
+                    });
+                });
+
+                // 2. Chat Listener
+                onSnapshot(query(collection(db, "admin_hq_chat"), orderBy('timestamp', 'asc'), limit(50)), (snap) => {
+                    const container = document.getElementById('chat-container');
+                    container.innerHTML = '<div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>';
+                    snap.forEach(d => {
+                        const m = d.data();
+                        const isMe = m.senderId === currentUser.uid;
+                        container.innerHTML += `
+                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2">
+                                <div class="text-[10px] text-gray-500 mb-0.5 ${isMe ? 'text-right' : 'text-left'}">${m.sender}</div>
+                                <div class="px-3 py-2 rounded-lg text-sm ${isMe ? 'bg-blueAccent text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'} max-w-[80%] break-words shadow-sm">
+                                    ${m.text}
+                                </div>
+                            </div>`;
+                    });
+                    this.scrollToChatBottom();
+                });
+
+                // 3. Team Board Listener
+                onSnapshot(query(collection(db, "admin_team_tasks"), orderBy('createdAt', 'desc')), (snap) => {
+                    const todo = document.getElementById('board-todo');
+                    const prog = document.getElementById('board-prog');
+                    const done = document.getElementById('board-done');
+                    todo.innerHTML = ''; prog.innerHTML = ''; done.innerHTML = '';
+                    let cTodo=0, cProg=0, cDone=0;
+
+                    snap.forEach(d => {
+                        const t = d.data();
+                        const card = `
+                            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm relative group hover:-translate-y-1 transition-transform cursor-pointer" onclick="app.moveTeamTask('${d.id}', '${t.status}')">
+                                <p class="text-sm font-bold text-white mb-1">${t.title}</p>
+                                <div class="flex justify-between items-center text-[10px] text-gray-400">
+                                    <span><i class="fa-solid fa-user-tag"></i> ${t.assignee}</span>
+                                    ${t.status === 'done' ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}
+                                </div>
+                                <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                            </div>`;
+                        
+                        if(t.status === 'todo') { todo.innerHTML += card; cTodo++; }
+                        else if(t.status === 'prog') { prog.innerHTML += card; cProg++; }
+                        else { done.innerHTML += card; cDone++; }
+                    });
+                    document.getElementById('count-todo').innerText = cTodo;
+                    document.getElementById('count-prog').innerText = cProg;
+                    document.getElementById('count-done').innerText = cDone;
+                });
+
+                // 4. Vault Listener
+                onSnapshot(query(collection(db, "admin_vault_files"), orderBy('timestamp', 'desc')), (snap) => {
+                    const list = document.getElementById('vault-list');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const f = d.data();
+                        list.innerHTML += `
+                            <div class="grid grid-cols-4 items-center bg-gray-900/50 p-3 rounded border border-gray-700/50 hover:bg-gray-800 transition">
+                                <div class="col-span-2 flex items-center gap-2 overflow-hidden">
+                                    <i class="fa-solid fa-file text-blue-400"></i>
+                                    <a href="${f.url}" target="_blank" class="text-sm text-white truncate hover:underline">${f.name}</a>
+                                </div>
+                                <div class="text-xs text-gray-500">${f.uploader}</div>
+                                <div class="text-right">
+                                    <button onclick="app.deleteVaultFile('${d.id}', '${f.path}')" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>`;
+                    });
+                });
+
+                // --- EXISTING LISTENERS (Users, Reqs, etc) ---
+                
+                // Users & Populate Assignee Dropdown
+                getDocs(query(collection(db, "users"), limit(100))).then(snap => {
+                    const list = document.getElementById('list-users');
+                    const adminListHtml = document.getElementById('list-admins');
+                    const dropdown = document.getElementById('team-task-assignee');
+                    document.getElementById('stat-users').innerText = snap.size + "+";
+                    
+                    let uHtml = ''; let aHtml = ''; let opts = '<option value="Unassigned">Anyone</option>';
+                    
+                    snap.forEach(d => {
+                        const u = d.data();
+                        uHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-gray-300">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3"><span class="bg-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td></tr>`;
+                        
+                        if(u.role === 'admin') {
+                            aHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${d.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button></td></tr>`;
+                            opts += `<option value="${u.name}">${u.name}</option>`;
+                        }
+                    });
+                    list.innerHTML = uHtml;
+                    adminListHtml.innerHTML = aHtml;
+                    dropdown.innerHTML = opts;
+                });
+
+                // Service Req Listener
+                onSnapshot(query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50)), (snap) => {
                     document.getElementById('stat-reqs').innerText = snap.size;
-                    let html = '';
-                    if(snap.empty) html = '<tr><td colspan="3" class="p-4 text-center">No active jobs.</td></tr>';
-                    else {
-                        snap.forEach(doc => {
-                            const job = doc.data();
-                            const unreadIndicator = job.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse">NEW</span>' : '';
-                            html += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white">${job.userName || 'Student'} ${unreadIndicator}<span class="text-xs text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-xs font-bold text-blue-300">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">Update</button></td></tr>`;
-                        });
-                    }
-                    document.getElementById('list-print-jobs').innerHTML = html;
+                    const list = document.getElementById('list-print-jobs');
+                    list.innerHTML = '';
+                    if(snap.empty) list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs">Queue Clear.</td></tr>';
+                    snap.forEach(doc => {
+                        const job = doc.data();
+                        const isNew = job.hasUnread ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 animate-pulse">NEW</span>' : '';
+                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white text-sm">${job.userName || 'Student'} ${isNew}<span class="text-[10px] text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-[10px] font-bold text-blue-300 tracking-wide">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded font-bold transition">UPDATE</button></td></tr>`;
+                    });
                 });
 
-                // Events Listener
-                const qEvents = query(collection(db, "events"), orderBy("timestamp", "desc"));
-                onSnapshot(qEvents, (snap) => {
+                // Events
+                onSnapshot(query(collection(db, "events"), orderBy("timestamp", "desc")), (snap) => {
                     const list = document.getElementById('list-active-events');
                     list.innerHTML = '';
                     snap.forEach(d => {
                         const ev = d.data();
-                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><div class="flex items-center gap-3"><img src="${ev.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-xs text-gray-400">${ev.date} • ${ev.ticketsSold}/${ev.totalTickets} Sold</p></div></div><button onclick="app.deleteEvent('${d.id}')" class="text-red-400 text-xs font-bold hover:text-red-300">DELETE</button></div>`;
+                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><div class="flex items-center gap-3"><img src="${ev.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover border border-gray-600"><div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-[10px] text-gray-400">${ev.date} • <span class="text-orangeAccent">${ev.ticketsSold} Sold</span></p></div></div><button onclick="app.deleteEvent('${d.id}')" class="text-red-500 text-[10px] font-bold border border-red-900/50 px-2 py-1 rounded hover:bg-red-900/20">DELETE</button></div>`;
                     });
                 });
 
-                // Broadcast Listener
-                const qBroadcast = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"));
-                onSnapshot(qBroadcast, (snap) => {
+                // Broadcasts
+                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
                     const list = document.getElementById('list-broadcasts');
                     list.innerHTML = '';
                     snap.forEach(d => {
                         const b = d.data();
-                        list.innerHTML += `<div class="bg-gray-800 p-2 rounded flex justify-between items-center"><span class="truncate text-sm w-1/2">${b.title}</span><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs">Delete</button></div>`;
+                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><span class="truncate text-sm w-2/3 text-gray-300 font-bold">${b.title}</span><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs hover:text-white transition">Delete</button></div>`;
                     });
                 });
             },
 
             fetchTickets() {
                 const list = document.getElementById('list-tickets');
-                list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>';
+                list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Syncing...</td></tr>';
                 const q = query(collectionGroup(db, 'tickets'), orderBy('purchaseDate', 'desc'), limit(50));
                 onSnapshot(q, (snap) => {
                     list.innerHTML = '';
-                    if(snap.empty) { list.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No tickets sold.</td></tr>'; return; }
+                    if(snap.empty) { list.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-xs text-gray-500">No records found.</td></tr>'; return; }
                     snap.forEach(d => {
                         const t = d.data();
-                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-mono font-bold text-yellow-400">${t.ticketId}</td><td class="px-4 py-3 truncate max-w-[150px]">${t.eventTitle}</td><td class="px-4 py-3 text-xs"><div class="font-bold text-white">${t.userName || 'Unknown'}</div><div class="text-gray-500">${new Date(t.purchaseDate).toLocaleDateString()}</div></td><td class="px-4 py-3 text-right font-bold">GHS ${t.price}</td></tr>`;
+                        list.innerHTML += `<tr class="border-b border-gray-700 hover:bg-white/5 transition"><td class="px-4 py-3 font-mono text-xs font-bold text-yellow-500">${t.ticketId.substring(0,8)}...</td><td class="px-4 py-3 truncate max-w-[100px] text-xs">${t.eventTitle}</td><td class="px-4 py-3 text-xs"><div class="font-bold text-white">${t.userName || 'Unknown'}</div><div class="text-gray-500 text-[10px]">${new Date(t.purchaseDate).toLocaleDateString()}</div></td><td class="px-4 py-3 text-right font-bold text-green-400 text-sm">${t.price}</td></tr>`;
                     });
                 });
             },
 
             async manageJob(id, currentStatus) {
-                const newStatus = prompt(`Change status from '${currentStatus}' to (received/printing/delivering/completed):`, currentStatus);
+                const newStatus = prompt(`Update Status (received/printing/delivering/completed):`, currentStatus);
                 if(newStatus && newStatus !== currentStatus) {
                     await updateDoc(doc(db, "print_orders", id), { status: newStatus.toLowerCase(), lastUpdated: Date.now() });
                 }
@@ -459,38 +608,38 @@ onSnapshot(query(collection(db, "activity_logs"), orderBy("timestamp", "desc"), 
                 const qty = document.getElementById('event-qty').value || "0";
                 const fileInput = document.getElementById('event-file');
 
-                if (!title || !date) return alert("Missing details!");
+                if (!title || !date) return alert("Missing mission parameters.");
                 let image = null;
                 if (fileInput.files.length > 0) {
-                      image = await this.compressImage(fileInput.files[0]);
+                     image = await this.compressImage(fileInput.files[0]);
                 }
 
                 await addDoc(collection(db, "events"), {
                     title, date, time, venue, description: desc, image,
                     price: parseFloat(price), totalTickets: parseInt(qty), ticketsSold: 0, rsvps: [], timestamp: Date.now()
                 });
-                alert("Event Posted! 🎉");
+                alert("Event Launched Successfully 🚀");
                 document.getElementById('event-title').value = '';
             },
 
-            async deleteEvent(id) { if(confirm("Delete event?")) await deleteDoc(doc(db, "events", id)); },
+            async deleteEvent(id) { if(confirm("Confirm Event Deletion?")) await deleteDoc(doc(db, "events", id)); },
             
             async sendBroadcast() {
                 const title = document.getElementById('broadcast-title').value;
                 const body = document.getElementById('broadcast-body').value;
                 if(!title) return;
                 await addDoc(collection(db, "global_announcements"), { title, body, timestamp: Date.now() });
-                alert("Sent!");
+                alert("Signal Transmitted.");
                 document.getElementById('broadcast-title').value = '';
                 document.getElementById('broadcast-body').value = '';
             },
-            async deleteBroadcast(id) { if(confirm("Delete announcement?")) await deleteDoc(doc(db, "global_announcements", id)); },
+            async deleteBroadcast(id) { if(confirm("Retract Signal?")) await deleteDoc(doc(db, "global_announcements", id)); },
 
             async sendVIPBroadcast() {
                 const title = document.getElementById('vip-title').value;
                 const body = document.getElementById('vip-body').value;
                 await addDoc(collection(db, "global_announcements"), { title, body, isVIP: true, timestamp: Date.now() });
-                alert("VIP Order Published 📜");
+                alert("Executive Order Published 📜");
             },
 
             async banUser() {
@@ -498,17 +647,17 @@ onSnapshot(query(collection(db, "activity_logs"), orderBy("timestamp", "desc"), 
                 if(!email) return;
                 const q = query(collection(db, "users"), where("email", "==", email));
                 const snap = await getDocs(q);
-                if(snap.empty) return alert("User not found.");
+                if(snap.empty) return alert("Target not found in DB.");
                 snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
-                alert("User Banned 🔨");
+                alert("Hammer Dropped 🔨");
             },
 
             async flushRequests() {
-                if(!confirm("Delete ALL service logs?")) return;
-                const q = query(collection(db, "print_orders"));
+                if(!confirm("Warning: This will wipe all service logs. Proceed?")) return;
+                const q = query(collection(db, "print_orders")); 
                 const snap = await getDocs(q);
                 snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
-                alert("Cleaned 🧹");
+                alert("Logs Purged.");
             },
 
             async addAdminByEmail() { 
@@ -518,11 +667,11 @@ onSnapshot(query(collection(db, "activity_logs"), orderBy("timestamp", "desc"), 
                 const snap = await getDocs(q); 
                 if(snap.empty) { alert("User not found!"); return; } 
                 snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); 
-                alert(`Promoted ${email}`); 
+                alert(`Promoted ${email} to Command.`); 
             },
             
             async toggleUserRole(uid, currentRole) { 
-                if(confirm(`Change role from ${currentRole}?`)) { 
+                if(confirm(`Revoke admin status for this user?`)) { 
                     const newRole = currentRole === 'admin' ? 'student' : 'admin'; 
                     await updateDoc(doc(db, "users", uid), { role: newRole }); 
                 } 
@@ -545,124 +694,7 @@ onSnapshot(query(collection(db, "activity_logs"), orderBy("timestamp", "desc"), 
             }
         };
 
-        // WORKSPACE MODULE
-        window.workspace = {
-            async enterRoom(roomName) {
-                if(roomName === 'ceo' && currentUser.email !== 'pwavwef@gmail.com') {
-                    return alert("⛔ RESTRICTED: CEO Access Only.");
-                }
-
-                // UI Updates
-                activeRoomId = roomName;
-                document.querySelectorAll('.room-tab').forEach(b => b.classList.remove('ring-2', 'ring-white', 'scale-105'));
-                document.getElementById(`room-btn-${roomName}`).classList.add('ring-2', 'ring-white', 'scale-105');
-                
-                const labels = { 'general': 'General Channel', 'tech': 'Tech Operations', 'ceo': 'CEO Office' };
-                document.getElementById('current-room-name').innerText = labels[roomName];
-                
-                // Clear old listener
-                if(currentWorkspaceUnsub) currentWorkspaceUnsub();
-
-                // Listen to room messages
-                const q = query(collection(db, "workspace_messages"), where("room", "==", roomName), orderBy("timestamp", "asc"));
-                currentWorkspaceUnsub = onSnapshot(q, (snap) => {
-                    const container = document.getElementById('workspace-messages');
-                    container.innerHTML = '';
-                    if(snap.empty) {
-                        container.innerHTML = `<div class="text-center text-gray-500 text-xs mt-10">Room is empty. Be the first!</div>`;
-                    }
-                    snap.forEach(d => {
-                        const msg = d.data();
-                        const isMe = msg.email === currentUser.email;
-                        const align = isMe ? 'ml-auto bg-blueAccent/20 border-blue-500/50' : 'mr-auto bg-gray-700/50 border-gray-600';
-                        const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
-                        container.innerHTML += `
-                            <div class="msg-enter max-w-[85%] ${align} p-3 rounded-xl border mb-2">
-                                <div class="flex justify-between items-baseline mb-1">
-                                    <span class="text-[10px] font-bold ${isMe ? 'text-blue-300' : 'text-orange-300'}">${msg.sender}</span>
-                                    <span class="text-[9px] text-gray-500 ml-2">${time}</span>
-                                </div>
-                                <p class="text-sm text-gray-200 leading-relaxed">${msg.text}</p>
-                            </div>
-                        `;
-                    });
-                    // Auto scroll to bottom
-                    container.scrollTop = container.scrollHeight;
-                });
-            },
-
-            async sendMessage() {
-                const input = document.getElementById('workspace-input');
-                const text = input.value.trim();
-                if(!text || !activeRoomId) return;
-
-                input.value = ''; // Instant clear
-                await addDoc(collection(db, "workspace_messages"), {
-                    room: activeRoomId,
-                    text: text,
-                    sender: currentUser.name,
-                    email: currentUser.email,
-                    timestamp: Date.now()
-                });
-            }
-        };
-
-        // HELPER: Log Action
-async function logAction(action) {
-    await addDoc(collection(db, "activity_logs"), {
-        admin: currentUser.name,
-        action: action,
-        timestamp: Date.now()
-    });
-}
-
-// TASK MANAGER
-window.taskManager = {
-    async addTask() {
-        const title = document.getElementById('task-title').value;
-        if(!title) return;
-        await addDoc(collection(db, "tasks"), {
-            title, status: 'pending', createdBy: currentUser.name, timestamp: Date.now()
-        });
-        document.getElementById('task-title').value = '';
-        logAction(`Created task: ${title}`);
-    },
-    async toggleTask(id, currentStatus) {
-        const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-        await updateDoc(doc(db, "tasks", id), { status: newStatus });
-        logAction(`Marked task ${id} as ${newStatus}`);
-    },
-    async deleteTask(id) {
-        if(confirm("Delete task?")) await deleteDoc(doc(db, "tasks", id));
-    }
-};
-
-// FILE MANAGER
-window.fileManager = {
-    async upload(input) {
-        const file = input.files[0];
-        if(!file) return;
-        const storageRef = ref(storage, `admin_files/${Date.now()}_${file.name}`);
-        
-        try {
-            const snapshot = await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(snapshot.ref);
-            await addDoc(collection(db, "files"), {
-                name: file.name, url: url, size: (file.size / 1024).toFixed(1) + " KB",
-                uploadedBy: currentUser.name, timestamp: Date.now()
-            });
-            alert("File Uploaded!");
-            logAction(`Uploaded file: ${file.name}`);
-        } catch(e) { alert("Upload failed"); }
-    },
-    async deleteFile(id) {
-        if(confirm("Delete this file?")) await deleteDoc(doc(db, "files", id));
-    }
-};
-
         window.addEventListener('DOMContentLoaded', () => app.init());
-        
     </script>
 </body>
 </html>
