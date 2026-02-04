@@ -181,7 +181,6 @@
             <nav class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                 <button onclick="app.switchAdminView('dash')" id="adm-btn-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
                 <button onclick="app.switchAdminView('godmode')" id="adm-btn-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition animate-pulse border border-purple-400">God Mode ⚡</button>
-                <button onclick="app.switchAdminView('broadcast')" id="adm-btn-broadcast" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
                 <button onclick="app.switchAdminView('events')" id="adm-btn-events" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
                <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
             </nav>
@@ -255,27 +254,6 @@
                          </div>
                          <button onclick="app.flushRequests()" class="w-full bg-gray-700 hover:bg-blueAccent hover:text-white text-gray-300 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">Purge Logs 🧹</button>
                     </div>
-                </div>
-            </div>
-            <div id="adm-view-broadcast" class="admin-view hidden space-y-6 pt-4">
-                <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700">
-                    <h2 class="text-xl font-bold mb-4">Standard Announcement</h2>
-                    <input id="broadcast-title" type="text" placeholder="Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
-                    <textarea id="broadcast-body" placeholder="Message content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center gap-2">
-                             <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Add Image <input type="file" id="broadcast-file" accept="image/*" class="hidden" onchange="document.getElementById('broadcast-file-name').innerText = this.files[0].name"></label>
-                             <span id="broadcast-file-name" class="text-xs text-gray-400">No image selected</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="app.sendBroadcast()" id="btn-send-broadcast" class="bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 flex-1 shadow-lg">Send Blast 🚀</button>
-                        <button onclick="app.cancelBroadcastEdit()" id="btn-cancel-broadcast" class="hidden bg-red-500 text-white px-4 py-3 rounded-lg font-bold">Cancel</button>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">History</h3>
-                    <div id="adm-broadcast-list" class="space-y-2"></div>
                 </div>
             </div>
             <div id="adm-view-events" class="admin-view hidden space-y-6 pt-4">
@@ -2942,14 +2920,6 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 document.getElementById('admin-panel').classList.remove('hidden');
                 this.switchAdminView('dash'); 
                 
-                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
-                    const list = document.getElementById('adm-broadcast-list');
-                    list.innerHTML = '';
-                    snap.forEach(d => {
-                        const b = d.data();
-                        list.innerHTML += `<div class="bg-gray-900 p-2 rounded flex justify-between items-center"><span class="truncate text-sm w-1/2">${b.title}</span><div><button onclick="app.editBroadcast('${d.id}', '${b.title}', '${b.body}')" class="text-blue-400 text-xs mr-2">Edit</button><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs">Delete</button></div></div>`;
-                    });
-                });
 
                 const usersSnap = await getDocs(query(collection(db, "users"), limit(50)));
                 const reqSnap = await getDocs(query(collection(db, "service_requests"), orderBy("timestamp", "desc"), limit(50)));
@@ -2998,7 +2968,7 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
                 
-                ['dash', 'godmode', 'broadcast', 'events', 'feedback'].forEach(v => {
+                ['dash', 'godmode', 'events', 'feedback'].forEach(v => {
                     const btn = document.getElementById(`adm-btn-${v}`);
                     if (!btn) return; 
 
@@ -3068,41 +3038,6 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
             async addAdminByEmail() { const email = document.getElementById('admin-email-input').value.trim(); if(!email) return; const q = query(collection(db, "users"), where("email", "==", email)); const snap = await getDocs(q); if(snap.empty) { alert("User not found!"); return; } snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); alert(`Success! ${email} promoted.`); this.openAdmin(); },
             async toggleUserRole(uid, currentRole) { if(confirm(`Change role from ${currentRole}?`)) { const newRole = currentRole === 'admin' ? 'student' : 'admin'; await updateDoc(doc(db, "users", uid), { role: newRole }); this.openAdmin(); } },
 
-            async sendBroadcast() {
-                const title = document.getElementById('broadcast-title').value;
-                const body = document.getElementById('broadcast-body').value;
-                const fileInput = document.getElementById('broadcast-file');
-                if(!title || !body) return alert("Enter Title and Body");
-
-                let imgData = null;
-                if (fileInput.files.length > 0) { imgData = await this.compressImage(fileInput.files[0]); }
-                
-                if(this.data.editingBroadcastId) {
-                    const updateData = { title, body };
-                    if(imgData) updateData.image = imgData;
-                    await updateDoc(doc(db, "global_announcements", this.data.editingBroadcastId), updateData);
-                    alert("Broadcast Updated!");
-                } else {
-                    await addDoc(collection(db, "global_announcements"), { title, body, image: imgData, timestamp: Date.now() });
-                    alert("Broadcast Sent!");
-                }
-                this.cancelBroadcastEdit();
-            },
-            editBroadcast(id, title, body) {
-                this.data.editingBroadcastId = id;
-                document.getElementById('broadcast-title').value = title;
-                document.getElementById('broadcast-body').value = body;
-                document.getElementById('btn-send-broadcast').innerText = "Update Broadcast";
-                document.getElementById('btn-cancel-broadcast').classList.remove('hidden');
-            },
-            async deleteBroadcast(id) { if(confirm("Delete this broadcast?")) await deleteDoc(doc(db, "global_announcements", id)); },
-            cancelBroadcastEdit() {
-                this.data.editingBroadcastId = null;
-                document.getElementById('broadcast-title').value = '';
-                document.getElementById('broadcast-body').value = '';
-                document.getElementById('btn-send-broadcast').innerText = "Send Blast 🚀";
-                document.getElementById('btn-cancel-broadcast').classList.add('hidden');
-            },
 
             async contactAdmin(adminName, phone) {
                 const safeName = (this.data.user && this.data.user.name) ? this.data.user.name : "Guest";
