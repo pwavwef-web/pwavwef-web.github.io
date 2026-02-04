@@ -1457,6 +1457,74 @@ clearBlogMedia() {
     document.getElementById('blog-media-preview').classList.add('hidden');
 },
 
+            // Toggles the visibility of the specific blog post menu
+toggleBlogMenu(id) {
+    // Close all other menus first
+    document.querySelectorAll('[id^="blog-menu-"]').forEach(el => {
+        if(el.id !== `blog-menu-${id}`) el.classList.add('hidden');
+    });
+    
+    // Toggle current
+    const menu = document.getElementById(`blog-menu-${id}`);
+    if(menu) menu.classList.toggle('hidden');
+},
+
+// Handles deleting a post
+async deleteBlog(id) {
+    if(confirm("Are you sure you want to delete this post?")) {
+        await deleteDoc(doc(db, "blogs", id));
+        // Menu will disappear automatically as the listener refreshes
+        this.addXp(-10, "Deleted Post 🗑️");
+    }
+},
+
+// Prepares the write modal for editing
+editBlog(id, text, mediaObj) {
+    this.data.editingBlogId = id;
+    this.data.activeBlogMedia = mediaObj; // Store media to keep it if they don't change it
+
+    // Populate Modal
+    document.getElementById('blog-input-text').value = text;
+    
+    // Show Media Preview if exists
+    if(mediaObj && mediaObj.data) {
+        document.getElementById('blog-media-preview').classList.remove('hidden');
+        if(mediaObj.type === 'image') {
+            document.getElementById('blog-img-prev').src = mediaObj.data;
+            document.getElementById('blog-img-prev').classList.remove('hidden');
+            document.getElementById('blog-vid-prev').classList.add('hidden');
+        } else {
+            document.getElementById('blog-vid-prev').src = mediaObj.data;
+            document.getElementById('blog-vid-prev').classList.remove('hidden');
+            document.getElementById('blog-img-prev').classList.add('hidden');
+        }
+    }
+
+    // Change Button Text
+    document.querySelector('#modal-write-blog h3').innerText = "Edit Post";
+    document.querySelector('#modal-write-blog header button:last-child').innerText = "Update";
+
+    this.openWriteBlog();
+    
+    // Hide the menu
+    document.getElementById(`blog-menu-${id}`).classList.add('hidden');
+},
+
+// Reports a blog
+reportBlog(id) {
+    if(confirm("Report this post as inappropriate?")) {
+        // Send report to database
+        addDoc(collection(db, "reports"), {
+            type: "blog",
+            contentId: id,
+            reporterId: currentUser.uid,
+            timestamp: Date.now()
+        });
+        alert("Thanks. We will review this post shortly. 🛡️");
+        document.getElementById(`blog-menu-${id}`).classList.add('hidden');
+    }
+},
+
 async saveBlog() {
     const text = document.getElementById('blog-input-text').value;
     const fileInput = document.getElementById('blog-media-input');
@@ -1467,68 +1535,91 @@ async saveBlog() {
 
     if (!text && fileInput.files.length === 0) return alert("Write something!");
 
-    // Show loading state
+    // UI Loading State
     const postBtn = document.querySelector('#modal-write-blog header button:last-child');
-    const originalBtnText = postBtn.innerText;
+    const originalText = postBtn.innerText;
     postBtn.innerText = "Posting...";
     postBtn.disabled = true;
 
-    let mediaUrl = null;
+    let mediaData = null; // This will be the URL
     let mediaType = 'text';
 
     try {
         if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
             
-            // Check file type
+            // 1. Handle VIDEO (Upload to Storage)
             if (file.type.startsWith('video')) {
                 mediaType = 'video';
-                // Limit video size (e.g., 50MB)
                 if (file.size > 50 * 1024 * 1024) throw new Error("Video too large! Max 50MB.");
                 
-                // Upload Video to Storage
+                // Upload to Firebase Storage
                 const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
                 const snapshot = await uploadBytes(storageRef, file);
-                mediaUrl = await getDownloadURL(snapshot.ref);
-                
-            } else if (file.type.startsWith('image')) {
+                mediaData = await getDownloadURL(snapshot.ref);
+            } 
+            // 2. Handle IMAGE (Compress & Upload)
+            else if (file.type.startsWith('image')) {
                 mediaType = 'image';
-                // Compress Image (keep existing logic or upload to storage)
-                // For better quality/performance, let's upload to storage too:
-                const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                mediaUrl = await getDownloadURL(snapshot.ref);
+                // Compress logic (keeping your existing helper)
+                const compressedBase64 = await this.compressImage(file);
+                
+                // Upload compressed image to Storage (Better than Firestore Base64)
+                // Convert Base64 back to Blob for upload
+                const res = await fetch(compressedBase64);
+                const blob = await res.blob();
+                
+                const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_img.jpg`);
+                const snapshot = await uploadBytes(storageRef, blob);
+                mediaData = await getDownloadURL(snapshot.ref);
+            }
+        } else {
+            // Keep existing media if editing and no new file selected
+            if (this.data.editingBlogId && this.data.activeBlogMedia) {
+                mediaData = this.data.activeBlogMedia.data;
+                mediaType = this.data.activeBlogMedia.type;
             }
         }
 
-        await addDoc(collection(db, "blogs"), {
+        const blogData = {
             userId: currentUser.uid,
             userName: userName,
             userPic: userPic,
             text: text,
             font: this.data.currentBlogFont || 'font-roboto',
-            mediaData: mediaUrl, // URL from storage
+            mediaData: mediaData,
             mediaType: mediaType,
-            likes: [], // Array of User IDs
-            dislikes: [], // Array of User IDs
-            reposts: 0,
-            shares: 0,
             timestamp: Date.now()
-        });
+        };
 
+        if (this.data.editingBlogId) {
+            // --- UPDATE EXISTING POST ---
+            await updateDoc(doc(db, "blogs", this.data.editingBlogId), blogData);
+            this.addXp(5, "Edited Post ✏️");
+        } else {
+            // --- CREATE NEW POST ---
+            blogData.likes = [];
+            blogData.dislikes = [];
+            blogData.reposts = 0;
+            await addDoc(collection(db, "blogs"), blogData);
+            this.addXp(20, "Posted a Blog ✍️");
+        }
+
+        // Cleanup
         document.getElementById('modal-write-blog').classList.add('hidden');
         document.getElementById('blog-input-text').value = '';
         this.clearBlogMedia();
-        this.addXp(20, "Posted a Blog ✍️");
+        this.data.editingBlogId = null; // Reset edit state
 
     } catch (e) {
         console.error(e);
         alert("Error posting: " + e.message);
     } finally {
-        postBtn.innerText = originalBtnText;
+        postBtn.innerText = originalText;
         postBtn.disabled = false;
     }
 },
+
 startBlogListener() {
     if (this.blogUnsub) return;
     const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
@@ -1556,31 +1647,63 @@ startBlogListener() {
             const isDisliked = dislikes.includes(currentUser.uid);
             const repostCount = b.reposts || 0;
 
+            // --- MEDIA RENDERING ---
             let mediaHtml = '';
-            // Video Logic
             if (b.mediaType === 'video' && b.mediaData) {
+                // INLINE VIDEO PLAYER
                 mediaHtml = `
-                <div class="blog-media-container group mt-3">
-                    <video src="${b.mediaData}" class="w-full rounded-lg" controls playsinline loop></video>
+                <div class="blog-media-container mt-3">
+                    <video src="${b.mediaData}" class="w-full rounded-lg bg-black max-h-[400px]" controls playsinline preload="metadata"></video>
                 </div>`;
-            } 
-            // Image Logic
-            else if (b.mediaType === 'image' && b.mediaData) {
+            } else if (b.mediaType === 'image' && b.mediaData) {
                 mediaHtml = `<div class="blog-media-container mt-3"><img src="${b.mediaData}" class="w-full rounded-lg" onclick="app.viewImage('${b.mediaData}')"></div>`;
+            }
+
+            // --- THREE DOT MENU LOGIC ---
+            const isAuthor = currentUser.uid === b.userId;
+            let menuItems = '';
+
+            if (isAuthor) {
+                // Escaping text for the onclick function
+                const escapedText = safeText.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                const mediaJson = b.mediaData ? JSON.stringify({data: b.mediaData, type: b.mediaType}).replace(/"/g, "&quot;") : "null";
+
+                menuItems = `
+                    <button onclick="app.editBlog('${id}', '${escapedText}', ${mediaJson})" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold text-blueAccent flex items-center gap-2">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </button>
+                    <button onclick="app.deleteBlog('${id}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold text-red-500 flex items-center gap-2">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                `;
+            } else {
+                menuItems = `
+                    <button onclick="app.reportBlog('${id}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold text-orange-500 flex items-center gap-2">
+                        <i class="fa-solid fa-flag"></i> Report
+                    </button>
+                `;
             }
 
             const pic = b.userPic ? `<img src="${b.userPic}" class="w-10 h-10 rounded-full object-cover border border-gray-200">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`;
 
-            // Render Card
+            // --- RENDER CARD ---
             feed.innerHTML += `
-            <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+            <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700 relative">
                 <div class="flex items-center gap-3 mb-3">
                     ${pic}
                     <div>
                         <h4 class="font-bold text-sm">${safeName}</h4>
                         <p class="text-[10px] opacity-60">${time}</p>
                     </div>
-                    <button onclick="app.openServiceModal('Report Post')" class="ml-auto text-gray-400"><i class="fa-solid fa-ellipsis"></i></button>
+                    
+                    <div class="ml-auto relative">
+                        <button onclick="app.toggleBlogMenu('${id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition">
+                            <i class="fa-solid fa-ellipsis text-gray-500"></i>
+                        </button>
+                        <div id="blog-menu-${id}" class="hidden absolute right-0 top-8 w-32 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-10 overflow-hidden">
+                            ${menuItems}
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="${b.font || 'font-sans'} text-base leading-relaxed whitespace-pre-wrap dark:text-gray-200">${safeText}</div>
@@ -1603,12 +1726,7 @@ startBlogListener() {
                     </div>
 
                     <div class="flex gap-4">
-                        <button onclick="app.repostBlog('${id}', '${safeText.replace(/'/g, "\\'")}')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-green-500">
-                            <i class="fa-solid fa-retweet"></i>
-                            <span class="text-xs">${repostCount > 0 ? repostCount : ''}</span>
-                        </button>
-
-                        <button onclick="app.shareBlog('${safeName}', '${safeText.replace(/'/g, "\\'")}')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-blueAccent">
+                        <button onclick="app.shareBlog('${safeName}', 'Check out this post on AZ Learner!')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-blueAccent">
                             <i class="fa-solid fa-share-nodes"></i>
                         </button>
                     </div>
@@ -1617,7 +1735,6 @@ startBlogListener() {
         });
     });
 },
-
             // --- NEW INTERACTION FUNCTIONS ---
 
 async toggleReaction(blogId, type) {
