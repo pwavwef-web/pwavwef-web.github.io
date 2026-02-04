@@ -950,7 +950,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
         
@@ -1539,45 +1539,75 @@ clearBlogMedia() {
 async saveBlog() {
     const text = document.getElementById('blog-input-text').value;
     const fileInput = document.getElementById('blog-media-input');
+    
+    // Safety check for user name
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Anonymous Student";
+    const userPic = (this.data.user && this.data.user.profilePic) ? this.data.user.profilePic : null;
+
     if (!text && fileInput.files.length === 0) return alert("Write something!");
 
-    let mediaData = null;
+    // Show loading state
+    const postBtn = document.querySelector('#modal-write-blog header button:last-child');
+    const originalBtnText = postBtn.innerText;
+    postBtn.innerText = "Posting...";
+    postBtn.disabled = true;
+
+    let mediaUrl = null;
     let mediaType = 'text';
 
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        // For video, we use FileReader directly (careful with size!)
-        mediaType = file.type.startsWith('video') ? 'video' : 'image';
-        if (mediaType === 'image') {
-            mediaData = await this.compressImage(file);
-        } else {
-            mediaData = await new Promise(r => {
-                const reader = new FileReader();
-                reader.onload = e => r(e.target.result);
-                reader.readAsDataURL(file);
-            });
+    try {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            
+            // Check file type
+            if (file.type.startsWith('video')) {
+                mediaType = 'video';
+                // Limit video size (e.g., 50MB)
+                if (file.size > 50 * 1024 * 1024) throw new Error("Video too large! Max 50MB.");
+                
+                // Upload Video to Storage
+                const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                mediaUrl = await getDownloadURL(snapshot.ref);
+                
+            } else if (file.type.startsWith('image')) {
+                mediaType = 'image';
+                // Compress Image (keep existing logic or upload to storage)
+                // For better quality/performance, let's upload to storage too:
+                const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                mediaUrl = await getDownloadURL(snapshot.ref);
+            }
         }
+
+        await addDoc(collection(db, "blogs"), {
+            userId: currentUser.uid,
+            userName: userName,
+            userPic: userPic,
+            text: text,
+            font: this.data.currentBlogFont || 'font-roboto',
+            mediaData: mediaUrl, // URL from storage
+            mediaType: mediaType,
+            likes: [], // Array of User IDs
+            dislikes: [], // Array of User IDs
+            reposts: 0,
+            shares: 0,
+            timestamp: Date.now()
+        });
+
+        document.getElementById('modal-write-blog').classList.add('hidden');
+        document.getElementById('blog-input-text').value = '';
+        this.clearBlogMedia();
+        this.addXp(20, "Posted a Blog ✍️");
+
+    } catch (e) {
+        console.error(e);
+        alert("Error posting: " + e.message);
+    } finally {
+        postBtn.innerText = originalBtnText;
+        postBtn.disabled = false;
     }
-
-    // Assume 'collection' and 'addDoc' and 'db' are available from your imports
-    // Note: You must ensure 'addDoc' and 'collection' are imported in your script tag logic
-    await addDoc(collection(db, "blogs"), {
-        userId: currentUser.uid,
-        userName: this.data.user.name,
-        userPic: this.data.user.profilePic || null,
-        text: text,
-        font: this.data.currentBlogFont,
-        mediaData: mediaData,
-        mediaType: mediaType,
-        timestamp: Date.now()
-    });
-
-    document.getElementById('modal-write-blog').classList.add('hidden');
-    document.getElementById('blog-input-text').value = '';
-    this.clearBlogMedia();
-    this.addXp(20, "Posted a Blog ✍️");
 },
-
 startBlogListener() {
     if (this.blogUnsub) return;
     const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
@@ -1591,48 +1621,171 @@ startBlogListener() {
             return;
         }
 
-        snap.forEach(doc => {
-            const b = doc.data();
-            const safeName = b.userName || 'Student'; // Fallback for undefined names
-            const safeText = b.text || ''; // Fallback for empty text
+        snap.forEach(docSnap => {
+            const b = docSnap.data();
+            const id = docSnap.id;
+            const safeName = b.userName || 'Student';
+            const safeText = b.text || '';
             const time = b.timestamp ? new Date(b.timestamp).toLocaleDateString() : 'Just now';
             
+            // Interaction Data
+            const likes = b.likes || [];
+            const dislikes = b.dislikes || [];
+            const isLiked = likes.includes(currentUser.uid);
+            const isDisliked = dislikes.includes(currentUser.uid);
+            const repostCount = b.reposts || 0;
+
             let mediaHtml = '';
+            // Video Logic
             if (b.mediaType === 'video' && b.mediaData) {
                 mediaHtml = `
-                <div class="blog-media-container group">
-                    <video src="${b.mediaData}" class="w-full"></video>
-                    <div class="play-overlay" onclick="this.previousElementSibling.play(); this.classList.add('hidden');">
-                        <i class="fa-solid fa-play text-white text-5xl opacity-90 transition-transform hover:scale-110"></i>
-                    </div>
+                <div class="blog-media-container group mt-3">
+                    <video src="${b.mediaData}" class="w-full rounded-lg" controls playsinline loop></video>
                 </div>`;
-            } else if (b.mediaType === 'image' && b.mediaData) {
-                mediaHtml = `<div class="blog-media-container"><img src="${b.mediaData}" onclick="app.viewImage('${b.mediaData}')"></div>`;
+            } 
+            // Image Logic
+            else if (b.mediaType === 'image' && b.mediaData) {
+                mediaHtml = `<div class="blog-media-container mt-3"><img src="${b.mediaData}" class="w-full rounded-lg" onclick="app.viewImage('${b.mediaData}')"></div>`;
             }
 
-            const pic = b.userPic ? `<img src="${b.userPic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`;
+            const pic = b.userPic ? `<img src="${b.userPic}" class="w-10 h-10 rounded-full object-cover border border-gray-200">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`;
 
-            // HTML for the Blog Card
+            // Render Card
             feed.innerHTML += `
-            <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4">
+            <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
                 <div class="flex items-center gap-3 mb-3">
                     ${pic}
                     <div>
                         <h4 class="font-bold text-sm">${safeName}</h4>
                         <p class="text-[10px] opacity-60">${time}</p>
                     </div>
+                    <button onclick="app.openServiceModal('Report Post')" class="ml-auto text-gray-400"><i class="fa-solid fa-ellipsis"></i></button>
                 </div>
-                <div class="${b.font || 'font-sans'} text-lg leading-relaxed whitespace-pre-wrap">${safeText}</div>
+                
+                <div class="${b.font || 'font-sans'} text-base leading-relaxed whitespace-pre-wrap dark:text-gray-200">${safeText}</div>
                 ${mediaHtml}
                 
-                <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <button onclick="app.openComments('${doc.id}')" class="flex items-center gap-2 text-gray-500 hover:text-blueAccent text-sm">
-                        <i class="fa-regular fa-comment-dots"></i> Comment
-                    </button>
+                <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex gap-4">
+                        <button onclick="app.toggleReaction('${id}', 'like')" class="flex items-center gap-1 text-sm transition ${isLiked ? 'text-red-500 font-bold' : 'text-gray-500 hover:text-red-500'}">
+                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                            <span>${likes.length || ''}</span>
+                        </button>
+
+                        <button onclick="app.toggleReaction('${id}', 'dislike')" class="flex items-center gap-1 text-sm transition ${isDisliked ? 'text-orange-500 font-bold' : 'text-gray-500 hover:text-orange-500'}">
+                            <i class="${isDisliked ? 'fa-solid' : 'fa-regular'} fa-thumbs-down"></i>
+                        </button>
+
+                        <button onclick="app.openComments('${id}')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-blueAccent">
+                            <i class="fa-regular fa-comment"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="app.repostBlog('${id}', '${safeText.replace(/'/g, "\\'")}')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-green-500">
+                            <i class="fa-solid fa-retweet"></i>
+                            <span class="text-xs">${repostCount > 0 ? repostCount : ''}</span>
+                        </button>
+
+                        <button onclick="app.shareBlog('${safeName}', '${safeText.replace(/'/g, "\\'")}')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-blueAccent">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                    </div>
                 </div>
             </div>`;
         });
     });
+},
+
+            // --- NEW INTERACTION FUNCTIONS ---
+
+async toggleReaction(blogId, type) {
+    if (!currentUser) return alert("Login needed!");
+    
+    const blogRef = doc(db, "blogs", blogId);
+    // Optimistic UI updates happen via the listener automatically
+    
+    try {
+        if (type === 'like') {
+            const docSnap = await getDoc(blogRef);
+            const likes = docSnap.data().likes || [];
+            
+            if (likes.includes(currentUser.uid)) {
+                // Unlike
+                await updateDoc(blogRef, { likes: arrayRemove(currentUser.uid) });
+            } else {
+                // Like (and remove dislike if exists)
+                await updateDoc(blogRef, { 
+                    likes: arrayUnion(currentUser.uid),
+                    dislikes: arrayRemove(currentUser.uid) 
+                });
+                this.addXp(5, "Liked a Post ❤️");
+            }
+        } else if (type === 'dislike') {
+            const docSnap = await getDoc(blogRef);
+            const dislikes = docSnap.data().dislikes || [];
+            
+            if (dislikes.includes(currentUser.uid)) {
+                // Remove Dislike
+                await updateDoc(blogRef, { dislikes: arrayRemove(currentUser.uid) });
+            } else {
+                // Dislike (and remove like if exists)
+                await updateDoc(blogRef, { 
+                    dislikes: arrayUnion(currentUser.uid),
+                    likes: arrayRemove(currentUser.uid)
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Reaction error", e);
+    }
+},
+
+async repostBlog(originalId, originalText) {
+    if (!confirm("Repost this to your viewers? 🔄")) return;
+    
+    try {
+        // 1. Create a new post referencing the old one
+        const safeName = this.data.user.name || "Anonymous";
+        await addDoc(collection(db, "blogs"), {
+            userId: currentUser.uid,
+            userName: safeName,
+            userPic: this.data.user.profilePic || null,
+            text: `🔄 Reposted:\n\n"${originalText.substring(0, 100)}..."`, // Quote the text
+            mediaType: 'text',
+            likes: [],
+            dislikes: [],
+            reposts: 0,
+            isRepost: true,
+            originalBlogId: originalId,
+            timestamp: Date.now()
+        });
+
+        // 2. Increment repost counter on original doc
+        await updateDoc(doc(db, "blogs", originalId), {
+            reposts: increment(1)
+        });
+
+        this.addXp(10, "Reposted 🔄");
+        alert("Reposted to your feed!");
+    } catch (e) {
+        console.error(e);
+        alert("Could not repost.");
+    }
+},
+
+shareBlog(authorName, text) {
+    if (navigator.share) {
+        navigator.share({
+            title: `AZ Learner Post by ${authorName}`,
+            text: text,
+            url: window.location.href
+        }).catch(console.error);
+    } else {
+        // Fallback for desktop/unsupported browsers
+        navigator.clipboard.writeText(`${text} - by ${authorName} on AZ Learner`);
+        alert("Link copied to clipboard! 📋");
+    }
 },
             // --- FIX FOR UNDEFINED BLOGS ---
 async saveBlog() {
