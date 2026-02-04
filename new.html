@@ -1299,7 +1299,7 @@
                 document.getElementById('feedback-form-content').classList.remove('hidden');
                 document.getElementById('feedback-success').classList.add('hidden');
             },
-            // FIND THIS FUNCTION AND REPLACE IT
+            // FIND THIS AND REPLACE IT
 showNotifications() {
     // 1. Push History State (So back button works)
     history.pushState({ view: 'notifications' }, null, "");
@@ -1313,16 +1313,16 @@ showNotifications() {
        const ids = this.data.notifications.map(n => n.id);
        this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
        localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
-       this.updateBadge();
+       try { this.updateBadge(); } catch(e) {} // Extra safety
     }
 
     // 4. Render content
     this.renderNotifications();
 
-    // 5. SHOW THE SCREEN (Directly, not via openModal)
+    // 5. SHOW THE SCREEN (Directly, NOT via openModal)
     document.getElementById('modal-notifications').classList.remove('hidden');
     
-    // Ensure the black overlay is NOT blocking interactions
+    // CRITICAL: Ensure the black overlay is HIDDEN so you can click buttons
     document.getElementById('modal-overlay').classList.add('hidden');
 },
             viewImage(src) { 
@@ -2410,11 +2410,21 @@ buyTicket(ev) {
                 this.updatePrintStatusUI('received');
             },
 
-            updateBadge() {
-                const unreadCount = this.data.notifications.filter(n => !this.data.readNotifications.includes(n.id)).length;
-                const badge = document.getElementById('notification-badge');
-                if(unreadCount > 0) { badge.classList.remove('hidden'); badge.innerText = unreadCount; } else { badge.classList.add('hidden'); }
-            },
+            // FIND THIS AND REPLACE IT
+updateBadge() {
+    const unreadCount = this.data.notifications.filter(n => !this.data.readNotifications.includes(n.id)).length;
+    const badge = document.getElementById('notification-badge');
+    
+    // SAFETY CHECK: If the badge doesn't exist in HTML, stop here to prevent crash
+    if (!badge) return; 
+
+    if(unreadCount > 0) { 
+        badge.classList.remove('hidden'); 
+        badge.innerText = unreadCount; 
+    } else { 
+        badge.classList.add('hidden'); 
+    }
+},
             sendSystemNotification(title, body) {
                 try {
                     const audio = document.getElementById('alert-sound');
