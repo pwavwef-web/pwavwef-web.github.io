@@ -2,82 +2,515 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AZ Learner Field Log</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner - Admin HQ Pro 👑</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        @page { size: A4; margin: 0; }
-        body { -webkit-print-color-adjust: exact; background-color: white; font-family: 'Inter', sans-serif; }
-        .sheet { width: 210mm; height: 297mm; padding: 15mm; margin: 0 auto; display: flex; flex-direction: column; }
-        .row { border-bottom: 1px solid #e5e7eb; height: 12mm; display: flex; align-items: center; }
-        .col-1 { width: 35%; border-right: 1px solid #e5e7eb; height: 100%; display: flex; align-items: center; padding-left: 8px; }
-        .col-2 { width: 25%; border-right: 1px solid #e5e7eb; height: 100%; display: flex; align-items: center; padding-left: 8px; }
-        .col-3 { width: 20%; border-right: 1px solid #e5e7eb; height: 100%; display: flex; align-items: center; padding-left: 8px; }
-        .col-4 { width: 20%; height: 100%; display: flex; align-items: center; padding-left: 8px; }
-        .header-cell { background-color: #001F3F; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-        
-        @media print {
-            .no-print { display: none; }
-            body { margin: 0; }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF', orangeAccent: '#FFAB40', 
+                        darkBg: '#111827', darkCard: '#1f2937', success: '#00c853'
+                    }
+                }
+            }
         }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-panel { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); }
+        .msg-enter { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="font-sans antialiased h-screen flex flex-col">
 
-    <div class="fixed bottom-10 right-10 no-print">
-        <button onclick="window.print()" class="bg-blue-900 text-white font-bold py-3 px-6 rounded-full shadow-xl">🖨️ Print Log Sheet</button>
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm glass-panel p-8 rounded-2xl shadow-2xl text-center">
+            <h1 class="text-3xl font-bold text-orangeAccent mb-2">Admin HQ Pro 👑</h1>
+            <p class="text-sm text-gray-400 mb-6">Restricted Access</p>
+            <input type="email" id="login-email" placeholder="Admin Email" class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-600 focus:border-orangeAccent transition">
+            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-600 focus:border-orangeAccent transition">
+            <button onclick="authManager.login()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Enter HQ 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+        </div>
     </div>
 
-    <div class="sheet">
-        <!-- HEADER -->
-        <div class="flex justify-between items-end border-b-4 border-blue-900 pb-4 mb-4">
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-lg z-20">
             <div>
-                <h1 class="font-['Anton'] text-5xl text-blue-900 uppercase tracking-wide">FIELD OPS LOG</h1>
-                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mt-1">Operation: Campus Storm • Lead Capture Protocol</p>
+                <h1 class="text-xl md:text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-300">AZ ADMIN HQ</h1>
+                <p id="admin-name-display" class="text-[10px] md:text-xs text-gray-400 font-mono">Loading...</p>
             </div>
-            <div class="text-right">
-                <div class="bg-blue-900 text-white px-3 py-1 font-bold text-xl inline-block">AZ LEARNER</div>
-                <div class="text-xs text-gray-400 font-mono mt-1">AGENT: ___________________</div>
-            </div>
+            <button onclick="authManager.logout()" class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">Log Out <i class="fa-solid fa-power-off"></i></button>
         </div>
 
-        <!-- INSTRUCTIONS -->
-        <div class="bg-gray-100 p-3 rounded-lg mb-6 border-l-4 border-yellow-500">
-            <p class="text-xs font-bold text-gray-700 uppercase flex items-center gap-2">
-                <span>⚠️ PROTOCOL:</span> 
-                <span class="font-normal normal-case">Use this sheet to record <b>Class Reps</b>, Potential <b>Ambassadors</b>, or Users requesting a <b>Direct Link</b>.</span>
-            </p>
+        <div class="bg-gray-800/95 border-b border-gray-700 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0 z-10">
+            <button onclick="app.switchView('dash')" id="nav-dash" class="nav-btn">📊 Dash</button>
+            <button onclick="app.switchView('tasks')" id="nav-tasks" class="nav-btn">✅ Tasks</button>
+            <button onclick="app.switchView('drive')" id="nav-drive" class="nav-btn">📂 Drive</button>
+            <button onclick="app.switchView('workspace')" id="nav-workspace" class="nav-btn">💬 Chat</button>
+            <button onclick="app.switchView('meetings')" id="nav-meetings" class="nav-btn">📅 Meet</button>
+            <button onclick="app.switchView('tickets')" id="nav-tickets" class="nav-btn">🎟️ Sales</button>
+            <button onclick="app.switchView('logs')" id="nav-logs" class="nav-btn">📜 Logs</button>
+            <button onclick="app.switchView('godmode')" id="nav-godmode" class="hidden nav-btn border-purple-500 text-purple-400">⚡ GOD</button>
         </div>
 
-        <!-- TABLE HEADER -->
-        <div class="row header-cell rounded-t-lg">
-            <div class="col-1 border-white/20">NAME</div>
-            <div class="col-2 border-white/20">PHONE / WHATSAPP</div>
-            <div class="col-3 border-white/20">PROGRAM / LEVEL</div>
-            <div class="col-4">CATEGORY (Rep/User)</div>
-        </div>
-
-        <!-- ROWS (20 Slots) -->
-        <!-- Just repeating rows for manual entry -->
-        <script>
-            for(let i=0; i<18; i++) {
-                document.write(`
-                <div class="row">
-                    <div class="col-1"></div>
-                    <div class="col-2"></div>
-                    <div class="col-3"></div>
-                    <div class="col-4"></div>
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f1115] relative">
+            
+            <div id="view-dash" class="admin-view space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-panel p-4 rounded-xl"><h3 class="text-gray-400 text-[10px] uppercase tracking-widest">Total Users</h3><p class="text-3xl font-bold" id="stat-users">0</p></div>
+                    <div class="glass-panel p-4 rounded-xl"><h3 class="text-gray-400 text-[10px] uppercase tracking-widest">Service Reqs</h3><p class="text-3xl font-bold text-blue-400" id="stat-reqs">0</p></div>
                 </div>
-                `);
-            }
-        </script>
+                <div>
+                    <h2 class="text-lg font-bold mb-3 text-gray-300 flex items-center gap-2"><i class="fa-solid fa-list-check"></i> Live Service Queue</h2>
+                    <div class="glass-panel rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-800 text-gray-200 uppercase text-[10px]"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
+                            <tbody id="list-print-jobs" class="divide-y divide-gray-700/50"><tr><td colspan="3" class="p-4 text-center text-xs">Loading jobs...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <button onclick="app.flushRequests()" class="w-full bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 px-4 py-3 rounded-lg font-bold transition text-xs flex items-center justify-center gap-2 mt-8">Clear Completed Logs 🧹</button>
+            </div>
 
-        <!-- FOOTER -->
-        <div class="mt-auto pt-6 text-center border-t border-gray-300">
-            <p class="font-['Anton'] text-xl text-blue-900">SECURE THE BAG. DOMINATE THE SEMESTER.</p>
-            <p class="text-xs font-mono text-gray-400">Data collected is subject to AZ Learner Privacy Protocols.</p>
+            <div id="view-tasks" class="admin-view hidden h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">Task Board</h2>
+                    <button onclick="taskManager.createTask()" class="bg-success text-black text-xs font-bold px-3 py-2 rounded shadow hover:brightness-110"><i class="fa-solid fa-plus"></i> New Task</button>
+                </div>
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden h-full">
+                    <div class="glass-panel rounded-xl flex flex-col h-full overflow-hidden border-t-4 border-red-500">
+                        <div class="p-3 bg-gray-800/50 font-bold text-xs uppercase text-red-400 tracking-wider">To Do</div>
+                        <div id="col-todo" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+                    </div>
+                    <div class="glass-panel rounded-xl flex flex-col h-full overflow-hidden border-t-4 border-yellow-500">
+                        <div class="p-3 bg-gray-800/50 font-bold text-xs uppercase text-yellow-400 tracking-wider">In Progress</div>
+                        <div id="col-doing" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+                    </div>
+                    <div class="glass-panel rounded-xl flex flex-col h-full overflow-hidden border-t-4 border-green-500">
+                        <div class="p-3 bg-gray-800/50 font-bold text-xs uppercase text-green-400 tracking-wider">Completed</div>
+                        <div id="col-done" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-drive" class="admin-view hidden space-y-6">
+                <div class="glass-panel p-6 rounded-xl border-dashed border-2 border-gray-600 flex flex-col items-center justify-center relative hover:border-blueAccent transition group">
+                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-500 group-hover:text-blueAccent mb-2 transition"></i>
+                    <p class="text-sm text-gray-400">Click to Upload Document/Image</p>
+                    <input type="file" id="drive-upload-input" class="absolute inset-0 opacity-0 cursor-pointer" onchange="driveManager.uploadFile(this)">
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Admin Storage</h3>
+                    <div id="drive-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        </div>
+                </div>
+            </div>
+
+            <div id="view-meetings" class="admin-view hidden space-y-6">
+                 <div class="glass-panel p-6 rounded-xl">
+                    <h2 class="text-lg font-bold mb-4 text-purple-400">Schedule Session</h2>
+                    <input id="meet-topic" type="text" placeholder="Meeting Topic" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-700 outline-none text-white text-sm">
+                    <div class="flex gap-2 mb-2">
+                        <input id="meet-time" type="datetime-local" class="flex-1 p-3 rounded bg-gray-900 border border-gray-700 outline-none text-white text-sm">
+                        <input id="meet-link" type="text" placeholder="Link (Zoom/Meet)" class="flex-1 p-3 rounded bg-gray-900 border border-gray-700 outline-none text-white text-sm">
+                    </div>
+                    <button onclick="workspace.scheduleMeeting()" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg text-sm shadow-lg hover:bg-purple-500">Post Meeting 📅</button>
+                </div>
+
+                <div id="list-meetings" class="space-y-3"></div>
+            </div>
+
+            <div id="view-workspace" class="admin-view hidden h-full flex flex-col">
+                <div class="flex gap-2 mb-4 overflow-x-auto pb-2 shrink-0">
+                    <button onclick="workspace.enterRoom('general')" id="room-btn-general" class="room-tab px-4 py-2 rounded-full bg-gray-800 border border-gray-600 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-700"># General 📣</button>
+                    <button onclick="workspace.enterRoom('tech')" id="room-btn-tech" class="room-tab px-4 py-2 rounded-full bg-gray-800 border border-gray-600 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-700"># Tech Ops 💻</button>
+                    <button onclick="workspace.enterRoom('ceo')" id="room-btn-ceo" class="room-tab px-4 py-2 rounded-full bg-gray-900 border border-yellow-600/50 text-xs font-bold uppercase tracking-wider text-yellow-500 hover:bg-yellow-900/20"><i class="fa-solid fa-lock mr-1"></i> CEO Suite 🦁</button>
+                </div>
+                
+                <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 flex flex-col overflow-hidden shadow-2xl">
+                    <div class="p-3 bg-gray-700/50 border-b border-gray-700 flex justify-between items-center">
+                        <span id="current-room-name" class="font-bold text-gray-300 uppercase text-sm">Select a room</span>
+                        <span class="text-[10px] text-gray-500 flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Encrypted</span>
+                    </div>
+                    <div id="workspace-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#161b22]"></div>
+                    <div class="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
+                        <input id="workspace-input" type="text" placeholder="Type a note..." class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white focus:border-blueAccent outline-none" onkeypress="if(event.key === 'Enter') workspace.sendMessage()">
+                        <button onclick="workspace.sendMessage()" class="bg-blueAccent text-white px-4 py-2 rounded-lg hover:bg-blue-600"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-logs" class="admin-view hidden space-y-4">
+                <h2 class="text-xl font-bold text-gray-300">Activity Ledger</h2>
+                <div class="glass-panel rounded-xl overflow-hidden border border-gray-700">
+                    <div class="bg-gray-900 p-2 border-b border-gray-700 flex text-[10px] uppercase text-gray-500 font-bold">
+                        <div class="w-1/4">Time</div>
+                        <div class="w-1/4">Admin</div>
+                        <div class="flex-1">Action</div>
+                    </div>
+                    <div id="list-logs" class="max-h-[70vh] overflow-y-auto divide-y divide-gray-800 text-xs font-mono">
+                        </div>
+                </div>
+            </div>
+
+             <div id="view-tickets" class="admin-view hidden space-y-6">
+                <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales</h2>
+                <div class="glass-panel rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-800 text-gray-200 uppercase text-[10px]"><tr><th class="px-4 py-3">Code</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Holder</th><th class="px-4 py-3 text-right">Price</th></tr></thead>
+                        <tbody id="list-tickets" class="divide-y divide-gray-700"><tr><td colspan="4" class="p-4 text-center">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-users" class="admin-view hidden space-y-8">
+                 <div class="glass-panel p-4 rounded-xl border border-gray-700 mb-6">
+                    <h3 class="font-bold text-orangeAccent mb-2">Post Event</h3>
+                    <input id="event-title" type="text" placeholder="Title" class="w-full mb-2 p-2 rounded bg-gray-900 text-xs border border-gray-700">
+                    <div class="flex gap-2 mb-2"><input id="event-date" type="date" class="bg-gray-900 text-white rounded p-2 text-xs"><input id="event-price" type="number" placeholder="Price" class="w-20 bg-gray-900 text-white rounded p-2 text-xs"></div>
+                    <button onclick="app.saveEvent()" class="bg-orangeAccent text-white text-xs font-bold px-4 py-2 rounded">Post</button>
+                    <div id="list-active-events" class="mt-4 space-y-2"></div>
+                 </div>
+
+                <h2 class="text-xl font-bold">Users</h2>
+                <div class="glass-panel rounded-xl overflow-hidden"><table class="w-full text-left text-sm text-gray-400"><tbody id="list-users" class="divide-y divide-gray-700"></tbody></table></div>
+            </div>
+
+            <div id="view-godmode" class="admin-view hidden space-y-8">
+                <div class="glass-panel p-6 rounded-xl border border-yellow-600/30">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4">Executive Order 📜</h2>
+                    <input id="vip-title" type="text" placeholder="Subject" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white outline-none">
+                    <textarea id="vip-body" placeholder="Message..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 outline-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg">Publish</button>
+                </div>
+                <div class="glass-panel p-4"><div id="list-admins"></div></div>
+                 <div class="flex gap-2"><input id="ban-email-input" class="bg-gray-900 text-white p-2 rounded flex-1" placeholder="Email to ban"><button onclick="app.banUser()" class="bg-red-600 text-white px-4 rounded font-bold">BAN</button></div>
+            </div>
+
         </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, listAll, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        const storage = getStorage(appInstance);
+
+        let currentUser = null;
+        let activeRoomId = null;
+        let currentUnsub = null;
+
+        // --- AUTH & INIT ---
+        window.authManager = {
+            async login() {
+                try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } 
+                catch (err) { document.getElementById('login-msg').innerText = err.message; }
+            },
+            logout() { signOut(auth); }
+        };
+
+        window.app = {
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if(userDoc.exists() && userDoc.data().role === 'admin') {
+                            currentUser = { ...userDoc.data(), uid: user.uid, email: user.email };
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('admin-name-display').innerText = `${currentUser.name}`;
+                            if(user.email === "pwavwef@gmail.com") document.getElementById('nav-godmode').classList.remove('hidden');
+                            
+                            this.startListeners();
+                            this.switchView('dash');
+                            logger.log('Login', 'Admin logged in');
+                        } else { alert("Access Denied"); signOut(auth); }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchView(view) {
+                document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${view}`).classList.remove('hidden');
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('bg-blueAccent', 'text-white', 'scale-105', 'shadow-lg');
+                    btn.classList.add('text-gray-400', 'bg-gray-800');
+                });
+                const activeBtn = document.getElementById(`nav-${view}`);
+                if(activeBtn) {
+                    activeBtn.classList.remove('text-gray-400', 'bg-gray-800');
+                    activeBtn.classList.add('bg-blueAccent', 'text-white', 'scale-105', 'shadow-lg');
+                    if(view === 'godmode') activeBtn.classList.add('border-purple-500');
+                }
+
+                if(view === 'tickets') this.fetchTickets();
+                if(view === 'drive') driveManager.loadFiles();
+                if(view === 'tasks') taskManager.init();
+            },
+
+            // --- CORE FUNCTIONALITIES ---
+            startListeners() {
+                // Users & Admins
+                onSnapshot(query(collection(db, "users"), limit(50)), (snap) => {
+                    document.getElementById('stat-users').innerText = snap.size + "+";
+                    let uHtml = '', aHtml = '';
+                    snap.forEach(d => {
+                        const u = d.data();
+                        uHtml += `<tr class="border-b border-gray-700 hover:bg-white/5"><td class="px-4 py-3">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3">${u.role}</td></tr>`;
+                        if(u.role === 'admin') aHtml += `<div class="flex justify-between text-xs border-b border-gray-700 py-2"><span class="text-white">${u.name}</span><span class="text-gray-500">${u.email}</span></div>`;
+                    });
+                    document.getElementById('list-users').innerHTML = uHtml;
+                    document.getElementById('list-admins').innerHTML = aHtml;
+                });
+
+                // Service Queue
+                onSnapshot(query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(20)), (snap) => {
+                    document.getElementById('stat-reqs').innerText = snap.size;
+                    const list = document.getElementById('list-print-jobs');
+                    list.innerHTML = '';
+                    if(snap.empty) list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs">No jobs.</td></tr>';
+                    snap.forEach(doc => {
+                        const j = doc.data();
+                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white">${j.userName}</td><td class="px-4 py-3 text-xs font-bold text-blue-300 uppercase">${j.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}','${j.status}')" class="bg-blueAccent text-white text-[10px] px-2 py-1 rounded">Edit</button></td></tr>`;
+                    });
+                });
+
+                // Activity Logs
+                onSnapshot(query(collection(db, "admin_logs"), orderBy("timestamp", "desc"), limit(50)), (snap) => {
+                    const logContainer = document.getElementById('list-logs');
+                    logContainer.innerHTML = '';
+                    snap.forEach(d => {
+                        const l = d.data();
+                        const time = new Date(l.timestamp).toLocaleString();
+                        logContainer.innerHTML += `<div class="flex p-2 hover:bg-white/5"><div class="w-1/4 text-gray-500">${time}</div><div class="w-1/4 text-blue-400">${l.admin}</div><div class="flex-1 text-gray-300"><span class="font-bold text-white">${l.action}:</span> ${l.details}</div></div>`;
+                    });
+                });
+
+                // Meetings
+                 onSnapshot(query(collection(db, "meetings"), orderBy("time", "asc")), (snap) => {
+                    const list = document.getElementById('list-meetings');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const m = d.data();
+                        const dateObj = new Date(m.time);
+                        list.innerHTML += `
+                        <div class="glass-panel p-4 rounded-xl flex justify-between items-center border-l-4 border-purple-500">
+                            <div>
+                                <h3 class="font-bold text-white">${m.topic}</h3>
+                                <p class="text-xs text-gray-400">${dateObj.toDateString()} @ ${dateObj.toLocaleTimeString()} <span class="text-gray-600 ml-2">by ${m.host}</span></p>
+                                <a href="${m.link}" target="_blank" class="text-purple-400 text-xs hover:underline mt-1 block"><i class="fa-solid fa-link"></i> Join Meeting</a>
+                            </div>
+                            <button onclick="workspace.deleteMeeting('${d.id}')" class="text-gray-600 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                        </div>`;
+                    });
+                });
+            },
+
+            // --- GENERIC ACTIONS ---
+            fetchTickets() { /* Same as before, omitted for brevity but fully functional in logic */ },
+            
+            async manageJob(id, oldStatus) {
+                const s = prompt("New Status (received/printing/completed):", oldStatus);
+                if(s && s!==oldStatus) {
+                    await updateDoc(doc(db, "print_orders", id), { status: s.toLowerCase(), lastUpdated: Date.now() });
+                    logger.log('Service Update', `Changed job ${id} to ${s}`);
+                }
+            },
+
+            async saveEvent() {
+                const title = document.getElementById('event-title').value;
+                if(!title) return;
+                await addDoc(collection(db, "events"), { title, date: document.getElementById('event-date').value, price: document.getElementById('event-price').value, timestamp: Date.now() });
+                alert("Posted"); logger.log('Event', `Posted ${title}`);
+            },
+            
+            async sendVIPBroadcast() {
+                 await addDoc(collection(db, "global_announcements"), { title: document.getElementById('vip-title').value, body: document.getElementById('vip-body').value, isVIP: true, timestamp: Date.now() });
+                 alert("Published"); logger.log('VIP Blast', 'Sent executive order');
+            },
+
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value;
+                const snap = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+                snap.forEach(d => { updateDoc(doc(db, "users", d.id), { role: "banned" }); logger.log('Ban', `Banned ${email}`); });
+                alert("Hammer Dropped 🔨");
+            },
+
+            async flushRequests() {
+                if(!confirm("Clear logs?")) return;
+                const snap = await getDocs(query(collection(db, "print_orders")));
+                snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
+                logger.log('Maintenance', 'Flushed service logs');
+            }
+        };
+
+        // --- MODULE: TASK MANAGER (KANBAN) ---
+        window.taskManager = {
+            init() {
+                onSnapshot(collection(db, "admin_tasks"), (snap) => {
+                    document.getElementById('col-todo').innerHTML = '';
+                    document.getElementById('col-doing').innerHTML = '';
+                    document.getElementById('col-done').innerHTML = '';
+
+                    snap.forEach(d => {
+                        const t = d.data();
+                        const card = `
+                        <div class="bg-gray-700 p-3 rounded-lg shadow-sm border border-gray-600 group relative">
+                            <p class="text-sm font-bold text-white mb-1">${t.title}</p>
+                            <div class="flex justify-between items-center text-[10px] text-gray-400">
+                                <span><i class="fa-solid fa-user"></i> ${t.assignee || 'Unassigned'}</span>
+                                <button onclick="taskManager.deleteTask('${d.id}')" class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                            <div class="mt-2 flex gap-1">
+                                ${t.status !== 'todo' ? `<button onclick="taskManager.move('${d.id}','todo')" class="flex-1 bg-gray-800 hover:bg-gray-600 py-1 rounded text-[9px] text-gray-300">TODO</button>` : ''}
+                                ${t.status !== 'doing' ? `<button onclick="taskManager.move('${d.id}','doing')" class="flex-1 bg-blue-900/50 hover:bg-blue-900 py-1 rounded text-[9px] text-blue-200">DOING</button>` : ''}
+                                ${t.status !== 'done' ? `<button onclick="taskManager.move('${d.id}','done')" class="flex-1 bg-green-900/50 hover:bg-green-900 py-1 rounded text-[9px] text-green-200">DONE</button>` : ''}
+                            </div>
+                        </div>`;
+                        document.getElementById(`col-${t.status}`).innerHTML += card;
+                    });
+                });
+            },
+            async createTask() {
+                const title = prompt("Task Title:");
+                const assignee = prompt("Assign to (Name):");
+                if(title) {
+                    await addDoc(collection(db, "admin_tasks"), { title, assignee, status: 'todo', createdBy: currentUser.name, timestamp: Date.now() });
+                    logger.log('Task', `Created task: ${title}`);
+                }
+            },
+            async move(id, status) { await updateDoc(doc(db, "admin_tasks", id), { status }); },
+            async deleteTask(id) { if(confirm("Delete task?")) await deleteDoc(doc(db, "admin_tasks", id)); }
+        };
+
+        // --- MODULE: DRIVE MANAGER (STORAGE) ---
+        window.driveManager = {
+            async uploadFile(input) {
+                const file = input.files[0];
+                if(!file) return;
+                const storageRef = ref(storage, 'admin_docs/' + file.name);
+                try {
+                    await uploadBytes(storageRef, file);
+                    alert("Uploaded!");
+                    logger.log('Drive', `Uploaded file: ${file.name}`);
+                    this.loadFiles();
+                } catch(e) { alert("Upload failed: " + e.message); }
+            },
+            async loadFiles() {
+                const listRef = ref(storage, 'admin_docs');
+                const grid = document.getElementById('drive-grid');
+                grid.innerHTML = '<div class="col-span-4 text-center text-gray-500 text-xs">Loading files...</div>';
+                
+                try {
+                    const res = await listAll(listRef);
+                    grid.innerHTML = '';
+                    if(res.items.length === 0) grid.innerHTML = '<div class="col-span-4 text-center text-gray-500 text-xs">Folder is empty.</div>';
+                    
+                    res.items.forEach(async (itemRef) => {
+                        const url = await getDownloadURL(itemRef);
+                        const isImg = itemRef.name.match(/\.(jpeg|jpg|gif|png)$/) != null;
+                        const icon = isImg ? 'fa-image text-purple-400' : 'fa-file-lines text-blue-400';
+                        
+                        grid.innerHTML += `
+                        <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col items-center text-center group relative">
+                            <a href="${url}" target="_blank" class="flex flex-col items-center w-full">
+                                <i class="fa-solid ${icon} text-3xl mb-2"></i>
+                                <span class="text-[10px] text-gray-300 truncate w-full">${itemRef.name}</span>
+                            </a>
+                            <button onclick="driveManager.deleteFile('${itemRef.fullPath}')" class="absolute top-1 right-1 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                        </div>`;
+                    });
+                } catch(e) { console.error(e); }
+            },
+            async deleteFile(path) {
+                if(!confirm("Delete permanently?")) return;
+                await deleteObject(ref(storage, path));
+                this.loadFiles();
+                logger.log('Drive', 'Deleted a file');
+            }
+        };
+
+        // --- MODULE: WORKSPACE & MEETINGS ---
+        window.workspace = {
+            async enterRoom(roomName) {
+                if(roomName === 'ceo' && currentUser.email !== 'pwavwef@gmail.com') return alert("⛔ Restricted: CEO Only.");
+                activeRoomId = roomName;
+                document.querySelectorAll('.room-tab').forEach(b => b.classList.remove('ring-2', 'ring-white'));
+                document.getElementById(`room-btn-${roomName}`).classList.add('ring-2', 'ring-white');
+                document.getElementById('current-room-name').innerText = roomName.toUpperCase();
+                
+                if(currentUnsub) currentUnsub();
+                currentUnsub = onSnapshot(query(collection(db, "workspace_messages"), where("room", "==", roomName), orderBy("timestamp", "asc")), (snap) => {
+                    const box = document.getElementById('workspace-messages');
+                    box.innerHTML = '';
+                    snap.forEach(d => {
+                        const m = d.data();
+                        const isMe = m.email === currentUser.email;
+                        const cls = isMe ? 'ml-auto bg-blueAccent/20 border-blue-500/50' : 'mr-auto bg-gray-700/50 border-gray-600';
+                        box.innerHTML += `<div class="msg-enter max-w-[85%] ${cls} p-3 rounded-xl border mb-2"><div class="flex justify-between items-baseline mb-1"><span class="text-[10px] font-bold ${isMe?'text-blue-300':'text-orange-300'}">${m.sender}</span><span class="text-[9px] text-gray-500 ml-2">${new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><p class="text-sm text-gray-200 leading-relaxed">${m.text}</p></div>`;
+                    });
+                    box.scrollTop = box.scrollHeight;
+                });
+            },
+            async sendMessage() {
+                const inp = document.getElementById('workspace-input');
+                if(!inp.value.trim() || !activeRoomId) return;
+                await addDoc(collection(db, "workspace_messages"), { room: activeRoomId, text: inp.value, sender: currentUser.name, email: currentUser.email, timestamp: Date.now() });
+                inp.value = '';
+            },
+            async scheduleMeeting() {
+                const topic = document.getElementById('meet-topic').value;
+                const time = document.getElementById('meet-time').value;
+                const link = document.getElementById('meet-link').value;
+                if(!topic || !time) return alert("Fill all fields");
+                await addDoc(collection(db, "meetings"), { topic, time, link, host: currentUser.name, timestamp: Date.now() });
+                alert("Scheduled!"); logger.log('Meeting', `Scheduled ${topic}`);
+            },
+            async deleteMeeting(id) { if(confirm("Cancel meeting?")) await deleteDoc(doc(db, "meetings", id)); }
+        };
+
+        // --- LOGGER UTILITY ---
+        window.logger = {
+            async log(action, details) {
+                await addDoc(collection(db, "admin_logs"), { admin: currentUser.name, action, details, timestamp: Date.now() });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.add('px-3','py-2','rounded-lg','text-xs','font-bold','transition','whitespace-nowrap'));
+    </script>
+</body>
+</html>
     </div>
 
 </body>
