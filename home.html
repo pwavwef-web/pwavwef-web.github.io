@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AZ Learner 🎓</title>
-
+    <meta name="google-site-verification" content="CaJNzJR9GYhrWSjJ3NImxTkfLXjW0KRakx2nIyXRoz8" />
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Playfair+Display:wght@700&family=Dancing+Script:wght@700&family=Fira+Code&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://js.paystack.co/v1/inline.js"></script>
@@ -74,6 +75,32 @@
         .dark .ticket-stub {
         background-image: radial-gradient(circle at 0 50%, transparent 10px, #424242 11px);
         }
+        /* --- BLOG STYLES --- */
+.font-roboto { font-family: 'Roboto', sans-serif; }
+.font-playfair { font-family: 'Playfair Display', serif; }
+.font-dancing { font-family: 'Dancing Script', cursive; }
+.font-mono { font-family: 'Fira Code', monospace; }
+
+.blog-media-container {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 12px;
+    background: #000;
+}
+/* Play Button Overlay */
+.play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.play-overlay:hover { background: rgba(0,0,0,0.6); }
     </style>
 </head>
 <body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
@@ -328,10 +355,10 @@
         </div>
         <div class="flex items-center gap-4">
             <button id="header-admin-btn" onclick="app.openAdmin()" class="hidden bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">ADMIN</button>
-            <div class="relative cursor-pointer" onclick="app.showNotifications()">
-                <i class="fa-solid fa-bell text-xl"></i>
-                <div id="notification-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center border border-white dark:border-gray-800">0</div>
-            </div>
+            <button onclick="app.openBlogs()" class="relative p-2 text-white hover:text-gray-200 transition">
+    <i class="fa-solid fa-newspaper text-xl"></i>
+    <span class="text-[10px] font-bold block leading-none mt-0.5">Blogs</span>
+</button>
             <div onclick="app.openProfile()" class="w-8 h-8 rounded-full overflow-hidden border-2 border-white/50 cursor-pointer flex-shrink-0 bg-white/20">
                 <img id="header-profile-img" src="" class="hidden w-full h-full object-cover">
                 <div id="header-profile-placeholder" class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
@@ -540,6 +567,66 @@
         </div>
     </div>
 
+    <div id="full-screen-blogs" class="fixed inset-0 z-[55] bg-gray-100 dark:bg-darkBg flex flex-col hidden pt-safe">
+    <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h1 class="text-xl font-black italic">AZ Blogs ✍️</h1>
+        <button onclick="app.openWriteBlog()" class="bg-black text-white dark:bg-white dark:text-black w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-pen-nib"></i></button>
+    </header>
+    
+    <div id="blogs-feed" class="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
+        </div>
+</div>
+
+<div id="modal-write-blog" class="fixed inset-0 z-[60] bg-white dark:bg-darkCard hidden flex flex-col pt-safe">
+    <header class="flex justify-between items-center px-4 py-3 border-b dark:border-gray-700">
+        <button onclick="document.getElementById('modal-write-blog').classList.add('hidden')" class="text-red-500 font-bold">Cancel</button>
+        <h3 class="font-bold">New Post</h3>
+        <button onclick="app.saveBlog()" class="bg-blueAccent text-white px-4 py-1 rounded-full font-bold text-sm">Post</button>
+    </header>
+    
+    <div class="p-4 flex-1 overflow-y-auto">
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <button onclick="app.setBlogFont('font-roboto')" class="px-3 py-1 rounded border dark:border-gray-600 font-roboto text-xs hover:bg-blueAccent hover:text-white">Normal</button>
+            <button onclick="app.setBlogFont('font-playfair')" class="px-3 py-1 rounded border dark:border-gray-600 font-playfair text-xs hover:bg-blueAccent hover:text-white">Fancy</button>
+            <button onclick="app.setBlogFont('font-mono')" class="px-3 py-1 rounded border dark:border-gray-600 font-mono text-xs hover:bg-blueAccent hover:text-white">Code</button>
+            <button onclick="app.setBlogFont('font-dancing')" class="px-3 py-1 rounded border dark:border-gray-600 font-dancing text-xs hover:bg-blueAccent hover:text-white">Script</button>
+        </div>
+
+        <textarea id="blog-input-text" class="w-full h-40 bg-transparent outline-none text-lg resize-none font-roboto" placeholder="What's on your mind?"></textarea>
+        
+        <div id="blog-media-preview" class="hidden mb-4 relative rounded-xl overflow-hidden bg-black">
+            <button onclick="app.clearBlogMedia()" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full z-10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <img id="blog-img-prev" class="hidden w-full max-h-60 object-contain">
+            <video id="blog-vid-prev" class="hidden w-full max-h-60" controls></video>
+        </div>
+    </div>
+
+    <div class="p-4 border-t dark:border-gray-700 flex gap-4 bg-gray-50 dark:bg-gray-800">
+        <label class="cursor-pointer text-blueAccent flex items-center gap-2 font-bold text-sm">
+            <i class="fa-solid fa-image text-xl"></i> Add Photo/Video
+            <input type="file" id="blog-media-input" accept="image/*,video/*" class="hidden" onchange="app.handleBlogMedia(this)">
+        </label>
+    </div>
+</div>
+
+    <div id="modal-blog-comments" class="fixed inset-0 z-[70] bg-white dark:bg-darkCard hidden flex flex-col pt-safe">
+    <header class="flex items-center gap-4 px-4 py-3 border-b dark:border-gray-700 shadow-sm">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h3 class="font-bold">Comments 💬</h3>
+    </header>
+    
+    <div id="comments-list" class="flex-1 overflow-y-auto p-4 pb-20">
+        </div>
+
+    <div class="p-3 border-t dark:border-gray-700 bg-white dark:bg-[#303030] pb-safe flex gap-2">
+        <input id="comment-input" type="text" placeholder="Add a comment..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2 outline-none">
+        <button onclick="app.postComment()" class="bg-blueAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+    </div>
+</div>
+
     <div id="full-screen-profile" class="fixed inset-0 z-[55] bg-gray-50 dark:bg-darkBg flex flex-col hidden overflow-y-auto">
         <div class="relative w-full h-64 profile-gradient shrink-0 overflow-hidden">
             <div class="absolute top-0 w-full flex items-center justify-between px-4 pt-safe mt-4 z-30">
@@ -667,7 +754,7 @@
         <button onclick="app.switchTab(1)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="1"><i class="fa-solid fa-calendar-days text-xl"></i><span class="text-[10px]">Timetable</span></button>
         <button onclick="app.switchTab(2)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="2"><i class="fa-solid fa-list-check text-xl"></i><span class="text-[10px]">Tasks</span></button>
         <button onclick="app.switchTab(3)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="3"><i class="fa-solid fa-pencil text-xl"></i><span class="text-[10px]">Notes</span></button>
-        <button onclick="app.switchTab(4)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="4"><i class="fa-solid fa-user-group text-xl"></i><span class="text-[10px]">Chat</span></button>
+        <button onclick="app.switchTab(4)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="4"><i class="fa-solid fa-user-group text-xl"></i><span id="notification-badge" class="hidden absolute top-2 right-6 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-darkBg">0</span><span class="text-[10px]">Chat</span></button>
     </nav>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
@@ -926,7 +1013,7 @@
 
         window.app = {
             data: { 
-                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
+                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], blogs: [], currentBlogFont: 'font-roboto', theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
                 badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
                 currentTabIndex: 0
             },
@@ -1000,54 +1087,61 @@
                         this.switchTab(0);
                         history.replaceState({ tab: 0 }, null, ""); 
                         
-                        // --- HISTORY API FIX ---
                         window.addEventListener('popstate', (event) => {
-                            // Define all your full-screen views and modals
-                            const views = [
-                                'full-screen-profile', 
-                                'full-screen-settings', 
-                                'full-screen-leaderboard', 
-                                'full-screen-feedback', 
-                                'full-screen-chat',
-                                'modal-overlay',
-                                'modal-image-view',
-                                'modal-notifications',
-                                'modal-note-editor',
-                                'modal-contacts'
-                            ];
+    // 1. Defined views ordered by PRIORITY (Top-most layers first!)
+    // If 'modal-blog-comments' is found open, we close it and STOP looking.
+    const views = [
+        'modal-image-view',       
+        'modal-blog-comments',    // Top priority (on top of blogs)
+        'full-screen-feedback',   
+        'full-screen-chat',       
+        'modal-write-blog',
+        'full-screen-profile',    
+        'full-screen-settings',   
+        'full-screen-leaderboard',
+        'full-screen-blogs',      // Lower priority (bottom layer)
+        'modal-notifications',    
+        'modal-note-editor',      
+        'modal-contacts',         
+        'modal-overlay'           
+    ];
 
-                            let viewClosed = false;
+    let viewClosed = false;
 
-                            // Check if any view is currently open (not hidden)
-                            views.forEach(id => {
-                                const el = document.getElementById(id);
-                                if (el && !el.classList.contains('hidden')) {
-                                    el.classList.add('hidden'); // Close it
-                                    viewClosed = true;
+    // 2. Use a for...of loop so we can use 'break'
+    for (const id of views) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) {
+            el.classList.add('hidden'); // Close this view
+            viewClosed = true;
 
-                                    // Special cleanup for Chat (stop listeners)
-                                    if (id === 'full-screen-chat' && this.activeChatListener) {
-                                        this.activeChatListener(); 
-                                        this.activeChatListener = null;
-                                    }
-                                    
-                                    // Special cleanup for modals inside overlay
-                                    if (id === 'modal-overlay') {
-                                        document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden'));
-                                    }
-                                }
-                            });
+            // Special cleanup for Chat
+            if (id === 'full-screen-chat' && this.activeChatListener) {
+                this.activeChatListener(); 
+                this.activeChatListener = null;
+            }
+            
+            // Special cleanup for generic overlay
+            if (id === 'modal-overlay') {
+                document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden'));
+            }
 
-                            // If we closed a view, stop here. Don't switch tabs.
-                            if (viewClosed) return;
+            // 3. CRITICAL FIX: Stop the loop here! 
+            // This prevents the code from continuing and closing the Blogs page underneath.
+            break; 
+        }
+    }
 
-                            // If no view was open, handle Tab Switching
-                            if (event.state && event.state.tab !== undefined) {
-                                this.switchTab(event.state.tab, true);
-                            } else {
-                                this.switchTab(0, true);
-                            }
-                        });
+    // If we closed a view (like comments), stop here. Don't switch tabs.
+    if (viewClosed) return;
+
+    // If no view was open, then we switch tabs
+    if (event.state && event.state.tab !== undefined) {
+        this.switchTab(event.state.tab, true);
+    } else {
+        this.switchTab(0, true);
+    }
+});
 
                         setTimeout(() => { splash.classList.add('opacity-0', 'pointer-events-none'); }, 800);
 
@@ -1205,16 +1299,32 @@
                 document.getElementById('feedback-form-content').classList.remove('hidden');
                 document.getElementById('feedback-success').classList.add('hidden');
             },
-            showNotifications() { 
-                if(this.data.notifications.length > 0) {
-                   const ids = this.data.notifications.map(n => n.id);
-                   this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
-                   localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
-                   this.updateBadge(); 
-                }
-                this.renderNotifications(); 
-                this.openModal('modal-notifications'); 
-            },
+            // FIND THIS AND REPLACE IT
+showNotifications() {
+    // 1. Push History State (So back button works)
+    history.pushState({ view: 'notifications' }, null, "");
+
+    // 2. Update Title
+    const header = document.querySelector('#modal-notifications h1');
+    if(header) header.innerText = "AZ Learner Core 📢";
+
+    // 3. Mark as read logic
+    if(this.data.notifications.length > 0) {
+       const ids = this.data.notifications.map(n => n.id);
+       this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
+       localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
+       try { this.updateBadge(); } catch(e) {} // Extra safety
+    }
+
+    // 4. Render content
+    this.renderNotifications();
+
+    // 5. SHOW THE SCREEN (Directly, NOT via openModal)
+    document.getElementById('modal-notifications').classList.remove('hidden');
+    
+    // CRITICAL: Ensure the black overlay is HIDDEN so you can click buttons
+    document.getElementById('modal-overlay').classList.add('hidden');
+},
             viewImage(src) { 
                 document.getElementById('full-image').src = src; 
                 this.openModal('modal-image-view');
@@ -1349,6 +1459,242 @@
     this.openModal('modal-event-details');
 },
 
+
+            openBlogs() {
+    history.pushState({ view: 'blogs' }, null, "");
+    document.getElementById('full-screen-blogs').classList.remove('hidden');
+    this.startBlogListener(); 
+},
+
+openWriteBlog() { document.getElementById('modal-write-blog').classList.remove('hidden'); },
+
+setBlogFont(fontClass) {
+    this.data.currentBlogFont = fontClass;
+    const txt = document.getElementById('blog-input-text');
+    txt.classList.remove('font-roboto', 'font-playfair', 'font-mono', 'font-dancing');
+    txt.classList.add(fontClass);
+},
+
+async handleBlogMedia(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    document.getElementById('blog-media-preview').classList.remove('hidden');
+    if (file.type.startsWith('image/')) {
+        document.getElementById('blog-img-prev').src = url;
+        document.getElementById('blog-img-prev').classList.remove('hidden');
+        document.getElementById('blog-vid-prev').classList.add('hidden');
+    } else {
+        document.getElementById('blog-vid-prev').src = url;
+        document.getElementById('blog-vid-prev').classList.remove('hidden');
+        document.getElementById('blog-img-prev').classList.add('hidden');
+    }
+},
+
+clearBlogMedia() {
+    document.getElementById('blog-media-input').value = '';
+    document.getElementById('blog-media-preview').classList.add('hidden');
+},
+
+async saveBlog() {
+    const text = document.getElementById('blog-input-text').value;
+    const fileInput = document.getElementById('blog-media-input');
+    if (!text && fileInput.files.length === 0) return alert("Write something!");
+
+    let mediaData = null;
+    let mediaType = 'text';
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        // For video, we use FileReader directly (careful with size!)
+        mediaType = file.type.startsWith('video') ? 'video' : 'image';
+        if (mediaType === 'image') {
+            mediaData = await this.compressImage(file);
+        } else {
+            mediaData = await new Promise(r => {
+                const reader = new FileReader();
+                reader.onload = e => r(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    // Assume 'collection' and 'addDoc' and 'db' are available from your imports
+    // Note: You must ensure 'addDoc' and 'collection' are imported in your script tag logic
+    await addDoc(collection(db, "blogs"), {
+        userId: currentUser.uid,
+        userName: this.data.user.name,
+        userPic: this.data.user.profilePic || null,
+        text: text,
+        font: this.data.currentBlogFont,
+        mediaData: mediaData,
+        mediaType: mediaType,
+        timestamp: Date.now()
+    });
+
+    document.getElementById('modal-write-blog').classList.add('hidden');
+    document.getElementById('blog-input-text').value = '';
+    this.clearBlogMedia();
+    this.addXp(20, "Posted a Blog ✍️");
+},
+
+startBlogListener() {
+    if (this.blogUnsub) return;
+    const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
+    
+    this.blogUnsub = onSnapshot(q, (snap) => {
+        const feed = document.getElementById('blogs-feed');
+        feed.innerHTML = '';
+        
+        if(snap.empty) {
+            feed.innerHTML = '<div class="text-center opacity-50 py-10">No blogs yet. Write the first one! ✍️</div>';
+            return;
+        }
+
+        snap.forEach(doc => {
+            const b = doc.data();
+            const safeName = b.userName || 'Student'; // Fallback for undefined names
+            const safeText = b.text || ''; // Fallback for empty text
+            const time = b.timestamp ? new Date(b.timestamp).toLocaleDateString() : 'Just now';
+            
+            let mediaHtml = '';
+            if (b.mediaType === 'video' && b.mediaData) {
+                mediaHtml = `
+                <div class="blog-media-container group">
+                    <video src="${b.mediaData}" class="w-full"></video>
+                    <div class="play-overlay" onclick="this.previousElementSibling.play(); this.classList.add('hidden');">
+                        <i class="fa-solid fa-play text-white text-5xl opacity-90 transition-transform hover:scale-110"></i>
+                    </div>
+                </div>`;
+            } else if (b.mediaType === 'image' && b.mediaData) {
+                mediaHtml = `<div class="blog-media-container"><img src="${b.mediaData}" onclick="app.viewImage('${b.mediaData}')"></div>`;
+            }
+
+            const pic = b.userPic ? `<img src="${b.userPic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`;
+
+            // HTML for the Blog Card
+            feed.innerHTML += `
+            <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4">
+                <div class="flex items-center gap-3 mb-3">
+                    ${pic}
+                    <div>
+                        <h4 class="font-bold text-sm">${safeName}</h4>
+                        <p class="text-[10px] opacity-60">${time}</p>
+                    </div>
+                </div>
+                <div class="${b.font || 'font-sans'} text-lg leading-relaxed whitespace-pre-wrap">${safeText}</div>
+                ${mediaHtml}
+                
+                <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <button onclick="app.openComments('${doc.id}')" class="flex items-center gap-2 text-gray-500 hover:text-blueAccent text-sm">
+                        <i class="fa-regular fa-comment-dots"></i> Comment
+                    </button>
+                </div>
+            </div>`;
+        });
+    });
+},
+            // --- FIX FOR UNDEFINED BLOGS ---
+async saveBlog() {
+    const text = document.getElementById('blog-input-text').value;
+    const fileInput = document.getElementById('blog-media-input');
+    
+    // Safety check for user name
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Anonymous Student";
+    const userPic = (this.data.user && this.data.user.profilePic) ? this.data.user.profilePic : null;
+
+    if (!text && fileInput.files.length === 0) return alert("Write something!");
+
+    let mediaData = null;
+    let mediaType = 'text';
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        mediaType = file.type.startsWith('video') ? 'video' : 'image';
+        if (mediaType === 'image') {
+            mediaData = await this.compressImage(file);
+        } else {
+            // Read video as DataURL
+            mediaData = await new Promise(r => {
+                const reader = new FileReader();
+                reader.onload = e => r(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    await addDoc(collection(db, "blogs"), {
+        userId: currentUser.uid,
+        userName: userName,
+        userPic: userPic,
+        text: text,
+        font: this.data.currentBlogFont || 'font-roboto',
+        mediaData: mediaData,
+        mediaType: mediaType,
+        timestamp: Date.now()
+    });
+
+    document.getElementById('modal-write-blog').classList.add('hidden');
+    document.getElementById('blog-input-text').value = '';
+    this.clearBlogMedia();
+    this.addXp(20, "Posted a Blog ✍️");
+},
+
+// --- COMMENT LOGIC ---
+openComments(blogId) {
+    this.data.activeBlogId = blogId;
+    history.pushState({ view: 'comments' }, null, "");
+    document.getElementById('modal-blog-comments').classList.remove('hidden');
+    
+    // Load Comments
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div class="text-center opacity-50 py-4">Loading thoughts...</div>';
+    
+    // Real-time listener for comments on this specific blog
+    const q = query(collection(db, "blog_comments"), where("blogId", "==", blogId), orderBy("timestamp", "desc"));
+    
+    // Stop previous listener if exists
+    if(this.commentListener) this.commentListener();
+    
+    this.commentListener = onSnapshot(q, (snap) => {
+        list.innerHTML = '';
+        if(snap.empty) {
+            list.innerHTML = '<div class="text-center opacity-40 py-10">No comments yet. Be the first!</div>';
+            return;
+        }
+        snap.forEach(d => {
+            const c = d.data();
+            list.innerHTML += `
+                <div class="flex gap-3 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center font-bold text-xs shrink-0">${c.userName[0]}</div>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none">
+                        <p class="text-[10px] font-bold opacity-60 mb-1">${c.userName}</p>
+                        <p class="text-sm">${c.text}</p>
+                    </div>
+                </div>`;
+        });
+    });
+},
+
+async postComment() {
+    const input = document.getElementById('comment-input');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Student";
+    
+    await addDoc(collection(db, "blog_comments"), {
+        blogId: this.data.activeBlogId,
+        userId: currentUser.uid,
+        userName: userName,
+        text: text,
+        timestamp: Date.now()
+    });
+    
+    input.value = '';
+    // Optional: Add tiny XP for engagement
+    this.addXp(5, "Commented 💬");
+},
             // --- TICKET SYSTEM LOGIC ---
 
 toggleHomeView(view) {
@@ -1663,6 +2009,31 @@ buyTicket(ev) {
                 const courseList = document.getElementById('course-chat-list');
                 list.innerHTML = '';
                 courseList.innerHTML = '';
+
+                // --- 0. NEW: RENDER AZ LEARNER CORE (BROADCASTS) ---
+    const lastNotif = this.data.notifications.length > 0 ? this.data.notifications[0] : null;
+    const coreMsg = lastNotif ? lastNotif.title : "No new announcements";
+    const coreTime = lastNotif ? new Date(lastNotif.timestamp).toLocaleDateString() : "";
+    const hasUnreadBroadcast = lastNotif && !this.data.readNotifications.includes(lastNotif.id);
+
+    list.innerHTML += `
+        <div onclick="app.showNotifications()" class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl shadow-sm flex items-center gap-3 cursor-pointer border border-blue-100 dark:border-blue-800 mb-2 relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blueAccent"></div>
+            <div class="relative">
+                <div class="w-12 h-12 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold text-lg shadow-lg">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                ${hasUnreadBroadcast ? '<div class="w-3 h-3 bg-red-500 rounded-full border-2 border-white absolute -top-1 -right-1"></div>' : ''}
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-blueAccent dark:text-blue-300">AZ Learner Core</h3>
+                    <span class="text-[10px] opacity-40 shrink-0">${coreTime}</span>
+                </div>
+                <p class="text-xs opacity-60 truncate font-medium italic">${coreMsg}</p>
+            </div>
+        </div>
+    `;
 
                 // --- 1. RENDER COURSE CIRCLES ---
                 const uniqueCourses = [...new Set(this.data.courses.map(c => c.name))];
@@ -2039,11 +2410,21 @@ buyTicket(ev) {
                 this.updatePrintStatusUI('received');
             },
 
-            updateBadge() {
-                const unreadCount = this.data.notifications.filter(n => !this.data.readNotifications.includes(n.id)).length;
-                const badge = document.getElementById('notification-badge');
-                if(unreadCount > 0) { badge.classList.remove('hidden'); badge.innerText = unreadCount; } else { badge.classList.add('hidden'); }
-            },
+            // FIND THIS AND REPLACE IT
+updateBadge() {
+    const unreadCount = this.data.notifications.filter(n => !this.data.readNotifications.includes(n.id)).length;
+    const badge = document.getElementById('notification-badge');
+    
+    // SAFETY CHECK: If the badge doesn't exist in HTML, stop here to prevent crash
+    if (!badge) return; 
+
+    if(unreadCount > 0) { 
+        badge.classList.remove('hidden'); 
+        badge.innerText = unreadCount; 
+    } else { 
+        badge.classList.add('hidden'); 
+    }
+},
             sendSystemNotification(title, body) {
                 try {
                     const audio = document.getElementById('alert-sound');
@@ -2209,6 +2590,9 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                     snap.forEach(d => newNotifs.push({id: d.id, ...d.data()}));
                     this.data.notifications = newNotifs;
                     this.renderNotifications(); this.updateBadge();
+                    if(!document.getElementById('tab-chat').classList.contains('hidden')) {
+        this.renderChatList();
+    }
                 }));
 
                 const qChats = query(collection(db, "direct_chats"), where("users", "array-contains", currentUser.uid));
@@ -2528,7 +2912,7 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 if(this.data.notifications.length === 0) { document.getElementById('empty-notifications').classList.remove('hidden'); return; }
                 document.getElementById('empty-notifications').classList.add('hidden');
                 this.data.notifications.forEach(n => {
-                    let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage('${n.image}')" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
+                   let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage(this.src)" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
                     let cardClass = "bg-white dark:bg-darkCard";
                     let titleClass = "text-blueAccent";
                     let border = "";
