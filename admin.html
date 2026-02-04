@@ -166,7 +166,6 @@
                 <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2">
                     <i class="fa-solid fa-money-bill-wave"></i> Revenue Streams
                 </h2>
-                <!-- Accordion Container -->
                 <div id="sales-accordion-container" class="space-y-4">
                     <div class="text-center text-gray-500 py-10 animate-pulse">Scanning Events...</div>
                 </div>
@@ -203,6 +202,15 @@
                     <h2 class="text-xl font-bold mb-4">Global Network Broadcast</h2>
                     <input id="broadcast-title" type="text" placeholder="Headline" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
                     <textarea id="broadcast-body" placeholder="Transmission content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2 transition-colors border border-gray-600">
+                            <i class="fa-solid fa-image"></i> Attach Visual
+                            <input type="file" id="broadcast-file" accept="image/*" class="hidden" onchange="document.getElementById('broadcast-file-name').innerText = this.files[0].name">
+                        </label>
+                        <span id="broadcast-file-name" class="text-xs text-gray-400">No image selected</span>
+                    </div>
+
                     <button onclick="app.sendBroadcast()" class="w-full bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 shadow-lg shadow-blue-500/30">Transmit 📡</button>
                 </div>
                 <div id="list-broadcasts" class="space-y-2"></div>
@@ -340,7 +348,7 @@
                     }
                 });
 
-                if(view === 'tickets') this.fetchSalesOverview(); // Changed to new function
+                if(view === 'tickets') this.fetchSalesOverview(); 
                 if(view === 'workspace') this.switchWorkspaceTab('personal');
             },
 
@@ -574,7 +582,17 @@
                     list.innerHTML = '';
                     snap.forEach(d => {
                         const b = d.data();
-                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><span class="truncate text-sm w-2/3 text-gray-300 font-bold">${b.title}</span><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs hover:text-white transition">Delete</button></div>`;
+                        // CHECK FOR IMAGE AND RENDER IT
+                        const imgTag = b.image ? `<img src="${b.image}" class="w-8 h-8 rounded object-cover border border-gray-600 mr-3 cursor-pointer hover:scale-150 transition-transform" onclick="window.open('${b.image}')">` : '';
+                        
+                        list.innerHTML += `
+                        <div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700">
+                            <div class="flex items-center w-2/3">
+                                ${imgTag}
+                                <span class="truncate text-sm text-gray-300 font-bold">${b.title}</span>
+                            </div>
+                            <button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs hover:text-white transition">Delete</button>
+                        </div>`;
                     });
                 });
             },
@@ -615,7 +633,6 @@
                                     <i class="fa-solid fa-chevron-down text-gray-500 ml-2 transition-transform duration-300" id="icon-${eventId}"></i>
                                 </div>
                             </div>
-                            <!-- Dropdown Area -->
                             <div id="dropdown-${eventId}" class="ticket-dropdown bg-gray-900/50">
                                 <div class="p-4" id="content-${eventId}">
                                     <div class="text-center text-xs text-gray-500">Decrypting Sales Data...</div>
@@ -644,7 +661,6 @@
                 }
 
                 // Fetch Data only if opening
-                // NOTE: We use collectionGroup without complex sorting to avoid Index errors that caused the hang
                 try {
                     const q = query(collectionGroup(db, 'tickets'), where('eventId', '==', eventId));
                     const snap = await getDocs(q);
@@ -722,12 +738,23 @@
             async sendBroadcast() {
                 const title = document.getElementById('broadcast-title').value;
                 const body = document.getElementById('broadcast-body').value;
+                const fileInput = document.getElementById('broadcast-file');
+                
                 if(!title) return;
-                await addDoc(collection(db, "global_announcements"), { title, body, timestamp: Date.now() });
+                
+                let image = null;
+                if (fileInput.files.length > 0) {
+                     image = await this.compressImage(fileInput.files[0]);
+                }
+
+                await addDoc(collection(db, "global_announcements"), { title, body, image, timestamp: Date.now() });
                 alert("Signal Transmitted.");
                 document.getElementById('broadcast-title').value = '';
                 document.getElementById('broadcast-body').value = '';
+                fileInput.value = '';
+                document.getElementById('broadcast-file-name').innerText = 'No image selected';
             },
+
             async deleteBroadcast(id) { if(confirm("Retract Signal?")) await deleteDoc(doc(db, "global_announcements", id)); },
 
             async sendVIPBroadcast() {
