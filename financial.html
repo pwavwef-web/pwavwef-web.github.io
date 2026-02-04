@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner Financial Logs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-print-color-adjust: exact;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm; /* A4 Size */
+            padding: 15mm;
+            box-sizing: border-box;
+            page-break-after: always; /* Forces new page for each journal */
+            position: relative;
+        }
+
+        .header {
+            border-bottom: 3px solid #001F3F; /* UCC Navy Blue */
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+        }
+
+        .brand-name {
+            font-family: 'Anton', sans-serif;
+            font-size: 24px;
+            color: #001F3F;
+            letter-spacing: 1px;
+        }
+
+        .journal-title {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #444;
+        }
+
+        .meta-info {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th {
+            background-color: #001F3F;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            text-transform: uppercase;
+            font-weight: 600;
+            border: 1px solid #001F3F;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            height: 25px; /* Space for handwriting */
+        }
+
+        /* Zebra striping for readability */
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        /* Screen only button */
+        .no-print {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .btn {
+            background: #001F3F;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button class="btn" onclick="window.print()">🖨️ PRINT LOGBOOKS</button>
+    </div>
+
+    <!-- PAGE 1: REVENUE JOURNAL -->
+    <div class="page">
+        <div class="header">
+            <div>
+                <div class="brand-name">AZ LEARNER</div>
+                <div style="font-size: 10px; color: #666;">The Squad Companion</div>
+            </div>
+            <div class="journal-title">REVENUE JOURNAL (INFLOW) 💰</div>
+        </div>
+
+        <div class="meta-info">
+            <div>MONTH: _________________</div>
+            <div>YEAR: 2026</div>
+            <div>CURRENCY: GHS</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Date</th>
+                    <th style="width: 15%;">Tx ID / Ref</th>
+                    <th style="width: 25%;">Payer Name</th>
+                    <th style="width: 20%;">Service Type</th>
+                    <th style="width: 15%;">Gross Amt</th>
+                    <th style="width: 15%;">Net (After Fee)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 20 Empty Rows -->
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div>Audit Status: Locked In 🔒</div>
+            <div>Authorized Sign: __________________________</div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: EXPENDITURE JOURNAL -->
+    <div class="page">
+        <div class="header">
+            <div>
+                <div class="brand-name">AZ LEARNER</div>
+                <div style="font-size: 10px; color: #666;">The Squad Companion</div>
+            </div>
+            <div class="journal-title">EXPENDITURE LOG (BURN RATE) 🔥</div>
+        </div>
+
+        <div class="meta-info">
+            <div>MONTH: _________________</div>
+            <div>YEAR: 2026</div>
+            <div>Protocol: No receipt, no record.</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Date</th>
+                    <th style="width: 35%;">Description of Expense</th>
+                    <th style="width: 20%;">Category (Ops/Mkt)</th>
+                    <th style="width: 15%;">Amount (GHS)</th>
+                    <th style="width: 20%;">Authorized By</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 20 Empty Rows -->
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div>Finance Unit: Expenditure Control</div>
+            <div>Authorized Sign: __________________________</div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: GIG ECONOMY LEDGER -->
+    <div class="page">
+        <div class="header">
+            <div>
+                <div class="brand-name">AZ LEARNER</div>
+                <div style="font-size: 10px; color: #666;">The Squad Companion</div>
+            </div>
+            <div class="journal-title">GIG ECONOMY LEDGER (THE SPLIT) ⚖️</div>
+        </div>
+
+        <div class="meta-info">
+            <div>MONTH: _________________</div>
+            <div>Standard Split: Writer (70%) / AZ (30%)</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Date</th>
+                    <th style="width: 15%;">Order ID</th>
+                    <th style="width: 20%;">Service</th>
+                    <th style="width: 15%;">Total Fee</th>
+                    <th style="width: 15%;">Writer Share</th>
+                    <th style="width: 15%;">Company Share</th>
+                    <th style="width: 10%;">Paid?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 20 Empty Rows -->
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div>Operations Unit: Writer Payouts</div>
+            <div>Authorized Sign: __________________________</div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: PETTY CASH LOG -->
+    <div class="page">
+        <div class="header">
+            <div>
+                <div class="brand-name">AZ LEARNER</div>
+                <div style="font-size: 10px; color: #666;">The Squad Companion</div>
+            </div>
+            <div class="journal-title">PETTY CASH LOG (SMALL OPS) 💸</div>
+        </div>
+
+        <div class="meta-info">
+            <div>MONTH: _________________</div>
+            <div>Cash Box Location: _________________</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Date</th>
+                    <th style="width: 35%;">Item / Description</th>
+                    <th style="width: 15%;">Cash IN</th>
+                    <th style="width: 15%;">Cash OUT</th>
+                    <th style="width: 20%;">Running Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 20 Empty Rows -->
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div>Note: Reconcile cash weekly.</div>
+            <div>Authorized Sign: __________________________</div>
+        </div>
+    </div>
+
+</body>
+</html>
