@@ -183,8 +183,7 @@
                 <button onclick="app.switchAdminView('godmode')" id="adm-btn-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition animate-pulse border border-purple-400">God Mode ⚡</button>
                 <button onclick="app.switchAdminView('broadcast')" id="adm-btn-broadcast" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
                 <button onclick="app.switchAdminView('events')" id="adm-btn-events" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
-                <button onclick="app.switchAdminView('users')" id="adm-btn-users" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Users 👥</button>
-                <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
+               <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
                 <button onclick="app.switchAdminView('tickets')" id="adm-btn-tickets" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
             </nav>
         </div>
@@ -325,17 +324,7 @@
         </div>
     </div>
 </div>
-            <div id="adm-view-users" class="admin-view hidden space-y-8 pt-4">
-                <div>
-                    <h2 class="text-xl font-bold mb-4">All Users Database</h2>
-                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
-                        <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Role</th></tr></thead>
-                            <tbody id="adm-user-list" class="divide-y divide-gray-700"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            
             <div id="adm-view-feedback" class="admin-view hidden pt-4">
                 <h2 class="text-xl font-bold mb-4 text-pink-400">User Reviews</h2>
                 <div class="bg-gray-800 rounded-xl overflow-hidden border border-pink-600/30">
@@ -2996,19 +2985,19 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 });
                 document.getElementById('adm-feedback-list').innerHTML = feedbackHtml || '<tr><td colspan="3" class="p-4 text-center">No feedback yet.</td></tr>';
 
-                let userHtml = ''; let adminHtml = ''; 
-                usersSnap.forEach(doc => { 
-                    const u = doc.data(); 
-                    userHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3">${u.role}</td><td class="px-4 py-3 text-xs text-gray-500">View</td></tr>`;
-                    
-                    if(u.role === 'admin') {
-                        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.email}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`; 
-                    }
-                });
-                
-                document.getElementById('adm-user-list').innerHTML = userHtml || '<tr><td colspan="4" class="p-4 text-center">No users.</td></tr>';
-                document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No admins found.</td></tr>';
+                let adminHtml = ''; 
+usersSnap.forEach(doc => { 
+    const u = doc.data(); 
+    // User HTML generation removed
+    
+    if(u.role === 'admin') {
+        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.email}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`; 
+    }
+});
 
+// document.getElementById('adm-user-list').innerHTML line removed
+document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No admins found.</td></tr>';
+                
                 if(activeJobListener) activeJobListener(); 
                 const q = query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50));
                 
@@ -3029,7 +3018,7 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
                 
-                ['dash', 'godmode', 'broadcast', 'events', 'users', 'feedback', 'tickets'].forEach(v => {
+                ['dash', 'godmode', 'broadcast', 'events', 'feedback', 'tickets'].forEach(v => {
                     const btn = document.getElementById(`adm-btn-${v}`);
                     if (!btn) return; 
 
