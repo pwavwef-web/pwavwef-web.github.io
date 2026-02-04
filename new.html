@@ -434,8 +434,19 @@
 </div>
         </div>
 
-        <div id="tab-timetable" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">My Schedule 📅</h2><div id="course-list" class="space-y-3"></div><div id="empty-courses" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No classes yet! Tap + to add.</p></div></div>
-        
+        <div id="tab-timetable" class="tab-content hidden">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">My Schedule 📅</h2>
+        <button onclick="app.downloadSchedule()" class="bg-blue-100 dark:bg-blue-900/30 text-blueAccent font-bold text-xs px-4 py-2 rounded-lg active:scale-95 transition flex items-center gap-2">
+            <i class="fa-solid fa-image"></i> Save Image
+        </button>
+    </div>
+    
+    <div id="course-list" class="space-y-3"></div>
+    <div id="empty-courses" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60">
+        <p class="text-lg">No classes yet! Tap + to add.</p>
+    </div>
+</div>
         <div id="tab-assignments" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Assignments 📚</h2><div id="assignment-list" class="space-y-3"></div><div id="empty-assignments" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No homework? Tap + to add.</p></div></div>
         
         <div id="tab-notes" class="tab-content hidden pt-2"><h2 class="text-2xl font-bold mb-4">My Notes 📝</h2><div id="notes-list" class="grid grid-cols-2 gap-3"></div><div id="empty-notes" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60"><p class="text-lg">No notes yet.</p></div></div>
@@ -1695,7 +1706,99 @@ async postComment() {
     // Optional: Add tiny XP for engagement
     this.addXp(5, "Commented 💬");
 },
-            // --- TICKET SYSTEM LOGIC ---
+        // --- ADD THIS NEW FUNCTION TO window.app ---
+
+async downloadSchedule() {
+    if (this.data.courses.length === 0) return alert("No classes to save! Add some first.");
+
+    // 1. Create a temporary container for the image (Hidden off-screen)
+    // We style this specifically to look good in the image, regardless of current theme
+    const exportContainer = document.createElement('div');
+    exportContainer.style.width = "600px"; // Fixed width for consistent high quality
+    exportContainer.style.position = "fixed";
+    exportContainer.style.top = "-9999px";
+    exportContainer.style.zIndex = "9999";
+    // Force light mode styles for the image so it looks clean
+    exportContainer.className = "bg-white text-gray-900 rounded-3xl overflow-hidden shadow-2xl font-sans";
+
+    // 2. Sort Courses by Day and Time
+    const daysMap = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":7};
+    const sortedCourses = [...this.data.courses].sort((a,b) => {
+        if(daysMap[a.day] !== daysMap[b.day]) return daysMap[a.day] - daysMap[b.day];
+        return a.time.localeCompare(b.time);
+    });
+
+    // 3. Build HTML Content
+    const userName = this.data.user.name || "Student";
+    const program = this.data.user.program || "Academic Schedule";
+
+    let contentHtml = `
+        <div class="bg-gradient-to-r from-blue-600 to-blue-400 p-8 text-white relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="flex justify-between items-center relative z-10">
+                <div>
+                    <p class="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">AZ Learner 🎓</p>
+                    <h1 class="text-4xl font-black mb-1">Weekly Schedule</h1>
+                    <p class="opacity-90 font-medium text-lg">${userName}</p>
+                    <p class="text-xs opacity-60">${program}</p>
+                </div>
+                <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-4xl shadow-lg border border-white/30">
+                    📅
+                </div>
+            </div>
+        </div>
+        <div class="p-8 bg-white min-h-[400px]">
+    `;
+
+    // Loop through sorted courses
+    sortedCourses.forEach(c => {
+        contentHtml += `
+            <div class="flex items-center gap-6 mb-6">
+                <div class="w-20 h-20 rounded-2xl bg-blue-50 flex flex-col items-center justify-center shrink-0 border border-blue-100">
+                    <span class="text-xs font-bold text-blue-400 uppercase tracking-wide">${c.day.substring(0,3)}</span>
+                    <span class="font-black text-2xl text-gray-800">${c.time}</span>
+                </div>
+                <div class="flex-1 border-b border-gray-100 pb-6">
+                    <h3 class="font-black text-2xl text-gray-800 leading-tight mb-1">${c.name}</h3>
+                    <div class="flex items-center gap-2 text-gray-500 font-medium">
+                        <i class="fa-solid fa-location-dot text-red-400"></i>
+                        <span>${c.venue}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    contentHtml += `
+        </div>
+        <div class="bg-gray-50 p-4 text-center text-gray-400 text-xs font-bold uppercase tracking-widest border-t border-gray-100">
+            Generated by AZ Learner 🚀
+        </div>
+    `;
+
+    exportContainer.innerHTML = contentHtml;
+    document.body.appendChild(exportContainer);
+
+    // 4. Capture & Download using html2canvas
+    try {
+        const canvas = await html2canvas(exportContainer, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const link = document.createElement('a');
+        link.download = `Timetable-${userName.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Optional: Play sound or vibrate
+        try { document.getElementById('xp-sound').play(); } catch(e){}
+        alert("Schedule downloaded successfully! 📸");
+    } catch(e) {
+        console.error(e);
+        alert("Oops! Could not generate image.");
+    } finally {
+        document.body.removeChild(exportContainer);
+    }
+},   
 
 toggleHomeView(view) {
     this.data.currentHomeView = view;
