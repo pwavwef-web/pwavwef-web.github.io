@@ -836,6 +836,21 @@
         <img id="full-image" class="max-w-full max-h-full object-contain rounded-lg">
     </div>
 
+    <div id="modal-pdf-view" class="fixed inset-0 z-[70] bg-black/90 hidden flex flex-col pt-safe">
+    <header class="flex justify-between items-center px-4 py-3 bg-gray-900 text-white">
+        <button onclick="document.getElementById('modal-pdf-view').classList.add('hidden')" class="text-gray-300">
+            <i class="fa-solid fa-xmark text-xl"></i> Close
+        </button>
+        <h3 class="font-bold">PDF Preview</h3>
+        <a id="pdf-download-btn" href="#" target="_blank" class="text-blueAccent font-bold text-sm">
+            <i class="fa-solid fa-download"></i> Save
+        </a>
+    </header>
+    <div class="flex-1 bg-gray-800 relative">
+        <iframe id="pdf-frame" class="w-full h-full border-0" src=""></iframe>
+    </div>
+</div>
+
     <div id="modal-notifications" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
         <header class="bg-blueAccent dark:bg-[#303030] text-white shadow-md flex items-center justify-between px-4 h-16 shrink-0">
             <button onclick="history.back()"><i class="fa-solid fa-arrow-left"></i></button>
@@ -937,6 +952,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -950,6 +966,7 @@
         const appInstance = initializeApp(firebaseConfig);
         const db = getFirestore(appInstance);
         const auth = getAuth(appInstance);
+        const storage = getStorage(appInstance);
 
         let currentUser = null;
         let listeners = [];
@@ -1341,6 +1358,18 @@ showNotifications() {
                 this.openModal('modal-image-view');
             },
 
+            openPdfPreview(url) {
+    const modal = document.getElementById('modal-pdf-view');
+    const frame = document.getElementById('pdf-frame');
+    const dlBtn = document.getElementById('pdf-download-btn');
+    
+    // Set source
+    frame.src = url;
+    dlBtn.href = url;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+},
             // --- EVENT & HOME LOGIC ---
             renderHome() {
                 // Greeting Logic
@@ -2326,16 +2355,44 @@ buyTicket(ev) {
                                 senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
                             }
 
-                            let content = `<p>${msg.text || ''}</p>`; // Added safety check for empty text
-                            
-                            if (msg.fileData) {
-                                // FIX: Added check 'msg.fileType &&' to prevent crash if fileType is missing
-                                if (msg.fileType && msg.fileType.startsWith('image/')) {
-                                    content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px]" onclick="app.viewImage('${msg.fileData}')">`;
-                                } else {
-                                    content += `<div onclick="app.downloadFile('${msg.id}')" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center"><i class="fa-solid fa-file"></i> ${msg.fileName || 'Attachment'}</div>`;
-                                }
-                            }
+                            let content = `<p>${msg.text || ''}</p>`;
+
+if (msg.fileData) {
+    // Check if it's an image
+    if (msg.fileType && msg.fileType.startsWith('image/')) {
+        content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px] cursor-pointer hover:opacity-90" onclick="app.viewImage('${msg.fileData}')">`;
+    } 
+    // Check if it's a PDF
+    else if (msg.fileType === 'application/pdf') {
+        content += `
+            <div class="mt-2 flex flex-col gap-1">
+                <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg flex items-center gap-3 border border-red-100 dark:border-red-800">
+                    <i class="fa-solid fa-file-pdf text-2xl text-red-500"></i>
+                    <div class="overflow-hidden">
+                        <p class="font-bold truncate text-xs">${msg.fileName}</p>
+                        <p class="text-[10px] opacity-60">${msg.fileSize || 'PDF'}</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-1">
+                    <button onclick="app.openPdfPreview('${msg.fileData}')" class="flex-1 bg-red-500 text-white text-xs py-2 rounded font-bold hover:bg-red-600">
+                        Preview <i class="fa-regular fa-eye"></i>
+                    </button>
+                    <a href="${msg.fileData}" target="_blank" class="px-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded flex items-center justify-center">
+                        <i class="fa-solid fa-download text-xs"></i>
+                    </a>
+                </div>
+            </div>`;
+    }
+    // Other files
+    else {
+        content += `
+            <a href="${msg.fileData}" target="_blank" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center hover:bg-black/20 transition">
+                <i class="fa-solid fa-file"></i> 
+                <span>${msg.fileName || 'Attachment'}</span>
+                <i class="fa-solid fa-download ml-auto opacity-50"></i>
+            </a>`;
+    }
+}
                             
                             html += `
                             <div class="flex flex-col ${align} mb-2 w-full msg-enter">
@@ -2397,56 +2454,88 @@ buyTicket(ev) {
                 }
             },
 
-            async sendMessage() {
-                const input = document.getElementById('chat-input');
-                const txt = input.value.trim();
-                const fileInput = document.getElementById('chat-file-input');
-                if(!txt && fileInput.files.length === 0) return;
+           async sendMessage() {
+    const input = document.getElementById('chat-input');
+    const txt = input.value.trim();
+    const fileInput = document.getElementById('chat-file-input');
+    
+    if(!txt && fileInput.files.length === 0) return;
 
-                let fileData = null; let fileName = null; let fileType = null;
-                if(fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    if(file.size > 2000000) return alert("File too big! Max 2MB."); 
-                    fileData = await this.compressImage(file); 
-                    fileName = file.name; fileType = file.type;
-                }
+    let fileUrl = null; 
+    let fileName = null; 
+    let fileType = null;
+    let fileSize = null;
 
-                // DETERMINE COLLECTION & ID
-                let coll, idField;
-                if (activeChatType === 'print') { coll = 'print_messages'; idField = 'orderId'; }
-                else if (activeChatType === 'course') { coll = 'course_messages'; idField = 'courseId'; }
-                else { coll = 'direct_messages'; idField = 'chatId'; }
-                
-                const msgData = {
-                    [idField]: activeChatId, 
-                    senderId: currentUser.uid, 
-                    text: txt, 
-                    fileData, fileName, fileType, 
-                    timestamp: Date.now()
-                };
+    // HANDLE FILE UPLOAD TO STORAGE
+    if(fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        // 1. Limit set to 25MB (Standard email/upload size)
+        if(file.size > 25 * 1024 * 1024) return alert("File too big! Max 25MB."); 
+        
+        fileName = file.name;
+        fileType = file.type;
+        fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
 
-                if (activeChatType === 'course') {
-                    msgData.senderName = this.data.user.name || 'Anonymous';
-                }
+        // 2. Upload to Firebase Storage
+        try {
+            // Show a temporary loading state in the input or button
+            input.placeholder = "Uploading file... 0%";
+            input.disabled = true;
 
-                await addDoc(collection(db, coll), msgData);
+            const storageRef = ref(storage, `chat_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            fileUrl = await getDownloadURL(snapshot.ref);
+            
+            input.placeholder = "Type a message...";
+            input.disabled = false;
+        } catch (e) {
+            console.error("Upload failed", e);
+            alert("Upload failed: " + e.message);
+            input.disabled = false;
+            return;
+        }
+    }
 
-                if(activeChatType === 'print') {
-                    const isStudentOwner = (currentUser.uid === activeChatId); 
-                    const updateData = { lastUpdated: Date.now() };
-                    if (isStudentOwner) updateData.hasUnread = true;
-                    await updateDoc(doc(db, "print_orders", activeChatId), updateData);
-                } else if(activeChatType === 'direct') {
-                    await updateDoc(doc(db, "direct_chats", activeChatId), { 
-                        lastUpdated: Date.now(), 
-                        lastSenderId: currentUser.uid,
-                        readBy: [currentUser.uid] 
-                    });
-                }
+    // DETERMINE COLLECTION & ID
+    let coll, idField;
+    if (activeChatType === 'print') { coll = 'print_messages'; idField = 'orderId'; }
+    else if (activeChatType === 'course') { coll = 'course_messages'; idField = 'courseId'; }
+    else { coll = 'direct_messages'; idField = 'chatId'; }
+    
+    const msgData = {
+        [idField]: activeChatId, 
+        senderId: currentUser.uid, 
+        text: txt, 
+        fileData: fileUrl, // Now storing the URL, not the Base64
+        fileName, 
+        fileType,
+        fileSize,
+        timestamp: Date.now()
+    };
 
-                input.value = ''; fileInput.value = ''; 
-            },
+    if (activeChatType === 'course') {
+        msgData.senderName = this.data.user.name || 'Anonymous';
+    }
 
+    await addDoc(collection(db, coll), msgData);
+
+    if(activeChatType === 'print') {
+        const isStudentOwner = (currentUser.uid === activeChatId); 
+        const updateData = { lastUpdated: Date.now() };
+        if (isStudentOwner) updateData.hasUnread = true;
+        await updateDoc(doc(db, "print_orders", activeChatId), updateData);
+    } else if(activeChatType === 'direct') {
+        await updateDoc(doc(db, "direct_chats", activeChatId), { 
+            lastUpdated: Date.now(), 
+            lastSenderId: currentUser.uid,
+            readBy: [currentUser.uid] 
+        });
+    }
+
+    input.value = ''; 
+    fileInput.value = ''; 
+},
             async handleFileUpload(input) { if(input.files.length > 0) { this.sendMessage(); } },
 
             async updatePrintStatus(newStatus) {
