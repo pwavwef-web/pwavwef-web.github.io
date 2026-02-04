@@ -1793,7 +1793,7 @@ async markBlogNotifsRead() {
             updateDoc(doc(db, `users/${currentUser.uid}/notifications`, n.id), { read: true });
         }
     });
-}
+},
             // --- NEW INTERACTION FUNCTIONS ---
 
 async toggleReaction(blogId, type) {
