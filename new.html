@@ -184,7 +184,6 @@
                 <button onclick="app.switchAdminView('broadcast')" id="adm-btn-broadcast" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Broadcast 📢</button>
                 <button onclick="app.switchAdminView('events')" id="adm-btn-events" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Events 🎉</button>
                <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
-                <button onclick="app.switchAdminView('tickets')" id="adm-btn-tickets" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Tickets 🎟️</button>
             </nav>
         </div>
 
@@ -304,26 +303,7 @@
                     <div id="adm-event-list" class="space-y-2"></div>
                 </div>
             </div>
-            <div id="adm-view-tickets" class="admin-view hidden space-y-6 pt-4">
-    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        <h2 class="text-xl font-bold mb-4 text-green-400">Ticket Sales Ledger</h2>
-        <div class="bg-black/20 rounded-lg overflow-hidden border border-gray-600">
-            <table class="w-full text-left text-sm text-gray-400">
-                <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
-                    <tr>
-                        <th class="px-4 py-3">Code</th>
-                        <th class="px-4 py-3">Event</th>
-                        <th class="px-4 py-3">Holder</th>
-                        <th class="px-4 py-3 text-right">Price</th>
-                    </tr>
-                </thead>
-                <tbody id="adm-ticket-list" class="divide-y divide-gray-700">
-                    <tr><td colspan="4" class="p-4 text-center">Loading sales...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+            
             
             <div id="adm-view-feedback" class="admin-view hidden pt-4">
                 <h2 class="text-xl font-bold mb-4 text-pink-400">User Reviews</h2>
