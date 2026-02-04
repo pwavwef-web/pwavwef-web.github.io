@@ -610,6 +610,23 @@
     </div>
 </div>
 
+    <div id="modal-blog-comments" class="fixed inset-0 z-[70] bg-white dark:bg-darkCard hidden flex flex-col pt-safe">
+    <header class="flex items-center gap-4 px-4 py-3 border-b dark:border-gray-700 shadow-sm">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h3 class="font-bold">Comments 💬</h3>
+    </header>
+    
+    <div id="comments-list" class="flex-1 overflow-y-auto p-4 pb-20">
+        </div>
+
+    <div class="p-3 border-t dark:border-gray-700 bg-white dark:bg-[#303030] pb-safe flex gap-2">
+        <input id="comment-input" type="text" placeholder="Add a comment..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2 outline-none">
+        <button onclick="app.postComment()" class="bg-blueAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+    </div>
+</div>
+
     <div id="full-screen-profile" class="fixed inset-0 z-[55] bg-gray-50 dark:bg-darkBg flex flex-col hidden overflow-y-auto">
         <div class="relative w-full h-64 profile-gradient shrink-0 overflow-hidden">
             <div class="absolute top-0 w-full flex items-center justify-between px-4 pt-safe mt-4 z-30">
@@ -1079,6 +1096,8 @@
                                 'full-screen-leaderboard', 
                                 'full-screen-feedback', 
                                 'full-screen-chat',
+                                'full-screen-blogs',
+                                'modal-blog-comments',
                                 'modal-overlay',
                                 'modal-image-view',
                                 'modal-notifications',
@@ -1275,17 +1294,21 @@
                 document.getElementById('feedback-form-content').classList.remove('hidden');
                 document.getElementById('feedback-success').classList.add('hidden');
             },
-            showNotifications() { 
-                document.querySelector('#modal-notifications h1').innerText = "AZ Learner Core 📢";
-                if(this.data.notifications.length > 0) {
-                   const ids = this.data.notifications.map(n => n.id);
-                   this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
-                   localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
-                   this.updateBadge(); 
-                }
-                this.renderNotifications(); 
-                this.openModal('modal-notifications'); 
-            },
+            showNotifications() {
+    // 1. Update Title
+    const header = document.querySelector('#modal-notifications h1');
+    if(header) header.innerText = "AZ Learner Core 📢";
+    
+    // 2. Mark as read logic
+    if(this.data.notifications.length > 0) {
+       const ids = this.data.notifications.map(n => n.id);
+       this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
+       localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
+       this.updateBadge();
+    }
+    this.renderNotifications();
+    this.openModal('modal-notifications');
+},
             viewImage(src) { 
                 document.getElementById('full-image').src = src; 
                 this.openModal('modal-image-view');
@@ -1502,14 +1525,23 @@ async saveBlog() {
 startBlogListener() {
     if (this.blogUnsub) return;
     const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
+    
     this.blogUnsub = onSnapshot(q, (snap) => {
         const feed = document.getElementById('blogs-feed');
         feed.innerHTML = '';
+        
+        if(snap.empty) {
+            feed.innerHTML = '<div class="text-center opacity-50 py-10">No blogs yet. Write the first one! ✍️</div>';
+            return;
+        }
+
         snap.forEach(doc => {
             const b = doc.data();
-            let mediaHtml = '';
+            const safeName = b.userName || 'Student'; // Fallback for undefined names
+            const safeText = b.text || ''; // Fallback for empty text
+            const time = b.timestamp ? new Date(b.timestamp).toLocaleDateString() : 'Just now';
             
-            // Video Play Logic
+            let mediaHtml = '';
             if (b.mediaType === 'video' && b.mediaData) {
                 mediaHtml = `
                 <div class="blog-media-container group">
@@ -1519,25 +1551,133 @@ startBlogListener() {
                     </div>
                 </div>`;
             } else if (b.mediaType === 'image' && b.mediaData) {
-                mediaHtml = `<div class="blog-media-container"><img src="${b.mediaData}"></div>`;
+                mediaHtml = `<div class="blog-media-container"><img src="${b.mediaData}" onclick="app.viewImage('${b.mediaData}')"></div>`;
             }
 
             const pic = b.userPic ? `<img src="${b.userPic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`;
 
+            // HTML for the Blog Card
             feed.innerHTML += `
             <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4">
                 <div class="flex items-center gap-3 mb-3">
                     ${pic}
                     <div>
-                        <h4 class="font-bold text-sm">${b.userName}</h4>
-                        <p class="text-[10px] opacity-60">${new Date(b.timestamp).toLocaleDateString()}</p>
+                        <h4 class="font-bold text-sm">${safeName}</h4>
+                        <p class="text-[10px] opacity-60">${time}</p>
                     </div>
                 </div>
-                <div class="${b.font || 'font-sans'} text-lg leading-relaxed whitespace-pre-wrap">${b.text}</div>
+                <div class="${b.font || 'font-sans'} text-lg leading-relaxed whitespace-pre-wrap">${safeText}</div>
                 ${mediaHtml}
+                
+                <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <button onclick="app.openComments('${doc.id}')" class="flex items-center gap-2 text-gray-500 hover:text-blueAccent text-sm">
+                        <i class="fa-regular fa-comment-dots"></i> Comment
+                    </button>
+                </div>
             </div>`;
         });
     });
+},
+            // --- FIX FOR UNDEFINED BLOGS ---
+async saveBlog() {
+    const text = document.getElementById('blog-input-text').value;
+    const fileInput = document.getElementById('blog-media-input');
+    
+    // Safety check for user name
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Anonymous Student";
+    const userPic = (this.data.user && this.data.user.profilePic) ? this.data.user.profilePic : null;
+
+    if (!text && fileInput.files.length === 0) return alert("Write something!");
+
+    let mediaData = null;
+    let mediaType = 'text';
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        mediaType = file.type.startsWith('video') ? 'video' : 'image';
+        if (mediaType === 'image') {
+            mediaData = await this.compressImage(file);
+        } else {
+            // Read video as DataURL
+            mediaData = await new Promise(r => {
+                const reader = new FileReader();
+                reader.onload = e => r(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    await addDoc(collection(db, "blogs"), {
+        userId: currentUser.uid,
+        userName: userName,
+        userPic: userPic,
+        text: text,
+        font: this.data.currentBlogFont || 'font-roboto',
+        mediaData: mediaData,
+        mediaType: mediaType,
+        timestamp: Date.now()
+    });
+
+    document.getElementById('modal-write-blog').classList.add('hidden');
+    document.getElementById('blog-input-text').value = '';
+    this.clearBlogMedia();
+    this.addXp(20, "Posted a Blog ✍️");
+},
+
+// --- COMMENT LOGIC ---
+openComments(blogId) {
+    this.data.activeBlogId = blogId;
+    history.pushState({ view: 'comments' }, null, "");
+    document.getElementById('modal-blog-comments').classList.remove('hidden');
+    
+    // Load Comments
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div class="text-center opacity-50 py-4">Loading thoughts...</div>';
+    
+    // Real-time listener for comments on this specific blog
+    const q = query(collection(db, "blog_comments"), where("blogId", "==", blogId), orderBy("timestamp", "desc"));
+    
+    // Stop previous listener if exists
+    if(this.commentListener) this.commentListener();
+    
+    this.commentListener = onSnapshot(q, (snap) => {
+        list.innerHTML = '';
+        if(snap.empty) {
+            list.innerHTML = '<div class="text-center opacity-40 py-10">No comments yet. Be the first!</div>';
+            return;
+        }
+        snap.forEach(d => {
+            const c = d.data();
+            list.innerHTML += `
+                <div class="flex gap-3 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center font-bold text-xs shrink-0">${c.userName[0]}</div>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none">
+                        <p class="text-[10px] font-bold opacity-60 mb-1">${c.userName}</p>
+                        <p class="text-sm">${c.text}</p>
+                    </div>
+                </div>`;
+        });
+    });
+},
+
+async postComment() {
+    const input = document.getElementById('comment-input');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Student";
+    
+    await addDoc(collection(db, "blog_comments"), {
+        blogId: this.data.activeBlogId,
+        userId: currentUser.uid,
+        userName: userName,
+        text: text,
+        timestamp: Date.now()
+    });
+    
+    input.value = '';
+    // Optional: Add tiny XP for engagement
+    this.addXp(5, "Commented 💬");
 },
             // --- TICKET SYSTEM LOGIC ---
 
