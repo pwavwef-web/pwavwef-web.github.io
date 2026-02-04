@@ -1087,56 +1087,61 @@
                         this.switchTab(0);
                         history.replaceState({ tab: 0 }, null, ""); 
                         
-                        // --- HISTORY API FIX ---
                         window.addEventListener('popstate', (event) => {
-                            // Define all your full-screen views and modals
-                            const views = [
-                                'full-screen-profile', 
-                                'full-screen-settings', 
-                                'full-screen-leaderboard', 
-                                'full-screen-feedback', 
-                                'full-screen-chat',
-                                'full-screen-blogs',
-                                'modal-blog-comments',
-                                'modal-overlay',
-                                'modal-image-view',
-                                'modal-notifications',
-                                'modal-note-editor',
-                                'modal-contacts'
-                            ];
+    // 1. Defined views ordered by PRIORITY (Top-most layers first!)
+    // If 'modal-blog-comments' is found open, we close it and STOP looking.
+    const views = [
+        'modal-image-view',       
+        'modal-blog-comments',    // Top priority (on top of blogs)
+        'full-screen-feedback',   
+        'full-screen-chat',       
+        'modal-write-blog',
+        'full-screen-profile',    
+        'full-screen-settings',   
+        'full-screen-leaderboard',
+        'full-screen-blogs',      // Lower priority (bottom layer)
+        'modal-notifications',    
+        'modal-note-editor',      
+        'modal-contacts',         
+        'modal-overlay'           
+    ];
 
-                            let viewClosed = false;
+    let viewClosed = false;
 
-                            // Check if any view is currently open (not hidden)
-                            views.forEach(id => {
-                                const el = document.getElementById(id);
-                                if (el && !el.classList.contains('hidden')) {
-                                    el.classList.add('hidden'); // Close it
-                                    viewClosed = true;
+    // 2. Use a for...of loop so we can use 'break'
+    for (const id of views) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) {
+            el.classList.add('hidden'); // Close this view
+            viewClosed = true;
 
-                                    // Special cleanup for Chat (stop listeners)
-                                    if (id === 'full-screen-chat' && this.activeChatListener) {
-                                        this.activeChatListener(); 
-                                        this.activeChatListener = null;
-                                    }
-                                    
-                                    // Special cleanup for modals inside overlay
-                                    if (id === 'modal-overlay') {
-                                        document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden'));
-                                    }
-                                }
-                            });
+            // Special cleanup for Chat
+            if (id === 'full-screen-chat' && this.activeChatListener) {
+                this.activeChatListener(); 
+                this.activeChatListener = null;
+            }
+            
+            // Special cleanup for generic overlay
+            if (id === 'modal-overlay') {
+                document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden'));
+            }
 
-                            // If we closed a view, stop here. Don't switch tabs.
-                            if (viewClosed) return;
+            // 3. CRITICAL FIX: Stop the loop here! 
+            // This prevents the code from continuing and closing the Blogs page underneath.
+            break; 
+        }
+    }
 
-                            // If no view was open, handle Tab Switching
-                            if (event.state && event.state.tab !== undefined) {
-                                this.switchTab(event.state.tab, true);
-                            } else {
-                                this.switchTab(0, true);
-                            }
-                        });
+    // If we closed a view (like comments), stop here. Don't switch tabs.
+    if (viewClosed) return;
+
+    // If no view was open, then we switch tabs
+    if (event.state && event.state.tab !== undefined) {
+        this.switchTab(event.state.tab, true);
+    } else {
+        this.switchTab(0, true);
+    }
+});
 
                         setTimeout(() => { splash.classList.add('opacity-0', 'pointer-events-none'); }, 800);
 
