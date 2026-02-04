@@ -1299,20 +1299,31 @@
                 document.getElementById('feedback-form-content').classList.remove('hidden');
                 document.getElementById('feedback-success').classList.add('hidden');
             },
-            showNotifications() {
-    // 1. Update Title
+            // FIND THIS FUNCTION AND REPLACE IT
+showNotifications() {
+    // 1. Push History State (So back button works)
+    history.pushState({ view: 'notifications' }, null, "");
+
+    // 2. Update Title
     const header = document.querySelector('#modal-notifications h1');
     if(header) header.innerText = "AZ Learner Core 📢";
-    
-    // 2. Mark as read logic
+
+    // 3. Mark as read logic
     if(this.data.notifications.length > 0) {
        const ids = this.data.notifications.map(n => n.id);
        this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
        localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
        this.updateBadge();
     }
+
+    // 4. Render content
     this.renderNotifications();
-    this.openModal('modal-notifications');
+
+    // 5. SHOW THE SCREEN (Directly, not via openModal)
+    document.getElementById('modal-notifications').classList.remove('hidden');
+    
+    // Ensure the black overlay is NOT blocking interactions
+    document.getElementById('modal-overlay').classList.add('hidden');
 },
             viewImage(src) { 
                 document.getElementById('full-image').src = src; 
@@ -2569,6 +2580,9 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                     snap.forEach(d => newNotifs.push({id: d.id, ...d.data()}));
                     this.data.notifications = newNotifs;
                     this.renderNotifications(); this.updateBadge();
+                    if(!document.getElementById('tab-chat').classList.contains('hidden')) {
+        this.renderChatList();
+    }
                 }));
 
                 const qChats = query(collection(db, "direct_chats"), where("users", "array-contains", currentUser.uid));
@@ -2888,7 +2902,7 @@ listeners.push(onSnapshot(qTickets, (snap) => {
                 if(this.data.notifications.length === 0) { document.getElementById('empty-notifications').classList.remove('hidden'); return; }
                 document.getElementById('empty-notifications').classList.add('hidden');
                 this.data.notifications.forEach(n => {
-                    let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage('${n.image}')" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
+                   let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage(this.src)" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
                     let cardClass = "bg-white dark:bg-darkCard";
                     let titleClass = "text-blueAccent";
                     let border = "";
