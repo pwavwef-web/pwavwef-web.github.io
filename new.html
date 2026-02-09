@@ -161,7 +161,8 @@
             </div>
 
             <div id="view-workspace" class="admin-view hidden h-full flex flex-col">
-                <div class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700">
+                <div
+                    class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
                     <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal"
                         class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white">My
                         Zone</button>
@@ -174,6 +175,32 @@
                     <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault"
                         class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Vault
                         📂</button>
+                    <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">System
+                        Logs 📜</button>
+                </div>
+
+                <div id="ws-view-logs" class="ws-view hidden h-full flex flex-col">
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 flex-1 overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center">
+                            <h2 class="text-sm font-bold text-gray-300">Operations Log</h2>
+                            <span class="text-[10px] text-gray-500 font-mono">ENCRYPTED_LEDGER_V1</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-0">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-900 text-gray-500 uppercase font-bold sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3">Time</th>
+                                        <th class="px-4 py-3">Officer</th>
+                                        <th class="px-4 py-3">Action</th>
+                                        <th class="px-4 py-3">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-list" class="divide-y divide-gray-700/50 text-gray-300 font-mono">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="ws-view-personal" class="ws-view flex-1 space-y-4">
@@ -218,17 +245,20 @@
                     <div class="grid md:grid-cols-3 gap-4">
                         <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
                             <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending
-                                <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span></h3>
+                                <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span>
+                            </h3>
                             <div id="board-todo" class="space-y-2 min-h-[100px]"></div>
                         </div>
                         <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20">
                             <h3 class="text-xs font-bold text-blue-400 uppercase mb-3 flex justify-between">In Progress
-                                <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span></h3>
+                                <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span>
+                            </h3>
                             <div id="board-prog" class="space-y-2 min-h-[100px]"></div>
                         </div>
                         <div class="bg-green-900/10 p-3 rounded-xl border border-green-500/20">
                             <h3 class="text-xs font-bold text-green-400 uppercase mb-3 flex justify-between">Completed
-                                <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span></h3>
+                                <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span>
+                            </h3>
                             <div id="board-done" class="space-y-2 min-h-[100px]"></div>
                         </div>
                     </div>
@@ -352,7 +382,8 @@
                 </div>
                 <div class="bg-red-900/10 border border-red-500/30 p-6 rounded-xl">
                     <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest">
-                        <i class="fa-solid fa-gavel"></i> Disciplinary Action</h3>
+                        <i class="fa-solid fa-gavel"></i> Disciplinary Action
+                    </h3>
                     <div class="flex gap-2">
                         <input id="ban-email-input" type="email" placeholder="Target Email..."
                             class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
@@ -446,9 +477,14 @@
             async login() {
                 try {
                     await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
+                    // LOGGING HAPPENS IN APP.INIT AFTER USER IS CONFIRMED
                 } catch (err) { document.getElementById('login-msg').innerText = "Auth Failed: " + err.message; }
             },
-            logout() { signOut(auth); }
+            logout() { 
+                // Log logout before signing out
+                if(currentUser) app.logAction('SYSTEM_EXIT', `User ${currentUser.name} disconnected.`);
+                signOut(auth); 
+            }
         };
 
         window.app = {
@@ -479,6 +515,98 @@
                         document.getElementById('app-content').classList.add('hidden');
                     }
                 });
+            },
+
+            // 1. ADD THIS NEW HELPER FUNCTION
+            async logAction(type, details) {
+                if(!currentUser) return;
+                await addDoc(collection(db, "admin_logs"), {
+                    type: type,
+                    user: currentUser.name,
+                    email: currentUser.email,
+                    details: details,
+                    timestamp: serverTimestamp()
+                });
+            },
+
+            // 2. UPDATE INIT (To log login success)
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            if (userData.role !== 'admin') {
+                                alert("SECURITY ALERT: Unauthorized access attempt logged.");
+                                signOut(auth);
+                                return;
+                            }
+                            currentUser = { ...userData, uid: user.uid };
+                            
+                            // LOG LOGIN HERE
+                            this.logAction('SYSTEM_ENTRY', `User ${userData.name} initialized session.`);
+
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('admin-name-display').innerText = `Officer ${userData.name}`;
+
+                            if (user.email === "pwavwef@gmail.com") {
+                                document.getElementById('nav-godmode').classList.remove('hidden');
+                            }
+                            this.startListeners();
+                            this.switchView('dash');
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            // 3. UPDATE MOVE TEAM TASK (The CEO Approval Logic)
+            async moveTeamTask(id, currentStatus, assignee, taskTitle) {
+                // Security Check
+                if (assignee !== 'Unassigned' && currentUser.name !== assignee && currentUser.email !== "pwavwef@gmail.com") {
+                    alert(`⛔ Access Denied: Only ${assignee} or CEO can update this.`);
+                    return;
+                }
+
+                // CEO APPROVAL LOGIC
+                if (currentStatus === 'done') {
+                    // Attempting to move from Done -> Completed (Archived)
+                    if (currentUser.email !== "pwavwef@gmail.com") {
+                        alert("🔒 Pending Approval: Only the CEO can sign off on completed tasks.");
+                        return;
+                    }
+
+                    const comment = prompt(`Approve completion of "${taskTitle}"?\n\nEnter remarks for the log:`);
+                    if (comment !== null) { // If not cancelled
+                        // 1. Log it
+                        await this.logAction('MISSION_COMPLETE', `Task: "${taskTitle}" by ${assignee}. CEO Remarks: ${comment}`);
+                        // 2. Delete from board (it lives in logs now)
+                        await deleteDoc(doc(db, "admin_team_tasks", id));
+                        alert("Task Approved & Logged.");
+                    }
+                    return;
+                }
+
+                // Normal Flow (Todo -> Prog -> Done)
+                const next = currentStatus === 'todo' ? 'prog' : 'done';
+                await updateDoc(doc(db, "admin_team_tasks", id), { status: next });
+            },
+
+            // 4. Update switchWorkspaceTab to handle logs
+            switchWorkspaceTab(tab) {
+                document.querySelectorAll('.ws-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`ws-view-${tab}`).classList.remove('hidden');
+
+                document.querySelectorAll('.ws-tab').forEach(btn => {
+                    btn.classList.remove('bg-blueAccent', 'text-white', 'text-gray-400');
+                    if (btn.id === `ws-tab-${tab}`) btn.classList.add('bg-blueAccent', 'text-white');
+                    else btn.classList.add('text-gray-400');
+                });
+
+                if (tab === 'chat') this.scrollToChatBottom();
             },
 
             switchView(view) {
@@ -555,14 +683,35 @@
                 document.getElementById('team-task-title').value = '';
             },
 
-            async moveTeamTask(id, currentStatus, assignee) {
-                // RULE: Only the assignee (or anyone if 'Unassigned') can change status
-                if (assignee !== 'Unassigned' && currentUser.name !== assignee) {
-                    alert(`⛔ Access Denied: Only ${assignee} can update this task.`);
+            // 3. UPDATE MOVE TEAM TASK (The CEO Approval Logic)
+            async moveTeamTask(id, currentStatus, assignee, taskTitle) {
+                // Security Check
+                if (assignee !== 'Unassigned' && currentUser.name !== assignee && currentUser.email !== "pwavwef@gmail.com") {
+                    alert(`⛔ Access Denied: Only ${assignee} or CEO can update this.`);
                     return;
                 }
 
-                const next = currentStatus === 'todo' ? 'prog' : (currentStatus === 'prog' ? 'done' : 'todo');
+                // CEO APPROVAL LOGIC
+                if (currentStatus === 'done') {
+                    // Attempting to move from Done -> Completed (Archived)
+                    if (currentUser.email !== "pwavwef@gmail.com") {
+                        alert("🔒 Pending Approval: Only the CEO can sign off on completed tasks.");
+                        return;
+                    }
+
+                    const comment = prompt(`Approve completion of "${taskTitle}"?\n\nEnter remarks for the log:`);
+                    if (comment !== null) { // If not cancelled
+                        // 1. Log it
+                        await this.logAction('MISSION_COMPLETE', `Task: "${taskTitle}" by ${assignee}. CEO Remarks: ${comment}`);
+                        // 2. Delete from board (it lives in logs now)
+                        await deleteDoc(doc(db, "admin_team_tasks", id));
+                        alert("Task Approved & Logged.");
+                    }
+                    return;
+                }
+
+                // Normal Flow (Todo -> Prog -> Done)
+                const next = currentStatus === 'todo' ? 'prog' : 'done';
                 await updateDoc(doc(db, "admin_team_tasks", id), { status: next });
             },
 
@@ -572,8 +721,8 @@
                     alert("⛔ Restricted: Only the CEO can delete tasks.");
                     return;
                 }
-                
-                if(confirm("Archive this directive?")) await deleteDoc(doc(db, "admin_team_tasks", id));
+
+                if (confirm("Archive this directive?")) await deleteDoc(doc(db, "admin_team_tasks", id));
             },
 
             async uploadToVault(input) {
@@ -637,7 +786,6 @@
                     this.scrollToChatBottom();
                 });
 
-                // 3. Team Board Listener
                 onSnapshot(query(collection(db, "admin_team_tasks"), orderBy('createdAt', 'desc')), (snap) => {
                     const todo = document.getElementById('board-todo');
                     const prog = document.getElementById('board-prog');
@@ -647,13 +795,13 @@
 
                     snap.forEach(d => {
                         const t = d.data();
-                        // UPDATE: Added t.assignee to the moveTeamTask arguments below
+                        // Added t.title to the onclick arguments
                         const card = `
-                            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm relative group hover:-translate-y-1 transition-transform cursor-pointer" onclick="app.moveTeamTask('${d.id}', '${t.status}', '${t.assignee}')">
+                            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm relative group hover:-translate-y-1 transition-transform cursor-pointer" onclick="app.moveTeamTask('${d.id}', '${t.status}', '${t.assignee}', '${t.title}')">
                                 <p class="text-sm font-bold text-white mb-1">${t.title}</p>
                                 <div class="flex justify-between items-center text-[10px] text-gray-400">
                                     <span><i class="fa-solid fa-user-tag"></i> ${t.assignee}</span>
-                                    ${t.status === 'done' ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}
+                                    ${t.status === 'done' ? '<span class="text-orangeAccent animate-pulse">Awaiting Approval</span>' : ''}
                                 </div>
                                 <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs hover:text-red-400 bg-gray-800 rounded-full px-1"><i class="fa-solid fa-xmark"></i></button>
                             </div>`;
@@ -665,6 +813,30 @@
                     document.getElementById('count-todo').innerText = cTodo;
                     document.getElementById('count-prog').innerText = cProg;
                     document.getElementById('count-done').innerText = cDone;
+                });
+
+                // 5. NEW LOGS LISTENER
+                onSnapshot(query(collection(db, "admin_logs"), orderBy('timestamp', 'desc'), limit(50)), (snap) => {
+                    const list = document.getElementById('logs-list');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const l = d.data();
+                        const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleString() : 'Just now';
+                        
+                        let typeColor = 'text-gray-400';
+                        if(l.type === 'SYSTEM_ENTRY') typeColor = 'text-green-400';
+                        if(l.type === 'SYSTEM_EXIT') typeColor = 'text-red-400';
+                        if(l.type === 'MISSION_COMPLETE') typeColor = 'text-orangeAccent';
+
+                        list.innerHTML += `
+                            <tr class="hover:bg-gray-800/50 transition">
+                                <td class="px-4 py-3 text-[10px] opacity-70 whitespace-nowrap">${time}</td>
+                                <td class="px-4 py-3 font-bold text-white">${l.user}</td>
+                                <td class="px-4 py-3 font-bold text-[10px] uppercase ${typeColor}">${l.type}</td>
+                                <td class="px-4 py-3 truncate max-w-xs" title="${l.details}">${l.details}</td>
+                            </tr>
+                        `;
+                    });
                 });
 
                 // 4. Vault Listener
