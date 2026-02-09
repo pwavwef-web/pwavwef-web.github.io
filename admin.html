@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -15,9 +16,9 @@
                 extend: {
                     fontFamily: { sans: ['Roboto', 'sans-serif'] },
                     colors: {
-                        blueAccent: '#448AFF', 
-                        orangeAccent: '#FFAB40', 
-                        darkBg: '#1a1a1a', 
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#1a1a1a',
                         darkCard: '#2d2d2d',
                         success: '#00E676'
                     }
@@ -26,114 +27,208 @@
         }
     </script>
     <style>
-        body { -webkit-tap-highlight-color: transparent; background-color: #111827; color: white; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .chat-bubble { max-width: 75%; }
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #111827;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chat-bubble {
+            max-width: 75%;
+        }
+
         /* Smooth dropdown animation */
-        .ticket-dropdown { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
-        .ticket-dropdown.open { max-height: 500px; opacity: 1; overflow-y: auto; }
+        .ticket-dropdown {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .ticket-dropdown.open {
+            max-height: 500px;
+            opacity: 1;
+            overflow-y: auto;
+        }
     </style>
 </head>
+
 <body class="font-sans antialiased h-screen flex flex-col">
 
     <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
             <h1 class="text-3xl font-black text-orangeAccent mb-2 tracking-tighter">Admin HQ 👑</h1>
             <p class="text-sm text-gray-400 mb-6">Restricted Access • Clearance Required</p>
-            <input type="email" id="login-email" placeholder="Admin Email" class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
-            <input type="password" id="login-pass" placeholder="Password" class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
-            <button onclick="authManager.login()" class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Initialize Session 🔐</button>
+            <input type="email" id="login-email" placeholder="Admin Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Initialize
+                Session 🔐</button>
             <p id="login-msg" class="text-red-500 text-xs h-4"></p>
         </div>
     </div>
 
     <div id="app-content" class="hidden flex-1 flex flex-col h-full">
-        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+        <div
+            class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
             <div>
-                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">AZ COMMAND</h1>
+                <h1
+                    class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
+                    AZ COMMAND</h1>
                 <p id="admin-name-display" class="text-xs text-gray-400 font-mono">System Standby...</p>
             </div>
-            <button onclick="authManager.logout()" class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">Abort <i class="fa-solid fa-power-off"></i></button>
+            <button onclick="authManager.logout()"
+                class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">Abort
+                <i class="fa-solid fa-power-off"></i></button>
         </div>
 
-        <div class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0 items-center">
-            <button onclick="app.switchView('dash')" id="nav-dash" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-chart-pie mr-2"></i>Dash</button>
-            <button onclick="app.switchView('workspace')" id="nav-workspace" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-blue-500/30 text-blue-400"><i class="fa-solid fa-briefcase mr-2"></i>Ops Center</button>
-            <button onclick="app.switchView('tickets')" id="nav-tickets" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-ticket mr-2"></i>Sales</button>
-            <button onclick="app.switchView('events')" id="nav-events" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-calendar mr-2"></i>Events</button>
-            <button onclick="app.switchView('broadcast')" id="nav-broadcast" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-bullhorn mr-2"></i>Comms</button>
-            <button onclick="app.switchView('users')" id="nav-users" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i class="fa-solid fa-users mr-2"></i>DB</button>
-            <button onclick="app.switchView('godmode')" id="nav-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i class="fa-solid fa-bolt mr-2"></i>God Mode</button>
+        <div
+            class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0 items-center">
+            <button onclick="app.switchView('dash')" id="nav-dash"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-chart-pie mr-2"></i>Dash</button>
+            <button onclick="app.switchView('workspace')" id="nav-workspace"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-blue-500/30 text-blue-400"><i
+                    class="fa-solid fa-briefcase mr-2"></i>Ops Center</button>
+            <button onclick="app.switchView('tickets')" id="nav-tickets"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-ticket mr-2"></i>Sales</button>
+            <button onclick="app.switchView('events')" id="nav-events"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-calendar mr-2"></i>Events</button>
+            <button onclick="app.switchView('broadcast')" id="nav-broadcast"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-bullhorn mr-2"></i>Comms</button>
+            <button onclick="app.switchView('users')" id="nav-users"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-users mr-2"></i>DB</button>
+            <button onclick="app.switchView('godmode')" id="nav-godmode"
+                class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i
+                    class="fa-solid fa-bolt mr-2"></i>God Mode</button>
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f1115]">
-            
+
             <div id="view-dash" class="admin-view space-y-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg"><h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Users</h3><p class="text-3xl font-black text-white" id="stat-users">0</p></div>
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg"><h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Pending Reqs</h3><p class="text-3xl font-black text-blueAccent" id="stat-reqs">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Users</h3>
+                        <p class="text-3xl font-black text-white" id="stat-users">0</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Pending Reqs</h3>
+                        <p class="text-3xl font-black text-blueAccent" id="stat-reqs">0</p>
+                    </div>
                 </div>
                 <div>
-                    <h2 class="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2"><i class="fa-solid fa-print text-blueAccent"></i> Service Queue</h2>
+                    <h2 class="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2"><i
+                            class="fa-solid fa-print text-blueAccent"></i> Service Queue</h2>
                     <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
                         <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px] tracking-wider"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Ops</th></tr></thead>
-                            <tbody id="list-print-jobs" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Scanning queue...</td></tr></tbody>
+                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="px-4 py-3">Student</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Ops</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-print-jobs" class="divide-y divide-gray-700">
+                                <tr>
+                                    <td colspan="3" class="p-4 text-center">Scanning queue...</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
-                <button onclick="app.flushRequests()" class="w-full bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-900/50 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 mt-8 text-sm uppercase tracking-wide">Purge Logs 🧹</button>
+                <button onclick="app.flushRequests()"
+                    class="w-full bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-900/50 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 mt-8 text-sm uppercase tracking-wide">Purge
+                    Logs 🧹</button>
             </div>
 
             <div id="view-workspace" class="admin-view hidden h-full flex flex-col">
                 <div class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700">
-                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white">My Zone</button>
-                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">The Hub 💬</button>
-                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Mission Board 📌</button>
-                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Vault 📂</button>
+                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white">My
+                        Zone</button>
+                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">The
+                        Hub 💬</button>
+                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Mission
+                        Board 📌</button>
+                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Vault
+                        📂</button>
                 </div>
 
                 <div id="ws-view-personal" class="ws-view flex-1 space-y-4">
-                    <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
+                    <div
+                        class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
                         <h2 class="text-xl font-bold text-blue-300 mb-1">Private Protocol</h2>
-                        <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.</p>
+                        <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.
+                        </p>
                         <div class="flex gap-2 mb-4">
-                            <input id="personal-task-input" type="text" placeholder="Add a new directive..." class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
-                            <button onclick="app.addPersonalTask()" class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                            <input id="personal-task-input" type="text" placeholder="Add a new directive..."
+                                class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
+                            <button onclick="app.addPersonalTask()"
+                                class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i
+                                    class="fa-solid fa-plus"></i></button>
                         </div>
                         <ul id="personal-task-list" class="space-y-2"></ul>
                     </div>
                 </div>
 
                 <div id="ws-view-chat" class="ws-view hidden flex-1 flex flex-col h-[calc(100vh-220px)]">
-                    <div id="chat-container" class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
+                    <div id="chat-container"
+                        class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
                         <div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>
                     </div>
-                    <form onsubmit="app.sendChatMessage(event)" class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2">
-                        <input id="chat-input" type="text" placeholder="Broadcast to team..." class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
-                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
+                    <form onsubmit="app.sendChatMessage(event)"
+                        class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2">
+                        <input id="chat-input" type="text" placeholder="Broadcast to team..."
+                            class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
+                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i
+                                class="fa-solid fa-paper-plane"></i></button>
                     </form>
                 </div>
 
                 <div id="ws-view-board" class="ws-view hidden space-y-4">
                     <div class="flex justify-between items-center">
                         <h2 class="text-lg font-bold text-gray-300">Team Directives</h2>
-                        <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')" class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i class="fa-solid fa-plus"></i> New Task</button>
+                        <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')"
+                            class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i
+                                class="fa-solid fa-plus"></i> New Task</button>
                     </div>
-                    
+
                     <div class="grid md:grid-cols-3 gap-4">
                         <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
-                            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span></h3>
+                            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending
+                                <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span></h3>
                             <div id="board-todo" class="space-y-2 min-h-[100px]"></div>
                         </div>
                         <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20">
-                            <h3 class="text-xs font-bold text-blue-400 uppercase mb-3 flex justify-between">In Progress <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span></h3>
+                            <h3 class="text-xs font-bold text-blue-400 uppercase mb-3 flex justify-between">In Progress
+                                <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span></h3>
                             <div id="board-prog" class="space-y-2 min-h-[100px]"></div>
                         </div>
                         <div class="bg-green-900/10 p-3 rounded-xl border border-green-500/20">
-                            <h3 class="text-xs font-bold text-green-400 uppercase mb-3 flex justify-between">Completed <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span></h3>
+                            <h3 class="text-xs font-bold text-green-400 uppercase mb-3 flex justify-between">Completed
+                                <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span></h3>
                             <div id="board-done" class="space-y-2 min-h-[100px]"></div>
                         </div>
                     </div>
@@ -141,22 +236,25 @@
 
                 <div id="ws-view-vault" class="ws-view hidden space-y-4">
                     <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                        <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i> Digital Repository</h2>
+                        <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i>
+                            Digital Repository</h2>
                         <div class="flex gap-2 items-center mb-6">
-                            <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                            <label
+                                class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                                 <i class="fa-solid fa-file-import"></i> Upload Artifact
                                 <input type="file" id="vault-upload" class="hidden" onchange="app.uploadToVault(this)">
                             </label>
                             <span id="vault-status" class="text-xs text-gray-500 animate-pulse"></span>
                         </div>
                         <div class="space-y-1">
-                            <div class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
+                            <div
+                                class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
                                 <div class="col-span-2">Filename</div>
                                 <div>Uploader</div>
                                 <div class="text-right">Action</div>
                             </div>
                             <div id="vault-list" class="space-y-2 pt-2">
-                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -174,25 +272,39 @@
             <div id="view-events" class="admin-view hidden space-y-6">
                 <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
                     <h2 class="text-xl font-bold mb-4 text-orangeAccent">Initiate Event</h2>
-                    <input id="event-title" type="text" placeholder="Event Designation" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                    <input id="event-title" type="text" placeholder="Event Designation"
+                        class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
                     <div class="flex gap-2 mb-2">
-                        <input id="event-date" type="date" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
-                        <input id="event-time" type="time" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                        <input id="event-date" type="date"
+                            class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                        <input id="event-time" type="time"
+                            class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
                     </div>
                     <div class="flex gap-2 mb-2">
-                        <input id="event-price" type="number" placeholder="Fee (GHS)" class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
-                        <input id="event-qty" type="number" placeholder="Capacity" class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
-                    </div>    
-                    <input id="event-venue" type="text" placeholder="Coordinates/Venue" class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
-                    <textarea id="event-desc" placeholder="Briefing..." class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20 focus:border-orangeAccent"></textarea>
+                        <input id="event-price" type="number" placeholder="Fee (GHS)"
+                            class="flex-1 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                        <input id="event-qty" type="number" placeholder="Capacity"
+                            class="w-1/3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                    </div>
+                    <input id="event-venue" type="text" placeholder="Coordinates/Venue"
+                        class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-orangeAccent">
+                    <textarea id="event-desc" placeholder="Briefing..."
+                        class="w-full mb-2 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-20 focus:border-orangeAccent"></textarea>
                     <div class="flex items-center gap-2 mb-4">
-                         <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i class="fa-solid fa-image"></i> Upload Visual <input type="file" id="event-file" accept="image/*" class="hidden" onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
-                         <span id="event-file-name" class="text-xs text-gray-400">No data selected</span>
+                        <label
+                            class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2"><i
+                                class="fa-solid fa-image"></i> Upload Visual <input type="file" id="event-file"
+                                accept="image/*" class="hidden"
+                                onchange="document.getElementById('event-file-name').innerText = this.files[0].name"></label>
+                        <span id="event-file-name" class="text-xs text-gray-400">No data selected</span>
                     </div>
-                    <button onclick="app.saveEvent()" class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110 shadow-lg shadow-orange-500/20">Launch Event 🚀</button>
+                    <button onclick="app.saveEvent()"
+                        class="w-full bg-orangeAccent text-white font-bold py-3 rounded-lg hover:brightness-110 shadow-lg shadow-orange-500/20">Launch
+                        Event 🚀</button>
                 </div>
                 <div>
-                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Active Operations</h3>
+                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Active Operations
+                    </h3>
                     <div id="list-active-events" class="space-y-2"></div>
                 </div>
             </div>
@@ -200,18 +312,24 @@
             <div id="view-broadcast" class="admin-view hidden space-y-6">
                 <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700 shadow-lg">
                     <h2 class="text-xl font-bold mb-4">Global Network Broadcast</h2>
-                    <input id="broadcast-title" type="text" placeholder="Headline" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
-                    <textarea id="broadcast-body" placeholder="Transmission content..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
-                    
+                    <input id="broadcast-title" type="text" placeholder="Headline"
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white focus:border-blueAccent">
+                    <textarea id="broadcast-body" placeholder="Transmission content..."
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 outline-none text-white h-24 focus:border-blueAccent"></textarea>
+
                     <div class="flex items-center gap-2 mb-4">
-                        <label class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2 transition-colors border border-gray-600">
+                        <label
+                            class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-2 rounded cursor-pointer flex items-center gap-2 transition-colors border border-gray-600">
                             <i class="fa-solid fa-image"></i> Attach Visual
-                            <input type="file" id="broadcast-file" accept="image/*" class="hidden" onchange="document.getElementById('broadcast-file-name').innerText = this.files[0].name">
+                            <input type="file" id="broadcast-file" accept="image/*" class="hidden"
+                                onchange="document.getElementById('broadcast-file-name').innerText = this.files[0].name">
                         </label>
                         <span id="broadcast-file-name" class="text-xs text-gray-400">No image selected</span>
                     </div>
 
-                    <button onclick="app.sendBroadcast()" class="w-full bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 shadow-lg shadow-blue-500/30">Transmit 📡</button>
+                    <button onclick="app.sendBroadcast()"
+                        class="w-full bg-blueAccent text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 shadow-lg shadow-blue-500/30">Transmit
+                        📡</button>
                 </div>
                 <div id="list-broadcasts" class="space-y-2"></div>
             </div>
@@ -221,36 +339,60 @@
                     <h2 class="text-xl font-bold mb-4">Personnel Database</h2>
                     <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
                         <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]"><tr><th class="px-4 py-3">Identity</th><th class="px-4 py-3">Comms</th><th class="px-4 py-3">Clearance</th></tr></thead>
+                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]">
+                                <tr>
+                                    <th class="px-4 py-3">Identity</th>
+                                    <th class="px-4 py-3">Comms</th>
+                                    <th class="px-4 py-3">Clearance</th>
+                                </tr>
+                            </thead>
                             <tbody id="list-users" class="divide-y divide-gray-700"></tbody>
                         </table>
                     </div>
                 </div>
                 <div class="bg-red-900/10 border border-red-500/30 p-6 rounded-xl">
-                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest"><i class="fa-solid fa-gavel"></i> Disciplinary Action</h3>
+                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest">
+                        <i class="fa-solid fa-gavel"></i> Disciplinary Action</h3>
                     <div class="flex gap-2">
-                      <input id="ban-email-input" type="email" placeholder="Target Email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
-                      <button onclick="app.banUser()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                        <input id="ban-email-input" type="email" placeholder="Target Email..."
+                            class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                        <button onclick="app.banUser()"
+                            class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
                     </div>
-               </div>
+                </div>
             </div>
 
             <div id="view-godmode" class="admin-view hidden space-y-8">
-                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
-                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order</h2>
-                    <input id="vip-title" type="text" placeholder="Subject" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
-                    <textarea id="vip-body" placeholder="Direct command..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
-                    <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish Gold Alert 🔔</button>
+                <div
+                    class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i
+                            class="fa-solid fa-scroll"></i> Executive Order</h2>
+                    <input id="vip-title" type="text" placeholder="Subject"
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Direct command..."
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()"
+                        class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish
+                        Gold Alert 🔔</button>
                 </div>
-                <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
+                <div
+                    class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
                     <h2 class="text-xl font-black text-white mb-2 uppercase italic">Inner Circle ⭕</h2>
                     <div class="flex gap-2 mb-4">
-                        <input id="admin-email-input" type="email" placeholder="Promote Email..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
-                        <button onclick="app.addAdminByEmail()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
+                        <input id="admin-email-input" type="email" placeholder="Promote Email..."
+                            class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="app.addAdminByEmail()"
+                            class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
                     </div>
                     <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
                         <table class="w-full text-left text-sm text-gray-300">
-                            <thead class="bg-purple-900/30 text-[10px] uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
+                            <thead class="bg-purple-900/30 text-[10px] uppercase text-purple-300">
+                                <tr>
+                                    <th class="px-4 py-2">Name</th>
+                                    <th class="px-4 py-2">Role</th>
+                                    <th class="px-4 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
                             <tbody id="list-admins" class="divide-y divide-purple-900/20"></tbody>
                         </table>
                     </div>
@@ -263,13 +405,17 @@
     <div id="new-task-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
         <div class="bg-gray-800 w-full max-w-md rounded-xl border border-gray-600 p-6">
             <h3 class="text-xl font-bold text-white mb-4">Assign Directive</h3>
-            <input id="team-task-title" type="text" placeholder="Task Title" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white">
-            <select id="team-task-assignee" class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white">
+            <input id="team-task-title" type="text" placeholder="Task Title"
+                class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white">
+            <select id="team-task-assignee"
+                class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white">
                 <option value="Unassigned">Anyone</option>
-                </select>
+            </select>
             <div class="flex gap-2">
-                <button onclick="app.addTeamTask()" class="flex-1 bg-blueAccent text-white py-2 rounded font-bold">Deploy</button>
-                <button onclick="document.getElementById('new-task-modal').classList.add('hidden')" class="px-4 py-2 rounded text-gray-400 font-bold">Cancel</button>
+                <button onclick="app.addTeamTask()"
+                    class="flex-1 bg-blueAccent text-white py-2 rounded font-bold">Deploy</button>
+                <button onclick="document.getElementById('new-task-modal').classList.add('hidden')"
+                    class="px-4 py-2 rounded text-gray-400 font-bold">Cancel</button>
             </div>
         </div>
     </div>
@@ -279,7 +425,7 @@
         import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
-        
+
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
             authDomain: "az-learner.firebaseapp.com",
@@ -310,9 +456,9 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         const userDoc = await getDoc(doc(db, "users", user.uid));
-                        if(userDoc.exists()) {
+                        if (userDoc.exists()) {
                             const userData = userDoc.data();
-                            if(userData.role !== 'admin') {
+                            if (userData.role !== 'admin') {
                                 alert("SECURITY ALERT: Unauthorized access attempt logged.");
                                 signOut(auth);
                                 return;
@@ -321,8 +467,8 @@
                             document.getElementById('auth-overlay').classList.add('hidden');
                             document.getElementById('app-content').classList.remove('hidden');
                             document.getElementById('admin-name-display').innerText = `Officer ${userData.name}`;
-                            
-                            if(user.email === "pwavwef@gmail.com") {
+
+                            if (user.email === "pwavwef@gmail.com") {
                                 document.getElementById('nav-godmode').classList.remove('hidden');
                             }
                             this.startListeners();
@@ -338,18 +484,18 @@
             switchView(view) {
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`view-${view}`).classList.remove('hidden');
-                
+
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.classList.remove('bg-blueAccent', 'text-white', 'bg-gray-700', 'text-gray-400');
-                    if(btn.id === `nav-${view}`) {
+                    if (btn.id === `nav-${view}`) {
                         btn.classList.add('bg-blueAccent', 'text-white');
                     } else {
                         btn.classList.add('bg-gray-700', 'text-gray-400');
                     }
                 });
 
-                if(view === 'tickets') this.fetchSalesOverview(); 
-                if(view === 'workspace') this.switchWorkspaceTab('personal');
+                if (view === 'tickets') this.fetchSalesOverview();
+                if (view === 'workspace') this.switchWorkspaceTab('personal');
             },
 
             // WORKSPACE LOGIC
@@ -359,16 +505,16 @@
 
                 document.querySelectorAll('.ws-tab').forEach(btn => {
                     btn.classList.remove('bg-blueAccent', 'text-white', 'text-gray-400');
-                    if(btn.id === `ws-tab-${tab}`) btn.classList.add('bg-blueAccent', 'text-white');
+                    if (btn.id === `ws-tab-${tab}`) btn.classList.add('bg-blueAccent', 'text-white');
                     else btn.classList.add('text-gray-400');
                 });
 
-                if(tab === 'chat') this.scrollToChatBottom();
+                if (tab === 'chat') this.scrollToChatBottom();
             },
 
             async addPersonalTask() {
                 const input = document.getElementById('personal-task-input');
-                if(!input.value.trim()) return;
+                if (!input.value.trim()) return;
                 await addDoc(collection(db, `users/${currentUser.uid}/private_tasks`), {
                     text: input.value, createdAt: serverTimestamp(), done: false
                 });
@@ -386,7 +532,7 @@
             async sendChatMessage(e) {
                 e.preventDefault();
                 const input = document.getElementById('chat-input');
-                if(!input.value.trim()) return;
+                if (!input.value.trim()) return;
                 await addDoc(collection(db, "admin_hq_chat"), {
                     text: input.value, sender: currentUser.name, senderId: currentUser.uid, timestamp: serverTimestamp()
                 });
@@ -401,7 +547,7 @@
             async addTeamTask() {
                 const title = document.getElementById('team-task-title').value;
                 const assignee = document.getElementById('team-task-assignee').value;
-                if(!title) return;
+                if (!title) return;
                 await addDoc(collection(db, "admin_team_tasks"), {
                     title, assignee, status: 'todo', createdBy: currentUser.name, createdAt: serverTimestamp()
                 });
@@ -409,41 +555,53 @@
                 document.getElementById('team-task-title').value = '';
             },
 
-            async moveTeamTask(id, currentStatus) {
+            async moveTeamTask(id, currentStatus, assignee) {
+                // RULE: Only the assignee (or anyone if 'Unassigned') can change status
+                if (assignee !== 'Unassigned' && currentUser.name !== assignee) {
+                    alert(`⛔ Access Denied: Only ${assignee} can update this task.`);
+                    return;
+                }
+
                 const next = currentStatus === 'todo' ? 'prog' : (currentStatus === 'prog' ? 'done' : 'todo');
                 await updateDoc(doc(db, "admin_team_tasks", id), { status: next });
             },
 
             async deleteTeamTask(id) {
+                // RULE: Only the CEO can delete tasks
+                if (currentUser.email !== "pwavwef@gmail.com") {
+                    alert("⛔ Restricted: Only the CEO can delete tasks.");
+                    return;
+                }
+                
                 if(confirm("Archive this directive?")) await deleteDoc(doc(db, "admin_team_tasks", id));
             },
 
             async uploadToVault(input) {
                 const file = input.files[0];
-                if(!file) return;
+                if (!file) return;
                 const status = document.getElementById('vault-status');
                 status.innerText = "Encrypting & Uploading...";
-                
+
                 try {
                     const storageRef = ref(storage, `admin_vault/${Date.now()}_${file.name}`);
                     await uploadBytes(storageRef, file);
                     const url = await getDownloadURL(storageRef);
-                    
+
                     await addDoc(collection(db, "admin_vault_files"), {
                         name: file.name, url, uploader: currentUser.name, size: file.size, timestamp: serverTimestamp(), path: storageRef.fullPath
                     });
                     status.innerText = "";
                     input.value = "";
-                } catch(e) {
+                } catch (e) {
                     status.innerText = "Upload Failed.";
                     console.error(e);
                 }
             },
 
             async deleteVaultFile(id, path) {
-                if(!confirm("Destroy this artifact?")) return;
+                if (!confirm("Destroy this artifact?")) return;
                 const storageRef = ref(storage, path);
-                try { await deleteObject(storageRef); } catch(e) { console.log("Storage delete error, cleaning DB anyway"); }
+                try { await deleteObject(storageRef); } catch (e) { console.log("Storage delete error, cleaning DB anyway"); }
                 await deleteDoc(doc(db, "admin_vault_files", id));
             },
 
@@ -489,14 +647,15 @@
 
                     snap.forEach(d => {
                         const t = d.data();
+                        // UPDATE: Added t.assignee to the moveTeamTask arguments below
                         const card = `
-                            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm relative group hover:-translate-y-1 transition-transform cursor-pointer" onclick="app.moveTeamTask('${d.id}', '${t.status}')">
+                            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm relative group hover:-translate-y-1 transition-transform cursor-pointer" onclick="app.moveTeamTask('${d.id}', '${t.status}', '${t.assignee}')">
                                 <p class="text-sm font-bold text-white mb-1">${t.title}</p>
                                 <div class="flex justify-between items-center text-[10px] text-gray-400">
                                     <span><i class="fa-solid fa-user-tag"></i> ${t.assignee}</span>
                                     ${t.status === 'done' ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}
                                 </div>
-                                <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                                <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs hover:text-red-400 bg-gray-800 rounded-full px-1"><i class="fa-solid fa-xmark"></i></button>
                             </div>`;
                         
                         if(t.status === 'todo') { todo.innerHTML += card; cTodo++; }
@@ -529,21 +688,21 @@
                 });
 
                 // --- EXISTING LISTENERS (Users, Reqs, etc) ---
-                
+
                 // Users & Populate Assignee Dropdown
                 getDocs(query(collection(db, "users"), limit(100))).then(snap => {
                     const list = document.getElementById('list-users');
                     const adminListHtml = document.getElementById('list-admins');
                     const dropdown = document.getElementById('team-task-assignee');
                     document.getElementById('stat-users').innerText = snap.size + "+";
-                    
+
                     let uHtml = ''; let aHtml = ''; let opts = '<option value="Unassigned">Anyone</option>';
-                    
+
                     snap.forEach(d => {
                         const u = d.data();
-                        uHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-gray-300">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3"><span class="bg-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td></tr>`;
-                        
-                        if(u.role === 'admin') {
+                        uHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-gray-300">${u.name}</td><td class="px-4 py-3">${u.phone || '-'}</td><td class="px-4 py-3"><span class="bg-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td></tr>`;
+
+                        if (u.role === 'admin') {
                             aHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${d.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button></td></tr>`;
                             opts += `<option value="${u.name}">${u.name}</option>`;
                         }
@@ -558,7 +717,7 @@
                     document.getElementById('stat-reqs').innerText = snap.size;
                     const list = document.getElementById('list-print-jobs');
                     list.innerHTML = '';
-                    if(snap.empty) list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs">Queue Clear.</td></tr>';
+                    if (snap.empty) list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs">Queue Clear.</td></tr>';
                     snap.forEach(doc => {
                         const job = doc.data();
                         const isNew = job.hasUnread ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 animate-pulse">NEW</span>' : '';
@@ -584,7 +743,7 @@
                         const b = d.data();
                         // CHECK FOR IMAGE AND RENDER IT
                         const imgTag = b.image ? `<img src="${b.image}" class="w-8 h-8 rounded object-cover border border-gray-600 mr-3 cursor-pointer hover:scale-150 transition-transform" onclick="window.open('${b.image}')">` : '';
-                        
+
                         list.innerHTML += `
                         <div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700">
                             <div class="flex items-center w-2/3">
@@ -598,14 +757,14 @@
             },
 
             // --- RE-ENGINEERED SALES VIEW LOGIC ---
-            
+
             fetchSalesOverview() {
                 const container = document.getElementById('sales-accordion-container');
                 container.innerHTML = '<div class="text-center text-gray-500 py-10 animate-pulse">Scanning Events...</div>';
-                
+
                 // 1. Fetch Events first (Fast)
                 getDocs(query(collection(db, "events"), orderBy("timestamp", "desc"))).then(eventSnap => {
-                    if(eventSnap.empty) {
+                    if (eventSnap.empty) {
                         container.innerHTML = '<div class="text-center text-gray-500 py-10">No active events found in database.</div>';
                         return;
                     }
@@ -616,7 +775,7 @@
                         const eventId = doc.id;
                         // Calculate quick stats locally if possible, or start with defaults
                         const revenue = (ev.ticketsSold || 0) * (ev.price || 0);
-                        
+
                         // Create Accordion HTML
                         const html = `
                         <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-md">
@@ -648,10 +807,10 @@
                 const dropdown = document.getElementById(`dropdown-${eventId}`);
                 const icon = document.getElementById(`icon-${eventId}`);
                 const contentDiv = document.getElementById(`content-${eventId}`);
-                
+
                 // Toggle UI
                 const isOpen = dropdown.classList.contains('open');
-                if(isOpen) {
+                if (isOpen) {
                     dropdown.classList.remove('open');
                     icon.classList.remove('rotate-180');
                     return; // Close and exit
@@ -664,8 +823,8 @@
                 try {
                     const q = query(collectionGroup(db, 'tickets'), where('eventId', '==', eventId));
                     const snap = await getDocs(q);
-                    
-                    if(snap.empty) {
+
+                    if (snap.empty) {
                         contentDiv.innerHTML = '<div class="text-center text-xs text-gray-500 py-2">No tickets sold yet.</div>';
                         return;
                     }
@@ -674,7 +833,7 @@
                     <table class="w-full text-left text-xs text-gray-400">
                         <thead class="uppercase text-[9px] text-gray-500 border-b border-gray-700"><tr><th class="py-2">Ticket ID</th><th class="py-2">Holder</th><th class="py-2 text-right">Paid</th></tr></thead>
                         <tbody class="divide-y divide-gray-700/50">`;
-                    
+
                     let totalActualRevenue = 0;
 
                     snap.forEach(d => {
@@ -682,12 +841,12 @@
                         totalActualRevenue += (parseFloat(t.price) || 0);
                         tableHtml += `
                         <tr>
-                            <td class="py-2 font-mono text-orangeAccent">${t.ticketId ? t.ticketId.substring(0,6) : '???'}...</td>
+                            <td class="py-2 font-mono text-orangeAccent">${t.ticketId ? t.ticketId.substring(0, 6) : '???'}...</td>
                             <td class="py-2 text-white font-bold">${t.userName || 'Unknown'} <span class="block text-[9px] font-normal text-gray-500">${t.userEmail || ''}</span></td>
                             <td class="py-2 text-right text-green-400">GHS ${t.price}</td>
                         </tr>`;
                     });
-                    
+
                     tableHtml += `</tbody></table>
                     <div class="mt-2 pt-2 border-t border-gray-700 text-right text-xs font-bold text-white">
                         Total Verified Revenue: <span class="text-green-400 text-sm">GHS ${totalActualRevenue}</span>
@@ -695,7 +854,7 @@
 
                     contentDiv.innerHTML = tableHtml;
 
-                } catch(err) {
+                } catch (err) {
                     console.error(err);
                     contentDiv.innerHTML = `<div class="text-center text-xs text-red-400 py-2">Error loading data. <br> <span class="text-[9px] opacity-70">Check console for Firestore Index link.</span></div>`;
                 }
@@ -704,7 +863,7 @@
 
             async manageJob(id, currentStatus) {
                 const newStatus = prompt(`Update Status (received/printing/delivering/completed):`, currentStatus);
-                if(newStatus && newStatus !== currentStatus) {
+                if (newStatus && newStatus !== currentStatus) {
                     await updateDoc(doc(db, "print_orders", id), { status: newStatus.toLowerCase(), lastUpdated: Date.now() });
                 }
             },
@@ -722,7 +881,7 @@
                 if (!title || !date) return alert("Missing mission parameters.");
                 let image = null;
                 if (fileInput.files.length > 0) {
-                     image = await this.compressImage(fileInput.files[0]);
+                    image = await this.compressImage(fileInput.files[0]);
                 }
 
                 await addDoc(collection(db, "events"), {
@@ -733,18 +892,18 @@
                 document.getElementById('event-title').value = '';
             },
 
-            async deleteEvent(id) { if(confirm("Confirm Event Deletion?")) await deleteDoc(doc(db, "events", id)); },
-            
+            async deleteEvent(id) { if (confirm("Confirm Event Deletion?")) await deleteDoc(doc(db, "events", id)); },
+
             async sendBroadcast() {
                 const title = document.getElementById('broadcast-title').value;
                 const body = document.getElementById('broadcast-body').value;
                 const fileInput = document.getElementById('broadcast-file');
-                
-                if(!title) return;
-                
+
+                if (!title) return;
+
                 let image = null;
                 if (fileInput.files.length > 0) {
-                     image = await this.compressImage(fileInput.files[0]);
+                    image = await this.compressImage(fileInput.files[0]);
                 }
 
                 await addDoc(collection(db, "global_announcements"), { title, body, image, timestamp: Date.now() });
@@ -755,7 +914,7 @@
                 document.getElementById('broadcast-file-name').innerText = 'No image selected';
             },
 
-            async deleteBroadcast(id) { if(confirm("Retract Signal?")) await deleteDoc(doc(db, "global_announcements", id)); },
+            async deleteBroadcast(id) { if (confirm("Retract Signal?")) await deleteDoc(doc(db, "global_announcements", id)); },
 
             async sendVIPBroadcast() {
                 const title = document.getElementById('vip-title').value;
@@ -766,37 +925,37 @@
 
             async banUser() {
                 const email = document.getElementById('ban-email-input').value.trim();
-                if(!email) return;
+                if (!email) return;
                 const q = query(collection(db, "users"), where("email", "==", email));
                 const snap = await getDocs(q);
-                if(snap.empty) return alert("Target not found in DB.");
+                if (snap.empty) return alert("Target not found in DB.");
                 snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
                 alert("Hammer Dropped 🔨");
             },
 
             async flushRequests() {
-                if(!confirm("Warning: This will wipe all service logs. Proceed?")) return;
-                const q = query(collection(db, "print_orders")); 
+                if (!confirm("Warning: This will wipe all service logs. Proceed?")) return;
+                const q = query(collection(db, "print_orders"));
                 const snap = await getDocs(q);
                 snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
                 alert("Logs Purged.");
             },
 
-            async addAdminByEmail() { 
-                const email = document.getElementById('admin-email-input').value.trim(); 
-                if(!email) return; 
-                const q = query(collection(db, "users"), where("email", "==", email)); 
-                const snap = await getDocs(q); 
-                if(snap.empty) { alert("User not found!"); return; } 
-                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); 
-                alert(`Promoted ${email} to Command.`); 
+            async addAdminByEmail() {
+                const email = document.getElementById('admin-email-input').value.trim();
+                if (!email) return;
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if (snap.empty) { alert("User not found!"); return; }
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); });
+                alert(`Promoted ${email} to Command.`);
             },
-            
-            async toggleUserRole(uid, currentRole) { 
-                if(confirm(`Revoke admin status for this user?`)) { 
-                    const newRole = currentRole === 'admin' ? 'student' : 'admin'; 
-                    await updateDoc(doc(db, "users", uid), { role: newRole }); 
-                } 
+
+            async toggleUserRole(uid, currentRole) {
+                if (confirm(`Revoke admin status for this user?`)) {
+                    const newRole = currentRole === 'admin' ? 'student' : 'admin';
+                    await updateDoc(doc(db, "users", uid), { role: newRole });
+                }
             },
 
             async compressImage(file) {
@@ -819,4 +978,5 @@
         window.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
+
 </html>
