@@ -122,9 +122,9 @@
                     class="fa-solid fa-bolt mr-2"></i>God Mode</button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f1115]">
+        <div class="flex-1 overflow-hidden flex flex-col bg-[#0f1115]">
 
-            <div id="view-dash" class="admin-view space-y-6">
+            <div id="view-dash" class="admin-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
                         <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Users</h3>
@@ -160,23 +160,23 @@
                     Logs 🧹</button>
             </div>
 
-            <div id="view-workspace" class="admin-view hidden h-full flex flex-col">
+            <div id="view-workspace" class="admin-view hidden h-full flex flex-col p-4 md:p-6">
                 <div
                     class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
                     <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white">My
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white overflow-y-auto flex-1">My
                         Zone</button>
                     <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">The
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-hidden flex-1">The
                         Hub 💬</button>
                     <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Mission
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-y-auto flex-1">Mission
                         Board 📌</button>
                     <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">Vault
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-y-auto flex-1">Vault
                         📂</button>
                     <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white">System
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-hidden flex-1">System
                         Logs 📜</button>
                 </div>
 
@@ -290,7 +290,7 @@
                 </div>
             </div>
 
-            <div id="view-tickets" class="admin-view hidden space-y-6">
+            <div id="view-tickets" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
                 <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2">
                     <i class="fa-solid fa-money-bill-wave"></i> Revenue Streams
                 </h2>
@@ -299,7 +299,7 @@
                 </div>
             </div>
 
-            <div id="view-events" class="admin-view hidden space-y-6">
+            <div id="view-events" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
                 <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
                     <h2 class="text-xl font-bold mb-4 text-orangeAccent">Initiate Event</h2>
                     <input id="event-title" type="text" placeholder="Event Designation"
@@ -339,7 +339,7 @@
                 </div>
             </div>
 
-            <div id="view-broadcast" class="admin-view hidden space-y-6">
+            <div id="view-broadcast" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
                 <div class="bg-gradient-to-r from-blue-900 to-gray-800 p-6 rounded-xl border border-blue-700 shadow-lg">
                     <h2 class="text-xl font-bold mb-4">Global Network Broadcast</h2>
                     <input id="broadcast-title" type="text" placeholder="Headline"
@@ -364,7 +364,7 @@
                 <div id="list-broadcasts" class="space-y-2"></div>
             </div>
 
-            <div id="view-users" class="admin-view hidden space-y-8">
+            <div id="view-users" class="admin-view hidden space-y-8 overflow-y-auto p-4 md:p-6 h-full">
                 <div>
                     <h2 class="text-xl font-bold mb-4">Personnel Database</h2>
                     <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
@@ -393,7 +393,7 @@
                 </div>
             </div>
 
-            <div id="view-godmode" class="admin-view hidden space-y-8">
+            <div id="view-godmode" class="admin-view hidden space-y-8 overflow-y-auto p-4 md:p-6 h-full">
                 <div
                     class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
                     <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i
@@ -1152,3 +1152,4 @@
 </body>
 
 </html>
+
