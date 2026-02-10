@@ -161,75 +161,64 @@
             </div>
 
             <div id="view-workspace" class="admin-view hidden h-full flex flex-col p-4 md:p-6">
-                <div
-                    class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
-                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white overflow-y-auto flex-1">My
-                        Zone</button>
-                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-hidden flex-1">The
-                        Hub 💬</button>
-                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-y-auto flex-1">Mission
-                        Board 📌</button>
-                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-y-auto flex-1">Vault
-                        📂</button>
-                    <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs"
-                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white overflow-hidden flex-1">System
-                        Logs 📜</button>
+                <div class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
+                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white whitespace-nowrap">My Zone</button>
+                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">The Hub 💬</button>
+                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Mission Board 📌</button>
+                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Vault 📂</button>
+                    <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">System Logs 📜</button>
                 </div>
 
                 <div id="ws-view-logs" class="ws-view hidden flex-1 flex flex-col min-h-0">
-                <div class="bg-gray-800 rounded-xl border border-gray-700 flex-1 overflow-hidden flex flex-col">
-                    <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center shrink-0">
-                        <h2 class="text-sm font-bold text-gray-300">Operations Log</h2>
-                        <span class="text-[10px] text-gray-500 font-mono">ENCRYPTED_LEDGER_V1</span>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-0">
-                         <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-900 text-gray-500 uppercase font-bold sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-3">Time</th>
-                                    <th class="px-4 py-3">Officer</th>
-                                    <th class="px-4 py-3">Action</th>
-                                    <th class="px-4 py-3">Details</th>
-                                </tr>
-                            </thead>
-                            <tbody id="logs-list" class="divide-y divide-gray-700/50 text-gray-300 font-mono"></tbody>
-                        </table>
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 flex-1 overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center shrink-0">
+                            <h2 class="text-sm font-bold text-gray-300">Operations Log</h2>
+                            <span class="text-[10px] text-gray-500 font-mono">ENCRYPTED_LEDGER_V1</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-0">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-900 text-gray-500 uppercase font-bold sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3">Time</th>
+                                        <th class="px-4 py-3">Officer</th>
+                                        <th class="px-4 py-3">Action</th>
+                                        <th class="px-4 py-3">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-list" class="divide-y divide-gray-700/50 text-gray-300 font-mono"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
                 <div id="ws-view-personal" class="ws-view flex-1 overflow-y-auto space-y-4">
-                <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
-                    <h2 class="text-xl font-bold text-blue-300 mb-1">Private Protocol</h2>
-                    <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.</p>
-                    <div class="flex gap-2 mb-4">
-                        <input id="personal-task-input" type="text" placeholder="Add a new directive..." class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
-                        <button onclick="app.addPersonalTask()" class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                    <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
+                        <h2 class="text-xl font-bold text-blue-300 mb-1">Private Protocol</h2>
+                        <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.</p>
+                        <div class="flex gap-2 mb-4">
+                            <input id="personal-task-input" type="text" placeholder="Add a new directive..." class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
+                            <button onclick="app.addPersonalTask()" class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <ul id="personal-task-list" class="space-y-2"></ul>
                     </div>
-                    <ul id="personal-task-list" class="space-y-2"></ul>
                 </div>
-            </div>
 
-            <div id="ws-view-chat" class="ws-view hidden flex-1 flex flex-col min-h-0">
-                <div id="chat-container" class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
-                    <div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>
+                <div id="ws-view-chat" class="ws-view hidden flex-1 flex flex-col min-h-0">
+                    <div id="chat-container" class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
+                        <div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>
+                    </div>
+                    <form onsubmit="app.sendChatMessage(event)" class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2 shrink-0">
+                        <input id="chat-input" type="text" placeholder="Broadcast to team..." class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
+                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
                 </div>
-                <form onsubmit="app.sendChatMessage(event)" class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2 shrink-0">
-                    <input id="chat-input" type="text" placeholder="Broadcast to team..." class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
-                    <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
-                </form>
-            </div>
 
-            <div id="ws-view-board" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-gray-300">Team Directives</h2>
-                    <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')" class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i class="fa-solid fa-plus"></i> New Task</button>
-                </div>
-                <div class="grid md:grid-cols-3 gap-4">
+                <div id="ws-view-board" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-gray-300">Team Directives</h2>
+                        <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')" class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i class="fa-solid fa-plus"></i> New Task</button>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-4">
                         <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
                             <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span></h3>
                             <div id="board-todo" class="space-y-2 min-h-[100px]"></div>
@@ -243,11 +232,11 @@
                             <div id="board-done" class="space-y-2 min-h-[100px]"></div>
                         </div>
                     </div>
-            </div>
+                </div>
 
-            <div id="ws-view-vault" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                    <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i> Digital Repository</h2>
+                <div id="ws-view-vault" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i> Digital Repository</h2>
                         <div class="flex gap-2 items-center mb-6">
                             <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                                 <i class="fa-solid fa-file-import"></i> Upload Artifact
@@ -263,6 +252,7 @@
                             </div>
                             <div id="vault-list" class="space-y-2 pt-2"></div>
                         </div>
+                    </div>
                 </div>
             </div>
 
