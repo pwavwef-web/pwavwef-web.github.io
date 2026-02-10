@@ -169,6 +169,7 @@
                     <button onclick="app.switchWorkspaceTab('ai')" id="ws-tab-ai"
                         class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap border border-purple-500/30 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]">AI
                         Coordinator 🤖</button>
+
                     <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat"
                         class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">The
                         Hub 💬</button>
@@ -218,14 +219,20 @@
                             <div
                                 class="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700 text-sm text-gray-300 shadow-md max-w-[85%]">
                                 <p class="font-bold text-purple-400 text-xs mb-1">AZ COORDINATOR v2.0</p>
-                                Greetings, Officer. I am connected to the Mission Board and Personnel Database. Ask me
-                                about tasks, status reports, or pending directives.
+                                Greetings, Officer. I am connected to the Mission Board and Personnel Database.
+                                <br><br>
+                                You can ask me:
+                                <ul class="list-disc list-inside mt-1 opacity-70">
+                                    <li>"What are my tasks?"</li>
+                                    <li>"How do I do this task fast?"</li>
+                                    <li>"What is Tourism Management?"</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                     <form onsubmit="app.handleAIQuery(event)"
                         class="bg-gray-800 p-3 rounded-b-xl border-t border-purple-500/30 flex gap-2 shrink-0">
-                        <input id="ai-input" type="text" placeholder="Query the system..."
+                        <input id="ai-input" type="text" placeholder="Query the system or ask for advice..."
                             class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-purple-500 transition-colors placeholder-gray-600">
                         <button type="submit"
                             class="bg-purple-600 hover:bg-purple-500 text-white px-4 rounded-lg transition-colors shadow-lg shadow-purple-900/20"><i
@@ -484,6 +491,8 @@
         import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+        // NEW IMPORT: Vertex AI for Firebase
+        import { getVertexAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -498,20 +507,22 @@
         const db = getFirestore(appInstance);
         const auth = getAuth(appInstance);
         const storage = getStorage(appInstance);
+        
+        // INITIALIZE VERTEX AI (Secure, No API Key needed in code)
+        const vertexAI = getVertexAI(appInstance);
+        const model = getGenerativeModel(vertexAI, { model: "gemini-1.5-flash" });
+
         let currentUser = null;
-        let adminList = [];
 
         window.authManager = {
             async login() {
                 try {
                     await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
-                    // LOGGING HAPPENS IN APP.INIT AFTER USER IS CONFIRMED
                 } catch (err) { document.getElementById('login-msg').innerText = "Auth Failed: " + err.message; }
             },
-            logout() {
-                // Log logout before signing out
-                if (currentUser) app.logAction('SYSTEM_EXIT', `User ${currentUser.name} disconnected.`);
-                signOut(auth);
+            logout() { 
+                if(currentUser) app.logAction('SYSTEM_EXIT', `User ${currentUser.name} disconnected.`);
+                signOut(auth); 
             }
         };
 
@@ -528,50 +539,7 @@
                                 return;
                             }
                             currentUser = { ...userData, uid: user.uid };
-                            document.getElementById('auth-overlay').classList.add('hidden');
-                            document.getElementById('app-content').classList.remove('hidden');
-                            document.getElementById('admin-name-display').innerText = `Officer ${userData.name}`;
-
-                            if (user.email === "pwavwef@gmail.com") {
-                                document.getElementById('nav-godmode').classList.remove('hidden');
-                            }
-                            this.startListeners();
-                            this.switchView('dash');
-                        }
-                    } else {
-                        document.getElementById('auth-overlay').classList.remove('hidden');
-                        document.getElementById('app-content').classList.add('hidden');
-                    }
-                });
-            },
-
-            // 1. ADD THIS NEW HELPER FUNCTION
-            async logAction(type, details) {
-                if (!currentUser) return;
-                await addDoc(collection(db, "admin_logs"), {
-                    type: type,
-                    user: currentUser.name,
-                    email: currentUser.email,
-                    details: details,
-                    timestamp: serverTimestamp()
-                });
-            },
-
-            // 2. UPDATE INIT (To log login success)
-            init() {
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        const userDoc = await getDoc(doc(db, "users", user.uid));
-                        if (userDoc.exists()) {
-                            const userData = userDoc.data();
-                            if (userData.role !== 'admin') {
-                                alert("SECURITY ALERT: Unauthorized access attempt logged.");
-                                signOut(auth);
-                                return;
-                            }
-                            currentUser = { ...userData, uid: user.uid };
-
-                            // LOG LOGIN HERE
+                            
                             this.logAction('SYSTEM_ENTRY', `User ${userData.name} initialized session.`);
 
                             document.getElementById('auth-overlay').classList.add('hidden');
@@ -591,6 +559,8 @@
                 });
             },
 
+            // --- AI COORDINATOR LOGIC (VERTEX AI VERSION) ---
+            
             scrollToAIBottom() {
                 const container = document.getElementById('ai-chat-container');
                 container.scrollTop = container.scrollHeight;
@@ -602,7 +572,7 @@
                 const text = input.value.trim();
                 if (!text) return;
 
-                // 1. Render User Message
+                // 1. User Message UI
                 const container = document.getElementById('ai-chat-container');
                 container.innerHTML += `
                     <div class="flex gap-3 flex-row-reverse animate-fade-in-up">
@@ -616,21 +586,21 @@
                 input.value = '';
                 this.scrollToAIBottom();
 
-                // 2. Simulate "Thinking" delay
+                // 2. Loading State
                 const loadingId = 'loading-' + Date.now();
                 container.innerHTML += `
                     <div id="${loadingId}" class="flex gap-3">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-robot text-white text-xs"></i></div>
                         <div class="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700 text-sm text-gray-400 shadow-md">
-                            <i class="fa-solid fa-circle-notch fa-spin text-purple-500"></i> Processing Directive...
+                            <i class="fa-solid fa-circle-notch fa-spin text-purple-500"></i> Linking to Neural Network...
                         </div>
                     </div>`;
                 this.scrollToAIBottom();
 
-                // 3. Process Logic (The "AI" Brain)
-                const response = await this.processSystemQuery(text.toLowerCase());
+                // 3. Process
+                const response = await this.processSystemQuery(text);
 
-                // 4. Render Response
+                // 4. Response UI
                 document.getElementById(loadingId).remove();
                 container.innerHTML += `
                     <div class="flex gap-3 animate-fade-in">
@@ -644,107 +614,84 @@
                 this.scrollToAIBottom();
             },
 
-            async processSystemQuery(query) {
-                // Simulating AI by actually querying the active database state
-                await new Promise(r => setTimeout(r, 800)); // Fake processing delay
+            async processSystemQuery(userQuery) {
+                // A. Gather Data Context from Firebase (The AI's "Eyes")
+                let contextData = {
+                    currentUser: { name: currentUser.name, role: currentUser.role },
+                    myTasks: [],
+                    allAdmins: [],
+                    recentEvent: "No recent data"
+                };
 
-                // CONTEXT: USERS
-                if(query.includes('who') || query.includes('users') || query.includes('admin')) {
-                    const snap = await getDocs(collection(db, "users"));
-                    const admins = [];
-                    snap.forEach(d => { if(d.data().role === 'admin') admins.push(d.data().name) });
-                    return `Database scan complete. There are currently <strong>${snap.size}</strong> users registered in the system.<br><br>Active Commanders:<br> ${admins.map(a => `• ${a}`).join('<br>')}`;
-                }
-
-                // CONTEXT: MY TASKS
-                if(query.includes('my task') || query.includes('assigned to me')) {
-                    const q = await getDocs(collection(db, "admin_team_tasks"));
-                    let myTasks = [];
-                    q.forEach(d => {
+                try {
+                    // Get Tasks
+                    const taskSnap = await getDocs(collection(db, "admin_team_tasks"));
+                    taskSnap.forEach(d => {
                         const t = d.data();
-                        if(t.assignee === currentUser.name && t.status !== 'done') myTasks.push(t.title);
+                        if (t.assignee === currentUser.name && t.status !== 'done') {
+                            contextData.myTasks.push({ title: t.title, status: t.status });
+                        }
                     });
-                    if(myTasks.length === 0) return "You have no active directives assigned to your ID, Officer. Standby for orders.";
-                    return `You have <strong>${myTasks.length}</strong> active directives:<br>${myTasks.map(t => `• ${t}`).join('<br>')}`;
-                }
 
-                // CONTEXT: PENDING / TODO
-                if(query.includes('pending') || query.includes('todo') || query.includes('status')) {
-                    const q = await getDocs(collection(db, "admin_team_tasks"));
-                    let todo = 0, prog = 0;
-                    q.forEach(d => {
-                        const t = d.data();
-                        if(t.status === 'todo') todo++;
-                        if(t.status === 'prog') prog++;
+                    // Get Admins
+                    const userSnap = await getDocs(collection(db, "users"));
+                    userSnap.forEach(d => {
+                        if (d.data().role === 'admin') contextData.allAdmins.push(d.data().name);
                     });
-                    return `Mission Board Status Report:<br>• <strong>${todo}</strong> tasks pending deployment.<br>• <strong>${prog}</strong> operations in progress.<br><br>Check the Mission Board for details.`;
-                }
 
-                // CONTEXT: REVENUE / SALES
-                if(query.includes('sales') || query.includes('money') || query.includes('revenue')) {
-                    // Quick check on active event
+                    // Get Event
                     const evSnap = await getDocs(query(collection(db, "events"), orderBy("timestamp", "desc"), limit(1)));
-                    if(evSnap.empty) return "No active revenue streams detected.";
-                    const ev = evSnap.docs[0].data();
-                    const rev = (ev.ticketsSold || 0) * (ev.price || 0);
-                    return `Financial Intelligence:<br>Latest Event: "${ev.title}"<br>Tickets Sold: ${ev.ticketsSold}<br>Est. Revenue: <span class="text-green-400 font-mono">GHS ${rev}</span>`;
-                }
-
-                // CONTEXT: JOKES / CHAT
-                if(query.includes('hello') || query.includes('hi')) return `Greetings, Officer ${currentUser.name}. Systems are nominal.`;
-                if(query.includes('joke')) return "Why did the developer go broke? Because he used up all his cache.";
-                if(query.includes('thank')) return "Affirmative. Serving the protocol.";
-
-                // DEFAULT
-                return "I am analyzing that request... specific data correlation is unavailable. Please query about: <em>My Tasks, System Users, Sales Stats, or Pending Operations.</em>";
-            },
-
-            // 3. UPDATE MOVE TEAM TASK (The CEO Approval Logic)
-            async moveTeamTask(id, currentStatus, assignee, taskTitle) {
-                // Security Check
-                if (assignee !== 'Unassigned' && currentUser.name !== assignee && currentUser.email !== "pwavwef@gmail.com") {
-                    alert(`⛔ Access Denied: Only ${assignee} or CEO can update this.`);
-                    return;
-                }
-
-                // CEO APPROVAL LOGIC
-                if (currentStatus === 'done') {
-                    // Attempting to move from Done -> Completed (Archived)
-                    if (currentUser.email !== "pwavwef@gmail.com") {
-                        alert("🔒 Pending Approval: Only the CEO can sign off on completed tasks.");
-                        return;
+                    if (!evSnap.empty) {
+                        const ev = evSnap.docs[0].data();
+                        contextData.recentEvent = `${ev.title}: ${ev.ticketsSold} sold`;
                     }
 
-                    const comment = prompt(`Approve completion of "${taskTitle}"?\n\nEnter remarks for the log:`);
-                    if (comment !== null) { // If not cancelled
-                        // 1. Log it
-                        await this.logAction('MISSION_COMPLETE', `Task: "${taskTitle}" by ${assignee}. CEO Remarks: ${comment}`);
-                        // 2. Delete from board (it lives in logs now)
-                        await deleteDoc(doc(db, "admin_team_tasks", id));
-                        alert("Task Approved & Logged.");
-                    }
-                    return;
-                }
+                } catch (err) { console.error("Context Error", err); }
 
-                // Normal Flow (Todo -> Prog -> Done)
-                const next = currentStatus === 'todo' ? 'prog' : 'done';
-                await updateDoc(doc(db, "admin_team_tasks", id), { status: next });
+                // B. Construct Prompt
+                const prompt = `
+                You are the AI Coordinator for "AZ Learner" Admin Dashboard. 
+                Be helpful, professional, and concise. Use HTML tags (<b>, <br>, <ul>) for formatting.
+                
+                REAL-TIME DATA CONTEXT:
+                ${JSON.stringify(contextData)}
+
+                USER QUESTION: "${userQuery}"
+                
+                INSTRUCTIONS:
+                1. If the user asks about system data (e.g., "What are my tasks?", "Who is online?"), USE the Context Data above.
+                2. If the user asks general questions (e.g., "How do I work faster?", "What is Tourism?"), IGNORE the context and use your general knowledge to answer.
+                `;
+
+                // C. Call Vertex AI
+                try {
+                    const result = await model.generateContent(prompt);
+                    const response = await result.response;
+                    return response.text();
+                } catch (error) {
+                    console.error("Vertex Error:", error);
+                    return "⚠️ <strong>Neural Link Error:</strong> Please ensure the 'Vertex AI API' is enabled in your Google Cloud Console (Build > Vertex AI).";
+                }
             },
 
-            // 4. Update switchWorkspaceTab to handle logs
+            // --- STANDARD FUNCTIONS ---
+
+            async logAction(type, details) {
+                if(!currentUser) return;
+                await addDoc(collection(db, "admin_logs"), {
+                    type: type, user: currentUser.name, email: currentUser.email, details: details, timestamp: serverTimestamp()
+                });
+            },
+
             switchWorkspaceTab(tab) {
                 document.querySelectorAll('.ws-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`ws-view-${tab}`).classList.remove('hidden');
 
                 document.querySelectorAll('.ws-tab').forEach(btn => {
-                    // Reset base classes
                     btn.classList.remove('bg-blueAccent', 'bg-purple-600', 'text-white', 'text-gray-400', 'border-purple-500/30', 'text-purple-300');
                     btn.classList.add('text-gray-400');
-                    
-                    // Special styling for AI tab
                     if(btn.id === 'ws-tab-ai') btn.classList.add('border', 'border-purple-500/30', 'text-purple-300');
 
-                    // Active state logic
                     if (btn.id === `ws-tab-${tab}`) {
                         btn.classList.remove('text-gray-400', 'text-purple-300');
                         btn.classList.add('text-white');
@@ -752,7 +699,6 @@
                         else btn.classList.add('bg-blueAccent');
                     }
                 });
-
                 if (tab === 'chat') this.scrollToChatBottom();
                 if (tab === 'ai') this.scrollToAIBottom();
             },
@@ -760,32 +706,13 @@
             switchView(view) {
                 document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`view-${view}`).classList.remove('hidden');
-
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.classList.remove('bg-blueAccent', 'text-white', 'bg-gray-700', 'text-gray-400');
-                    if (btn.id === `nav-${view}`) {
-                        btn.classList.add('bg-blueAccent', 'text-white');
-                    } else {
-                        btn.classList.add('bg-gray-700', 'text-gray-400');
-                    }
+                    if (btn.id === `nav-${view}`) btn.classList.add('bg-blueAccent', 'text-white');
+                    else btn.classList.add('bg-gray-700', 'text-gray-400');
                 });
-
                 if (view === 'tickets') this.fetchSalesOverview();
                 if (view === 'workspace') this.switchWorkspaceTab('personal');
-            },
-
-            // WORKSPACE LOGIC
-            switchWorkspaceTab(tab) {
-                document.querySelectorAll('.ws-view').forEach(el => el.classList.add('hidden'));
-                document.getElementById(`ws-view-${tab}`).classList.remove('hidden');
-
-                document.querySelectorAll('.ws-tab').forEach(btn => {
-                    btn.classList.remove('bg-blueAccent', 'text-white', 'text-gray-400');
-                    if (btn.id === `ws-tab-${tab}`) btn.classList.add('bg-blueAccent', 'text-white');
-                    else btn.classList.add('text-gray-400');
-                });
-
-                if (tab === 'chat') this.scrollToChatBottom();
             },
 
             async addPersonalTask() {
@@ -796,488 +723,110 @@
                 });
                 input.value = '';
             },
-
-            async togglePersonalTask(id, currentStatus) {
-                await updateDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id), { done: !currentStatus });
-            },
-
-            async deletePersonalTask(id) {
-                await deleteDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id));
-            },
-
+            async togglePersonalTask(id, currentStatus) { await updateDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id), { done: !currentStatus }); },
+            async deletePersonalTask(id) { await deleteDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id)); },
             async sendChatMessage(e) {
-                e.preventDefault();
-                const input = document.getElementById('chat-input');
-                if (!input.value.trim()) return;
-                await addDoc(collection(db, "admin_hq_chat"), {
-                    text: input.value, sender: currentUser.name, senderId: currentUser.uid, timestamp: serverTimestamp()
-                });
+                e.preventDefault(); const input = document.getElementById('chat-input'); if (!input.value.trim()) return;
+                await addDoc(collection(db, "admin_hq_chat"), { text: input.value, sender: currentUser.name, senderId: currentUser.uid, timestamp: serverTimestamp() });
                 input.value = '';
             },
-
-            scrollToChatBottom() {
-                const container = document.getElementById('chat-container');
-                container.scrollTop = container.scrollHeight;
-            },
-
+            scrollToChatBottom() { const c = document.getElementById('chat-container'); c.scrollTop = c.scrollHeight; },
             async addTeamTask() {
                 const title = document.getElementById('team-task-title').value;
                 const assignee = document.getElementById('team-task-assignee').value;
                 if (!title) return;
-                await addDoc(collection(db, "admin_team_tasks"), {
-                    title, assignee, status: 'todo', createdBy: currentUser.name, createdAt: serverTimestamp()
-                });
-                document.getElementById('new-task-modal').classList.add('hidden');
-                document.getElementById('team-task-title').value = '';
+                await addDoc(collection(db, "admin_team_tasks"), { title, assignee, status: 'todo', createdBy: currentUser.name, createdAt: serverTimestamp() });
+                document.getElementById('new-task-modal').classList.add('hidden'); document.getElementById('team-task-title').value = '';
             },
-
-            // 3. UPDATE MOVE TEAM TASK (The CEO Approval Logic)
             async moveTeamTask(id, currentStatus, assignee, taskTitle) {
-                // Security Check
-                if (assignee !== 'Unassigned' && currentUser.name !== assignee && currentUser.email !== "pwavwef@gmail.com") {
-                    alert(`⛔ Access Denied: Only ${assignee} or CEO can update this.`);
-                    return;
-                }
-
-                // CEO APPROVAL LOGIC
+                if (assignee !== 'Unassigned' && currentUser.name !== assignee && currentUser.email !== "pwavwef@gmail.com") return alert(`⛔ Access Denied`);
                 if (currentStatus === 'done') {
-                    // Attempting to move from Done -> Completed (Archived)
-                    if (currentUser.email !== "pwavwef@gmail.com") {
-                        alert("🔒 Pending Approval: Only the CEO can sign off on completed tasks.");
-                        return;
-                    }
-
-                    const comment = prompt(`Approve completion of "${taskTitle}"?\n\nEnter remarks for the log:`);
-                    if (comment !== null) { // If not cancelled
-                        // 1. Log it
-                        await this.logAction('MISSION_COMPLETE', `Task: "${taskTitle}" by ${assignee}. CEO Remarks: ${comment}`);
-                        // 2. Delete from board (it lives in logs now)
-                        await deleteDoc(doc(db, "admin_team_tasks", id));
-                        alert("Task Approved & Logged.");
-                    }
+                    if (currentUser.email !== "pwavwef@gmail.com") return alert("🔒 CEO Approval Required");
+                    const comment = prompt(`Approve "${taskTitle}"?`);
+                    if (comment !== null) { await this.logAction('MISSION_COMPLETE', `Task: "${taskTitle}" Approved. Note: ${comment}`); await deleteDoc(doc(db, "admin_team_tasks", id)); alert("Approved."); }
                     return;
                 }
-
-                // Normal Flow (Todo -> Prog -> Done)
                 const next = currentStatus === 'todo' ? 'prog' : 'done';
                 await updateDoc(doc(db, "admin_team_tasks", id), { status: next });
             },
-
             async deleteTeamTask(id) {
-                // RULE: Only the CEO can delete tasks
-                if (currentUser.email !== "pwavwef@gmail.com") {
-                    alert("⛔ Restricted: Only the CEO can delete tasks.");
-                    return;
-                }
-
-                if (confirm("Archive this directive?")) await deleteDoc(doc(db, "admin_team_tasks", id));
+                if (currentUser.email !== "pwavwef@gmail.com") return alert("⛔ Restricted");
+                if (confirm("Archive?")) await deleteDoc(doc(db, "admin_team_tasks", id));
             },
-
             async uploadToVault(input) {
-                const file = input.files[0];
-                if (!file) return;
-                const status = document.getElementById('vault-status');
-                status.innerText = "Encrypting & Uploading...";
-
+                const file = input.files[0]; if (!file) return;
+                document.getElementById('vault-status').innerText = "Uploading...";
                 try {
                     const storageRef = ref(storage, `admin_vault/${Date.now()}_${file.name}`);
                     await uploadBytes(storageRef, file);
                     const url = await getDownloadURL(storageRef);
-
-                    await addDoc(collection(db, "admin_vault_files"), {
-                        name: file.name, url, uploader: currentUser.name, size: file.size, timestamp: serverTimestamp(), path: storageRef.fullPath
-                    });
-                    status.innerText = "";
-                    input.value = "";
-                } catch (e) {
-                    status.innerText = "Upload Failed.";
-                    console.error(e);
-                }
+                    await addDoc(collection(db, "admin_vault_files"), { name: file.name, url, uploader: currentUser.name, size: file.size, timestamp: serverTimestamp(), path: storageRef.fullPath });
+                    document.getElementById('vault-status').innerText = ""; input.value = "";
+                } catch (e) { console.error(e); }
             },
-
             async deleteVaultFile(id, path) {
-                if (!confirm("Destroy this artifact?")) return;
-                const storageRef = ref(storage, path);
-                try { await deleteObject(storageRef); } catch (e) { console.log("Storage delete error, cleaning DB anyway"); }
+                if (!confirm("Destroy?")) return;
+                try { await deleteObject(ref(storage, path)); } catch(e){}
                 await deleteDoc(doc(db, "admin_vault_files", id));
             },
-
-            startListeners() {
-                // 1. Personal Tasks Listener
-                onSnapshot(query(collection(db, `users/${currentUser.uid}/private_tasks`), orderBy('createdAt', 'desc')), (snap) => {
-                    const list = document.getElementById('personal-task-list');
-                    list.innerHTML = '';
-                    snap.forEach(d => {
-                        const t = d.data();
-                        list.innerHTML += `<li class="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700 hover:border-blue-500/50 transition group">
-                            <span class="${t.done ? 'line-through text-gray-600' : 'text-gray-300'} cursor-pointer flex-1" onclick="app.togglePersonalTask('${d.id}', ${t.done})">${t.text}</span>
-                            <button onclick="app.deletePersonalTask('${d.id}')" class="text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
-                        </li>`;
-                    });
-                });
-
-                // 2. Chat Listener
-                onSnapshot(query(collection(db, "admin_hq_chat"), orderBy('timestamp', 'asc'), limit(50)), (snap) => {
-                    const container = document.getElementById('chat-container');
-                    container.innerHTML = '<div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>';
-                    snap.forEach(d => {
-                        const m = d.data();
-                        const isMe = m.senderId === currentUser.uid;
-                        container.innerHTML += `
-                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2">
-                                <div class="text-[10px] text-gray-500 mb-0.5 ${isMe ? 'text-right' : 'text-left'}">${m.sender}</div>
-                                <div class="px-3 py-2 rounded-lg text-sm ${isMe ? 'bg-blueAccent text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'} max-w-[80%] break-words shadow-sm">
-                                    ${m.text}
-                                </div>
-                            </div>`;
-                    });
-                    this.scrollToChatBottom();
-                });
-
-                onSnapshot(query(collection(db, "admin_team_tasks"), orderBy('createdAt', 'desc')), (snap) => {
-                    const todo = document.getElementById('board-todo');
-                    const prog = document.getElementById('board-prog');
-                    const done = document.getElementById('board-done');
-                    todo.innerHTML = ''; prog.innerHTML = ''; done.innerHTML = '';
-                    let cTodo = 0, cProg = 0, cDone = 0;
-
-                    snap.forEach(d => {
-                        const t = d.data();
-                        // Added t.title to the onclick arguments
-                        const card = `
-                            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm relative group hover:-translate-y-1 transition-transform cursor-pointer" onclick="app.moveTeamTask('${d.id}', '${t.status}', '${t.assignee}', '${t.title}')">
-                                <p class="text-sm font-bold text-white mb-1">${t.title}</p>
-                                <div class="flex justify-between items-center text-[10px] text-gray-400">
-                                    <span><i class="fa-solid fa-user-tag"></i> ${t.assignee}</span>
-                                    ${t.status === 'done' ? '<span class="text-orangeAccent animate-pulse">Awaiting Approval</span>' : ''}
-                                </div>
-                                <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs hover:text-red-400 bg-gray-800 rounded-full px-1"><i class="fa-solid fa-xmark"></i></button>
-                            </div>`;
-
-                        if (t.status === 'todo') { todo.innerHTML += card; cTodo++; }
-                        else if (t.status === 'prog') { prog.innerHTML += card; cProg++; }
-                        else { done.innerHTML += card; cDone++; }
-                    });
-                    document.getElementById('count-todo').innerText = cTodo;
-                    document.getElementById('count-prog').innerText = cProg;
-                    document.getElementById('count-done').innerText = cDone;
-                });
-
-                // 5. NEW LOGS LISTENER
-                onSnapshot(query(collection(db, "admin_logs"), orderBy('timestamp', 'desc'), limit(50)), (snap) => {
-                    const list = document.getElementById('logs-list');
-                    list.innerHTML = '';
-                    snap.forEach(d => {
-                        const l = d.data();
-                        const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleString() : 'Just now';
-
-                        let typeColor = 'text-gray-400';
-                        if (l.type === 'SYSTEM_ENTRY') typeColor = 'text-green-400';
-                        if (l.type === 'SYSTEM_EXIT') typeColor = 'text-red-400';
-                        if (l.type === 'MISSION_COMPLETE') typeColor = 'text-orangeAccent';
-
-                        list.innerHTML += `
-                            <tr class="hover:bg-gray-800/50 transition">
-                                <td class="px-4 py-3 text-[10px] opacity-70 whitespace-nowrap">${time}</td>
-                                <td class="px-4 py-3 font-bold text-white">${l.user}</td>
-                                <td class="px-4 py-3 font-bold text-[10px] uppercase ${typeColor}">${l.type}</td>
-                                <td class="px-4 py-3 truncate max-w-xs" title="${l.details}">${l.details}</td>
-                            </tr>
-                        `;
-                    });
-                });
-
-                // 4. Vault Listener
-                onSnapshot(query(collection(db, "admin_vault_files"), orderBy('timestamp', 'desc')), (snap) => {
-                    const list = document.getElementById('vault-list');
-                    list.innerHTML = '';
-                    snap.forEach(d => {
-                        const f = d.data();
-                        list.innerHTML += `
-                            <div class="grid grid-cols-4 items-center bg-gray-900/50 p-3 rounded border border-gray-700/50 hover:bg-gray-800 transition">
-                                <div class="col-span-2 flex items-center gap-2 overflow-hidden">
-                                    <i class="fa-solid fa-file text-blue-400"></i>
-                                    <a href="${f.url}" target="_blank" class="text-sm text-white truncate hover:underline">${f.name}</a>
-                                </div>
-                                <div class="text-xs text-gray-500">${f.uploader}</div>
-                                <div class="text-right">
-                                    <button onclick="app.deleteVaultFile('${d.id}', '${f.path}')" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>`;
-                    });
-                });
-
-                // --- EXISTING LISTENERS (Users, Reqs, etc) ---
-
-                // Users & Populate Assignee Dropdown
-                getDocs(query(collection(db, "users"), limit(100))).then(snap => {
-                    const list = document.getElementById('list-users');
-                    const adminListHtml = document.getElementById('list-admins');
-                    const dropdown = document.getElementById('team-task-assignee');
-                    document.getElementById('stat-users').innerText = snap.size + "+";
-
-                    let uHtml = ''; let aHtml = ''; let opts = '<option value="Unassigned">Anyone</option>';
-
-                    snap.forEach(d => {
-                        const u = d.data();
-                        uHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-gray-300">${u.name}</td><td class="px-4 py-3">${u.phone || '-'}</td><td class="px-4 py-3"><span class="bg-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td></tr>`;
-
-                        if (u.role === 'admin') {
-                            aHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${d.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button></td></tr>`;
-                            opts += `<option value="${u.name}">${u.name}</option>`;
-                        }
-                    });
-                    list.innerHTML = uHtml;
-                    adminListHtml.innerHTML = aHtml;
-                    dropdown.innerHTML = opts;
-                });
-
-                // Service Req Listener
-                onSnapshot(query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50)), (snap) => {
-                    document.getElementById('stat-reqs').innerText = snap.size;
-                    const list = document.getElementById('list-print-jobs');
-                    list.innerHTML = '';
-                    if (snap.empty) list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs">Queue Clear.</td></tr>';
-                    snap.forEach(doc => {
-                        const job = doc.data();
-                        const isNew = job.hasUnread ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 animate-pulse">NEW</span>' : '';
-                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white text-sm">${job.userName || 'Student'} ${isNew}<span class="text-[10px] text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-[10px] font-bold text-blue-300 tracking-wide">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded font-bold transition">UPDATE</button></td></tr>`;
-                    });
-                });
-
-                // Events
-                onSnapshot(query(collection(db, "events"), orderBy("timestamp", "desc")), (snap) => {
-                    const list = document.getElementById('list-active-events');
-                    list.innerHTML = '';
-                    snap.forEach(d => {
-                        const ev = d.data();
-                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><div class="flex items-center gap-3"><img src="${ev.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover border border-gray-600"><div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-[10px] text-gray-400">${ev.date} • <span class="text-orangeAccent">${ev.ticketsSold} Sold</span></p></div></div><button onclick="app.deleteEvent('${d.id}')" class="text-red-500 text-[10px] font-bold border border-red-900/50 px-2 py-1 rounded hover:bg-red-900/20">DELETE</button></div>`;
-                    });
-                });
-
-                // Broadcasts
-                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
-                    const list = document.getElementById('list-broadcasts');
-                    list.innerHTML = '';
-                    snap.forEach(d => {
-                        const b = d.data();
-                        // CHECK FOR IMAGE AND RENDER IT
-                        const imgTag = b.image ? `<img src="${b.image}" class="w-8 h-8 rounded object-cover border border-gray-600 mr-3 cursor-pointer hover:scale-150 transition-transform" onclick="window.open('${b.image}')">` : '';
-
-                        list.innerHTML += `
-                        <div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700">
-                            <div class="flex items-center w-2/3">
-                                ${imgTag}
-                                <span class="truncate text-sm text-gray-300 font-bold">${b.title}</span>
-                            </div>
-                            <button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs hover:text-white transition">Delete</button>
-                        </div>`;
-                    });
-                });
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value.trim(); if(!email) return;
+                const snap = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+                if(snap.empty) return alert("Not found");
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); }); alert("Banned.");
             },
-
-            // --- RE-ENGINEERED SALES VIEW LOGIC ---
-
-            fetchSalesOverview() {
-                const container = document.getElementById('sales-accordion-container');
-                container.innerHTML = '<div class="text-center text-gray-500 py-10 animate-pulse">Scanning Events...</div>';
-
-                // 1. Fetch Events first (Fast)
-                getDocs(query(collection(db, "events"), orderBy("timestamp", "desc"))).then(eventSnap => {
-                    if (eventSnap.empty) {
-                        container.innerHTML = '<div class="text-center text-gray-500 py-10">No active events found in database.</div>';
-                        return;
-                    }
-
-                    container.innerHTML = '';
-                    eventSnap.forEach(doc => {
-                        const ev = doc.data();
-                        const eventId = doc.id;
-                        // Calculate quick stats locally if possible, or start with defaults
-                        const revenue = (ev.ticketsSold || 0) * (ev.price || 0);
-
-                        // Create Accordion HTML
-                        const html = `
-                        <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-md">
-                            <div onclick="app.toggleEventSales('${eventId}')" class="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/50 transition bg-gradient-to-r from-gray-800 to-gray-800 hover:to-gray-700">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-orangeAccent/10 p-2 rounded-lg text-orangeAccent"><i class="fa-solid fa-calendar-day"></i></div>
-                                    <div>
-                                        <h3 class="font-bold text-white text-sm">${ev.title}</h3>
-                                        <p class="text-[10px] text-gray-400">${ev.date || 'No Date'} • <span class="text-green-400 font-mono">GHS ${revenue}</span> Est. Rev</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <span class="bg-blueAccent text-white text-xs font-bold px-2 py-1 rounded-full">${ev.ticketsSold || 0} Sold</span>
-                                    <i class="fa-solid fa-chevron-down text-gray-500 ml-2 transition-transform duration-300" id="icon-${eventId}"></i>
-                                </div>
-                            </div>
-                            <div id="dropdown-${eventId}" class="ticket-dropdown bg-gray-900/50">
-                                <div class="p-4" id="content-${eventId}">
-                                    <div class="text-center text-xs text-gray-500">Decrypting Sales Data...</div>
-                                </div>
-                            </div>
-                        </div>`;
-                        container.innerHTML += html;
-                    });
-                });
+            async flushRequests() {
+                if(!confirm("Wipe logs?")) return;
+                const snap = await getDocs(query(collection(db, "print_orders")));
+                snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id))); alert("Purged.");
             },
-
-            async toggleEventSales(eventId) {
-                const dropdown = document.getElementById(`dropdown-${eventId}`);
-                const icon = document.getElementById(`icon-${eventId}`);
-                const contentDiv = document.getElementById(`content-${eventId}`);
-
-                // Toggle UI
-                const isOpen = dropdown.classList.contains('open');
-                if (isOpen) {
-                    dropdown.classList.remove('open');
-                    icon.classList.remove('rotate-180');
-                    return; // Close and exit
-                } else {
-                    dropdown.classList.add('open');
-                    icon.classList.add('rotate-180');
-                }
-
-                // Fetch Data only if opening
-                try {
-                    const q = query(collectionGroup(db, 'tickets'), where('eventId', '==', eventId));
-                    const snap = await getDocs(q);
-
-                    if (snap.empty) {
-                        contentDiv.innerHTML = '<div class="text-center text-xs text-gray-500 py-2">No tickets sold yet.</div>';
-                        return;
-                    }
-
-                    let tableHtml = `
-                    <table class="w-full text-left text-xs text-gray-400">
-                        <thead class="uppercase text-[9px] text-gray-500 border-b border-gray-700"><tr><th class="py-2">Ticket ID</th><th class="py-2">Holder</th><th class="py-2 text-right">Paid</th></tr></thead>
-                        <tbody class="divide-y divide-gray-700/50">`;
-
-                    let totalActualRevenue = 0;
-
-                    snap.forEach(d => {
-                        const t = d.data();
-                        totalActualRevenue += (parseFloat(t.price) || 0);
-                        tableHtml += `
-                        <tr>
-                            <td class="py-2 font-mono text-orangeAccent">${t.ticketId ? t.ticketId.substring(0, 6) : '???'}...</td>
-                            <td class="py-2 text-white font-bold">${t.userName || 'Unknown'} <span class="block text-[9px] font-normal text-gray-500">${t.userEmail || ''}</span></td>
-                            <td class="py-2 text-right text-green-400">GHS ${t.price}</td>
-                        </tr>`;
-                    });
-
-                    tableHtml += `</tbody></table>
-                    <div class="mt-2 pt-2 border-t border-gray-700 text-right text-xs font-bold text-white">
-                        Total Verified Revenue: <span class="text-green-400 text-sm">GHS ${totalActualRevenue}</span>
-                    </div>`;
-
-                    contentDiv.innerHTML = tableHtml;
-
-                } catch (err) {
-                    console.error(err);
-                    contentDiv.innerHTML = `<div class="text-center text-xs text-red-400 py-2">Error loading data. <br> <span class="text-[9px] opacity-70">Check console for Firestore Index link.</span></div>`;
-                }
+            async addAdminByEmail() {
+                const email = document.getElementById('admin-email-input').value.trim(); if(!email) return;
+                const snap = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+                if(snap.empty) return alert("User not found");
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); alert("Promoted.");
             },
-
-
-            async manageJob(id, currentStatus) {
-                const newStatus = prompt(`Update Status (received/printing/delivering/completed):`, currentStatus);
-                if (newStatus && newStatus !== currentStatus) {
-                    await updateDoc(doc(db, "print_orders", id), { status: newStatus.toLowerCase(), lastUpdated: Date.now() });
-                }
+            async toggleUserRole(uid, role) {
+                if(confirm("Toggle role?")) await updateDoc(doc(db, "users", uid), { role: role === 'admin' ? 'student' : 'admin' });
             },
-
+            async manageJob(id, s) {
+                const ns = prompt("Status:", s); if(ns && ns!==s) await updateDoc(doc(db, "print_orders", id), { status: ns.toLowerCase(), lastUpdated: Date.now() });
+            },
             async saveEvent() {
                 const title = document.getElementById('event-title').value;
                 const date = document.getElementById('event-date').value;
-                const time = document.getElementById('event-time').value;
-                const venue = document.getElementById('event-venue').value;
-                const desc = document.getElementById('event-desc').value;
-                const price = document.getElementById('event-price').value || "0";
-                const qty = document.getElementById('event-qty').value || "0";
-                const fileInput = document.getElementById('event-file');
-
-                if (!title || !date) return alert("Missing mission parameters.");
-                let image = null;
-                if (fileInput.files.length > 0) {
-                    image = await this.compressImage(fileInput.files[0]);
-                }
-
-                await addDoc(collection(db, "events"), {
-                    title, date, time, venue, description: desc, image,
-                    price: parseFloat(price), totalTickets: parseInt(qty), ticketsSold: 0, rsvps: [], timestamp: Date.now()
+                if (!title) return alert("Missing params");
+                await addDoc(collection(db, "events"), { 
+                    title, date, 
+                    time: document.getElementById('event-time').value, 
+                    venue: document.getElementById('event-venue').value,
+                    description: document.getElementById('event-desc').value,
+                    price: parseFloat(document.getElementById('event-price').value||0),
+                    ticketsSold: 0, timestamp: Date.now()
                 });
-                alert("Event Launched Successfully 🚀");
-                document.getElementById('event-title').value = '';
+                alert("Launched");
             },
-
-            async deleteEvent(id) { if (confirm("Confirm Event Deletion?")) await deleteDoc(doc(db, "events", id)); },
-
+            async deleteEvent(id) { if(confirm("Delete?")) await deleteDoc(doc(db, "events", id)); },
             async sendBroadcast() {
                 const title = document.getElementById('broadcast-title').value;
-                const body = document.getElementById('broadcast-body').value;
-                const fileInput = document.getElementById('broadcast-file');
-
-                if (!title) return;
-
+                if(!title) return;
                 let image = null;
-                if (fileInput.files.length > 0) {
-                    image = await this.compressImage(fileInput.files[0]);
-                }
+                const fileInput = document.getElementById('broadcast-file');
+                if (fileInput.files.length > 0) image = await this.compressImage(fileInput.files[0]);
 
-                await addDoc(collection(db, "global_announcements"), { title, body, image, timestamp: Date.now() });
-                alert("Signal Transmitted.");
-                document.getElementById('broadcast-title').value = '';
-                document.getElementById('broadcast-body').value = '';
-                fileInput.value = '';
-                document.getElementById('broadcast-file-name').innerText = 'No image selected';
+                await addDoc(collection(db, "global_announcements"), { 
+                    title, body: document.getElementById('broadcast-body').value, image, timestamp: Date.now() 
+                });
+                alert("Sent");
             },
-
-            async deleteBroadcast(id) { if (confirm("Retract Signal?")) await deleteDoc(doc(db, "global_announcements", id)); },
-
+            async deleteBroadcast(id) { if(confirm("Delete?")) await deleteDoc(doc(db, "global_announcements", id)); },
             async sendVIPBroadcast() {
-                const title = document.getElementById('vip-title').value;
-                const body = document.getElementById('vip-body').value;
-                await addDoc(collection(db, "global_announcements"), { title, body, isVIP: true, timestamp: Date.now() });
-                alert("Executive Order Published 📜");
+                await addDoc(collection(db, "global_announcements"), { 
+                    title: document.getElementById('vip-title').value, 
+                    body: document.getElementById('vip-body').value, isVIP: true, timestamp: Date.now() 
+                });
+                alert("VIP Sent");
             },
-
-            async banUser() {
-                const email = document.getElementById('ban-email-input').value.trim();
-                if (!email) return;
-                const q = query(collection(db, "users"), where("email", "==", email));
-                const snap = await getDocs(q);
-                if (snap.empty) return alert("Target not found in DB.");
-                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
-                alert("Hammer Dropped 🔨");
-            },
-
-            async flushRequests() {
-                if (!confirm("Warning: This will wipe all service logs. Proceed?")) return;
-                const q = query(collection(db, "print_orders"));
-                const snap = await getDocs(q);
-                snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
-                alert("Logs Purged.");
-            },
-
-            async addAdminByEmail() {
-                const email = document.getElementById('admin-email-input').value.trim();
-                if (!email) return;
-                const q = query(collection(db, "users"), where("email", "==", email));
-                const snap = await getDocs(q);
-                if (snap.empty) { alert("User not found!"); return; }
-                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); });
-                alert(`Promoted ${email} to Command.`);
-            },
-
-            async toggleUserRole(uid, currentRole) {
-                if (confirm(`Revoke admin status for this user?`)) {
-                    const newRole = currentRole === 'admin' ? 'student' : 'admin';
-                    await updateDoc(doc(db, "users", uid), { role: newRole });
-                }
-            },
-
             async compressImage(file) {
                 return new Promise((resolve) => {
                     const reader = new FileReader(); reader.readAsDataURL(file);
@@ -1291,6 +840,151 @@
                             resolve(canvas.toDataURL('image/jpeg', 0.6));
                         };
                     };
+                });
+            },
+            
+            // --- LISTENERS ---
+            startListeners() {
+                // 1. Private Tasks
+                onSnapshot(query(collection(db, `users/${currentUser.uid}/private_tasks`), orderBy('createdAt', 'desc')), (snap) => {
+                    const list = document.getElementById('personal-task-list'); list.innerHTML = '';
+                    snap.forEach(d => {
+                        const t = d.data();
+                        list.innerHTML += `<li class="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700"><span class="${t.done?'line-through text-gray-600':'text-gray-300'} cursor-pointer" onclick="app.togglePersonalTask('${d.id}',${t.done})">${t.text}</span><button onclick="app.deletePersonalTask('${d.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></li>`;
+                    });
+                });
+                
+                // 2. Chat
+                onSnapshot(query(collection(db, "admin_hq_chat"), orderBy('timestamp', 'asc'), limit(50)), (snap) => {
+                    const c = document.getElementById('chat-container'); c.innerHTML = '<div class="text-center text-xs text-gray-600 my-4">--- Encrypted ---</div>';
+                    snap.forEach(d => {
+                        const m = d.data(); const isMe = m.senderId === currentUser.uid;
+                        c.innerHTML += `<div class="flex flex-col ${isMe?'items-end':'items-start'} mb-2"><div class="text-[10px] text-gray-500">${m.sender}</div><div class="px-3 py-2 rounded-lg text-sm ${isMe?'bg-blueAccent text-white':'bg-gray-700 text-gray-200'}">${m.text}</div></div>`;
+                    });
+                    this.scrollToChatBottom();
+                });
+
+                // 3. Team Board
+                onSnapshot(query(collection(db, "admin_team_tasks"), orderBy('createdAt', 'desc')), (snap) => {
+                    const todo = document.getElementById('board-todo'); todo.innerHTML = '';
+                    const prog = document.getElementById('board-prog'); prog.innerHTML = '';
+                    const done = document.getElementById('board-done'); done.innerHTML = '';
+                    let cT=0, cP=0, cD=0;
+                    snap.forEach(d => {
+                        const t = d.data();
+                        const html = `<div class="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-2 cursor-pointer relative group" onclick="app.moveTeamTask('${d.id}','${t.status}','${t.assignee}','${t.title}')">
+                            <p class="text-sm font-bold text-white">${t.title}</p>
+                            <div class="text-[10px] text-gray-400 mt-1 flex justify-between"><span>${t.assignee}</span>${t.status==='done'?'<span class="text-orangeAccent animate-pulse">Waiting Approval</span>':''}</div>
+                            <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>`;
+                        if(t.status==='todo'){ todo.innerHTML+=html; cT++; }
+                        else if(t.status==='prog'){ prog.innerHTML+=html; cP++; }
+                        else{ done.innerHTML+=html; cD++; }
+                    });
+                    document.getElementById('count-todo').innerText=cT; document.getElementById('count-prog').innerText=cP; document.getElementById('count-done').innerText=cD;
+                });
+
+                // 4. Logs
+                onSnapshot(query(collection(db, "admin_logs"), orderBy('timestamp', 'desc'), limit(50)), (snap) => {
+                    const l = document.getElementById('logs-list'); l.innerHTML = '';
+                    snap.forEach(d => {
+                        const data = d.data();
+                        l.innerHTML += `<tr class="hover:bg-gray-800/50"><td class="px-4 py-3 text-[10px] text-gray-500">${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString() : ''}</td><td class="px-4 py-3 text-white font-bold">${data.user}</td><td class="px-4 py-3 text-[10px] uppercase text-blue-400">${data.type}</td><td class="px-4 py-3 text-gray-400 truncate max-w-xs">${data.details}</td></tr>`;
+                    });
+                });
+
+                // 5. Existing Listeners (Users, etc)
+                getDocs(query(collection(db, "users"), limit(100))).then(snap => {
+                    const list = document.getElementById('list-users');
+                    const adminListHtml = document.getElementById('list-admins');
+                    const dropdown = document.getElementById('team-task-assignee');
+                    document.getElementById('stat-users').innerText = snap.size + "+";
+                    let uHtml = ''; let aHtml = ''; let opts = '<option value="Unassigned">Anyone</option>';
+                    snap.forEach(d => {
+                        const u = d.data();
+                        uHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-gray-300">${u.name}</td><td class="px-4 py-3">${u.phone||'-'}</td><td class="px-4 py-3"><span class="bg-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td></tr>`;
+                        if(u.role === 'admin') {
+                            aHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${d.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button></td></tr>`;
+                            opts += `<option value="${u.name}">${u.name}</option>`;
+                        }
+                    });
+                    list.innerHTML = uHtml; adminListHtml.innerHTML = aHtml; dropdown.innerHTML = opts;
+                });
+
+                onSnapshot(query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50)), (snap) => {
+                    document.getElementById('stat-reqs').innerText = snap.size;
+                    const list = document.getElementById('list-print-jobs'); list.innerHTML = '';
+                    if(snap.empty) list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs">Queue Clear.</td></tr>';
+                    snap.forEach(doc => {
+                        const job = doc.data();
+                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white text-sm">${job.userName||'Student'} <span class="text-[10px] text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-[10px] font-bold text-blue-300">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded font-bold">UPDATE</button></td></tr>`;
+                    });
+                });
+
+                onSnapshot(query(collection(db, "events"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('list-active-events'); list.innerHTML = '';
+                    snap.forEach(d => {
+                        const ev = d.data();
+                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><div class="flex items-center gap-3"><img src="${ev.image||'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div><p class="text-sm font-bold text-white">${ev.title}</p><p class="text-[10px] text-gray-400">${ev.date}</p></div></div><button onclick="app.deleteEvent('${d.id}')" class="text-red-500 text-[10px]">DELETE</button></div>`;
+                    });
+                });
+
+                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('list-broadcasts'); list.innerHTML = '';
+                    snap.forEach(d => {
+                        const b = d.data();
+                        const img = b.image ? `<img src="${b.image}" class="w-8 h-8 rounded object-cover mr-3">` : '';
+                        list.innerHTML += `<div class="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700"><div class="flex items-center w-2/3">${img}<span class="truncate text-sm text-gray-300 font-bold">${b.title}</span></div><button onclick="app.deleteBroadcast('${d.id}')" class="text-red-400 text-xs">Delete</button></div>`;
+                    });
+                });
+
+                onSnapshot(query(collection(db, "admin_vault_files"), orderBy('timestamp', 'desc')), (snap) => {
+                    const list = document.getElementById('vault-list'); list.innerHTML = '';
+                    snap.forEach(d => {
+                        const f = d.data();
+                        list.innerHTML += `<div class="grid grid-cols-4 items-center bg-gray-900/50 p-3 rounded border border-gray-700/50 hover:bg-gray-800 transition"><div class="col-span-2 flex items-center gap-2 overflow-hidden"><i class="fa-solid fa-file text-blue-400"></i><a href="${f.url}" target="_blank" class="text-sm text-white truncate hover:underline">${f.name}</a></div><div class="text-xs text-gray-500">${f.uploader}</div><div class="text-right"><button onclick="app.deleteVaultFile('${d.id}', '${f.path}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                    });
+                });
+            },
+
+            async toggleEventSales(eventId) {
+                const dropdown = document.getElementById(`dropdown-${eventId}`);
+                const icon = document.getElementById(`icon-${eventId}`);
+                const contentDiv = document.getElementById(`content-${eventId}`);
+                
+                if (dropdown.classList.contains('open')) {
+                    dropdown.classList.remove('open'); icon.classList.remove('rotate-180'); return;
+                }
+                dropdown.classList.add('open'); icon.classList.add('rotate-180');
+
+                try {
+                    const snap = await getDocs(query(collectionGroup(db, 'tickets'), where('eventId', '==', eventId)));
+                    if (snap.empty) { contentDiv.innerHTML = '<div class="text-center text-xs text-gray-500 py-2">No data.</div>'; return; }
+                    let html = `<table class="w-full text-left text-xs text-gray-400"><tbody class="divide-y divide-gray-700/50">`;
+                    snap.forEach(d => {
+                        const t = d.data();
+                        html += `<tr><td class="py-2 text-white">${t.userName||'User'}</td><td class="py-2 text-right text-green-400">GHS ${t.price}</td></tr>`;
+                    });
+                    contentDiv.innerHTML = html + `</tbody></table>`;
+                } catch (e) { contentDiv.innerHTML = "Error loading data."; }
+            },
+            
+            fetchSalesOverview() {
+                const container = document.getElementById('sales-accordion-container');
+                container.innerHTML = '<div class="text-center text-gray-500 py-10 animate-pulse">Scanning...</div>';
+                getDocs(query(collection(db, "events"), orderBy("timestamp", "desc"))).then(snap => {
+                    if(snap.empty) { container.innerHTML = "No events."; return; }
+                    container.innerHTML = '';
+                    snap.forEach(doc => {
+                        const ev = doc.data();
+                        container.innerHTML += `<div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-md mb-2">
+                            <div onclick="app.toggleEventSales('${doc.id}')" class="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/50">
+                                <div><h3 class="font-bold text-white text-sm">${ev.title}</h3><p class="text-[10px] text-gray-400">${ev.date} • GHS ${(ev.ticketsSold||0)*ev.price}</p></div>
+                                <div><span class="bg-blueAccent text-white text-xs font-bold px-2 py-1 rounded-full">${ev.ticketsSold||0} Sold</span><i class="fa-solid fa-chevron-down text-gray-500 ml-2" id="icon-${doc.id}"></i></div>
+                            </div>
+                            <div id="dropdown-${doc.id}" class="ticket-dropdown bg-gray-900/50"><div class="p-4" id="content-${doc.id}">Loading...</div></div>
+                        </div>`;
+                    });
                 });
             }
         };
