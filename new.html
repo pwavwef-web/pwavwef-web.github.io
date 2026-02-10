@@ -161,17 +161,32 @@
             </div>
 
             <div id="view-workspace" class="admin-view hidden h-full flex flex-col p-4 md:p-6">
-                <div class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
-                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white whitespace-nowrap">My Zone</button>
-                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">The Hub 💬</button>
-                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Mission Board 📌</button>
-                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Vault 📂</button>
-                    <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">System Logs 📜</button>
+                <div
+                    class="flex gap-2 mb-4 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
+                    <button onclick="app.switchWorkspaceTab('personal')" id="ws-tab-personal"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition bg-blueAccent text-white whitespace-nowrap">My
+                        Zone</button>
+                    <button onclick="app.switchWorkspaceTab('ai')" id="ws-tab-ai"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap border border-purple-500/30 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]">AI
+                        Coordinator 🤖</button>
+                    <button onclick="app.switchWorkspaceTab('chat')" id="ws-tab-chat"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">The
+                        Hub 💬</button>
+                    <button onclick="app.switchWorkspaceTab('board')" id="ws-tab-board"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Mission
+                        Board 📌</button>
+                    <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Vault
+                        📂</button>
+                    <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs"
+                        class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">System
+                        Logs 📜</button>
                 </div>
 
                 <div id="ws-view-logs" class="ws-view hidden flex-1 flex flex-col min-h-0">
                     <div class="bg-gray-800 rounded-xl border border-gray-700 flex-1 overflow-hidden flex flex-col">
-                        <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center shrink-0">
+                        <div
+                            class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center shrink-0">
                             <h2 class="text-sm font-bold text-gray-300">Operations Log</h2>
                             <span class="text-[10px] text-gray-500 font-mono">ENCRYPTED_LEDGER_V1</span>
                         </div>
@@ -185,50 +200,94 @@
                                         <th class="px-4 py-3">Details</th>
                                     </tr>
                                 </thead>
-                                <tbody id="logs-list" class="divide-y divide-gray-700/50 text-gray-300 font-mono"></tbody>
+                                <tbody id="logs-list" class="divide-y divide-gray-700/50 text-gray-300 font-mono">
+                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
+                <div id="ws-view-ai" class="ws-view hidden flex-1 flex flex-col min-h-0">
+                    <div id="ai-chat-container"
+                        class="flex-1 bg-[#0f1115] rounded-t-xl p-4 overflow-y-auto space-y-4 border border-purple-900/30 shadow-inner">
+                        <div class="flex gap-3">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-purple-900/50">
+                                <i class="fa-solid fa-robot text-white text-xs"></i>
+                            </div>
+                            <div
+                                class="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700 text-sm text-gray-300 shadow-md max-w-[85%]">
+                                <p class="font-bold text-purple-400 text-xs mb-1">AZ COORDINATOR v2.0</p>
+                                Greetings, Officer. I am connected to the Mission Board and Personnel Database. Ask me
+                                about tasks, status reports, or pending directives.
+                            </div>
+                        </div>
+                    </div>
+                    <form onsubmit="app.handleAIQuery(event)"
+                        class="bg-gray-800 p-3 rounded-b-xl border-t border-purple-500/30 flex gap-2 shrink-0">
+                        <input id="ai-input" type="text" placeholder="Query the system..."
+                            class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-purple-500 transition-colors placeholder-gray-600">
+                        <button type="submit"
+                            class="bg-purple-600 hover:bg-purple-500 text-white px-4 rounded-lg transition-colors shadow-lg shadow-purple-900/20"><i
+                                class="fa-solid fa-sparkles"></i></button>
+                    </form>
+                </div>
+
                 <div id="ws-view-personal" class="ws-view flex-1 overflow-y-auto space-y-4">
-                    <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
+                    <div
+                        class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
                         <h2 class="text-xl font-bold text-blue-300 mb-1">Private Protocol</h2>
-                        <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.</p>
+                        <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.
+                        </p>
                         <div class="flex gap-2 mb-4">
-                            <input id="personal-task-input" type="text" placeholder="Add a new directive..." class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
-                            <button onclick="app.addPersonalTask()" class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                            <input id="personal-task-input" type="text" placeholder="Add a new directive..."
+                                class="flex-1 bg-gray-900 border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blueAccent">
+                            <button onclick="app.addPersonalTask()"
+                                class="bg-blueAccent text-white px-4 py-2 rounded-lg font-bold"><i
+                                    class="fa-solid fa-plus"></i></button>
                         </div>
                         <ul id="personal-task-list" class="space-y-2"></ul>
                     </div>
                 </div>
 
                 <div id="ws-view-chat" class="ws-view hidden flex-1 flex flex-col min-h-0">
-                    <div id="chat-container" class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
+                    <div id="chat-container"
+                        class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
                         <div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>
                     </div>
-                    <form onsubmit="app.sendChatMessage(event)" class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2 shrink-0">
-                        <input id="chat-input" type="text" placeholder="Broadcast to team..." class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
-                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
+                    <form onsubmit="app.sendChatMessage(event)"
+                        class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2 shrink-0">
+                        <input id="chat-input" type="text" placeholder="Broadcast to team..."
+                            class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
+                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i
+                                class="fa-solid fa-paper-plane"></i></button>
                     </form>
                 </div>
 
                 <div id="ws-view-board" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
                     <div class="flex justify-between items-center">
                         <h2 class="text-lg font-bold text-gray-300">Team Directives</h2>
-                        <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')" class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i class="fa-solid fa-plus"></i> New Task</button>
+                        <button onclick="document.getElementById('new-task-modal').classList.remove('hidden')"
+                            class="bg-orangeAccent text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition"><i
+                                class="fa-solid fa-plus"></i> New Task</button>
                     </div>
                     <div class="grid md:grid-cols-3 gap-4">
                         <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
-                            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span></h3>
+                            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 flex justify-between">Pending
+                                <span class="bg-gray-700 px-1.5 rounded text-white" id="count-todo">0</span>
+                            </h3>
                             <div id="board-todo" class="space-y-2 min-h-[100px]"></div>
                         </div>
                         <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20">
-                            <h3 class="text-xs font-bold text-blue-400 uppercase mb-3 flex justify-between">In Progress <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span></h3>
+                            <h3 class="text-xs font-bold text-blue-400 uppercase mb-3 flex justify-between">In Progress
+                                <span class="bg-blue-900 px-1.5 rounded text-white" id="count-prog">0</span>
+                            </h3>
                             <div id="board-prog" class="space-y-2 min-h-[100px]"></div>
                         </div>
                         <div class="bg-green-900/10 p-3 rounded-xl border border-green-500/20">
-                            <h3 class="text-xs font-bold text-green-400 uppercase mb-3 flex justify-between">Completed <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span></h3>
+                            <h3 class="text-xs font-bold text-green-400 uppercase mb-3 flex justify-between">Completed
+                                <span class="bg-green-900 px-1.5 rounded text-white" id="count-done">0</span>
+                            </h3>
                             <div id="board-done" class="space-y-2 min-h-[100px]"></div>
                         </div>
                     </div>
@@ -236,16 +295,19 @@
 
                 <div id="ws-view-vault" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
                     <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                        <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i> Digital Repository</h2>
+                        <h2 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up"></i>
+                            Digital Repository</h2>
                         <div class="flex gap-2 items-center mb-6">
-                            <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                            <label
+                                class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                                 <i class="fa-solid fa-file-import"></i> Upload Artifact
                                 <input type="file" id="vault-upload" class="hidden" onchange="app.uploadToVault(this)">
                             </label>
                             <span id="vault-status" class="text-xs text-gray-500 animate-pulse"></span>
                         </div>
                         <div class="space-y-1">
-                            <div class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
+                            <div
+                                class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
                                 <div class="col-span-2">Filename</div>
                                 <div>Uploader</div>
                                 <div class="text-right">Action</div>
@@ -446,10 +508,10 @@
                     // LOGGING HAPPENS IN APP.INIT AFTER USER IS CONFIRMED
                 } catch (err) { document.getElementById('login-msg').innerText = "Auth Failed: " + err.message; }
             },
-            logout() { 
+            logout() {
                 // Log logout before signing out
-                if(currentUser) app.logAction('SYSTEM_EXIT', `User ${currentUser.name} disconnected.`);
-                signOut(auth); 
+                if (currentUser) app.logAction('SYSTEM_EXIT', `User ${currentUser.name} disconnected.`);
+                signOut(auth);
             }
         };
 
@@ -485,7 +547,7 @@
 
             // 1. ADD THIS NEW HELPER FUNCTION
             async logAction(type, details) {
-                if(!currentUser) return;
+                if (!currentUser) return;
                 await addDoc(collection(db, "admin_logs"), {
                     type: type,
                     user: currentUser.name,
@@ -508,7 +570,7 @@
                                 return;
                             }
                             currentUser = { ...userData, uid: user.uid };
-                            
+
                             // LOG LOGIN HERE
                             this.logAction('SYSTEM_ENTRY', `User ${userData.name} initialized session.`);
 
@@ -527,6 +589,114 @@
                         document.getElementById('app-content').classList.add('hidden');
                     }
                 });
+            },
+
+            scrollToAIBottom() {
+                const container = document.getElementById('ai-chat-container');
+                container.scrollTop = container.scrollHeight;
+            },
+
+            async handleAIQuery(e) {
+                e.preventDefault();
+                const input = document.getElementById('ai-input');
+                const text = input.value.trim();
+                if (!text) return;
+
+                // 1. Render User Message
+                const container = document.getElementById('ai-chat-container');
+                container.innerHTML += `
+                    <div class="flex gap-3 flex-row-reverse animate-fade-in-up">
+                        <div class="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center shrink-0 border border-gray-600">
+                            <i class="fa-solid fa-user text-gray-400 text-xs"></i>
+                        </div>
+                        <div class="bg-blue-600/20 p-3 rounded-xl rounded-tr-none border border-blue-500/30 text-sm text-blue-100 shadow-md max-w-[85%]">
+                            ${text}
+                        </div>
+                    </div>`;
+                input.value = '';
+                this.scrollToAIBottom();
+
+                // 2. Simulate "Thinking" delay
+                const loadingId = 'loading-' + Date.now();
+                container.innerHTML += `
+                    <div id="${loadingId}" class="flex gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-robot text-white text-xs"></i></div>
+                        <div class="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700 text-sm text-gray-400 shadow-md">
+                            <i class="fa-solid fa-circle-notch fa-spin text-purple-500"></i> Processing Directive...
+                        </div>
+                    </div>`;
+                this.scrollToAIBottom();
+
+                // 3. Process Logic (The "AI" Brain)
+                const response = await this.processSystemQuery(text.toLowerCase());
+
+                // 4. Render Response
+                document.getElementById(loadingId).remove();
+                container.innerHTML += `
+                    <div class="flex gap-3 animate-fade-in">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-purple-900/50">
+                            <i class="fa-solid fa-robot text-white text-xs"></i>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700 text-sm text-gray-300 shadow-md max-w-[85%] leading-relaxed">
+                            ${response}
+                        </div>
+                    </div>`;
+                this.scrollToAIBottom();
+            },
+
+            async processSystemQuery(query) {
+                // Simulating AI by actually querying the active database state
+                await new Promise(r => setTimeout(r, 800)); // Fake processing delay
+
+                // CONTEXT: USERS
+                if(query.includes('who') || query.includes('users') || query.includes('admin')) {
+                    const snap = await getDocs(collection(db, "users"));
+                    const admins = [];
+                    snap.forEach(d => { if(d.data().role === 'admin') admins.push(d.data().name) });
+                    return `Database scan complete. There are currently <strong>${snap.size}</strong> users registered in the system.<br><br>Active Commanders:<br> ${admins.map(a => `• ${a}`).join('<br>')}`;
+                }
+
+                // CONTEXT: MY TASKS
+                if(query.includes('my task') || query.includes('assigned to me')) {
+                    const q = await getDocs(collection(db, "admin_team_tasks"));
+                    let myTasks = [];
+                    q.forEach(d => {
+                        const t = d.data();
+                        if(t.assignee === currentUser.name && t.status !== 'done') myTasks.push(t.title);
+                    });
+                    if(myTasks.length === 0) return "You have no active directives assigned to your ID, Officer. Standby for orders.";
+                    return `You have <strong>${myTasks.length}</strong> active directives:<br>${myTasks.map(t => `• ${t}`).join('<br>')}`;
+                }
+
+                // CONTEXT: PENDING / TODO
+                if(query.includes('pending') || query.includes('todo') || query.includes('status')) {
+                    const q = await getDocs(collection(db, "admin_team_tasks"));
+                    let todo = 0, prog = 0;
+                    q.forEach(d => {
+                        const t = d.data();
+                        if(t.status === 'todo') todo++;
+                        if(t.status === 'prog') prog++;
+                    });
+                    return `Mission Board Status Report:<br>• <strong>${todo}</strong> tasks pending deployment.<br>• <strong>${prog}</strong> operations in progress.<br><br>Check the Mission Board for details.`;
+                }
+
+                // CONTEXT: REVENUE / SALES
+                if(query.includes('sales') || query.includes('money') || query.includes('revenue')) {
+                    // Quick check on active event
+                    const evSnap = await getDocs(query(collection(db, "events"), orderBy("timestamp", "desc"), limit(1)));
+                    if(evSnap.empty) return "No active revenue streams detected.";
+                    const ev = evSnap.docs[0].data();
+                    const rev = (ev.ticketsSold || 0) * (ev.price || 0);
+                    return `Financial Intelligence:<br>Latest Event: "${ev.title}"<br>Tickets Sold: ${ev.ticketsSold}<br>Est. Revenue: <span class="text-green-400 font-mono">GHS ${rev}</span>`;
+                }
+
+                // CONTEXT: JOKES / CHAT
+                if(query.includes('hello') || query.includes('hi')) return `Greetings, Officer ${currentUser.name}. Systems are nominal.`;
+                if(query.includes('joke')) return "Why did the developer go broke? Because he used up all his cache.";
+                if(query.includes('thank')) return "Affirmative. Serving the protocol.";
+
+                // DEFAULT
+                return "I am analyzing that request... specific data correlation is unavailable. Please query about: <em>My Tasks, System Users, Sales Stats, or Pending Operations.</em>";
             },
 
             // 3. UPDATE MOVE TEAM TASK (The CEO Approval Logic)
@@ -567,12 +737,24 @@
                 document.getElementById(`ws-view-${tab}`).classList.remove('hidden');
 
                 document.querySelectorAll('.ws-tab').forEach(btn => {
-                    btn.classList.remove('bg-blueAccent', 'text-white', 'text-gray-400');
-                    if (btn.id === `ws-tab-${tab}`) btn.classList.add('bg-blueAccent', 'text-white');
-                    else btn.classList.add('text-gray-400');
+                    // Reset base classes
+                    btn.classList.remove('bg-blueAccent', 'bg-purple-600', 'text-white', 'text-gray-400', 'border-purple-500/30', 'text-purple-300');
+                    btn.classList.add('text-gray-400');
+                    
+                    // Special styling for AI tab
+                    if(btn.id === 'ws-tab-ai') btn.classList.add('border', 'border-purple-500/30', 'text-purple-300');
+
+                    // Active state logic
+                    if (btn.id === `ws-tab-${tab}`) {
+                        btn.classList.remove('text-gray-400', 'text-purple-300');
+                        btn.classList.add('text-white');
+                        if(tab === 'ai') btn.classList.add('bg-purple-600', 'border-transparent');
+                        else btn.classList.add('bg-blueAccent');
+                    }
                 });
 
                 if (tab === 'chat') this.scrollToChatBottom();
+                if (tab === 'ai') this.scrollToAIBottom();
             },
 
             switchView(view) {
@@ -757,7 +939,7 @@
                     const prog = document.getElementById('board-prog');
                     const done = document.getElementById('board-done');
                     todo.innerHTML = ''; prog.innerHTML = ''; done.innerHTML = '';
-                    let cTodo=0, cProg=0, cDone=0;
+                    let cTodo = 0, cProg = 0, cDone = 0;
 
                     snap.forEach(d => {
                         const t = d.data();
@@ -771,9 +953,9 @@
                                 </div>
                                 <button onclick="event.stopPropagation(); app.deleteTeamTask('${d.id}')" class="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 text-xs hover:text-red-400 bg-gray-800 rounded-full px-1"><i class="fa-solid fa-xmark"></i></button>
                             </div>`;
-                        
-                        if(t.status === 'todo') { todo.innerHTML += card; cTodo++; }
-                        else if(t.status === 'prog') { prog.innerHTML += card; cProg++; }
+
+                        if (t.status === 'todo') { todo.innerHTML += card; cTodo++; }
+                        else if (t.status === 'prog') { prog.innerHTML += card; cProg++; }
                         else { done.innerHTML += card; cDone++; }
                     });
                     document.getElementById('count-todo').innerText = cTodo;
@@ -788,11 +970,11 @@
                     snap.forEach(d => {
                         const l = d.data();
                         const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleString() : 'Just now';
-                        
+
                         let typeColor = 'text-gray-400';
-                        if(l.type === 'SYSTEM_ENTRY') typeColor = 'text-green-400';
-                        if(l.type === 'SYSTEM_EXIT') typeColor = 'text-red-400';
-                        if(l.type === 'MISSION_COMPLETE') typeColor = 'text-orangeAccent';
+                        if (l.type === 'SYSTEM_ENTRY') typeColor = 'text-green-400';
+                        if (l.type === 'SYSTEM_EXIT') typeColor = 'text-red-400';
+                        if (l.type === 'MISSION_COMPLETE') typeColor = 'text-orangeAccent';
 
                         list.innerHTML += `
                             <tr class="hover:bg-gray-800/50 transition">
