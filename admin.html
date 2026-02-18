@@ -1319,7 +1319,7 @@
                     }
                     
                     const applicationData = appDoc.data();
-                    const fullName = applicationData.fullName || 'this applicant';
+                    const fullName = applicationData.fullName || 'Unknown Applicant';
                     
                     if (!confirm(`Approve ${fullName} as an ambassador?`)) return;
 
@@ -1357,7 +1357,7 @@
                     }
                     
                     const applicationData = appDoc.data();
-                    const fullName = applicationData.fullName || 'this applicant';
+                    const fullName = applicationData.fullName || 'Unknown Applicant';
                     
                     if (!confirm(`Reject ${fullName}'s application?`)) return;
 
