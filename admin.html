@@ -117,6 +117,9 @@
             <button onclick="app.switchView('users')" id="nav-users"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
                     class="fa-solid fa-users mr-2"></i>DB</button>
+            <button onclick="app.switchView('ambassadors')" id="nav-ambassadors"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-star mr-2"></i>Ambassadors</button>
             <button onclick="app.switchView('godmode')" id="nav-godmode"
                 class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i
                     class="fa-solid fa-bolt mr-2"></i>God Mode</button>
@@ -355,6 +358,70 @@
                             class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
                         <button onclick="app.banUser()"
                             class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-ambassadors" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-r from-yellow-900/30 to-gray-800 p-6 rounded-xl border border-yellow-600/30 shadow-lg">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-star"></i> Ambassador Program
+                    </h2>
+                    <p class="text-sm text-gray-400">Review and manage student ambassador applications</p>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-inbox"></i> Applications
+                        </h3>
+                        <div class="flex gap-2 text-xs">
+                            <button onclick="app.filterAmbassadors('pending')" id="filter-pending" 
+                                class="px-3 py-1 rounded bg-yellow-900/30 text-yellow-400 border border-yellow-600/50 font-bold">
+                                Pending
+                            </button>
+                            <button onclick="app.filterAmbassadors('approved')" id="filter-approved"
+                                class="px-3 py-1 rounded bg-gray-700 text-gray-400 border border-gray-600 font-bold">
+                                Approved
+                            </button>
+                            <button onclick="app.filterAmbassadors('rejected')" id="filter-rejected"
+                                class="px-3 py-1 rounded bg-gray-700 text-gray-400 border border-gray-600 font-bold">
+                                Rejected
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="ambassadors-list" class="space-y-3">
+                        <div class="text-center text-gray-500 py-8">Loading applications...</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-plus"></i> Schedule Ambassador Program
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-3 mb-3">
+                        <input id="program-title" type="text" placeholder="Program Title"
+                            class="w-full p-3 rounded bg-gray-900 border border-gray-600 text-white outline-none focus:border-orangeAccent transition">
+                        <input id="program-date" type="datetime-local"
+                            class="w-full p-3 rounded bg-gray-900 border border-gray-600 text-white outline-none focus:border-orangeAccent transition">
+                    </div>
+                    <textarea id="program-description" placeholder="Program Description" rows="3"
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white outline-none focus:border-orangeAccent transition resize-none"></textarea>
+                    <input id="program-location" type="text" placeholder="Location/Link"
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-gray-600 text-white outline-none focus:border-orangeAccent transition">
+                    <button onclick="app.scheduleProgram()"
+                        class="w-full bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl active:scale-95 transition">
+                        <i class="fa-solid fa-calendar-check mr-2"></i>Schedule Program
+                    </button>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar"></i> Scheduled Programs
+                    </h3>
+                    <div id="scheduled-programs-list" class="space-y-3">
+                        <div class="text-center text-gray-500 py-4">No programs scheduled yet</div>
                     </div>
                 </div>
             </div>
@@ -892,6 +959,50 @@
                         </div>`;
                     });
                 });
+
+                // Ambassador Signups Listener
+                onSnapshot(query(collection(db, "ambassador_signups"), orderBy("timestamp", "desc")), (snap) => {
+                    this.ambassadorData = [];
+                    snap.forEach(d => {
+                        this.ambassadorData.push({ id: d.id, ...d.data() });
+                    });
+                    this.renderAmbassadorsList();
+                });
+
+                // Scheduled Programs Listener
+                onSnapshot(query(collection(db, "ambassador_programs"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('scheduled-programs-list');
+                    if (snap.empty) {
+                        list.innerHTML = '<div class="text-center text-gray-500 py-4">No programs scheduled yet</div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const prog = d.data();
+                        const progDate = new Date(prog.date);
+                        list.innerHTML += `
+                            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="text-white font-bold">${app.escapeHtml(prog.title)}</h4>
+                                        <p class="text-xs text-gray-400">
+                                            <i class="fa-solid fa-calendar mr-1"></i>
+                                            ${progDate.toLocaleDateString()} at ${progDate.toLocaleTimeString()}
+                                        </p>
+                                    </div>
+                                    <button onclick="app.deleteProgram('${d.id}')" 
+                                        class="text-red-400 hover:text-red-300 text-xs">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                                <p class="text-sm text-gray-300 mb-2">${app.escapeHtml(prog.description)}</p>
+                                ${prog.location ? `<p class="text-xs text-blue-400"><i class="fa-solid fa-location-dot mr-1"></i>${app.escapeHtml(prog.location)}</p>` : ''}
+                                <p class="text-[10px] text-gray-500 mt-2">Scheduled by ${app.escapeHtml(prog.createdBy)}</p>
+                            </div>
+                        `;
+                    });
+                });
             },
 
             // --- RE-ENGINEERED SALES VIEW LOGIC ---
@@ -1110,6 +1221,199 @@
                         };
                     };
                 });
+            },
+
+            // ===== AMBASSADOR FUNCTIONS =====
+            currentAmbassadorFilter: 'pending',
+
+            // Helper to escape HTML to prevent XSS
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
+            filterAmbassadors(status) {
+                this.currentAmbassadorFilter = status;
+                // Update button styles
+                ['pending', 'approved', 'rejected'].forEach(s => {
+                    const btn = document.getElementById(`filter-${s}`);
+                    if (s === status) {
+                        btn.className = 'px-3 py-1 rounded bg-yellow-900/30 text-yellow-400 border border-yellow-600/50 font-bold';
+                    } else {
+                        btn.className = 'px-3 py-1 rounded bg-gray-700 text-gray-400 border border-gray-600 font-bold';
+                    }
+                });
+                // Re-render list with filter
+                this.renderAmbassadorsList();
+            },
+
+            renderAmbassadorsList() {
+                const list = document.getElementById('ambassadors-list');
+                if (!this.ambassadorData) {
+                    list.innerHTML = '<div class="text-center text-gray-500 py-8">Loading applications...</div>';
+                    return;
+                }
+
+                const filtered = this.ambassadorData.filter(a => a.status === this.currentAmbassadorFilter);
+                
+                if (filtered.length === 0) {
+                    list.innerHTML = `<div class="text-center text-gray-500 py-8">No ${this.currentAmbassadorFilter} applications</div>`;
+                    return;
+                }
+
+                list.innerHTML = filtered.map(app => `
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-white font-bold text-lg">${this.escapeHtml(app.fullName)}</h4>
+                                <p class="text-xs text-gray-400">${this.escapeHtml(app.email)} • ${this.escapeHtml(app.phone)}</p>
+                                <p class="text-xs text-gray-500 mt-1">${this.escapeHtml(app.institution)} • ${this.escapeHtml(app.major)} • ${this.escapeHtml(app.year)}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-gray-500">${new Date(app.submittedAt).toLocaleDateString()}</span>
+                                ${app.status === 'pending' ? '<span class="block mt-1 bg-yellow-900/30 text-yellow-400 text-xs font-bold px-2 py-1 rounded">PENDING</span>' : ''}
+                                ${app.status === 'approved' ? '<span class="block mt-1 bg-green-900/30 text-green-400 text-xs font-bold px-2 py-1 rounded">APPROVED</span>' : ''}
+                                ${app.status === 'rejected' ? '<span class="block mt-1 bg-red-900/30 text-red-400 text-xs font-bold px-2 py-1 rounded">REJECTED</span>' : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-2 text-sm mb-3">
+                            <div><span class="text-gray-500">Graduation:</span> <span class="text-white">${this.escapeHtml(app.graduation)}</span></div>
+                            <div><span class="text-gray-500">Commitment:</span> <span class="text-white">${this.escapeHtml(app.commitment)}</span></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <p class="text-xs text-gray-500 mb-1">Motivation:</p>
+                            <p class="text-sm text-gray-300 bg-gray-800 p-2 rounded">${this.escapeHtml(app.motivation)}</p>
+                        </div>
+
+                        ${app.experience ? `<div class="mb-3">
+                            <p class="text-xs text-gray-500 mb-1">Experience:</p>
+                            <p class="text-sm text-gray-300 bg-gray-800 p-2 rounded">${this.escapeHtml(app.experience)}</p>
+                        </div>` : ''}
+
+                        ${app.skills ? `<div class="mb-3">
+                            <p class="text-xs text-gray-500 mb-1">Skills:</p>
+                            <p class="text-sm text-gray-300 bg-gray-800 p-2 rounded">${this.escapeHtml(app.skills)}</p>
+                        </div>` : ''}
+
+                        ${app.status === 'pending' ? `
+                            <div class="flex gap-2 mt-4">
+                                <button onclick="app.approveAmbassador('${app.id}', '${this.escapeHtml(app.email)}', '${this.escapeHtml(app.fullName)}')" 
+                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">
+                                    <i class="fa-solid fa-check mr-1"></i> Approve
+                                </button>
+                                <button onclick="app.rejectAmbassador('${app.id}')" 
+                                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded transition">
+                                    <i class="fa-solid fa-times mr-1"></i> Reject
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            },
+
+            async approveAmbassador(appId, email, name) {
+                if (!confirm(`Approve ${name} as an ambassador?`)) return;
+
+                try {
+                    // Normalize email for consistent lookup
+                    const normalizedEmail = email.toLowerCase().trim();
+
+                    // Update application status
+                    await updateDoc(doc(db, 'ambassador_signups', appId), {
+                        status: 'approved',
+                        approvedAt: new Date().toISOString(),
+                        approvedBy: currentUser.name
+                    });
+
+                    // Find and update user role to ambassador
+                    const usersQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
+                    const userSnap = await getDocs(usersQuery);
+                    
+                    if (!userSnap.empty) {
+                        const userDoc = userSnap.docs[0];
+                        await updateDoc(doc(db, 'users', userDoc.id), {
+                            role: 'ambassador'
+                        });
+                        await this.logAction('AMBASSADOR_APPROVED', `Approved ${name} (${normalizedEmail}) as ambassador and promoted user`);
+                        alert(`${name} has been approved and promoted to Ambassador!`);
+                    } else {
+                        // User account doesn't exist yet - approval recorded but role not updated
+                        await this.logAction('AMBASSADOR_APPROVED', `Approved ${name} (${normalizedEmail}) - user account not found, will be promoted upon registration`);
+                        alert(`${name} has been approved! Note: User account not found. They will be promoted to Ambassador when they create an account.`);
+                    }
+                } catch (error) {
+                    console.error('Error approving ambassador:', error);
+                    alert('Error approving ambassador. Please try again.');
+                }
+            },
+
+            async rejectAmbassador(appId) {
+                if (!confirm('Reject this application?')) return;
+
+                try {
+                    await updateDoc(doc(db, 'ambassador_signups', appId), {
+                        status: 'rejected',
+                        rejectedAt: new Date().toISOString(),
+                        rejectedBy: currentUser.name
+                    });
+
+                    await this.logAction('AMBASSADOR_REJECTED', `Rejected application ${appId}`);
+                    alert('Application rejected.');
+                } catch (error) {
+                    console.error('Error rejecting ambassador:', error);
+                    alert('Error rejecting application. Please try again.');
+                }
+            },
+
+            async scheduleProgram() {
+                const title = document.getElementById('program-title').value.trim();
+                const date = document.getElementById('program-date').value;
+                const description = document.getElementById('program-description').value.trim();
+                const location = document.getElementById('program-location').value.trim();
+
+                if (!title || !date || !description) {
+                    alert('Please fill in all required fields (title, date, description)');
+                    return;
+                }
+
+                try {
+                    await addDoc(collection(db, 'ambassador_programs'), {
+                        title,
+                        date,
+                        description,
+                        location,
+                        createdBy: currentUser.name,
+                        createdAt: new Date().toISOString(),
+                        timestamp: serverTimestamp()
+                    });
+
+                    await this.logAction('PROGRAM_SCHEDULED', `Scheduled program: ${title} on ${date}`);
+                    alert('Program scheduled successfully!');
+
+                    // Clear form
+                    document.getElementById('program-title').value = '';
+                    document.getElementById('program-date').value = '';
+                    document.getElementById('program-description').value = '';
+                    document.getElementById('program-location').value = '';
+                } catch (error) {
+                    console.error('Error scheduling program:', error);
+                    alert('Error scheduling program. Please try again.');
+                }
+            },
+
+            async deleteProgram(programId) {
+                if (!confirm('Delete this program?')) return;
+
+                try {
+                    await deleteDoc(doc(db, 'ambassador_programs', programId));
+                    await this.logAction('PROGRAM_DELETED', `Deleted program ${programId}`);
+                } catch (error) {
+                    console.error('Error deleting program:', error);
+                    alert('Error deleting program. Please try again.');
+                }
             }
         };
 

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner - Ambassador Portal</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#111827',
+                        darkCard: '#1f2937',
+                        success: '#00E676'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #111827;
+            color: white;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-panel {
+            background: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm glass-panel p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="mb-4">
+                <i class="fa-solid fa-star text-5xl text-orangeAccent"></i>
+            </div>
+            <h1 class="text-3xl font-black text-orangeAccent mb-2">Ambassador Portal</h1>
+            <p class="text-sm text-gray-400 mb-6">AZ Learner Leadership Hub</p>
+            <input type="email" id="login-email" placeholder="Email Address"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">
+                Enter Portal 🔐
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="text-xs text-gray-500 hover:text-orangeAccent transition mt-4 inline-block">← Back to Home</a>
+        </div>
+    </div>
+
+    <!-- Main App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
+                    AMBASSADOR PORTAL
+                </h1>
+                <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Logout <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-gray-800/95 border-b border-gray-700 px-6 py-2 overflow-x-auto no-scrollbar flex gap-3 shrink-0 items-center">
+            <button onclick="portal.switchTab('profile')" id="tab-profile"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-user mr-2"></i>Profile
+            </button>
+            <button onclick="portal.switchTab('programs')" id="tab-programs"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-calendar mr-2"></i>Programs
+            </button>
+            <button onclick="portal.switchTab('course')" id="tab-course"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-book mr-2"></i>Course
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f1115]">
+            
+            <!-- Profile Tab -->
+            <div id="view-profile" class="portal-view space-y-6">
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-2xl font-bold text-orangeAccent mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-id-card"></i> Your Profile
+                    </h2>
+                    <div id="profile-info" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">Loading profile...</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy"></i> Ambassador Stats
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-800 p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-orangeAccent" id="stat-programs">0</div>
+                            <div class="text-xs text-gray-400 mt-1">Programs Attended</div>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-blue-400" id="stat-events">0</div>
+                            <div class="text-xs text-gray-400 mt-1">Events Organized</div>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-green-400" id="stat-hours">0</div>
+                            <div class="text-xs text-gray-400 mt-1">Hours Contributed</div>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-purple-400" id="stat-rank">-</div>
+                            <div class="text-xs text-gray-400 mt-1">Rank</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Programs Tab -->
+            <div id="view-programs" class="portal-view hidden space-y-6">
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-2xl font-bold text-orangeAccent mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days"></i> Upcoming Programs
+                    </h2>
+                    <div id="programs-list" class="space-y-3">
+                        <div class="text-center text-gray-500 py-8">Loading programs...</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn"></i> Announcements
+                    </h3>
+                    <div id="announcements-list" class="space-y-3">
+                        <div class="text-center text-gray-500 py-4">No announcements</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Tab -->
+            <div id="view-course" class="portal-view hidden space-y-6">
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-2xl font-bold text-orangeAccent mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap"></i> Ambassador Training
+                    </h2>
+                    <p class="text-gray-300 mb-6">
+                        Complete these courses to enhance your leadership skills and become a more effective ambassador.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-blue-900/30 p-3 rounded-lg">
+                                    <i class="fa-solid fa-chalkboard-user text-2xl text-blue-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-bold text-white mb-2">Leadership Fundamentals</h4>
+                                    <p class="text-sm text-gray-400 mb-3">Learn the core principles of effective leadership and team management.</p>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex-1 bg-gray-700 rounded-full h-2">
+                                            <div class="bg-blue-400 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-400">0%</span>
+                                    </div>
+                                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">
+                                        Start Course
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-green-900/30 p-3 rounded-lg">
+                                    <i class="fa-solid fa-users text-2xl text-green-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-bold text-white mb-2">Community Building</h4>
+                                    <p class="text-sm text-gray-400 mb-3">Discover strategies to engage and grow your student community.</p>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex-1 bg-gray-700 rounded-full h-2">
+                                            <div class="bg-green-400 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-400">0%</span>
+                                    </div>
+                                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold transition">
+                                        Start Course
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-purple-900/30 p-3 rounded-lg">
+                                    <i class="fa-solid fa-microphone text-2xl text-purple-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-bold text-white mb-2">Public Speaking & Presentation</h4>
+                                    <p class="text-sm text-gray-400 mb-3">Master the art of presenting and communicating your ideas effectively.</p>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex-1 bg-gray-700 rounded-full h-2">
+                                            <div class="bg-purple-400 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-400">0%</span>
+                                    </div>
+                                    <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-bold transition">
+                                        Start Course
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-yellow-900/30 p-3 rounded-lg">
+                                    <i class="fa-solid fa-lightbulb text-2xl text-yellow-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-lg font-bold text-white mb-2">Event Planning & Execution</h4>
+                                    <p class="text-sm text-gray-400 mb-3">Learn how to plan, organize, and execute successful events.</p>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex-1 bg-gray-700 rounded-full h-2">
+                                            <div class="bg-yellow-400 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-400">0%</span>
+                                    </div>
+                                    <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm font-bold transition">
+                                        Start Course
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-file-alt"></i> Resources & Materials
+                    </h3>
+                    <div class="space-y-2">
+                        <a href="#" class="block bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-orangeAccent transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i>
+                                <div>
+                                    <div class="text-sm font-bold text-white">Ambassador Handbook</div>
+                                    <div class="text-xs text-gray-400">Complete guide to being an AZ Learner Ambassador</div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#" class="block bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-orangeAccent transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-powerpoint text-orange-400 text-xl"></i>
+                                <div>
+                                    <div class="text-sm font-bold text-white">Presentation Templates</div>
+                                    <div class="text-xs text-gray-400">Ready-to-use slides for your events</div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#" class="block bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-orangeAccent transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-image text-blue-400 text-xl"></i>
+                                <div>
+                                    <div class="text-sm font-bold text-white">Brand Assets & Logos</div>
+                                    <div class="text-xs text-gray-400">Official AZ Learner branding materials</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        let currentUser = null;
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-pass').value;
+                const msgEl = document.getElementById('login-msg');
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } catch (err) {
+                    msgEl.innerText = "Login failed: " + err.message;
+                }
+            },
+            async logout() {
+                await signOut(auth);
+            }
+        };
+
+        window.portal = {
+            // Helper to escape HTML to prevent XSS
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            // Allow both ambassadors and admins
+                            if (userData.role !== 'ambassador' && userData.role !== 'admin') {
+                                alert("Access Denied: This portal is for ambassadors and admins only.");
+                                signOut(auth);
+                                return;
+                            }
+                            currentUser = { ...userData, uid: user.uid };
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('user-name-display').innerText = `Welcome, ${userData.name}`;
+                            
+                            this.loadProfile();
+                            this.startListeners();
+                            this.switchTab('profile');
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchTab(tab) {
+                // Hide all views
+                document.querySelectorAll('.portal-view').forEach(v => v.classList.add('hidden'));
+                // Show selected view
+                document.getElementById('view-' + tab).classList.remove('hidden');
+                
+                // Update tab buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('bg-orangeAccent', 'text-white');
+                    btn.classList.add('bg-gray-700', 'text-gray-400');
+                });
+                const activeBtn = document.getElementById('tab-' + tab);
+                activeBtn.classList.remove('bg-gray-700', 'text-gray-400');
+                activeBtn.classList.add('bg-orangeAccent', 'text-white');
+            },
+
+            loadProfile() {
+                const profileInfo = document.getElementById('profile-info');
+                
+                profileInfo.innerHTML = `
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-gray-500">Full Name</label>
+                            <div class="text-white font-bold">${this.escapeHtml(currentUser.name || 'N/A')}</div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Email</label>
+                            <div class="text-white font-bold">${this.escapeHtml(currentUser.email || 'N/A')}</div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Phone</label>
+                            <div class="text-white font-bold">${this.escapeHtml(currentUser.phone || 'N/A')}</div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Role</label>
+                            <div class="text-white font-bold">
+                                <span class="bg-orangeAccent/20 text-orangeAccent px-3 py-1 rounded-full text-sm">
+                                    <i class="fa-solid fa-star mr-1"></i>
+                                    ${currentUser.role === 'admin' ? 'Admin (Ambassador)' : 'Ambassador'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-gray-700">
+                        <h4 class="text-sm font-bold text-gray-400 mb-3">ABOUT ME</h4>
+                        <p class="text-gray-300 text-sm">
+                            As an AZ Learner Ambassador, you represent our mission to empower students through technology and education. 
+                            Keep learning, keep leading, and keep inspiring others!
+                        </p>
+                    </div>
+                `;
+
+                // Set placeholder stats (could be derived from actual data in future)
+                document.getElementById('stat-programs').innerText = '0';
+                document.getElementById('stat-events').innerText = '0';
+                document.getElementById('stat-hours').innerText = '0';
+                document.getElementById('stat-rank').innerText = 'Rising Star';
+            },
+
+            startListeners() {
+                // Listen to scheduled programs
+                onSnapshot(query(collection(db, "ambassador_programs"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('programs-list');
+                    
+                    if (snap.empty) {
+                        list.innerHTML = '<div class="text-center text-gray-500 py-8">No upcoming programs</div>';
+                        return;
+                    }
+
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const prog = d.data();
+                        const progDate = new Date(prog.date);
+                        const isPast = progDate < new Date();
+
+                        list.innerHTML += `
+                            <div class="bg-gray-800 p-4 rounded-lg border ${isPast ? 'border-gray-700 opacity-50' : 'border-orangeAccent/30'}">
+                                <div class="flex items-start gap-3">
+                                    <div class="bg-orangeAccent/20 p-3 rounded-lg">
+                                        <i class="fa-solid fa-calendar-check text-orangeAccent text-xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-white font-bold mb-1">${portal.escapeHtml(prog.title)}</h4>
+                                        <p class="text-xs text-gray-400 mb-2">
+                                            <i class="fa-solid fa-clock mr-1"></i>
+                                            ${progDate.toLocaleDateString()} at ${progDate.toLocaleTimeString()}
+                                        </p>
+                                        <p class="text-sm text-gray-300 mb-2">${portal.escapeHtml(prog.description)}</p>
+                                        ${prog.location ? `
+                                            <p class="text-xs text-blue-400">
+                                                <i class="fa-solid fa-location-dot mr-1"></i>
+                                                ${portal.escapeHtml(prog.location)}
+                                            </p>
+                                        ` : ''}
+                                        ${isPast ? '<span class="inline-block mt-2 text-xs text-gray-500">PAST EVENT</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+
+                // Listen to global announcements
+                onSnapshot(query(collection(db, "global_announcements"), orderBy("timestamp", "desc")), (snap) => {
+                    const list = document.getElementById('announcements-list');
+                    
+                    if (snap.empty) {
+                        list.innerHTML = '<div class="text-center text-gray-500 py-4">No announcements</div>';
+                        return;
+                    }
+
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const ann = d.data();
+                        list.innerHTML += `
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                                <h4 class="text-white font-bold mb-2">${portal.escapeHtml(ann.title)}</h4>
+                                ${ann.body ? `<p class="text-sm text-gray-300 mb-2">${portal.escapeHtml(ann.body)}</p>` : ''}
+                                ${ann.image ? `<img src="${portal.escapeHtml(ann.image)}" class="w-full rounded-lg mt-2" alt="Announcement">` : ''}
+                            </div>
+                        `;
+                    });
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => portal.init());
+    </script>
+</body>
+</html>
