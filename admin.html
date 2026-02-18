@@ -193,6 +193,7 @@
                 </div>
 
                 <div id="ws-view-personal" class="ws-view flex-1 overflow-y-auto space-y-4">
+                    <!-- Task Manager -->
                     <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
                         <h2 class="text-xl font-bold text-blue-300 mb-1">Private Protocol</h2>
                         <p class="text-xs text-blue-200/50 mb-4">Your personal encrypted workspace. Only you see this.</p>
@@ -202,16 +203,99 @@
                         </div>
                         <ul id="personal-task-list" class="space-y-2"></ul>
                     </div>
+
+                    <!-- Personal Notes/Scratchpad -->
+                    <div class="bg-gradient-to-br from-purple-900/40 to-gray-800 p-6 rounded-xl border border-purple-500/20">
+                        <h2 class="text-lg font-bold text-purple-300 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-note-sticky"></i> Quick Notes
+                        </h2>
+                        <p class="text-xs text-purple-200/50 mb-3">Your personal scratchpad for ideas and reminders</p>
+                        <textarea id="personal-notes" placeholder="Jot down quick notes, ideas, or reminders..." 
+                            class="w-full bg-gray-900 border border-purple-500/30 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-purple-400 resize-none font-mono" 
+                            rows="6"></textarea>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="app.savePersonalNotes()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-1.5 rounded text-xs font-bold transition">
+                                <i class="fa-solid fa-save"></i> Save Notes
+                            </button>
+                            <span id="notes-saved-indicator" class="text-xs text-green-400 opacity-0 transition-opacity flex items-center gap-1">
+                                <i class="fa-solid fa-check"></i> Saved
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="bg-gradient-to-br from-green-900/40 to-gray-800 p-6 rounded-xl border border-green-500/20">
+                        <h2 class="text-lg font-bold text-green-300 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-link"></i> Quick Links
+                        </h2>
+                        <p class="text-xs text-green-200/50 mb-3">Save frequently accessed URLs for quick access</p>
+                        <div class="flex gap-2 mb-3">
+                            <input id="link-title-input" type="text" placeholder="Link title..." class="flex-1 bg-gray-900 border border-green-500/30 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-green-400">
+                            <input id="link-url-input" type="url" placeholder="https://..." class="flex-1 bg-gray-900 border border-green-500/30 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-green-400">
+                            <button onclick="app.addQuickLink()" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <div id="quick-links-list" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Personal Stats -->
+                    <div class="bg-gradient-to-br from-orange-900/40 to-gray-800 p-6 rounded-xl border border-orange-500/20">
+                        <h2 class="text-lg font-bold text-orange-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line"></i> Personal Dashboard
+                        </h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-blue-400" id="stat-total-tasks">0</div>
+                                <div class="text-[10px] text-gray-500 uppercase">Total Tasks</div>
+                            </div>
+                            <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-green-400" id="stat-completed-tasks">0</div>
+                                <div class="text-[10px] text-gray-500 uppercase">Completed</div>
+                            </div>
+                            <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-purple-400" id="stat-quick-links">0</div>
+                                <div class="text-[10px] text-gray-500 uppercase">Quick Links</div>
+                            </div>
+                            <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-orange-400" id="stat-completion-rate">0%</div>
+                                <div class="text-[10px] text-gray-500 uppercase">Completion</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="ws-view-chat" class="ws-view hidden flex-1 flex flex-col min-h-0">
                     <div id="chat-container" class="flex-1 bg-gray-800 rounded-t-xl p-4 overflow-y-auto space-y-3 border border-gray-700">
                         <div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>
                     </div>
-                    <form onsubmit="app.sendChatMessage(event)" class="bg-gray-800 p-3 rounded-b-xl border-t border-gray-700 flex gap-2 shrink-0">
-                        <input id="chat-input" type="text" placeholder="Broadcast to team..." class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500">
-                        <button type="submit" class="bg-green-600 text-white px-4 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
-                    </form>
+                    <div class="bg-gray-800 border-t border-gray-700 shrink-0">
+                        <!-- Formatting Toolbar -->
+                        <div class="flex gap-1 p-2 border-b border-gray-700 bg-gray-900/50">
+                            <button type="button" onclick="app.formatChatText('bold')" class="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition" title="Bold">
+                                <i class="fa-solid fa-bold"></i>
+                            </button>
+                            <button type="button" onclick="app.formatChatText('italic')" class="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition" title="Italic">
+                                <i class="fa-solid fa-italic"></i>
+                            </button>
+                            <button type="button" onclick="app.formatChatText('code')" class="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition" title="Code">
+                                <i class="fa-solid fa-code"></i>
+                            </button>
+                            <button type="button" onclick="app.formatChatText('heading')" class="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition" title="Heading">
+                                <i class="fa-solid fa-heading"></i>
+                            </button>
+                            <div class="border-l border-gray-600 mx-1"></div>
+                            <span class="text-[10px] text-gray-500 px-2 py-1 flex items-center">
+                                <i class="fa-solid fa-lightbulb mr-1"></i>
+                                Use **bold**, *italic*, `code`, # heading, or paste URLs
+                            </span>
+                        </div>
+                        <!-- Input Form -->
+                        <form onsubmit="app.sendChatMessage(event)" class="p-3 flex gap-2">
+                            <textarea id="chat-input" placeholder="Broadcast to team... (Shift+Enter for new line)" 
+                                class="flex-1 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg outline-none border border-gray-600 focus:border-green-500 resize-none" 
+                                rows="2" onkeydown="app.handleChatKeydown(event)"></textarea>
+                            <button type="submit" class="bg-green-600 text-white px-4 rounded-lg hover:bg-green-500 transition"><i class="fa-solid fa-paper-plane"></i></button>
+                        </form>
+                    </div>
                 </div>
 
                 <div id="ws-view-board" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
@@ -478,7 +562,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, setDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
 
@@ -663,6 +747,7 @@
                 });
 
                 if (tab === 'chat') this.scrollToChatBottom();
+                if (tab === 'personal') this.loadPersonalNotes();
             },
 
             async addPersonalTask() {
@@ -680,6 +765,118 @@
 
             async deletePersonalTask(id) {
                 await deleteDoc(doc(db, `users/${currentUser.uid}/private_tasks`, id));
+            },
+
+            // NEW: Personal Notes Functions
+            async savePersonalNotes() {
+                const notes = document.getElementById('personal-notes').value;
+                await setDoc(doc(db, `users/${currentUser.uid}/personal_data`, 'notes'), {
+                    content: notes, updatedAt: serverTimestamp()
+                });
+                const indicator = document.getElementById('notes-saved-indicator');
+                indicator.classList.remove('opacity-0');
+                setTimeout(() => indicator.classList.add('opacity-0'), 2000);
+            },
+
+            async loadPersonalNotes() {
+                const docSnap = await getDoc(doc(db, `users/${currentUser.uid}/personal_data`, 'notes'));
+                if (docSnap.exists()) {
+                    document.getElementById('personal-notes').value = docSnap.data().content || '';
+                }
+            },
+
+            // NEW: Quick Links Functions
+            async addQuickLink() {
+                const titleInput = document.getElementById('link-title-input');
+                const urlInput = document.getElementById('link-url-input');
+                if (!titleInput.value.trim() || !urlInput.value.trim()) return;
+                
+                await addDoc(collection(db, `users/${currentUser.uid}/quick_links`), {
+                    title: titleInput.value,
+                    url: urlInput.value,
+                    createdAt: serverTimestamp()
+                });
+                titleInput.value = '';
+                urlInput.value = '';
+            },
+
+            async deleteQuickLink(id) {
+                await deleteDoc(doc(db, `users/${currentUser.uid}/quick_links`, id));
+            },
+
+            // NEW: Personal Stats Update
+            updatePersonalStats(tasksData, linksData) {
+                const totalTasks = tasksData.length;
+                const completedTasks = tasksData.filter(t => t.done).length;
+                const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                
+                document.getElementById('stat-total-tasks').textContent = totalTasks;
+                document.getElementById('stat-completed-tasks').textContent = completedTasks;
+                document.getElementById('stat-quick-links').textContent = linksData.length;
+                document.getElementById('stat-completion-rate').textContent = completionRate + '%';
+            },
+
+            // NEW: Chat Formatting Functions
+            formatChatText(format) {
+                const input = document.getElementById('chat-input');
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const selectedText = input.value.substring(start, end);
+                let formattedText = '';
+
+                switch(format) {
+                    case 'bold':
+                        formattedText = `**${selectedText || 'bold text'}**`;
+                        break;
+                    case 'italic':
+                        formattedText = `*${selectedText || 'italic text'}*`;
+                        break;
+                    case 'code':
+                        formattedText = `\`${selectedText || 'code'}\``;
+                        break;
+                    case 'heading':
+                        formattedText = `# ${selectedText || 'Heading'}`;
+                        break;
+                }
+
+                input.value = input.value.substring(0, start) + formattedText + input.value.substring(end);
+                input.focus();
+                input.selectionStart = input.selectionEnd = start + formattedText.length;
+            },
+
+            handleChatKeydown(event) {
+                // Allow Shift+Enter for new line, Enter alone submits
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    document.querySelector('#ws-view-chat form').dispatchEvent(new Event('submit'));
+                }
+            },
+
+            // NEW: Format message text with markdown-like syntax and linkify URLs
+            formatMessageText(text) {
+                // Escape HTML
+                text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                
+                // Format heading (# Heading)
+                text = text.replace(/^# (.+)$/gm, '<div class="text-lg font-bold text-white mb-1">$1</div>');
+                
+                // Format bold (**text**)
+                text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+                
+                // Format italic (*text*)
+                text = text.replace(/\*(.+?)\*/g, '<em class="italic">$1</em>');
+                
+                // Format code (`code`)
+                text = text.replace(/`(.+?)`/g, '<code class="bg-gray-900 px-1.5 py-0.5 rounded text-xs font-mono text-orange-300">$1</code>');
+                
+                // Linkify URLs
+                const urlPattern = /(https?:\/\/[^\s]+)/g;
+                text = text.replace(urlPattern, '<a href="$1" target="_blank" class="text-blue-400 underline hover:text-blue-300">$1</a>');
+                
+                // Convert line breaks to <br>
+                text = text.replace(/\n/g, '<br>');
+                
+                return text;
             },
 
             async sendChatMessage(e) {
@@ -780,31 +977,61 @@
             },
 
             startListeners() {
+                // Store task and link data for stats
+                let tasksData = [];
+                let linksData = [];
+
                 // 1. Personal Tasks Listener
                 onSnapshot(query(collection(db, `users/${currentUser.uid}/private_tasks`), orderBy('createdAt', 'desc')), (snap) => {
                     const list = document.getElementById('personal-task-list');
                     list.innerHTML = '';
+                    tasksData = [];
                     snap.forEach(d => {
                         const t = d.data();
+                        tasksData.push(t);
                         list.innerHTML += `<li class="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700 hover:border-blue-500/50 transition group">
                             <span class="${t.done ? 'line-through text-gray-600' : 'text-gray-300'} cursor-pointer flex-1" onclick="app.togglePersonalTask('${d.id}', ${t.done})">${t.text}</span>
                             <button onclick="app.deletePersonalTask('${d.id}')" class="text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
                         </li>`;
                     });
+                    this.updatePersonalStats(tasksData, linksData);
                 });
 
-                // 2. Chat Listener
+                // NEW: Quick Links Listener
+                onSnapshot(query(collection(db, `users/${currentUser.uid}/quick_links`), orderBy('createdAt', 'desc')), (snap) => {
+                    const list = document.getElementById('quick-links-list');
+                    list.innerHTML = '';
+                    linksData = [];
+                    snap.forEach(d => {
+                        const link = d.data();
+                        linksData.push(link);
+                        list.innerHTML += `
+                            <div class="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700 hover:border-green-500/50 transition group">
+                                <a href="${link.url}" target="_blank" class="flex-1 text-green-300 hover:text-green-200 text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-external-link-alt text-xs"></i>
+                                    <span>${link.title}</span>
+                                </a>
+                                <button onclick="app.deleteQuickLink('${d.id}')" class="text-red-500 opacity-0 group-hover:opacity-100 transition text-xs">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>`;
+                    });
+                    this.updatePersonalStats(tasksData, linksData);
+                });
+
+                // 2. Chat Listener (with formatting support)
                 onSnapshot(query(collection(db, "admin_hq_chat"), orderBy('timestamp', 'asc'), limit(50)), (snap) => {
                     const container = document.getElementById('chat-container');
                     container.innerHTML = '<div class="text-center text-xs text-gray-600 my-4">--- Encrypted Channel Established ---</div>';
                     snap.forEach(d => {
                         const m = d.data();
                         const isMe = m.senderId === currentUser.uid;
+                        const formattedText = this.formatMessageText(m.text);
                         container.innerHTML += `
                             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2">
                                 <div class="text-[10px] text-gray-500 mb-0.5 ${isMe ? 'text-right' : 'text-left'}">${m.sender}</div>
                                 <div class="px-3 py-2 rounded-lg text-sm ${isMe ? 'bg-blueAccent text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'} max-w-[80%] break-words shadow-sm">
-                                    ${m.text}
+                                    ${formattedText}
                                 </div>
                             </div>`;
                     });
