@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner - Ambassador Portal</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#111827',
+                        darkCard: '#2d2d2d',
+                        success: '#00E676'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm glass-panel p-8 rounded-2xl shadow-2xl text-center">
+            <div class="text-6xl mb-4">🎓</div>
+            <h1 class="text-3xl font-black text-orangeAccent mb-2 tracking-tighter">Ambassador Portal</h1>
+            <p class="text-sm text-gray-400 mb-6">Access Restricted to Ambassadors & Admins</p>
+            <input type="email" id="login-email" placeholder="Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">
+                Enter Portal 🚀
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <div class="mt-6 pt-6 border-t border-gray-700">
+                <a href="index.html" class="text-gray-400 hover:text-white text-sm transition">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
+                    AZ AMBASSADOR PORTAL
+                </h1>
+                <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Sign Out <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="glass-panel border-b border-gray-700/50 px-4 py-2 overflow-x-auto flex gap-2 shrink-0 z-10">
+            <button onclick="portal.switchTab('profile')" id="tab-profile" 
+                class="portal-tab px-4 py-2 rounded text-xs font-bold transition bg-blueAccent text-white whitespace-nowrap">
+                <i class="fa-solid fa-user"></i> Profile
+            </button>
+            <button onclick="portal.switchTab('programs')" id="tab-programs" 
+                class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
+                <i class="fa-solid fa-calendar"></i> Programs
+            </button>
+            <button onclick="portal.switchTab('courses')" id="tab-courses" 
+                class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
+                <i class="fa-solid fa-book"></i> Courses
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+            
+            <!-- Profile Tab -->
+            <div id="view-profile" class="portal-view">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-2xl p-8">
+                        <div class="flex items-center gap-6 mb-6">
+                            <div class="w-24 h-24 bg-gradient-to-br from-orangeAccent to-orange-600 rounded-full flex items-center justify-center text-4xl font-bold">
+                                <span id="profile-initials">?</span>
+                            </div>
+                            <div>
+                                <h2 class="text-3xl font-bold text-white" id="profile-name">Loading...</h2>
+                                <p class="text-gray-400" id="profile-email">Loading...</p>
+                                <div class="mt-2">
+                                    <span class="bg-orange-900/30 text-orange-400 px-3 py-1 rounded-full text-xs font-bold" id="profile-role">Ambassador</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Academic Information</h3>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">University:</span>
+                                        <span class="text-white font-bold" id="profile-university">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Major:</span>
+                                        <span class="text-white" id="profile-major">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Year:</span>
+                                        <span class="text-white" id="profile-year">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">GPA:</span>
+                                        <span class="text-white" id="profile-gpa">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Contact Information</h3>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Phone:</span>
+                                        <span class="text-white" id="profile-phone">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Date of Birth:</span>
+                                        <span class="text-white" id="profile-dob">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Social Media:</span>
+                                        <span class="text-white" id="profile-social">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-6 border-t border-gray-700">
+                            <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Ambassador Status</h3>
+                            <div class="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-check-circle text-green-400 text-2xl"></i>
+                                    <div>
+                                        <p class="text-white font-bold">Active Ambassador</p>
+                                        <p class="text-xs text-gray-400" id="profile-approved">Approved on: Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-blue-500/20 p-3 rounded-lg">
+                                    <i class="fas fa-calendar text-blue-400 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400">Programs Attended</p>
+                                    <p class="text-2xl font-bold text-white" id="stat-programs">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-orange-500/20 p-3 rounded-lg">
+                                    <i class="fas fa-book text-orange-400 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400">Courses Available</p>
+                                    <p class="text-2xl font-bold text-white" id="stat-courses">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-green-500/20 p-3 rounded-lg">
+                                    <i class="fas fa-trophy text-green-400 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400">Achievement Points</p>
+                                    <p class="text-2xl font-bold text-white">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Programs Tab -->
+            <div id="view-programs" class="portal-view hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-2xl p-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">
+                            <i class="fas fa-calendar-alt"></i> Ambassador Programs
+                        </h2>
+                        <p class="text-gray-400 text-sm mb-6">View and join upcoming programs and events</p>
+                        
+                        <div id="programs-list" class="space-y-4">
+                            <div class="text-center text-gray-500 py-8">Loading programs...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Tab -->
+            <div id="view-courses" class="portal-view hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-2xl p-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">
+                            <i class="fas fa-graduation-cap"></i> Training & Resources
+                        </h2>
+                        <p class="text-gray-400 text-sm mb-6">Access exclusive ambassador training materials</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <!-- Course Cards -->
+                            <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6 hover:border-blue-500/50 transition cursor-pointer">
+                                <div class="flex items-start gap-4">
+                                    <div class="bg-blue-500/20 p-3 rounded-lg">
+                                        <i class="fas fa-bullhorn text-blue-400 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white mb-1">Marketing & Outreach</h3>
+                                        <p class="text-sm text-gray-400 mb-3">Learn how to effectively promote AZ Learner on campus</p>
+                                        <span class="text-xs text-blue-400 font-bold">Coming Soon</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-orange-900/20 border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition cursor-pointer">
+                                <div class="flex items-start gap-4">
+                                    <div class="bg-orange-500/20 p-3 rounded-lg">
+                                        <i class="fas fa-users text-orange-400 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white mb-1">Leadership Development</h3>
+                                        <p class="text-sm text-gray-400 mb-3">Build leadership skills and manage student groups</p>
+                                        <span class="text-xs text-orange-400 font-bold">Coming Soon</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-green-900/20 border border-green-500/30 rounded-xl p-6 hover:border-green-500/50 transition cursor-pointer">
+                                <div class="flex items-start gap-4">
+                                    <div class="bg-green-500/20 p-3 rounded-lg">
+                                        <i class="fas fa-comments text-green-400 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white mb-1">Communication Skills</h3>
+                                        <p class="text-sm text-gray-400 mb-3">Master effective communication with students and team</p>
+                                        <span class="text-xs text-green-400 font-bold">Coming Soon</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-purple-900/20 border border-purple-500/30 rounded-xl p-6 hover:border-purple-500/50 transition cursor-pointer">
+                                <div class="flex items-start gap-4">
+                                    <div class="bg-purple-500/20 p-3 rounded-lg">
+                                        <i class="fas fa-chart-line text-purple-400 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white mb-1">Event Planning</h3>
+                                        <p class="text-sm text-gray-400 mb-3">Organize successful campus events and study sessions</p>
+                                        <span class="text-xs text-purple-400 font-bold">Coming Soon</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 p-6 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+                            <h3 class="text-lg font-bold text-white mb-2">
+                                <i class="fas fa-download"></i> Resource Library
+                            </h3>
+                            <p class="text-sm text-gray-400 mb-4">Download ambassador guides, templates, and promotional materials</p>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                                Browse Resources
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, onSnapshot, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        let currentUser = null;
+        let isAmbassador = false;
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+
+                if (!email || !pass) {
+                    msg.innerText = 'Please enter email and password';
+                    return;
+                }
+
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                    // Auth state change handler will take care of the rest
+                } catch (error) {
+                    msg.innerText = 'Invalid credentials';
+                    console.error('Login error:', error);
+                }
+            },
+
+            async logout() {
+                await signOut(auth);
+                location.reload();
+            }
+        };
+
+        window.portal = {
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // Check if user is admin or ambassador
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            
+                            // Admins are automatically ambassadors
+                            if (userData.role === 'admin') {
+                                isAmbassador = true;
+                                currentUser = { 
+                                    ...userData, 
+                                    uid: user.uid,
+                                    isAdmin: true 
+                                };
+                                this.showPortal(currentUser);
+                                return;
+                            }
+                        }
+
+                        // Check if user is an approved ambassador
+                        const ambassadorQuery = query(
+                            collection(db, 'ambassadors'),
+                            where('email', '==', user.email)
+                        );
+                        const ambassadorSnap = await getDocs(ambassadorQuery);
+
+                        if (!ambassadorSnap.empty) {
+                            isAmbassador = true;
+                            const ambassadorData = ambassadorSnap.docs[0].data();
+                            currentUser = { 
+                                ...ambassadorData, 
+                                uid: user.uid,
+                                isAdmin: false 
+                            };
+                            this.showPortal(currentUser);
+                        } else {
+                            alert('Access Denied: You are not an approved ambassador. Please submit an application at ambassadorsignup.html or contact support for assistance.');
+                            signOut(auth);
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            showPortal(userData) {
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                
+                const displayName = userData.name || userData.fullName || 'Ambassador';
+                document.getElementById('user-name-display').innerText = `Welcome, ${displayName}`;
+                
+                this.loadProfile(userData);
+                this.loadPrograms();
+                this.switchTab('profile');
+            },
+
+            loadProfile(userData) {
+                // Set initials
+                const name = userData.name || userData.fullName || '?';
+                const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('profile-initials').innerText = initials;
+                
+                // Set profile data
+                document.getElementById('profile-name').innerText = name;
+                document.getElementById('profile-email').innerText = userData.email || '-';
+                document.getElementById('profile-university').innerText = userData.university || '-';
+                document.getElementById('profile-major').innerText = userData.major || '-';
+                document.getElementById('profile-year').innerText = userData.year || '-';
+                document.getElementById('profile-gpa').innerText = userData.gpa || '-';
+                document.getElementById('profile-phone').innerText = userData.phone || '-';
+                document.getElementById('profile-dob').innerText = userData.dob || '-';
+                document.getElementById('profile-social').innerText = userData.socialMedia || '-';
+                
+                if (userData.isAdmin) {
+                    document.getElementById('profile-role').innerText = 'Admin (Default Ambassador)';
+                    document.getElementById('profile-role').classList.remove('bg-orange-900/30', 'text-orange-400');
+                    document.getElementById('profile-role').classList.add('bg-purple-900/30', 'text-purple-400');
+                    document.getElementById('profile-approved').innerText = 'Admin - Default Ambassador Status';
+                } else if (userData.approvedAt && typeof userData.approvedAt.toDate === 'function') {
+                    const approvedDate = new Date(userData.approvedAt.toDate()).toLocaleDateString();
+                    const approvedBy = userData.approvedBy || 'Admin';
+                    document.getElementById('profile-approved').innerText = `Approved on: ${approvedDate} by ${approvedBy}`;
+                } else {
+                    document.getElementById('profile-approved').innerText = 'Ambassador Status: Active';
+                }
+            },
+
+            loadPrograms() {
+                onSnapshot(
+                    query(collection(db, 'ambassador_programs'), orderBy('createdAt', 'desc')),
+                    (snap) => {
+                        const programsList = document.getElementById('programs-list');
+                        programsList.innerHTML = '';
+                        
+                        if (snap.empty) {
+                            programsList.innerHTML = '<div class="text-center text-gray-500 py-8">No programs scheduled yet</div>';
+                        } else {
+                            document.getElementById('stat-programs').innerText = snap.size;
+                            
+                            snap.forEach(d => {
+                                const prog = d.data();
+                                const programDate = new Date(prog.date).toLocaleString();
+                                const isPast = new Date(prog.date) < new Date();
+                                
+                                programsList.innerHTML += `
+                                    <div class="bg-gray-800/50 border ${isPast ? 'border-gray-700' : 'border-blue-500/30'} rounded-xl p-6">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <h3 class="text-xl font-bold text-white">${prog.title}</h3>
+                                            <span class="px-3 py-1 rounded-full text-xs font-bold ${isPast ? 'bg-gray-700 text-gray-400' : 'bg-blue-900/30 text-blue-400'}">
+                                                ${isPast ? 'Past Event' : 'Upcoming'}
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-300 mb-4">${prog.description}</p>
+                                        <div class="flex items-center gap-4 text-sm text-gray-400">
+                                            <span><i class="fas fa-calendar"></i> ${programDate}</span>
+                                            ${prog.link !== 'TBD' ? `<a href="${prog.link}" target="_blank" class="text-blue-400 hover:underline"><i class="fas fa-link"></i> Join Link</a>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+                );
+            },
+
+            switchTab(tab) {
+                // Hide all views
+                document.querySelectorAll('.portal-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+                // Update tab buttons
+                document.querySelectorAll('.portal-tab').forEach(btn => {
+                    btn.classList.remove('bg-blueAccent', 'text-white');
+                    btn.classList.add('text-gray-400');
+                });
+                document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
+                document.getElementById(`tab-${tab}`).classList.add('bg-blueAccent', 'text-white');
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => portal.init());
+    </script>
+</body>
+</html>
