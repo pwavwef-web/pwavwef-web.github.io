@@ -330,6 +330,13 @@
         };
 
         window.portal = {
+            // Helper to escape HTML to prevent XSS
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
             init() {
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -381,15 +388,15 @@
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="text-xs text-gray-500">Full Name</label>
-                            <div class="text-white font-bold">${currentUser.name || 'N/A'}</div>
+                            <div class="text-white font-bold">${this.escapeHtml(currentUser.name || 'N/A')}</div>
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Email</label>
-                            <div class="text-white font-bold">${currentUser.email || 'N/A'}</div>
+                            <div class="text-white font-bold">${this.escapeHtml(currentUser.email || 'N/A')}</div>
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Phone</label>
-                            <div class="text-white font-bold">${currentUser.phone || 'N/A'}</div>
+                            <div class="text-white font-bold">${this.escapeHtml(currentUser.phone || 'N/A')}</div>
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Role</label>
@@ -441,16 +448,16 @@
                                         <i class="fa-solid fa-calendar-check text-orangeAccent text-xl"></i>
                                     </div>
                                     <div class="flex-1">
-                                        <h4 class="text-white font-bold mb-1">${prog.title}</h4>
+                                        <h4 class="text-white font-bold mb-1">${portal.escapeHtml(prog.title)}</h4>
                                         <p class="text-xs text-gray-400 mb-2">
                                             <i class="fa-solid fa-clock mr-1"></i>
                                             ${progDate.toLocaleDateString()} at ${progDate.toLocaleTimeString()}
                                         </p>
-                                        <p class="text-sm text-gray-300 mb-2">${prog.description}</p>
+                                        <p class="text-sm text-gray-300 mb-2">${portal.escapeHtml(prog.description)}</p>
                                         ${prog.location ? `
                                             <p class="text-xs text-blue-400">
                                                 <i class="fa-solid fa-location-dot mr-1"></i>
-                                                ${prog.location}
+                                                ${portal.escapeHtml(prog.location)}
                                             </p>
                                         ` : ''}
                                         ${isPast ? '<span class="inline-block mt-2 text-xs text-gray-500">PAST EVENT</span>' : ''}
@@ -475,9 +482,9 @@
                         const ann = d.data();
                         list.innerHTML += `
                             <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                                <h4 class="text-white font-bold mb-2">${ann.title}</h4>
-                                ${ann.body ? `<p class="text-sm text-gray-300 mb-2">${ann.body}</p>` : ''}
-                                ${ann.image ? `<img src="${ann.image}" class="w-full rounded-lg mt-2" alt="Announcement">` : ''}
+                                <h4 class="text-white font-bold mb-2">${portal.escapeHtml(ann.title)}</h4>
+                                ${ann.body ? `<p class="text-sm text-gray-300 mb-2">${portal.escapeHtml(ann.body)}</p>` : ''}
+                                ${ann.image ? `<img src="${portal.escapeHtml(ann.image)}" class="w-full rounded-lg mt-2" alt="Announcement">` : ''}
                             </div>
                         `;
                     });
