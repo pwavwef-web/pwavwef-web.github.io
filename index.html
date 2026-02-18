@@ -37,6 +37,17 @@
             overflow-x: hidden;
             cursor: none;
             scroll-behavior: smooth;
+            /* Prevent text inflation on iOS */
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        /* Prevent horizontal overflow on all elements */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        html {
+            overflow-x: hidden;
         }
 
         body.scroll-locked {
@@ -143,6 +154,14 @@
             background: linear-gradient(to right, #ffffff, #60a5fa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+        
+        /* Improved focus states for accessibility */
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
         }
         
         .video-wrapper iframe {
@@ -311,10 +330,10 @@
     </nav>
 
     <!-- Login Modal -->
-    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden px-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-md" id="closeModalBg"></div>
-        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
-            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable">
+        <div class="relative glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <span class="material-symbols-outlined">close</span>
             </button>
             
@@ -322,7 +341,7 @@
                 <div class="w-16 h-16 bg-blue-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4">
                     <span class="material-symbols-outlined text-3xl text-blue-400">fingerprint</span>
                 </div>
-                <h2 class="text-2xl font-bold mb-2">Squad Access</h2>
+                <h2 class="text-xl sm:text-2xl font-bold mb-2">Squad Access</h2>
                 <p class="text-gray-400 text-sm">Enter the mainframe.</p>
             </div>
 
@@ -344,10 +363,10 @@
     </div>
 
     <!-- GENERIC FEATURE MODAL -->
-    <div id="featureModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+    <div id="featureModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden px-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="window.closeFeature()"></div>
-        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-lg border border-white/10 shadow-[0_0_60px_rgba(59,130,246,0.15)] transform scale-95 opacity-0 transition-all duration-300" id="featureContent">
-            <button onclick="window.closeFeature()" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable">
+        <div class="relative glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-lg border border-white/10 shadow-[0_0_60px_rgba(59,130,246,0.15)] transform scale-95 opacity-0 transition-all duration-300" id="featureContent">
+            <button onclick="window.closeFeature()" class="absolute top-4 right-4 text-gray-400 hover:text-white hoverable min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <span class="material-symbols-outlined">close</span>
             </button>
             
@@ -420,27 +439,27 @@
     </section>
 
     <!-- Infinite Marquee -->
-    <div class="py-6 glass-panel border-y border-white/5 transform -rotate-1 scale-105 mb-20">
+    <div class="py-6 glass-panel border-y border-white/5 transform -rotate-1 scale-105 mb-20 overflow-hidden">
         <div class="marquee-container">
-            <div class="marquee-content text-4xl font-black uppercase text-transparent stroke-text opacity-50">
-                <span class="mx-8 text-outline">Learn in Style</span> • 
-                <span class="mx-8 text-white">Academic Weapon</span> • 
-                <span class="mx-8 text-outline">Main Character Energy</span> • 
-                <span class="mx-8 text-white">Squad Goals</span> • 
-                <span class="mx-8 text-outline">Future Ready</span> • 
-                <span class="mx-8 text-white">Print & Deliver</span> •
-                <span class="mx-8 text-outline">Learn in Style</span> • 
-                <span class="mx-8 text-white">Academic Weapon</span> • 
-                <span class="mx-8 text-outline">Main Character Energy</span> • 
-                <span class="mx-8 text-white">Squad Goals</span> • 
-                <span class="mx-8 text-outline">Future Ready</span> • 
-                <span class="mx-8 text-white">Print & Deliver</span> •
+            <div class="marquee-content text-2xl sm:text-3xl md:text-4xl font-black uppercase text-transparent stroke-text opacity-50">
+                <span class="mx-4 sm:mx-8 text-outline">Learn in Style</span> • 
+                <span class="mx-4 sm:mx-8 text-white">Academic Weapon</span> • 
+                <span class="mx-4 sm:mx-8 text-outline">Main Character Energy</span> • 
+                <span class="mx-4 sm:mx-8 text-white">Squad Goals</span> • 
+                <span class="mx-4 sm:mx-8 text-outline">Future Ready</span> • 
+                <span class="mx-4 sm:mx-8 text-white">Print & Deliver</span> •
+                <span class="mx-4 sm:mx-8 text-outline">Learn in Style</span> • 
+                <span class="mx-4 sm:mx-8 text-white">Academic Weapon</span> • 
+                <span class="mx-4 sm:mx-8 text-outline">Main Character Energy</span> • 
+                <span class="mx-4 sm:mx-8 text-white">Squad Goals</span> • 
+                <span class="mx-4 sm:mx-8 text-outline">Future Ready</span> • 
+                <span class="mx-4 sm:mx-8 text-white">Print & Deliver</span> •
             </div>
         </div>
     </div>
 
     <!-- YouTube Video Section -->
-    <section class="max-w-5xl mx-auto px-6 mb-32">
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-32">
         <div class="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl">
             <div class="video-wrapper aspect-video bg-black rounded-xl overflow-hidden hoverable">
                 <iframe src="https://www.youtube.com/embed/WV7Ix6j7a_A?si=Yx1JWatvKkqjUNIu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
@@ -449,23 +468,23 @@
     </section>
 
     <!-- Upcoming Events (Horizontal) -->
-    <section class="max-w-7xl mx-auto px-6 mb-32" id="home-events">
-        <div class="text-center mb-12">
-             <h2 class="text-3xl font-bold mb-4">Upcoming Events 🎟️</h2>
-             <p class="text-gray-400">See what's popping on campus.</p>
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 mb-32" id="home-events">
+        <div class="text-center mb-12 px-4">
+             <h2 class="text-2xl sm:text-3xl font-bold mb-4">Upcoming Events 🎟️</h2>
+             <p class="text-gray-400 text-sm sm:text-base">See what's popping on campus.</p>
         </div>
         <div id="home-events-feed" class="flex gap-4 overflow-x-auto no-scrollbar pb-8 snap-x snap-mandatory px-4">
             <!-- Loaded via JS -->
-            <div class="min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
-            <div class="min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
+            <div class="min-w-[280px] sm:min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
+            <div class="min-w-[280px] sm:min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
         </div>
     </section>
 
     <!-- UI Screenshot Gallery -->
-    <section class="max-w-7xl mx-auto px-6 mb-32 overflow-hidden">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4">The Interface</h2>
-            <p class="text-gray-400">Clean. Calm. Control.</p>
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 mb-32 overflow-hidden">
+        <div class="text-center mb-12 px-4">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-4">The Interface</h2>
+            <p class="text-gray-400 text-sm sm:text-base">Clean. Calm. Control.</p>
         </div>
         
         <!-- Staggered Phone Layout -->
