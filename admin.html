@@ -1311,6 +1311,9 @@
                 if (!confirm(`Approve ${name} as an ambassador?`)) return;
 
                 try {
+                    // Normalize email for consistent lookup
+                    const normalizedEmail = email.toLowerCase().trim();
+
                     // Update application status
                     await updateDoc(doc(db, 'ambassador_signups', appId), {
                         status: 'approved',
@@ -1319,7 +1322,7 @@
                     });
 
                     // Find and update user role to ambassador
-                    const usersQuery = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
+                    const usersQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
                     const userSnap = await getDocs(usersQuery);
                     
                     if (!userSnap.empty) {
@@ -1327,10 +1330,13 @@
                         await updateDoc(doc(db, 'users', userDoc.id), {
                             role: 'ambassador'
                         });
+                        await this.logAction('AMBASSADOR_APPROVED', `Approved ${name} (${normalizedEmail}) as ambassador and promoted user`);
+                        alert(`${name} has been approved and promoted to Ambassador!`);
+                    } else {
+                        // User account doesn't exist yet - approval recorded but role not updated
+                        await this.logAction('AMBASSADOR_APPROVED', `Approved ${name} (${normalizedEmail}) - user account not found, will be promoted upon registration`);
+                        alert(`${name} has been approved! Note: User account not found. They will be promoted to Ambassador when they create an account.`);
                     }
-
-                    await this.logAction('AMBASSADOR_APPROVED', `Approved ${name} (${email}) as ambassador`);
-                    alert(`${name} has been approved and promoted to Ambassador!`);
                 } catch (error) {
                     console.error('Error approving ambassador:', error);
                     alert('Error approving ambassador. Please try again.');

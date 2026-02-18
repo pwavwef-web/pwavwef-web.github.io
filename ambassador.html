@@ -338,7 +338,7 @@
                             const userData = userDoc.data();
                             // Allow both ambassadors and admins
                             if (userData.role !== 'ambassador' && userData.role !== 'admin') {
-                                alert("Access Denied: This portal is for ambassadors only.");
+                                alert("Access Denied: This portal is for ambassadors and admins only.");
                                 signOut(auth);
                                 return;
                             }
@@ -411,7 +411,7 @@
                     </div>
                 `;
 
-                // Set placeholder stats
+                // Set placeholder stats (could be derived from actual data in future)
                 document.getElementById('stat-programs').innerText = '0';
                 document.getElementById('stat-events').innerText = '0';
                 document.getElementById('stat-hours').innerText = '0';
