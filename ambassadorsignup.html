@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner - Ambassador Program Signup 🌟</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #1e3a8a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col text-white">
+
+    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blueAccent to-orangeAccent">
+                    AZ Learner Ambassador Program 🌟
+                </h1>
+                <p class="text-gray-300 text-lg">Join the squad making learning awesome!</p>
+            </div>
+
+            <!-- About Section -->
+            <div class="glass-panel rounded-2xl p-6 md:p-8 mb-8 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-info-circle text-blueAccent"></i>
+                    About AZ Learner
+                </h2>
+                <div class="space-y-4 text-gray-200">
+                    <p>
+                        <strong>AZ Learner</strong> is your ultimate squad companion for academic success! 
+                        We're revolutionizing the student experience by combining printing services, 
+                        collaborative learning tools, and community support all in one platform.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-4 mt-6">
+                        <div class="bg-white/5 p-4 rounded-xl">
+                            <div class="text-3xl mb-2">📄</div>
+                            <h3 class="font-bold mb-1">Print Services</h3>
+                            <p class="text-sm text-gray-400">Fast, affordable printing for all your academic needs</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-xl">
+                            <div class="text-3xl mb-2">💬</div>
+                            <h3 class="font-bold mb-1">Collaboration</h3>
+                            <p class="text-sm text-gray-400">Chat, share notes, and study together</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-xl">
+                            <div class="text-3xl mb-2">🎯</div>
+                            <h3 class="font-bold mb-1">Task Management</h3>
+                            <p class="text-sm text-gray-400">Stay organized and hit your goals</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Benefits Section -->
+            <div class="glass-panel rounded-2xl p-6 md:p-8 mb-8 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-orangeAccent"></i>
+                    Why Become an Ambassador?
+                </h2>
+                <ul class="space-y-3 text-gray-200">
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                        <span><strong>Exclusive Access:</strong> Early access to new features and premium tools</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                        <span><strong>Leadership Experience:</strong> Build your resume with real-world leadership skills</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                        <span><strong>Networking:</strong> Connect with student leaders across universities</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                        <span><strong>Free Printing Credits:</strong> Get monthly printing credits as a thank you</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                        <span><strong>Community Impact:</strong> Help fellow students succeed academically</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Application Form -->
+            <div class="glass-panel rounded-2xl p-6 md:p-8 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-blueAccent"></i>
+                    Application Form
+                </h2>
+                <form id="ambassador-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">Full Name *</label>
+                        <input type="text" id="full-name" required 
+                            class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors"
+                            placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-gray-300">Email *</label>
+                            <input type="email" id="email" required 
+                                class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors"
+                                placeholder="your.email@university.edu">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-gray-300">Phone Number *</label>
+                            <input type="tel" id="phone" required 
+                                class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors"
+                                placeholder="+234 xxx xxx xxxx">
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-gray-300">University/College *</label>
+                            <input type="text" id="university" required 
+                                class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors"
+                                placeholder="Your institution name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-gray-300">Year of Study *</label>
+                            <select id="year" required 
+                                class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors">
+                                <option value="">Select year</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                                <option value="5+">Year 5+</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">Course of Study *</label>
+                        <input type="text" id="course" required 
+                            class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors"
+                            placeholder="e.g., Computer Science, Medicine, Law">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">Why do you want to be an AZ Learner Ambassador? *</label>
+                        <textarea id="motivation" required rows="5"
+                            class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors resize-none"
+                            placeholder="Tell us about your passion for helping fellow students and why you'd be a great ambassador..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-300">Previous Leadership Experience (Optional)</label>
+                        <textarea id="experience" rows="4"
+                            class="w-full p-3 rounded-lg bg-white/10 border border-white/20 outline-none text-white focus:border-blueAccent transition-colors resize-none"
+                            placeholder="Share any clubs, organizations, or leadership roles you've held..."></textarea>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" id="terms" required class="mt-1">
+                        <label for="terms" class="text-sm text-gray-300">
+                            I agree to represent AZ Learner professionally and commit to promoting the platform 
+                            within my university community. I understand this is a volunteer role with benefits. *
+                        </label>
+                    </div>
+
+                    <div id="form-message" class="hidden p-4 rounded-lg text-sm font-medium"></div>
+
+                    <button type="submit" id="submit-btn"
+                        class="w-full py-4 bg-gradient-to-r from-blueAccent to-orangeAccent text-white font-bold rounded-xl shadow-xl hover:shadow-2xl active:scale-95 transition-all text-lg">
+                        Submit Application 🚀
+                    </button>
+                </form>
+            </div>
+
+            <div class="text-center mt-8 text-gray-400 text-sm">
+                <p>Questions? Contact us at <a href="mailto:support@azlearner.com" class="text-blueAccent hover:underline">support@azlearner.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+
+        const form = document.getElementById('ambassador-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const formMessage = document.getElementById('form-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            formMessage.classList.add('hidden');
+
+            try {
+                const applicationData = {
+                    fullName: document.getElementById('full-name').value.trim(),
+                    email: document.getElementById('email').value.trim().toLowerCase(),
+                    phone: document.getElementById('phone').value.trim(),
+                    university: document.getElementById('university').value.trim(),
+                    year: document.getElementById('year').value,
+                    course: document.getElementById('course').value.trim(),
+                    motivation: document.getElementById('motivation').value.trim(),
+                    experience: document.getElementById('experience').value.trim(),
+                    status: 'pending',
+                    createdAt: serverTimestamp(),
+                    approvedAt: null,
+                    approvedBy: null
+                };
+
+                await addDoc(collection(db, 'ambassador_applications'), applicationData);
+
+                // Show success message
+                formMessage.classList.remove('hidden', 'bg-red-500/20', 'text-red-400');
+                formMessage.classList.add('bg-green-500/20', 'text-green-400');
+                formMessage.innerHTML = '<i class="fa-solid fa-check-circle"></i> Application submitted successfully! We\'ll review it and get back to you soon.';
+                
+                // Reset form
+                form.reset();
+                
+                // Scroll to message
+                formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            } catch (error) {
+                console.error('Error submitting application:', error);
+                formMessage.classList.remove('hidden', 'bg-green-500/20', 'text-green-400');
+                formMessage.classList.add('bg-red-500/20', 'text-red-400');
+                formMessage.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i> Error submitting application. Please try again.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit Application 🚀';
+            }
+        });
+    </script>
+
+</body>
+</html>
