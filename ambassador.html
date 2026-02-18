@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner - Ambassador Portal 🌟</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#1a1a1a',
+                        darkCard: '#2d2d2d',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #111827;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Login Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="text-5xl mb-4">🌟</div>
+            <h1 class="text-3xl font-black text-orangeAccent mb-2">Ambassador Portal</h1>
+            <p class="text-sm text-gray-400 mb-6">Welcome back, Ambassador!</p>
+            <input type="email" id="login-email" placeholder="Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-blueAccent to-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">
+                Enter Portal 🚀
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- Main App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blueAccent to-orangeAccent">
+                    AMBASSADOR HQ
+                </h1>
+                <p id="ambassador-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Logout <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-2 overflow-x-auto flex gap-3 shrink-0">
+            <button onclick="portal.switchTab('profile')" id="tab-profile"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-user mr-2"></i>Profile
+            </button>
+            <button onclick="portal.switchTab('programs')" id="tab-programs"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-calendar mr-2"></i>Programs
+            </button>
+            <button onclick="portal.switchTab('courses')" id="tab-courses"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-book mr-2"></i>Courses
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f1115]">
+
+            <!-- Profile Tab -->
+            <div id="view-profile" class="tab-view space-y-6">
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-user-circle text-blueAccent"></i>
+                        Ambassador Profile
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 mb-2">Full Name</label>
+                            <p id="profile-name" class="text-white text-lg font-semibold">Loading...</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 mb-2">Email</label>
+                            <p id="profile-email" class="text-white text-lg">Loading...</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 mb-2">Role</label>
+                            <p id="profile-role" class="text-orangeAccent text-lg font-bold">Ambassador</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 mb-2">Member Since</label>
+                            <p id="profile-since" class="text-white">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-yellow-400"></i>
+                        Ambassador Benefits
+                    </h3>
+                    <ul class="space-y-3 text-gray-200">
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Exclusive access to ambassador programs and training</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Monthly printing credits as appreciation</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Leadership development opportunities</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Network with student leaders across universities</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Early access to new AZ Learner features</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-tasks text-blueAccent"></i>
+                        Your Responsibilities
+                    </h3>
+                    <ul class="space-y-3 text-gray-200">
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-star text-orangeAccent mt-1"></i>
+                            <span>Promote AZ Learner within your university community</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-star text-orangeAccent mt-1"></i>
+                            <span>Help fellow students get the most out of the platform</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-star text-orangeAccent mt-1"></i>
+                            <span>Provide feedback to improve the platform</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-star text-orangeAccent mt-1"></i>
+                            <span>Attend scheduled ambassador programs and training sessions</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="fa-solid fa-star text-orangeAccent mt-1"></i>
+                            <span>Represent AZ Learner professionally in all interactions</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Programs Tab -->
+            <div id="view-programs" class="tab-view hidden space-y-6">
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days text-blueAccent"></i>
+                        Upcoming Programs & Events
+                    </h2>
+                    <div id="programs-list" class="space-y-4">
+                        <p class="text-center text-gray-500 py-8">Loading programs...</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-info-circle text-orangeAccent"></i>
+                        Program Information
+                    </h3>
+                    <p class="text-gray-300 mb-4">
+                        Ambassador programs are designed to help you grow as a leader and maximize your impact. 
+                        These sessions include training, networking opportunities, and strategy discussions.
+                    </p>
+                    <p class="text-gray-300">
+                        Make sure to attend scheduled programs to stay updated and connected with the ambassador community.
+                        Check this page regularly for new program announcements.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Courses Tab -->
+            <div id="view-courses" class="tab-view hidden space-y-6">
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-blueAccent"></i>
+                        Ambassador Training Courses
+                    </h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                            <div class="text-4xl mb-3">📚</div>
+                            <h3 class="text-xl font-bold mb-2">Getting Started</h3>
+                            <p class="text-sm text-gray-400 mb-4">
+                                Learn the basics of being an AZ Learner ambassador and how to effectively 
+                                promote the platform in your community.
+                            </p>
+                            <span class="inline-block px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">
+                                Beginner
+                            </span>
+                        </div>
+
+                        <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                            <div class="text-4xl mb-3">🎯</div>
+                            <h3 class="text-xl font-bold mb-2">Effective Communication</h3>
+                            <p class="text-sm text-gray-400 mb-4">
+                                Master the art of communicating AZ Learner's value proposition to students, 
+                                faculty, and potential partners.
+                            </p>
+                            <span class="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
+                                Intermediate
+                            </span>
+                        </div>
+
+                        <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                            <div class="text-4xl mb-3">👥</div>
+                            <h3 class="text-xl font-bold mb-2">Community Building</h3>
+                            <p class="text-sm text-gray-400 mb-4">
+                                Learn strategies for building and nurturing a thriving student community 
+                                around AZ Learner on your campus.
+                            </p>
+                            <span class="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
+                                Intermediate
+                            </span>
+                        </div>
+
+                        <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                            <div class="text-4xl mb-3">📊</div>
+                            <h3 class="text-xl font-bold mb-2">Leadership & Impact</h3>
+                            <p class="text-sm text-gray-400 mb-4">
+                                Develop advanced leadership skills and learn to measure and maximize 
+                                your impact as an ambassador.
+                            </p>
+                            <span class="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs font-bold">
+                                Advanced
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 md:p-8">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-yellow-400"></i>
+                        Resources & Materials
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-pdf text-red-400 text-2xl"></i>
+                                <div>
+                                    <h4 class="font-bold">Ambassador Handbook</h4>
+                                    <p class="text-xs text-gray-400">Complete guide for ambassadors</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500">PDF • 2.4 MB</span>
+                        </div>
+
+                        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-powerpoint text-orange-400 text-2xl"></i>
+                                <div>
+                                    <h4 class="font-bold">Presentation Templates</h4>
+                                    <p class="text-xs text-gray-400">Ready-to-use presentation slides</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500">PPTX • 5.1 MB</span>
+                        </div>
+
+                        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-image text-blue-400 text-2xl"></i>
+                                <div>
+                                    <h4 class="font-bold">Marketing Assets</h4>
+                                    <p class="text-xs text-gray-400">Logos, posters, and social media graphics</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500">ZIP • 15 MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, orderBy, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+
+        window.authManager = {
+            async login() {
+                try {
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-pass').value;
+                    await signInWithEmailAndPassword(auth, email, password);
+                } catch (err) {
+                    document.getElementById('login-msg').innerText = "Login Failed: " + err.message;
+                }
+            },
+            logout() {
+                if (confirm('Are you sure you want to logout?')) {
+                    signOut(auth);
+                }
+            }
+        };
+
+        window.portal = {
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            
+                            // Check if user is an ambassador or admin
+                            if (userData.role !== 'ambassador' && userData.role !== 'admin') {
+                                alert("Access Denied: This portal is only for ambassadors.");
+                                signOut(auth);
+                                return;
+                            }
+                            
+                            currentUser = { ...userData, uid: user.uid };
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('ambassador-name-display').innerText = `${userData.name}`;
+                            
+                            this.loadProfile();
+                            this.switchTab('profile');
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            loadProfile() {
+                document.getElementById('profile-name').innerText = currentUser.name || 'N/A';
+                document.getElementById('profile-email').innerText = currentUser.email || 'N/A';
+                
+                const since = currentUser.ambassadorSince 
+                    ? new Date(currentUser.ambassadorSince.toDate()).toLocaleDateString()
+                    : new Date().toLocaleDateString();
+                document.getElementById('profile-since').innerText = since;
+            },
+
+            switchTab(tab) {
+                // Hide all tabs
+                document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+                // Update active button
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('bg-blueAccent', 'text-white', 'bg-gray-700', 'text-gray-400');
+                    if (btn.id === `tab-${tab}`) {
+                        btn.classList.add('bg-blueAccent', 'text-white');
+                    } else {
+                        btn.classList.add('bg-gray-700', 'text-gray-400');
+                    }
+                });
+
+                // Load tab-specific data
+                if (tab === 'programs') this.loadPrograms();
+            },
+
+            loadPrograms() {
+                const programsRef = collection(db, 'ambassador_programs');
+                onSnapshot(query(programsRef, orderBy('datetime', 'asc')), (snap) => {
+                    const list = document.getElementById('programs-list');
+                    
+                    if (snap.empty) {
+                        list.innerHTML = '<p class="text-center text-gray-500 py-8">No scheduled programs at the moment. Check back soon!</p>';
+                        return;
+                    }
+
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const program = d.data();
+                        const date = program.datetime ? new Date(program.datetime.toDate()).toLocaleString() : 'TBD';
+                        const isPast = program.datetime && new Date(program.datetime.toDate()) < new Date();
+                        
+                        list.innerHTML += `
+                            <div class="bg-gray-900 p-6 rounded-xl border ${isPast ? 'border-gray-800' : 'border-blueAccent/30'} ${isPast ? 'opacity-60' : ''}">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-white mb-1">${program.title}</h3>
+                                        <p class="text-sm text-gray-400">
+                                            <i class="fa-solid fa-calendar mr-2"></i>${date}
+                                        </p>
+                                    </div>
+                                    ${isPast ? '<span class="px-3 py-1 bg-gray-700 text-gray-400 rounded-full text-xs font-bold">Past Event</span>' : '<span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">Upcoming</span>'}
+                                </div>
+                                <p class="text-gray-300 mb-3">${program.description}</p>
+                                <p class="text-xs text-gray-500">
+                                    <i class="fa-solid fa-user mr-1"></i>Organized by ${program.createdBy}
+                                </p>
+                            </div>
+                        `;
+                    });
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => portal.init());
+    </script>
+
+</body>
+</html>
