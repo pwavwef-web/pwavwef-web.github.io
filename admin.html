@@ -1011,11 +1011,11 @@
                                     ` : ''}
                                     
                                     <div class="flex gap-2 mt-4">
-                                        <button onclick="window.app.approveAmbassador('${app.id}', ${JSON.stringify(app).replace(/"/g, '&quot;')})" 
+                                        <button onclick="window.app.approveAmbassador('${app.id}')" 
                                             class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">
                                             <i class="fa-solid fa-check"></i> Approve
                                         </button>
-                                        <button onclick="window.app.rejectAmbassador('${app.id}', '${app.fullName}')" 
+                                        <button onclick="window.app.rejectAmbassador('${app.id}')" 
                                             class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">
                                             <i class="fa-solid fa-times"></i> Reject
                                         </button>
@@ -1309,10 +1309,20 @@
             },
 
             // AMBASSADOR MANAGEMENT FUNCTIONS
-            async approveAmbassador(appId, applicationData) {
-                if (!confirm(`Approve ${applicationData.fullName} as an ambassador?`)) return;
-
+            async approveAmbassador(appId) {
                 try {
+                    // Fetch the application data
+                    const appDoc = await getDoc(doc(db, 'ambassador_applications', appId));
+                    if (!appDoc.exists()) {
+                        alert('Application not found');
+                        return;
+                    }
+                    
+                    const applicationData = appDoc.data();
+                    const fullName = applicationData.fullName || 'this applicant';
+                    
+                    if (!confirm(`Approve ${fullName} as an ambassador?`)) return;
+
                     // Create ambassador record
                     await addDoc(collection(db, 'ambassadors'), {
                         ...applicationData,
@@ -1328,26 +1338,36 @@
                     });
 
                     // Log the action
-                    await this.logAction('AMBASSADOR_APPROVED', `Approved ${applicationData.fullName} as ambassador`);
+                    await this.logAction('AMBASSADOR_APPROVED', `Approved ${fullName} as ambassador`);
 
-                    alert(`✅ ${applicationData.fullName} has been approved as an ambassador!`);
+                    alert(`✅ ${fullName} has been approved as an ambassador!`);
                 } catch (error) {
                     console.error('Error approving ambassador:', error);
                     alert('Error approving ambassador. Please try again.');
                 }
             },
 
-            async rejectAmbassador(appId, name) {
-                if (!confirm(`Reject ${name}'s application?`)) return;
-
+            async rejectAmbassador(appId) {
                 try {
+                    // Fetch the application data
+                    const appDoc = await getDoc(doc(db, 'ambassador_applications', appId));
+                    if (!appDoc.exists()) {
+                        alert('Application not found');
+                        return;
+                    }
+                    
+                    const applicationData = appDoc.data();
+                    const fullName = applicationData.fullName || 'this applicant';
+                    
+                    if (!confirm(`Reject ${fullName}'s application?`)) return;
+
                     await updateDoc(doc(db, 'ambassador_applications', appId), {
                         status: 'rejected',
                         rejectedAt: serverTimestamp(),
                         rejectedBy: currentUser.name
                     });
 
-                    await this.logAction('AMBASSADOR_REJECTED', `Rejected ${name}'s ambassador application`);
+                    await this.logAction('AMBASSADOR_REJECTED', `Rejected ${fullName}'s ambassador application`);
 
                     alert(`Application rejected.`);
                 } catch (error) {

@@ -414,7 +414,7 @@
                             };
                             this.showPortal(currentUser);
                         } else {
-                            alert('Access Denied: You are not an approved ambassador.');
+                            alert('Access Denied: You are not an approved ambassador. Please submit an application at ambassadorsignup.html or contact support for assistance.');
                             signOut(auth);
                         }
                     } else {
@@ -458,9 +458,12 @@
                     document.getElementById('profile-role').classList.remove('bg-orange-900/30', 'text-orange-400');
                     document.getElementById('profile-role').classList.add('bg-purple-900/30', 'text-purple-400');
                     document.getElementById('profile-approved').innerText = 'Admin - Default Ambassador Status';
-                } else if (userData.approvedAt) {
+                } else if (userData.approvedAt && typeof userData.approvedAt.toDate === 'function') {
                     const approvedDate = new Date(userData.approvedAt.toDate()).toLocaleDateString();
-                    document.getElementById('profile-approved').innerText = `Approved on: ${approvedDate} by ${userData.approvedBy}`;
+                    const approvedBy = userData.approvedBy || 'Admin';
+                    document.getElementById('profile-approved').innerText = `Approved on: ${approvedDate} by ${approvedBy}`;
+                } else {
+                    document.getElementById('profile-approved').innerText = 'Ambassador Status: Active';
                 }
             },
 

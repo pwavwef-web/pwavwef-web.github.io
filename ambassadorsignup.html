@@ -324,7 +324,15 @@
 
             } catch (error) {
                 console.error('Error submitting application:', error);
-                alert('There was an error submitting your application. Please try again.');
+                let errorMessage = 'There was an error submitting your application. ';
+                if (error.code === 'permission-denied') {
+                    errorMessage += 'Database permission error. Please contact support.';
+                } else if (error.message.includes('network')) {
+                    errorMessage += 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += 'Please try again or contact support if the problem persists.';
+                }
+                alert(errorMessage);
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application';
             }
