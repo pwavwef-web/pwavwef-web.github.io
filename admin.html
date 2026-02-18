@@ -117,6 +117,9 @@
             <button onclick="app.switchView('users')" id="nav-users"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
                     class="fa-solid fa-users mr-2"></i>DB</button>
+            <button onclick="app.switchView('ambassadors')" id="nav-ambassadors"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-user-graduate mr-2"></i>Ambassadors</button>
             <button onclick="app.switchView('godmode')" id="nav-godmode"
                 class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i
                     class="fa-solid fa-bolt mr-2"></i>God Mode</button>
@@ -359,6 +362,92 @@
                 </div>
             </div>
 
+            <div id="view-ambassadors" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-indigo-900/40 to-gray-800 p-6 rounded-xl border border-indigo-500/30">
+                    <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-user-graduate text-indigo-400"></i>
+                        Ambassador Program
+                    </h2>
+                    <p class="text-gray-300 text-sm mb-4">Manage ambassador applications and schedule programs</p>
+                    <a href="ambassadorsignup.html" target="_blank" 
+                        class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-indigo-500 transition">
+                        <i class="fas fa-external-link-alt"></i>
+                        View Sign-Up Page
+                    </a>
+                </div>
+
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
+                        <h3 class="text-lg font-bold text-white">Pending Applications</h3>
+                        <span id="pending-count" class="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-900 text-gray-400 uppercase text-xs">
+                                <tr>
+                                    <th class="px-4 py-3">Name</th>
+                                    <th class="px-4 py-3">Email</th>
+                                    <th class="px-4 py-3">University</th>
+                                    <th class="px-4 py-3">Year</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-applications" class="divide-y divide-gray-700 text-gray-300">
+                                <tr>
+                                    <td colspan="6" class="p-4 text-center text-gray-500">Loading applications...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700 bg-gray-900/50">
+                        <h3 class="text-lg font-bold text-white mb-2">Schedule Ambassador Program</h3>
+                        <p class="text-xs text-gray-400">Create events for approved ambassadors</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-400 text-xs font-semibold mb-2">Program Title</label>
+                                <input type="text" id="program-title" placeholder="e.g., Monthly Ambassador Meeting"
+                                    class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600 text-white outline-none focus:border-indigo-400 transition">
+                            </div>
+                            <div>
+                                <label class="block text-gray-400 text-xs font-semibold mb-2">Date & Time</label>
+                                <input type="datetime-local" id="program-datetime"
+                                    class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600 text-white outline-none focus:border-indigo-400 transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-semibold mb-2">Description</label>
+                            <textarea id="program-description" rows="3" placeholder="Program details..."
+                                class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600 text-white outline-none focus:border-indigo-400 transition resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-semibold mb-2">Location/Link</label>
+                            <input type="text" id="program-location" placeholder="e.g., Zoom link or venue"
+                                class="w-full p-3 rounded-lg bg-gray-900 border border-gray-600 text-white outline-none focus:border-indigo-400 transition">
+                        </div>
+                        <button onclick="app.scheduleProgram()"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-bold hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fas fa-calendar-plus"></i>
+                            Schedule Program
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700 bg-gray-900/50">
+                        <h3 class="text-lg font-bold text-white">Scheduled Programs</h3>
+                    </div>
+                    <div id="list-programs" class="divide-y divide-gray-700">
+                        <div class="p-4 text-center text-gray-500 text-sm">No programs scheduled yet</div>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-godmode" class="admin-view hidden space-y-8 overflow-y-auto p-4 md:p-6 h-full">
                 <div
                     class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
@@ -590,6 +679,7 @@
 
                 if (view === 'tickets') this.fetchSalesOverview();
                 if (view === 'workspace') this.switchWorkspaceTab('personal');
+                if (view === 'ambassadors') this.loadAmbassadorApplications();
             },
 
             // WORKSPACE LOGIC
@@ -1093,6 +1183,196 @@
                 if (confirm(`Revoke admin status for this user?`)) {
                     const newRole = currentRole === 'admin' ? 'student' : 'admin';
                     await updateDoc(doc(db, "users", uid), { role: newRole });
+                }
+            },
+
+            // AMBASSADOR PROGRAM METHODS
+            loadAmbassadorApplications() {
+                onSnapshot(query(collection(db, "ambassador_applications"), orderBy('createdAt', 'desc')), (snap) => {
+                    const list = document.getElementById('list-applications');
+                    const pendingCount = snap.docs.filter(d => d.data().status === 'pending').length;
+                    document.getElementById('pending-count').innerText = pendingCount;
+                    
+                    if (snap.empty) {
+                        list.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No applications yet</td></tr>';
+                        return;
+                    }
+                    
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const app = d.data();
+                        const statusColor = app.status === 'approved' ? 'text-green-400' : app.status === 'rejected' ? 'text-red-400' : 'text-yellow-400';
+                        const statusText = app.status.charAt(0).toUpperCase() + app.status.slice(1);
+                        
+                        list.innerHTML += `
+                            <tr class="hover:bg-gray-700/30 transition">
+                                <td class="px-4 py-3 font-semibold text-white">${app.name}</td>
+                                <td class="px-4 py-3 text-xs">${app.email}</td>
+                                <td class="px-4 py-3 text-xs">${app.university}</td>
+                                <td class="px-4 py-3 text-xs">${app.year}</td>
+                                <td class="px-4 py-3"><span class="${statusColor} font-semibold text-xs uppercase">${statusText}</span></td>
+                                <td class="px-4 py-3 text-right">
+                                    <button onclick="app.viewApplication('${d.id}')" class="text-blue-400 hover:text-blue-300 text-xs font-semibold mr-2">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    ${app.status === 'pending' ? `
+                                        <button onclick="app.approveApplication('${d.id}', '${app.email}', '${app.name}')" class="text-green-400 hover:text-green-300 text-xs font-semibold mr-2">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                        <button onclick="app.rejectApplication('${d.id}')" class="text-red-400 hover:text-red-300 text-xs font-semibold">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    ` : ''}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+
+                // Load scheduled programs
+                onSnapshot(query(collection(db, "ambassador_programs"), orderBy('datetime', 'desc')), (snap) => {
+                    const list = document.getElementById('list-programs');
+                    if (snap.empty) {
+                        list.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No programs scheduled yet</div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const prog = d.data();
+                        const date = prog.datetime ? new Date(prog.datetime).toLocaleString() : 'N/A';
+                        list.innerHTML += `
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-white">${prog.title}</h4>
+                                    <button onclick="app.deleteProgram('${d.id}')" class="text-red-400 hover:text-red-300 text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-400 mb-2">${prog.description || 'No description'}</p>
+                                <div class="flex gap-4 text-xs text-gray-500">
+                                    <span><i class="fas fa-calendar mr-1"></i>${date}</span>
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${prog.location || 'TBD'}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+            },
+
+            async viewApplication(appId) {
+                const appDoc = await getDoc(doc(db, "ambassador_applications", appId));
+                if (!appDoc.exists()) return;
+                
+                const app = appDoc.data();
+                alert(`
+Application Details:
+
+Name: ${app.name}
+Email: ${app.email}
+Phone: ${app.phone}
+University: ${app.university}
+Year: ${app.year}
+Field: ${app.field}
+
+Motivation:
+${app.motivation}
+
+Experience:
+${app.experience || 'Not provided'}
+
+Social Media: ${app.social || 'Not provided'}
+                `.trim());
+            },
+
+            async approveApplication(appId, email, name) {
+                if (!confirm(`Approve ${name} as an ambassador? This will promote them to ambassador role.`)) return;
+                
+                try {
+                    // Update application status
+                    await updateDoc(doc(db, "ambassador_applications", appId), { 
+                        status: 'approved',
+                        approvedAt: serverTimestamp()
+                    });
+                    
+                    // Find user by email and promote to ambassador
+                    const usersQuery = query(collection(db, "users"), where("email", "==", email));
+                    const userSnap = await getDocs(usersQuery);
+                    
+                    if (!userSnap.empty) {
+                        const userDoc = userSnap.docs[0];
+                        await updateDoc(doc(db, "users", userDoc.id), { role: 'ambassador' });
+                        await this.logAction('AMBASSADOR_APPROVED', `Promoted ${name} (${email}) to ambassador`);
+                        alert(`✓ ${name} has been approved and promoted to ambassador!`);
+                    } else {
+                        await this.logAction('AMBASSADOR_APPROVED', `Approved ${name} (${email}) but user not found in system`);
+                        alert(`✓ Application approved! Note: User not found in system yet. They'll be promoted when they sign up.`);
+                    }
+                } catch (error) {
+                    console.error("Error approving application:", error);
+                    alert("Error approving application. Please try again.");
+                }
+            },
+
+            async rejectApplication(appId) {
+                if (!confirm('Reject this application?')) return;
+                
+                try {
+                    await updateDoc(doc(db, "ambassador_applications", appId), { 
+                        status: 'rejected',
+                        rejectedAt: serverTimestamp()
+                    });
+                    await this.logAction('AMBASSADOR_REJECTED', `Rejected ambassador application`);
+                } catch (error) {
+                    console.error("Error rejecting application:", error);
+                    alert("Error rejecting application. Please try again.");
+                }
+            },
+
+            async scheduleProgram() {
+                const title = document.getElementById('program-title').value;
+                const datetime = document.getElementById('program-datetime').value;
+                const description = document.getElementById('program-description').value;
+                const location = document.getElementById('program-location').value;
+                
+                if (!title || !datetime) {
+                    alert('Please fill in title and date/time');
+                    return;
+                }
+                
+                try {
+                    await addDoc(collection(db, "ambassador_programs"), {
+                        title,
+                        datetime,
+                        description,
+                        location,
+                        createdBy: currentUser.name,
+                        createdAt: serverTimestamp()
+                    });
+                    
+                    // Clear form
+                    document.getElementById('program-title').value = '';
+                    document.getElementById('program-datetime').value = '';
+                    document.getElementById('program-description').value = '';
+                    document.getElementById('program-location').value = '';
+                    
+                    await this.logAction('PROGRAM_SCHEDULED', `Scheduled program: ${title}`);
+                    alert('✓ Program scheduled successfully!');
+                } catch (error) {
+                    console.error("Error scheduling program:", error);
+                    alert("Error scheduling program. Please try again.");
+                }
+            },
+
+            async deleteProgram(progId) {
+                if (!confirm('Delete this program?')) return;
+                
+                try {
+                    await deleteDoc(doc(db, "ambassador_programs", progId));
+                    await this.logAction('PROGRAM_DELETED', `Deleted a scheduled program`);
+                } catch (error) {
+                    console.error("Error deleting program:", error);
+                    alert("Error deleting program. Please try again.");
                 }
             },
 
