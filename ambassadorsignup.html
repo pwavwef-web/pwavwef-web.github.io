@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner - Ambassador Program Signup</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#111827',
+                        darkCard: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .glass-panel {
+            background: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #FFAB40, #FFD740);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Header -->
+    <div class="bg-gray-800/95 border-b border-gray-700 px-6 py-4 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black gradient-text">AZ LEARNER</h1>
+                <p class="text-xs text-gray-400">Student Ambassador Program</p>
+            </div>
+            <a href="index.html" class="text-sm text-gray-400 hover:text-orangeAccent transition">
+                <i class="fa-solid fa-home mr-1"></i> Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 py-8 md:py-12">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <div class="inline-block mb-4">
+                <i class="fa-solid fa-star text-6xl text-orangeAccent"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black mb-4 gradient-text">
+                Become an AZ Learner Ambassador
+            </h1>
+            <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                Join an elite team of student leaders shaping the future of education and technology
+            </p>
+        </div>
+
+        <!-- Program Info Section -->
+        <div class="glass-panel rounded-2xl p-8 mb-8 shadow-2xl">
+            <h2 class="text-2xl font-bold text-orangeAccent mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-info-circle"></i> About the Program
+            </h2>
+            
+            <div class="space-y-6 text-gray-300">
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-2">What is AZ Learner?</h3>
+                    <p class="leading-relaxed">
+                        AZ Learner is a revolutionary platform empowering students with cutting-edge educational resources, 
+                        technology workshops, and career development opportunities. We bridge the gap between academic learning 
+                        and real-world skills, preparing students for success in the digital age.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-3">Why Become an Ambassador?</h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <i class="fa-solid fa-trophy text-yellow-400 text-2xl mb-2"></i>
+                            <h4 class="font-bold mb-1">Leadership Experience</h4>
+                            <p class="text-sm text-gray-400">Lead initiatives and mentor fellow students</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <i class="fa-solid fa-certificate text-blue-400 text-2xl mb-2"></i>
+                            <h4 class="font-bold mb-1">Official Certification</h4>
+                            <p class="text-sm text-gray-400">Receive recognition for your contributions</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <i class="fa-solid fa-users text-green-400 text-2xl mb-2"></i>
+                            <h4 class="font-bold mb-1">Exclusive Network</h4>
+                            <p class="text-sm text-gray-400">Connect with like-minded innovators</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <i class="fa-solid fa-rocket text-purple-400 text-2xl mb-2"></i>
+                            <h4 class="font-bold mb-1">Career Boost</h4>
+                            <p class="text-sm text-gray-400">Stand out in college and job applications</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-3">Ambassador Responsibilities</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Promote AZ Learner programs and events within your institution</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Organize workshops and study sessions for peers</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Provide feedback to improve our platform and services</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-green-400 mt-1"></i>
+                            <span>Participate in monthly ambassador meetings and training</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Form -->
+        <div class="glass-panel rounded-2xl p-8 shadow-2xl">
+            <h2 class="text-2xl font-bold text-orangeAccent mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-file-signature"></i> Application Form
+            </h2>
+
+            <form id="ambassadorForm" class="space-y-6">
+                <!-- Personal Information -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-600 pb-2">
+                        Personal Information
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Full Name <span class="text-red-400">*</span>
+                            </label>
+                            <input type="text" id="fullName" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Email Address <span class="text-red-400">*</span>
+                            </label>
+                            <input type="email" id="email" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="john@example.com">
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Phone Number <span class="text-red-400">*</span>
+                            </label>
+                            <input type="tel" id="phone" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="+1234567890">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Date of Birth <span class="text-red-400">*</span>
+                            </label>
+                            <input type="date" id="dob" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Educational Background -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-600 pb-2">
+                        Educational Background
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Institution Name <span class="text-red-400">*</span>
+                            </label>
+                            <input type="text" id="institution" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="University/College Name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Major/Field of Study <span class="text-red-400">*</span>
+                            </label>
+                            <input type="text" id="major" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="Computer Science">
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Year of Study <span class="text-red-400">*</span>
+                            </label>
+                            <select id="year" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition">
+                                <option value="">Select Year</option>
+                                <option value="Freshman">Freshman (Year 1)</option>
+                                <option value="Sophomore">Sophomore (Year 2)</option>
+                                <option value="Junior">Junior (Year 3)</option>
+                                <option value="Senior">Senior (Year 4+)</option>
+                                <option value="Graduate">Graduate Student</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Expected Graduation <span class="text-red-400">*</span>
+                            </label>
+                            <input type="month" id="graduation" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience & Motivation -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-600 pb-2">
+                        Experience & Motivation
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Why do you want to become an AZ Learner Ambassador? <span class="text-red-400">*</span>
+                            </label>
+                            <textarea id="motivation" required rows="4"
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition resize-none"
+                                placeholder="Share your passion and goals (minimum 50 characters)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Relevant Experience (Leadership, Volunteering, etc.)
+                            </label>
+                            <textarea id="experience" rows="4"
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition resize-none"
+                                placeholder="Describe any relevant experience you have"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Technical Skills & Interests
+                            </label>
+                            <input type="text" id="skills"
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="e.g., Python, Web Development, AI, Data Science">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Availability -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-600 pb-2">
+                        Availability
+                    </h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">
+                            Hours per week you can commit <span class="text-red-400">*</span>
+                        </label>
+                        <select id="commitment" required
+                            class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition">
+                            <option value="">Select Hours</option>
+                            <option value="2-5">2-5 hours/week</option>
+                            <option value="5-10">5-10 hours/week</option>
+                            <option value="10+">10+ hours/week</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Social Media (Optional) -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-600 pb-2">
+                        Social Media (Optional)
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                LinkedIn Profile
+                            </label>
+                            <input type="url" id="linkedin"
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="https://linkedin.com/in/yourprofile">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Instagram Handle
+                            </label>
+                            <input type="text" id="instagram"
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600 outline-none text-white focus:border-orangeAccent transition"
+                                placeholder="@yourusername">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terms & Conditions -->
+                <div class="bg-gray-800/50 p-4 rounded-lg">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="terms" required class="mt-1">
+                        <span class="text-sm text-gray-300">
+                            I agree to the terms and conditions of the AZ Learner Ambassador Program and commit to upholding 
+                            the values and responsibilities outlined above. <span class="text-red-400">*</span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn"
+                        class="w-full py-4 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Submit Application
+                    </button>
+                </div>
+
+                <p id="form-message" class="text-center text-sm font-medium h-6"></p>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-12 text-gray-400 text-sm">
+            <p>Questions? Contact us at <a href="mailto:ambassadors@azlearner.com" class="text-orangeAccent hover:underline">ambassadors@azlearner.com</a></p>
+            <p class="mt-2">© 2024 AZ Learner. All rights reserved.</p>
+        </div>
+    </div>
+
+    <!-- Firebase Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.getElementById('ambassadorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const formMessage = document.getElementById('form-message');
+            
+            // Validate motivation length
+            const motivation = document.getElementById('motivation').value;
+            if (motivation.length < 50) {
+                formMessage.className = 'text-center text-sm font-medium h-6 text-red-400';
+                formMessage.textContent = 'Motivation must be at least 50 characters long.';
+                return;
+            }
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            formMessage.textContent = '';
+
+            try {
+                // Collect form data
+                const formData = {
+                    fullName: document.getElementById('fullName').value.trim(),
+                    email: document.getElementById('email').value.trim().toLowerCase(),
+                    phone: document.getElementById('phone').value.trim(),
+                    dob: document.getElementById('dob').value,
+                    institution: document.getElementById('institution').value.trim(),
+                    major: document.getElementById('major').value.trim(),
+                    year: document.getElementById('year').value,
+                    graduation: document.getElementById('graduation').value,
+                    motivation: motivation.trim(),
+                    experience: document.getElementById('experience').value.trim(),
+                    skills: document.getElementById('skills').value.trim(),
+                    commitment: document.getElementById('commitment').value,
+                    linkedin: document.getElementById('linkedin').value.trim(),
+                    instagram: document.getElementById('instagram').value.trim(),
+                    status: 'pending',
+                    timestamp: serverTimestamp(),
+                    submittedAt: new Date().toISOString()
+                };
+
+                // Submit to Firestore
+                await addDoc(collection(db, 'ambassador_signups'), formData);
+
+                // Show success message
+                formMessage.className = 'text-center text-sm font-medium h-6 text-green-400';
+                formMessage.textContent = '✓ Application submitted successfully! We will review and get back to you soon.';
+
+                // Reset form
+                document.getElementById('ambassadorForm').reset();
+
+                // Scroll to message
+                formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            } catch (error) {
+                console.error('Error submitting application:', error);
+                formMessage.className = 'text-center text-sm font-medium h-6 text-red-400';
+                formMessage.textContent = '✗ Error submitting application. Please try again.';
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Application';
+            }
+        });
+    </script>
+</body>
+</html>
