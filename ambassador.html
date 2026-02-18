@@ -367,7 +367,8 @@
                             const userData = userDoc.data();
                             
                             // Check if user is an ambassador or admin
-                            if (userData.role !== 'ambassador' && userData.role !== 'admin') {
+                            const allowedRoles = ['ambassador', 'admin'];
+                            if (!allowedRoles.includes(userData.role)) {
                                 alert("Access Denied: This portal is only for ambassadors.");
                                 signOut(auth);
                                 return;
@@ -394,7 +395,7 @@
                 
                 const since = currentUser.ambassadorSince 
                     ? new Date(currentUser.ambassadorSince.toDate()).toLocaleDateString()
-                    : new Date().toLocaleDateString();
+                    : 'N/A';
                 document.getElementById('profile-since').innerText = since;
             },
 

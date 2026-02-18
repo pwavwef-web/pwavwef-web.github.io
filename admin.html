@@ -1205,6 +1205,13 @@
         window.ambassadorManager = {
             currentFilter: 'all',
 
+            // HTML escape helper to prevent XSS
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
             async init() {
                 // Load applications
                 this.loadApplications();
@@ -1251,46 +1258,61 @@
                         <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 hover:border-gray-600 transition">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
-                                    <h4 class="font-bold text-white text-lg">${app.fullName}</h4>
-                                    <p class="text-sm text-gray-400">${app.email}</p>
-                                    <p class="text-xs text-gray-500 mt-1">${app.university} • Year ${app.year} • ${app.course}</p>
+                                    <h4 class="font-bold text-white text-lg">${this.escapeHtml(app.fullName)}</h4>
+                                    <p class="text-sm text-gray-400">${this.escapeHtml(app.email)}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${this.escapeHtml(app.university)} • Year ${this.escapeHtml(app.year)} • ${this.escapeHtml(app.course)}</p>
                                 </div>
                                 <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusColors[app.status] || statusColors.pending}">
-                                    ${app.status.toUpperCase()}
+                                    ${this.escapeHtml(app.status.toUpperCase())}
                                 </span>
                             </div>
                             <div class="mb-3 text-sm text-gray-300">
                                 <p class="font-semibold text-gray-400 mb-1">Motivation:</p>
-                                <p class="text-xs">${app.motivation}</p>
+                                <p class="text-xs">${this.escapeHtml(app.motivation)}</p>
                             </div>
                             ${app.experience ? `
                                 <div class="mb-3 text-sm text-gray-300">
                                     <p class="font-semibold text-gray-400 mb-1">Experience:</p>
-                                    <p class="text-xs">${app.experience}</p>
+                                    <p class="text-xs">${this.escapeHtml(app.experience)}</p>
                                 </div>
                             ` : ''}
                             <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-                                <span><i class="fa-solid fa-phone mr-1"></i>${app.phone}</span>
+                                <span><i class="fa-solid fa-phone mr-1"></i>${this.escapeHtml(app.phone)}</span>
                                 <span><i class="fa-solid fa-calendar mr-1"></i>${date}</span>
                             </div>
                             ${app.status === 'pending' ? `
                                 <div class="flex gap-2">
-                                    <button onclick="ambassadorManager.approveApplication('${app.id}', '${app.email}', '${app.fullName}')" 
-                                        class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition">
+                                    <button data-action="approve" data-app-id="${app.id}" data-email="${this.escapeHtml(app.email)}" data-name="${this.escapeHtml(app.fullName)}"
+                                        class="app-action-btn flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition">
                                         <i class="fa-solid fa-check mr-1"></i>Approve
                                     </button>
-                                    <button onclick="ambassadorManager.rejectApplication('${app.id}')" 
-                                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold transition">
+                                    <button data-action="reject" data-app-id="${app.id}"
+                                        class="app-action-btn flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold transition">
                                         <i class="fa-solid fa-times mr-1"></i>Reject
                                     </button>
                                 </div>
                             ` : ''}
                             ${app.status === 'approved' && app.approvedBy ? `
-                                <p class="text-xs text-green-400 mt-2"><i class="fa-solid fa-check-circle mr-1"></i>Approved by ${app.approvedBy}</p>
+                                <p class="text-xs text-green-400 mt-2"><i class="fa-solid fa-check-circle mr-1"></i>Approved by ${this.escapeHtml(app.approvedBy)}</p>
                             ` : ''}
                         </div>
                     `;
                 }).join('');
+
+                // Add event listeners to action buttons
+                document.querySelectorAll('.app-action-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const action = e.currentTarget.dataset.action;
+                        const appId = e.currentTarget.dataset.appId;
+                        if (action === 'approve') {
+                            const email = e.currentTarget.dataset.email;
+                            const name = e.currentTarget.dataset.name;
+                            this.approveApplication(appId, email, name);
+                        } else if (action === 'reject') {
+                            this.rejectApplication(appId);
+                        }
+                    });
+                });
             },
 
             filterApplications(status) {
@@ -1330,12 +1352,21 @@
                     const userSnap = await getDocs(q);
                     
                     if (!userSnap.empty) {
-                        userSnap.forEach(async (userDoc) => {
-                            await updateDoc(doc(db, 'users', userDoc.id), {
-                                role: 'ambassador',
-                                ambassadorSince: serverTimestamp()
-                            });
+                        if (userSnap.size > 1) {
+                            console.warn(`Warning: Multiple users found with email ${email}`);
+                        }
+                        
+                        // Use for...of to properly await all updates
+                        const updatePromises = [];
+                        userSnap.forEach((userDoc) => {
+                            updatePromises.push(
+                                updateDoc(doc(db, 'users', userDoc.id), {
+                                    role: 'ambassador',
+                                    ambassadorSince: serverTimestamp()
+                                })
+                            );
                         });
+                        await Promise.all(updatePromises);
                     }
 
                     // Log the action
@@ -1431,22 +1462,29 @@
                         const program = d.data();
                         const date = program.datetime ? new Date(program.datetime.toDate()).toLocaleString() : 'TBD';
                         
-                        list.innerHTML += `
-                            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-                                <div class="flex justify-between items-start mb-2">
-                                    <h4 class="font-bold text-white">${program.title}</h4>
-                                    <button onclick="ambassadorManager.deleteProgram('${d.id}')" 
-                                        class="text-red-500 hover:text-red-400 text-sm">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>
-                                <p class="text-sm text-gray-400 mb-2">${program.description}</p>
-                                <div class="text-xs text-gray-500">
-                                    <span><i class="fa-solid fa-calendar mr-1"></i>${date}</span>
-                                    <span class="ml-3"><i class="fa-solid fa-user mr-1"></i>${program.createdBy}</span>
-                                </div>
+                        const programDiv = document.createElement('div');
+                        programDiv.className = 'bg-gray-900 p-4 rounded-lg border border-gray-700';
+                        programDiv.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-white">${this.escapeHtml(program.title)}</h4>
+                                <button data-program-id="${d.id}" class="delete-program-btn text-red-500 hover:text-red-400 text-sm">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-400 mb-2">${this.escapeHtml(program.description)}</p>
+                            <div class="text-xs text-gray-500">
+                                <span><i class="fa-solid fa-calendar mr-1"></i>${date}</span>
+                                <span class="ml-3"><i class="fa-solid fa-user mr-1"></i>${this.escapeHtml(program.createdBy)}</span>
                             </div>
                         `;
+                        
+                        // Add event listener to delete button
+                        const deleteBtn = programDiv.querySelector('.delete-program-btn');
+                        deleteBtn.addEventListener('click', () => {
+                            this.deleteProgram(d.id);
+                        });
+                        
+                        list.appendChild(programDiv);
                     });
                 });
             },
