@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AZ Learner Intel Decryption: Master Key</title>
+    <title>AZ Learner Puzzle Quest - 20 Levels</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,23 +11,22 @@
         body { font-family: 'JetBrains Mono', monospace; background-color: #000a12; color: #f3f4f6; }
         .font-display { font-family: 'Anton', sans-serif; }
         
-        /* Grid Input Styling */
+        /* Grid Input Styling for Crossword */
         .grid-input {
             width: 100%;
             aspect-ratio: 1/1;
-            background: #001F3F; /* Navy background */
+            background: #001F3F;
             border: 1px solid #004d40;
             text-align: center;
             text-transform: uppercase;
             font-weight: 800;
             color: #00FFFF;
-            font-size: 0.9rem; /* optimized for 15x15 */
+            font-size: 0.9rem;
             border-radius: 2px;
             transition: all 0.2s;
-            caret-color: transparent; /* Hide cursor to look like a game board */
+            caret-color: transparent;
         }
         
-        /* Focus State */
         .grid-input:focus {
             outline: none;
             background: #003366;
@@ -35,10 +34,41 @@
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
         }
         
-        /* Blocked (Black) Cells */
         .grid-input.blocked {
             background: transparent;
             border: none;
+        }
+
+        /* Word Search Grid Styling */
+        .ws-cell {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #001F3F;
+            border: 1px solid #004d40;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #00FFFF;
+            font-size: 0.9rem;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .ws-cell:hover {
+            background: #003366;
+        }
+
+        .ws-cell.selected {
+            background: #fbbf24;
+            color: #000;
+        }
+
+        .ws-cell.found {
+            background: #10b981;
+            color: #fff;
         }
 
         /* Glassmorphism Panels */
@@ -60,18 +90,58 @@
             position: absolute;
             top: 2px;
             left: 2px;
-            color: #fbbf24; /* Amber for visibility */
+            color: #fbbf24;
             z-index: 10;
             pointer-events: none;
         }
 
-        /* Crossword Grid Container */
-        #crossword-grid {
+        /* Level Button Styles */
+        .level-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #374151;
+            border-radius: 0.5rem;
+            background: #1f2937;
+            color: #9ca3af;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level-btn:hover {
+            background: #374151;
+            border-color: #4b5563;
+        }
+
+        .level-btn.completed {
+            background: #10b981;
+            color: #fff;
+            border-color: #10b981;
+        }
+
+        .level-btn.active {
+            background: #06b6d4;
+            color: #000;
+            border-color: #06b6d4;
+        }
+
+        .word-list-item {
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .word-list-item.found {
+            background: #10b981;
+            color: #fff;
+            text-decoration: line-through;
+        }
+
+        /* Grid Container */
+        #puzzle-grid {
             display: grid;
-            grid-template-columns: repeat(15, 1fr); /* FORCED 15 COLUMNS */
             gap: 2px;
             width: 100%;
-            max-width: 600px; /* Constraints width for desktop */
+            max-width: 600px;
             margin: 0 auto;
         }
 
@@ -88,83 +158,60 @@
     <div class="max-w-7xl mx-auto w-full">
         <header class="flex flex-col md:flex-row justify-between items-end mb-6 border-b border-cyan-500/30 pb-4">
             <div>
-                <h1 class="font-display text-4xl md:text-5xl text-cyan-400 tracking-tighter uppercase leading-none">INTEL DECRYPTION</h1>
-                <p class="text-xs md:text-sm font-bold text-gray-400 tracking-widest mt-1 uppercase">MISSION: ISSUE 02 / FEB 2026 • <span class="text-red-500 animate-pulse">CLASSIFIED</span></p>
+                <h1 class="font-display text-4xl md:text-5xl text-cyan-400 tracking-tighter uppercase leading-none">PUZZLE QUEST</h1>
+                <p class="text-xs md:text-sm font-bold text-gray-400 tracking-widest mt-1 uppercase">
+                    LEVEL <span id="current-level-display">1</span> OF 20 • 
+                    <span id="completion-display" class="text-amber-400">0% COMPLETE</span>
+                </p>
             </div>
             <div class="text-right mt-4 md:mt-0">
                 <div class="bg-cyan-900/30 border border-cyan-500 text-cyan-400 px-3 py-1 font-mono text-xs inline-block mb-1">
-                    KEY: AZ LEARNER
+                    <span id="puzzle-type">CROSSWORD</span> • <span id="theme-display">GENERAL KNOWLEDGE</span>
                 </div>
             </div>
         </header>
 
+        <!-- Level Selector -->
+        <div class="glass p-4 rounded-lg mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-display text-lg text-white">SELECT LEVEL</h2>
+                <button onclick="resetProgress()" class="text-xs text-red-400 hover:text-red-300">
+                    <i class="fas fa-redo mr-1"></i>Reset All Progress
+                </button>
+            </div>
+            <div id="level-selector" class="grid grid-cols-5 md:grid-cols-10 gap-2">
+                <!-- Level buttons will be generated here -->
+            </div>
+        </div>
+
         <div class="grid lg:grid-cols-12 gap-6">
             
-            <div class="lg:col-span-4 space-y-4 h-fit">
-                
-                <div class="glass p-5 rounded-lg border-t-4 border-t-cyan-500">
-                    <h2 class="font-display text-xl text-white mb-3 flex items-center gap-2">
-                        <i class="fas fa-arrows-left-right text-cyan-400 text-sm"></i> ACROSS
-                    </h2>
-                    <div class="space-y-3 text-xs text-gray-300 font-mono h-48 overflow-y-auto pr-2 custom-scrollbar">
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-cyan-400">1.</span> Restaurant where precision meets hospitality. (5)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-cyan-400">3.</span> Word of the day: Travel on foot. (13)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-cyan-400">5.</span> Patrick Awuku Amada's brand: DID & ____. (4)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-cyan-400">7.</span> Prof Biney leads the School of ____. (8)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-cyan-400">9.</span> Build lasting systems: invest in ____ capital. (6)
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass p-5 rounded-lg border-t-4 border-t-amber-500">
-                    <h2 class="font-display text-xl text-white mb-3 flex items-center gap-2">
-                        <i class="fas fa-arrows-up-down text-amber-400 text-sm"></i> DOWN
-                    </h2>
-                    <div class="space-y-3 text-xs text-gray-300 font-mono h-48 overflow-y-auto pr-2 custom-scrollbar">
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-amber-400">2.</span> AZ Learner aims to ameliorate this disorder. (7)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-amber-400">4.</span> Prof Mensah: Hospitality and ____ Management. (7)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-amber-400">6.</span> Street where Luban Workshop is located. (7)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-amber-400">8.</span> Phase 2 feature: The Campus ____. (11)
-                        </div>
-                        <div class="clue-item p-1.5 rounded">
-                            <span class="font-bold text-amber-400">10.</span> Feb 13-16 Training: Data ____. (9)
-                        </div>
-                    </div>
-                </div>
+            <!-- Clues/Words Panel -->
+            <div id="clues-panel" class="lg:col-span-4 space-y-4 h-fit">
+                <!-- Will be populated based on puzzle type -->
             </div>
 
+            <!-- Puzzle Grid -->
             <div class="lg:col-span-8 glass p-4 md:p-8 rounded-xl flex flex-col items-center justify-center">
                 
-                <div class="flex gap-3 mb-6 w-full justify-center">
-                    <button onclick="window.print()" class="no-print bg-gray-800 text-gray-300 px-4 py-2 font-bold text-xs hover:bg-gray-700 transition rounded border border-gray-600">
-                        <i class="fas fa-print mr-2"></i>PRINT
-                    </button>
-                    <button onclick="solvePuzzle()" class="no-print bg-cyan-600/20 text-cyan-400 px-4 py-2 font-bold text-xs hover:bg-cyan-600/40 transition rounded border border-cyan-500/50">
-                        <i class="fas fa-eye mr-2"></i>REVEAL INTEL
+                <div class="flex gap-3 mb-6 w-full justify-center flex-wrap">
+                    <button onclick="previousLevel()" class="no-print bg-gray-800 text-gray-300 px-4 py-2 font-bold text-xs hover:bg-gray-700 transition rounded border border-gray-600">
+                        <i class="fas fa-arrow-left mr-2"></i>PREVIOUS
                     </button>
                     <button onclick="checkPuzzle()" class="no-print bg-cyan-500 text-black px-6 py-2 font-bold text-xs hover:bg-cyan-400 transition rounded shadow-[0_0_15px_rgba(6,182,212,0.5)]">
-                        VALIDATE
+                        <i class="fas fa-check mr-2"></i>VALIDATE
+                    </button>
+                    <button onclick="revealPuzzle()" class="no-print bg-amber-600/20 text-amber-400 px-4 py-2 font-bold text-xs hover:bg-amber-600/40 transition rounded border border-amber-500/50">
+                        <i class="fas fa-eye mr-2"></i>REVEAL
+                    </button>
+                    <button onclick="nextLevel()" class="no-print bg-gray-800 text-gray-300 px-4 py-2 font-bold text-xs hover:bg-gray-700 transition rounded border border-gray-600">
+                        NEXT<i class="fas fa-arrow-right ml-2"></i>
                     </button>
                 </div>
 
-                <div id="crossword-grid">
-                    </div>
+                <div id="puzzle-grid">
+                    <!-- Puzzle will be rendered here -->
+                </div>
 
                 <div class="mt-8 text-center opacity-70">
                     <p class="font-display text-lg tracking-wider text-gray-500">
@@ -176,62 +223,643 @@
     </div>
 
     <script>
-        // 15x15 Grid. Symbols: '.' = Block, 'LETTER' = Answer
-        // LAYOUT MAPPING:
-        // 1. ACROSS: LUBAN, PEREGRINATION, DONE, PHARMACY, SOCIAL
-        // 2. DOWN: ENTROPY, TOURISM, CASFORD, MARKETPLACE, ANALYTICS
-        
-        // This map is carefully constructed to ensure all intersections match.
-        const solutionGrid = [
-            /* 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 */
-            ['.', '.', 'C', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'], // 0 - Starts CASFORD(6)
-            ['.', '.', 'A', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'], // 1
-            ['.', '.', 'S', 'O', 'C', 'I', 'A', 'L', '.', '.', '.', '.', '.', '.', '.'], // 2 - SOCIAL(9) crosses CASFORD
-            ['.', 'E', 'F', '.', '.', '.', '.', '.', '.', '.', 'M', '.', '.', '.', '.'], // 3 - ENTROPY(2) start, MARKETPLACE(8) start
-            ['.', 'N', 'O', '.', '.', '.', '.', 'L', 'U', 'B', 'A', 'N', '.', '.', '.'], // 4 - LUBAN(1) crosses MARKETPLACE
-            ['.', 'T', 'R', 'T', '.', '.', '.', '.', '.', '.', 'R', '.', '.', '.', '.'], // 5 - TOURISM(4) starts
-            ['.', 'R', 'D', 'O', 'N', 'E', '.', '.', '.', '.', 'K', '.', '.', '.', '.'], // 6 - DONE(5) crosses CASFORD, TOURISM
-            ['.', 'O', '.', 'U', '.', '.', '.', '.', 'A', '.', 'E', '.', '.', '.', '.'], // 7 - ANALYTICS(10) starts
-            ['.', 'P', 'E', 'R', 'E', 'G', 'R', 'I', 'N', 'A', 'T', 'I', 'O', 'N', '.'], // 8 - PEREGRINATION(3) crosses EVERYTHING
-            ['.', 'Y', '.', 'I', '.', '.', '.', '.', 'A', '.', 'P', '.', '.', '.', '.'], // 9 - ENTROPY ends
-            ['.', '.', '.', 'S', '.', '.', '.', '.', 'L', '.', 'L', '.', '.', '.', '.'], // 10
-            ['.', '.', '.', 'M', '.', '.', '.', '.', 'Y', '.', 'A', '.', '.', '.', '.'], // 11
-            ['.', '.', '.', '.', '.', '.', '.', '.', 'T', '.', 'C', '.', '.', '.', '.'], // 12
-            ['.', '.', '.', '.', '.', '.', '.', '.', 'I', '.', 'E', '.', '.', '.', '.'], // 13
-            ['.', '.', 'P', 'H', 'A', 'R', 'M', 'A', 'C', 'Y', '.', '.', '.', '.', '.'], // 14 - PHARMACY(7) crosses ANALYTICS
+        // ======== PUZZLE DATA ========
+        const PUZZLES = [
+            // Level 1 - Crossword: World Capitals
+            {
+                type: 'crossword',
+                theme: 'World Capitals',
+                size: 10,
+                grid: [
+                    ['.', '.', '.', 'P', 'A', 'R', 'I', 'S', '.', '.'],
+                    ['.', '.', '.', '.', '.', 'O', '.', '.', '.', '.'],
+                    ['T', 'O', 'K', 'Y', 'O', 'M', 'E', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', 'E', '.', '.', '.', '.'],
+                    ['.', 'L', 'O', 'N', 'D', 'O', 'N', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'C', 'A', 'I', 'R', 'O', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Capital of France (5)", row: 0, col: 3 },
+                        { num: 3, clue: "Capital of Japan (5)", row: 2, col: 0 },
+                        { num: 5, clue: "Capital of UK (6)", row: 4, col: 1 },
+                        { num: 6, clue: "Capital of Egypt (5)", row: 6, col: 1 }
+                    ],
+                    down: [
+                        { num: 2, clue: "Capital of Italy (4)", row: 0, col: 5 }
+                    ]
+                }
+            },
+            // Level 2 - Word Search: Colors
+            {
+                type: 'wordsearch',
+                theme: 'Colors',
+                size: 10,
+                grid: [
+                    ['R', 'E', 'D', 'X', 'Y', 'B', 'L', 'U', 'E', 'Z'],
+                    ['G', 'A', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S'],
+                    ['R', 'B', 'L', 'A', 'C', 'K', 'G', 'H', 'I', 'J'],
+                    ['E', 'L', 'A', 'C', 'K', 'L', 'M', 'N', 'O', 'P'],
+                    ['E', 'A', 'W', 'H', 'I', 'T', 'E', 'R', 'S', 'T'],
+                    ['N', 'C', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D', 'E'],
+                    ['P', 'K', 'G', 'R', 'A', 'Y', 'F', 'G', 'H', 'I'],
+                    ['U', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'],
+                    ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A'],
+                    ['P', 'I', 'N', 'K', 'B', 'C', 'D', 'E', 'F', 'G'],
+                    ['L', 'E', 'Y', 'E', 'L', 'L', 'O', 'W', 'H', 'I']
+                ],
+                words: ['RED', 'BLUE', 'GREEN', 'BLACK', 'WHITE', 'GRAY', 'PINK', 'YELLOW'],
+                solutions: [
+                    { word: 'RED', positions: [[0,0], [0,1], [0,2]] },
+                    { word: 'BLUE', positions: [[0,5], [0,6], [0,7], [0,8]] },
+                    { word: 'GREEN', positions: [[1,0], [2,0], [3,0], [4,0], [5,0]] },
+                    { word: 'BLACK', positions: [[2,1], [2,2], [2,3], [2,4], [2,5]] },
+                    { word: 'WHITE', positions: [[4,2], [4,3], [4,4], [4,5], [4,6]] },
+                    { word: 'GRAY', positions: [[6,2], [6,3], [6,4], [6,5]] },
+                    { word: 'PINK', positions: [[9,0], [9,1], [9,2], [9,3]] },
+                    { word: 'YELLOW', positions: [[10,1], [10,2], [10,3], [10,4], [10,5], [10,6]] }
+                ]
+            },
+            // Level 3 - Crossword: Animals
+            {
+                type: 'crossword',
+                theme: 'Animals',
+                size: 10,
+                grid: [
+                    ['.', '.', 'L', 'I', 'O', 'N', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['T', 'I', 'G', 'E', 'R', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'L', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'E', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'B', 'E', 'A', 'R', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'N', '.', '.', '.', '.', '.', '.'],
+                    ['W', 'O', 'L', 'F', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "King of the jungle (4)", row: 0, col: 2 },
+                        { num: 2, clue: "Striped big cat (5)", row: 2, col: 0 },
+                        { num: 4, clue: "Large mammal that hibernates (4)", row: 5, col: 1 },
+                        { num: 6, clue: "Pack animal that howls (4)", row: 7, col: 0 }
+                    ],
+                    down: [
+                        { num: 3, clue: "Largest land animal (8)", row: 2, col: 3 }
+                    ]
+                }
+            },
+            // Level 4 - Word Search: Fruits
+            {
+                type: 'wordsearch',
+                theme: 'Fruits',
+                size: 10,
+                grid: [
+                    ['A', 'P', 'P', 'L', 'E', 'X', 'Y', 'Z', 'A', 'B'],
+                    ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
+                    ['O', 'R', 'A', 'N', 'G', 'E', 'L', 'M', 'N', 'O'],
+                    ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'],
+                    ['B', 'A', 'N', 'A', 'N', 'A', 'Z', 'A', 'B', 'C'],
+                    ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
+                    ['G', 'R', 'A', 'P', 'E', 'N', 'O', 'P', 'Q', 'R'],
+                    ['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B'],
+                    ['M', 'A', 'N', 'G', 'O', 'C', 'D', 'E', 'F', 'G'],
+                    ['H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+                ],
+                words: ['APPLE', 'ORANGE', 'BANANA', 'GRAPE', 'MANGO'],
+                solutions: [
+                    { word: 'APPLE', positions: [[0,0], [0,1], [0,2], [0,3], [0,4]] },
+                    { word: 'ORANGE', positions: [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5]] },
+                    { word: 'BANANA', positions: [[4,0], [4,1], [4,2], [4,3], [4,4], [4,5]] },
+                    { word: 'GRAPE', positions: [[6,0], [6,1], [6,2], [6,3], [6,4]] },
+                    { word: 'MANGO', positions: [[8,0], [8,1], [8,2], [8,3], [8,4]] }
+                ]
+            },
+            // Level 5 - Crossword: Planets
+            {
+                type: 'crossword',
+                theme: 'Solar System',
+                size: 10,
+                grid: [
+                    ['.', '.', 'M', 'A', 'R', 'S', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['V', 'E', 'N', 'U', 'S', '.', '.', '.', '.', '.'],
+                    ['.', 'A', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'R', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'T', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'H', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Red planet (4)", row: 0, col: 2 },
+                        { num: 3, clue: "Hottest planet (5)", row: 2, col: 0 }
+                    ],
+                    down: [
+                        { num: 2, clue: "Our home planet (5)", row: 2, col: 1 }
+                    ]
+                }
+            },
+            // Level 6 - Word Search: Sports
+            {
+                type: 'wordsearch',
+                theme: 'Sports',
+                size: 10,
+                grid: [
+                    ['S', 'O', 'C', 'C', 'E', 'R', 'X', 'Y', 'Z', 'A'],
+                    ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
+                    ['T', 'E', 'N', 'N', 'I', 'S', 'L', 'M', 'N', 'O'],
+                    ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'],
+                    ['G', 'O', 'L', 'F', 'Z', 'A', 'B', 'C', 'D', 'E'],
+                    ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'],
+                    ['R', 'U', 'G', 'B', 'Y', 'P', 'Q', 'R', 'S', 'T'],
+                    ['U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D'],
+                    ['H', 'O', 'C', 'K', 'E', 'Y', 'E', 'F', 'G', 'H'],
+                    ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R']
+                ],
+                words: ['SOCCER', 'TENNIS', 'GOLF', 'RUGBY', 'HOCKEY'],
+                solutions: [
+                    { word: 'SOCCER', positions: [[0,0], [0,1], [0,2], [0,3], [0,4], [0,5]] },
+                    { word: 'TENNIS', positions: [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5]] },
+                    { word: 'GOLF', positions: [[4,0], [4,1], [4,2], [4,3]] },
+                    { word: 'RUGBY', positions: [[6,0], [6,1], [6,2], [6,3], [6,4]] },
+                    { word: 'HOCKEY', positions: [[8,0], [8,1], [8,2], [8,3], [8,4], [8,5]] }
+                ]
+            },
+            // Level 7 - Crossword: Science
+            {
+                type: 'crossword',
+                theme: 'Science',
+                size: 10,
+                grid: [
+                    ['.', 'A', 'T', 'O', 'M', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['C', 'E', 'L', 'L', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'N', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'E', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'R', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'G', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', 'Y', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Smallest unit of matter (4)", row: 0, col: 1 },
+                        { num: 3, clue: "Basic unit of life (4)", row: 2, col: 0 }
+                    ],
+                    down: [
+                        { num: 2, clue: "Capacity to do work (6)", row: 0, col: 1 }
+                    ]
+                }
+            },
+            // Level 8 - Word Search: Countries
+            {
+                type: 'wordsearch',
+                theme: 'Countries',
+                size: 10,
+                grid: [
+                    ['C', 'H', 'I', 'N', 'A', 'X', 'Y', 'Z', 'A', 'B'],
+                    ['I', 'N', 'D', 'I', 'A', 'C', 'D', 'E', 'F', 'G'],
+                    ['H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'],
+                    ['J', 'A', 'P', 'A', 'N', 'R', 'S', 'T', 'U', 'V'],
+                    ['W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F'],
+                    ['F', 'R', 'A', 'N', 'C', 'E', 'G', 'H', 'I', 'J'],
+                    ['K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T'],
+                    ['I', 'T', 'A', 'L', 'Y', 'U', 'V', 'W', 'X', 'Y'],
+                    ['Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
+                    ['J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S']
+                ],
+                words: ['CHINA', 'INDIA', 'JAPAN', 'FRANCE', 'ITALY'],
+                solutions: [
+                    { word: 'CHINA', positions: [[0,0], [0,1], [0,2], [0,3], [0,4]] },
+                    { word: 'INDIA', positions: [[1,0], [1,1], [1,2], [1,3], [1,4]] },
+                    { word: 'JAPAN', positions: [[3,0], [3,1], [3,2], [3,3], [3,4]] },
+                    { word: 'FRANCE', positions: [[5,0], [5,1], [5,2], [5,3], [5,4], [5,5]] },
+                    { word: 'ITALY', positions: [[7,0], [7,1], [7,2], [7,3], [7,4]] }
+                ]
+            },
+            // Level 9 - Crossword: Music
+            {
+                type: 'crossword',
+                theme: 'Music',
+                size: 10,
+                grid: [
+                    ['.', 'D', 'R', 'U', 'M', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['F', 'L', 'U', 'T', 'E', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['P', 'I', 'A', 'N', 'O', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Percussion instrument (4)", row: 0, col: 1 },
+                        { num: 2, clue: "Wind instrument (5)", row: 2, col: 0 },
+                        { num: 3, clue: "Keyboard instrument (5)", row: 4, col: 0 }
+                    ],
+                    down: []
+                }
+            },
+            // Level 10 - Word Search: Vegetables
+            {
+                type: 'wordsearch',
+                theme: 'Vegetables',
+                size: 10,
+                grid: [
+                    ['C', 'A', 'R', 'R', 'O', 'T', 'X', 'Y', 'Z', 'A'],
+                    ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
+                    ['T', 'O', 'M', 'A', 'T', 'O', 'L', 'M', 'N', 'O'],
+                    ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'],
+                    ['P', 'O', 'T', 'A', 'T', 'O', 'Z', 'A', 'B', 'C'],
+                    ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
+                    ['L', 'E', 'T', 'T', 'U', 'C', 'E', 'N', 'O', 'P'],
+                    ['Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                    ['O', 'N', 'I', 'O', 'N', 'A', 'B', 'C', 'D', 'E'],
+                    ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
+                ],
+                words: ['CARROT', 'TOMATO', 'POTATO', 'LETTUCE', 'ONION'],
+                solutions: [
+                    { word: 'CARROT', positions: [[0,0], [0,1], [0,2], [0,3], [0,4], [0,5]] },
+                    { word: 'TOMATO', positions: [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5]] },
+                    { word: 'POTATO', positions: [[4,0], [4,1], [4,2], [4,3], [4,4], [4,5]] },
+                    { word: 'LETTUCE', positions: [[6,0], [6,1], [6,2], [6,3], [6,4], [6,5], [6,6]] },
+                    { word: 'ONION', positions: [[8,0], [8,1], [8,2], [8,3], [8,4]] }
+                ]
+            },
+            // Level 11 - Crossword: Weather
+            {
+                type: 'crossword',
+                theme: 'Weather',
+                size: 10,
+                grid: [
+                    ['.', 'R', 'A', 'I', 'N', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['S', 'N', 'O', 'W', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['W', 'I', 'N', 'D', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Water falling from clouds (4)", row: 0, col: 1 },
+                        { num: 2, clue: "Frozen precipitation (4)", row: 2, col: 0 },
+                        { num: 3, clue: "Moving air (4)", row: 4, col: 0 }
+                    ],
+                    down: []
+                }
+            },
+            // Level 12 - Word Search: Oceans
+            {
+                type: 'wordsearch',
+                theme: 'Oceans',
+                size: 10,
+                grid: [
+                    ['P', 'A', 'C', 'I', 'F', 'I', 'C', 'X', 'Y', 'Z'],
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+                    ['A', 'T', 'L', 'A', 'N', 'T', 'I', 'C', 'K', 'L'],
+                    ['M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'],
+                    ['I', 'N', 'D', 'I', 'A', 'N', 'W', 'X', 'Y', 'Z'],
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+                    ['A', 'R', 'C', 'T', 'I', 'C', 'K', 'L', 'M', 'N'],
+                    ['O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'],
+                    ['Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+                    ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R']
+                ],
+                words: ['PACIFIC', 'ATLANTIC', 'INDIAN', 'ARCTIC'],
+                solutions: [
+                    { word: 'PACIFIC', positions: [[0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6]] },
+                    { word: 'ATLANTIC', positions: [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5], [2,6], [2,7]] },
+                    { word: 'INDIAN', positions: [[4,0], [4,1], [4,2], [4,3], [4,4], [4,5]] },
+                    { word: 'ARCTIC', positions: [[6,0], [6,1], [6,2], [6,3], [6,4], [6,5]] }
+                ]
+            },
+            // Level 13 - Crossword: Food
+            {
+                type: 'crossword',
+                theme: 'Food',
+                size: 10,
+                grid: [
+                    ['.', 'B', 'R', 'E', 'A', 'D', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['P', 'A', 'S', 'T', 'A', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['R', 'I', 'C', 'E', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Baked food from flour (5)", row: 0, col: 1 },
+                        { num: 2, clue: "Italian noodles (5)", row: 2, col: 0 },
+                        { num: 3, clue: "Common Asian grain (4)", row: 4, col: 0 }
+                    ],
+                    down: []
+                }
+            },
+            // Level 14 - Word Search: Trees
+            {
+                type: 'wordsearch',
+                theme: 'Trees',
+                size: 10,
+                grid: [
+                    ['O', 'A', 'K', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D'],
+                    ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'],
+                    ['P', 'I', 'N', 'E', 'O', 'P', 'Q', 'R', 'S', 'T'],
+                    ['U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D'],
+                    ['M', 'A', 'P', 'L', 'E', 'E', 'F', 'G', 'H', 'I'],
+                    ['J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S'],
+                    ['B', 'I', 'R', 'C', 'H', 'T', 'U', 'V', 'W', 'X'],
+                    ['Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+                    ['W', 'I', 'L', 'L', 'O', 'W', 'I', 'J', 'K', 'L'],
+                    ['M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V']
+                ],
+                words: ['OAK', 'PINE', 'MAPLE', 'BIRCH', 'WILLOW'],
+                solutions: [
+                    { word: 'OAK', positions: [[0,0], [0,1], [0,2]] },
+                    { word: 'PINE', positions: [[2,0], [2,1], [2,2], [2,3]] },
+                    { word: 'MAPLE', positions: [[4,0], [4,1], [4,2], [4,3], [4,4]] },
+                    { word: 'BIRCH', positions: [[6,0], [6,1], [6,2], [6,3], [6,4]] },
+                    { word: 'WILLOW', positions: [[8,0], [8,1], [8,2], [8,3], [8,4], [8,5]] }
+                ]
+            },
+            // Level 15 - Crossword: Body Parts
+            {
+                type: 'crossword',
+                theme: 'Body Parts',
+                size: 10,
+                grid: [
+                    ['.', 'H', 'E', 'A', 'D', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['A', 'R', 'M', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['L', 'E', 'G', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Top of the body (4)", row: 0, col: 1 },
+                        { num: 2, clue: "Upper limb (3)", row: 2, col: 0 },
+                        { num: 3, clue: "Lower limb (3)", row: 4, col: 0 }
+                    ],
+                    down: []
+                }
+            },
+            // Level 16 - Word Search: Birds
+            {
+                type: 'wordsearch',
+                theme: 'Birds',
+                size: 10,
+                grid: [
+                    ['E', 'A', 'G', 'L', 'E', 'X', 'Y', 'Z', 'A', 'B'],
+                    ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'],
+                    ['R', 'O', 'B', 'I', 'N', 'M', 'N', 'O', 'P', 'Q'],
+                    ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A'],
+                    ['S', 'P', 'A', 'R', 'R', 'O', 'W', 'B', 'C', 'D'],
+                    ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'],
+                    ['C', 'R', 'O', 'W', 'O', 'P', 'Q', 'R', 'S', 'T'],
+                    ['U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D'],
+                    ['P', 'I', 'G', 'E', 'O', 'N', 'E', 'F', 'G', 'H'],
+                    ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R']
+                ],
+                words: ['EAGLE', 'ROBIN', 'SPARROW', 'CROW', 'PIGEON'],
+                solutions: [
+                    { word: 'EAGLE', positions: [[0,0], [0,1], [0,2], [0,3], [0,4]] },
+                    { word: 'ROBIN', positions: [[2,0], [2,1], [2,2], [2,3], [2,4]] },
+                    { word: 'SPARROW', positions: [[4,0], [4,1], [4,2], [4,3], [4,4], [4,5], [4,6]] },
+                    { word: 'CROW', positions: [[6,0], [6,1], [6,2], [6,3]] },
+                    { word: 'PIGEON', positions: [[8,0], [8,1], [8,2], [8,3], [8,4], [8,5]] }
+                ]
+            },
+            // Level 17 - Crossword: Transportation
+            {
+                type: 'crossword',
+                theme: 'Transportation',
+                size: 10,
+                grid: [
+                    ['.', 'C', 'A', 'R', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['B', 'U', 'S', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['T', 'R', 'A', 'I', 'N', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Personal vehicle (3)", row: 0, col: 1 },
+                        { num: 2, clue: "Public transport vehicle (3)", row: 2, col: 0 },
+                        { num: 3, clue: "Runs on tracks (5)", row: 4, col: 0 }
+                    ],
+                    down: []
+                }
+            },
+            // Level 18 - Word Search: Metals
+            {
+                type: 'wordsearch',
+                theme: 'Metals',
+                size: 10,
+                grid: [
+                    ['G', 'O', 'L', 'D', 'X', 'Y', 'Z', 'A', 'B', 'C'],
+                    ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
+                    ['S', 'I', 'L', 'V', 'E', 'R', 'N', 'O', 'P', 'Q'],
+                    ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A'],
+                    ['I', 'R', 'O', 'N', 'B', 'C', 'D', 'E', 'F', 'G'],
+                    ['H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'],
+                    ['C', 'O', 'P', 'P', 'E', 'R', 'R', 'S', 'T', 'U'],
+                    ['V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D', 'E'],
+                    ['Z', 'I', 'N', 'C', 'F', 'G', 'H', 'I', 'J', 'K'],
+                    ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U']
+                ],
+                words: ['GOLD', 'SILVER', 'IRON', 'COPPER', 'ZINC'],
+                solutions: [
+                    { word: 'GOLD', positions: [[0,0], [0,1], [0,2], [0,3]] },
+                    { word: 'SILVER', positions: [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5]] },
+                    { word: 'IRON', positions: [[4,0], [4,1], [4,2], [4,3]] },
+                    { word: 'COPPER', positions: [[6,0], [6,1], [6,2], [6,3], [6,4], [6,5]] },
+                    { word: 'ZINC', positions: [[8,0], [8,1], [8,2], [8,3]] }
+                ]
+            },
+            // Level 19 - Crossword: Professions
+            {
+                type: 'crossword',
+                theme: 'Professions',
+                size: 10,
+                grid: [
+                    ['D', 'O', 'C', 'T', 'O', 'R', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'E', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'A', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'C', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'H', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'E', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', 'R', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                    ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
+                ],
+                clues: {
+                    across: [
+                        { num: 1, clue: "Medical professional (6)", row: 0, col: 0 }
+                    ],
+                    down: [
+                        { num: 2, clue: "Educates students (7)", row: 0, col: 3 }
+                    ]
+                }
+            },
+            // Level 20 - Word Search: Continents
+            {
+                type: 'wordsearch',
+                theme: 'Continents',
+                size: 10,
+                grid: [
+                    ['A', 'S', 'I', 'A', 'X', 'Y', 'Z', 'A', 'B', 'C'],
+                    ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
+                    ['A', 'F', 'R', 'I', 'C', 'A', 'N', 'O', 'P', 'Q'],
+                    ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A'],
+                    ['E', 'U', 'R', 'O', 'P', 'E', 'B', 'C', 'D', 'E'],
+                    ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'],
+                    ['A', 'U', 'S', 'T', 'R', 'A', 'L', 'I', 'A', 'P'],
+                    ['Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+                    ['K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+                ],
+                words: ['ASIA', 'AFRICA', 'EUROPE', 'AUSTRALIA'],
+                solutions: [
+                    { word: 'ASIA', positions: [[0,0], [0,1], [0,2], [0,3]] },
+                    { word: 'AFRICA', positions: [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5]] },
+                    { word: 'EUROPE', positions: [[4,0], [4,1], [4,2], [4,3], [4,4], [4,5]] },
+                    { word: 'AUSTRALIA', positions: [[6,0], [6,1], [6,2], [6,3], [6,4], [6,5], [6,6], [6,7], [6,8]] }
+                ]
+            }
         ];
 
-        // Mapping Clue Numbers to [Row, Col]
-        const clueNumbers = {
-            "0,2": "6",  // CASFORD
-            "2,2": "9",  // SOCIAL
-            "3,1": "2",  // ENTROPY
-            "3,10": "8", // MARKETPLACE
-            "4,7": "1",  // LUBAN
-            "5,3": "4",  // TOURISM
-            "6,2": "5",  // DONE
-            "7,8": "10", // ANALYTICS
-            "8,1": "3",  // PEREGRINATION
-            "14,2": "7"  // PHARMACY
-        };
+        // ======== GAME STATE ========
+        let currentLevel = 0;
+        let selectedCells = [];
+        let foundWords = new Set();
+        
+        // ======== LOCAL STORAGE ========
+        function saveProgress() {
+            const progress = {
+                currentLevel: currentLevel,
+                completedLevels: Array.from(getCompletedLevels())
+            };
+            localStorage.setItem('puzzleGameProgress', JSON.stringify(progress));
+        }
 
-        function createGrid() {
-            const container = document.getElementById('crossword-grid');
-            container.innerHTML = ''; // Clear existing
+        function loadProgress() {
+            const saved = localStorage.getItem('puzzleGameProgress');
+            if (saved) {
+                const progress = JSON.parse(saved);
+                currentLevel = progress.currentLevel || 0;
+                if (progress.completedLevels) {
+                    progress.completedLevels.forEach(level => {
+                        localStorage.setItem(`level_${level}_completed`, 'true');
+                    });
+                }
+            }
+        }
 
-            for (let r = 0; r < 15; r++) {
-                for (let c = 0; c < 15; c++) {
-                    const cellVal = solutionGrid[r][c];
+        function getCompletedLevels() {
+            const completed = new Set();
+            for (let i = 0; i < PUZZLES.length; i++) {
+                if (localStorage.getItem(`level_${i}_completed`) === 'true') {
+                    completed.add(i);
+                }
+            }
+            return completed;
+        }
+
+        function markLevelComplete(level) {
+            localStorage.setItem(`level_${level}_completed`, 'true');
+            saveProgress();
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                localStorage.clear();
+                currentLevel = 0;
+                foundWords.clear();
+                selectedCells = [];
+                initGame();
+            }
+        }
+
+        // ======== UI UPDATES ========
+        function updateUI() {
+            document.getElementById('current-level-display').textContent = currentLevel + 1;
+            const puzzle = PUZZLES[currentLevel];
+            document.getElementById('puzzle-type').textContent = puzzle.type.toUpperCase();
+            document.getElementById('theme-display').textContent = puzzle.theme.toUpperCase();
+            
+            const completed = getCompletedLevels();
+            const percentage = Math.round((completed.size / PUZZLES.length) * 100);
+            document.getElementById('completion-display').textContent = `${percentage}% COMPLETE`;
+        }
+
+        function createLevelSelector() {
+            const container = document.getElementById('level-selector');
+            container.innerHTML = '';
+            const completed = getCompletedLevels();
+            
+            for (let i = 0; i < PUZZLES.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.textContent = i + 1;
+                
+                if (completed.has(i)) {
+                    btn.classList.add('completed');
+                }
+                if (i === currentLevel) {
+                    btn.classList.add('active');
+                }
+                
+                btn.onclick = () => loadLevel(i);
+                container.appendChild(btn);
+            }
+        }
+
+        // ======== CROSSWORD FUNCTIONS ========
+        function createCrossword(puzzle) {
+            const container = document.getElementById('puzzle-grid');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${puzzle.size}, 1fr)`;
+            
+            for (let r = 0; r < puzzle.size; r++) {
+                for (let c = 0; c < puzzle.size; c++) {
+                    const cellVal = puzzle.grid[r][c];
                     const cellWrapper = document.createElement('div');
                     cellWrapper.className = 'relative w-full aspect-square';
 
                     if (cellVal === '.') {
-                        // Blocked Cell
                         const block = document.createElement('div');
                         block.className = 'grid-input blocked';
                         cellWrapper.appendChild(block);
                     } else {
-                        // Input Cell
                         const input = document.createElement('input');
                         input.className = 'grid-input';
                         input.maxLength = 1;
@@ -239,15 +867,14 @@
                         input.dataset.col = c;
                         input.dataset.answer = cellVal;
                         
-                        // Auto-navigation logic
-                        input.onkeyup = (e) => handleInput(e, r, c);
+                        input.onkeyup = (e) => handleCrosswordInput(e, r, c);
 
-                        // Add Clue Number if it exists
-                        const key = `${r},${c}`;
-                        if (clueNumbers[key]) {
+                        // Add clue numbers
+                        const clueNum = findClueNumber(puzzle, r, c);
+                        if (clueNum) {
                             const num = document.createElement('span');
                             num.className = 'cell-number';
-                            num.innerText = clueNumbers[key];
+                            num.innerText = clueNum;
                             cellWrapper.appendChild(num);
                         }
 
@@ -258,15 +885,17 @@
             }
         }
 
-        // Basic Auto-focus navigation
-        function handleInput(e, r, c) {
+        function findClueNumber(puzzle, row, col) {
+            const across = puzzle.clues.across.find(c => c.row === row && c.col === col);
+            const down = puzzle.clues.down.find(c => c.row === row && c.col === col);
+            return across ? across.num : (down ? down.num : null);
+        }
+
+        function handleCrosswordInput(e, r, c) {
             const current = e.target;
-            // If letter typed, move next
             if (current.value.length === 1 && e.key.match(/[a-zA-Z]/)) {
-                // Try moving right first, if blocked, try down
                 moveFocus(r, c + 1) || moveFocus(r + 1, c);
             }
-            // If backspace, move back
             if (e.key === 'Backspace') {
                 moveFocus(r, c - 1) || moveFocus(r - 1, c);
             }
@@ -281,37 +910,309 @@
             return false;
         }
 
-        function checkPuzzle() {
-            const inputs = document.querySelectorAll('input.grid-input');
-            let correct = true;
+        function createCrosswordClues(puzzle) {
+            const panel = document.getElementById('clues-panel');
+            panel.innerHTML = '';
             
-            inputs.forEach(input => {
-                if (input.value.toUpperCase() !== input.dataset.answer) {
-                    correct = false;
-                    input.style.borderColor = 'red';
-                    input.style.color = 'red';
-                } else {
-                    input.style.borderColor = '#00FFFF';
-                    input.style.color = '#00FFFF';
-                }
-            });
-
-            if (correct) {
-                alert("ACCESS GRANTED. INTEL DECRYPTED. 🦅");
-            } else {
-                // Subtle shake effect logic could go here
-                alert("DECRYPTION FAILED. RE-CALIBRATE.");
+            if (puzzle.clues.across.length > 0) {
+                const acrossDiv = document.createElement('div');
+                acrossDiv.className = 'glass p-5 rounded-lg border-t-4 border-t-cyan-500';
+                acrossDiv.innerHTML = `
+                    <h2 class="font-display text-xl text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-arrows-left-right text-cyan-400 text-sm"></i> ACROSS
+                    </h2>
+                    <div class="space-y-3 text-xs text-gray-300 font-mono h-48 overflow-y-auto pr-2">
+                        ${puzzle.clues.across.map(clue => `
+                            <div class="clue-item p-1.5 rounded">
+                                <span class="font-bold text-cyan-400">${clue.num}.</span> ${clue.clue}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                panel.appendChild(acrossDiv);
+            }
+            
+            if (puzzle.clues.down.length > 0) {
+                const downDiv = document.createElement('div');
+                downDiv.className = 'glass p-5 rounded-lg border-t-4 border-t-amber-500';
+                downDiv.innerHTML = `
+                    <h2 class="font-display text-xl text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-arrows-up-down text-amber-400 text-sm"></i> DOWN
+                    </h2>
+                    <div class="space-y-3 text-xs text-gray-300 font-mono h-48 overflow-y-auto pr-2">
+                        ${puzzle.clues.down.map(clue => `
+                            <div class="clue-item p-1.5 rounded">
+                                <span class="font-bold text-amber-400">${clue.num}.</span> ${clue.clue}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                panel.appendChild(downDiv);
             }
         }
 
-        function solvePuzzle() {
-            const inputs = document.querySelectorAll('input.grid-input');
-            inputs.forEach(input => {
-                input.value = input.dataset.answer;
+        // ======== WORD SEARCH FUNCTIONS ========
+        function createWordSearch(puzzle) {
+            const container = document.getElementById('puzzle-grid');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${puzzle.size}, 1fr)`;
+            foundWords.clear();
+            
+            for (let r = 0; r < puzzle.size; r++) {
+                for (let c = 0; c < puzzle.size; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'ws-cell';
+                    cell.textContent = puzzle.grid[r][c];
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    cell.addEventListener('mousedown', () => startSelection(r, c));
+                    cell.addEventListener('mouseenter', () => continueSelection(r, c));
+                    cell.addEventListener('mouseup', endSelection);
+                    
+                    container.appendChild(cell);
+                }
+            }
+            
+            document.addEventListener('mouseup', endSelection);
+        }
+
+        function createWordList(puzzle) {
+            const panel = document.getElementById('clues-panel');
+            panel.innerHTML = `
+                <div class="glass p-5 rounded-lg border-t-4 border-t-cyan-500">
+                    <h2 class="font-display text-xl text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-search text-cyan-400 text-sm"></i> FIND THESE WORDS
+                    </h2>
+                    <div class="space-y-2 text-sm text-gray-300 font-mono">
+                        ${puzzle.words.map(word => `
+                            <div class="word-list-item" data-word="${word}">
+                                ${word}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let isSelecting = false;
+
+        function startSelection(r, c) {
+            isSelecting = true;
+            selectedCells = [[r, c]];
+            updateSelection();
+        }
+
+        function continueSelection(r, c) {
+            if (!isSelecting) return;
+            
+            const last = selectedCells[selectedCells.length - 1];
+            if (last[0] === r && last[1] === c) return;
+            
+            // Only allow straight lines (horizontal, vertical, diagonal)
+            if (selectedCells.length === 1 || isAligned(selectedCells[0], [r, c], selectedCells[1])) {
+                selectedCells.push([r, c]);
+                updateSelection();
+            }
+        }
+
+        function isAligned(start, current, second) {
+            const dr1 = second[0] - start[0];
+            const dc1 = second[1] - start[1];
+            const dr2 = current[0] - start[0];
+            const dc2 = current[1] - start[1];
+            
+            // Check if same direction
+            const ratio = dr1 !== 0 ? dr2 / dr1 : (dc1 !== 0 ? dc2 / dc1 : 0);
+            return ratio >= 0 && (dr1 === 0 || dr2 / dr1 === (dc1 === 0 ? 0 : dc2 / dc1));
+        }
+
+        function updateSelection() {
+            document.querySelectorAll('.ws-cell').forEach(cell => {
+                if (!cell.classList.contains('found')) {
+                    cell.classList.remove('selected');
+                }
+            });
+            
+            selectedCells.forEach(([r, c]) => {
+                const cell = document.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`);
+                if (cell && !cell.classList.contains('found')) {
+                    cell.classList.add('selected');
+                }
             });
         }
 
-        window.onload = createGrid;
+        function endSelection() {
+            if (!isSelecting) return;
+            isSelecting = false;
+            
+            const puzzle = PUZZLES[currentLevel];
+            const selectedWord = selectedCells.map(([r, c]) => puzzle.grid[r][c]).join('');
+            
+            // Check if word matches any solution
+            const solution = puzzle.solutions.find(sol => {
+                const word = sol.word;
+                const positions = sol.positions;
+                
+                // Check forward
+                if (selectedWord === word && JSON.stringify(selectedCells) === JSON.stringify(positions)) {
+                    return true;
+                }
+                
+                // Check backward
+                const reversed = selectedWord.split('').reverse().join('');
+                const reversedPos = [...selectedCells].reverse();
+                if (reversed === word && JSON.stringify(reversedPos) === JSON.stringify(positions)) {
+                    return true;
+                }
+                
+                return false;
+            });
+            
+            if (solution && !foundWords.has(solution.word)) {
+                foundWords.add(solution.word);
+                markWordFound(solution);
+                checkWordSearchComplete();
+            } else {
+                // Clear selection if not a valid word
+                selectedCells = [];
+                updateSelection();
+            }
+        }
+
+        function markWordFound(solution) {
+            solution.positions.forEach(([r, c]) => {
+                const cell = document.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`);
+                if (cell) {
+                    cell.classList.remove('selected');
+                    cell.classList.add('found');
+                }
+            });
+            
+            const wordItem = document.querySelector(`.word-list-item[data-word="${solution.word}"]`);
+            if (wordItem) {
+                wordItem.classList.add('found');
+            }
+            
+            selectedCells = [];
+        }
+
+        function checkWordSearchComplete() {
+            const puzzle = PUZZLES[currentLevel];
+            if (foundWords.size === puzzle.words.length) {
+                setTimeout(() => {
+                    alert('🎉 Level Complete! All words found!');
+                    markLevelComplete(currentLevel);
+                    createLevelSelector();
+                    if (currentLevel < PUZZLES.length - 1) {
+                        nextLevel();
+                    } else {
+                        alert('🏆 Congratulations! You\'ve completed all 20 levels!');
+                    }
+                }, 300);
+            }
+        }
+
+        // ======== PUZZLE VALIDATION ========
+        function checkPuzzle() {
+            const puzzle = PUZZLES[currentLevel];
+            
+            if (puzzle.type === 'crossword') {
+                const inputs = document.querySelectorAll('input.grid-input');
+                let correct = true;
+                
+                inputs.forEach(input => {
+                    if (input.value.toUpperCase() !== input.dataset.answer) {
+                        correct = false;
+                        input.style.borderColor = 'red';
+                        input.style.color = 'red';
+                    } else {
+                        input.style.borderColor = '#00FFFF';
+                        input.style.color = '#00FFFF';
+                    }
+                });
+
+                if (correct && inputs.length > 0) {
+                    setTimeout(() => {
+                        alert('🎉 Level Complete! Puzzle solved correctly!');
+                        markLevelComplete(currentLevel);
+                        createLevelSelector();
+                        if (currentLevel < PUZZLES.length - 1) {
+                            nextLevel();
+                        } else {
+                            alert('🏆 Congratulations! You\'ve completed all 20 levels!');
+                        }
+                    }, 100);
+                } else if (!correct) {
+                    alert('Some answers are incorrect. Keep trying!');
+                }
+            } else {
+                // Word search - just show status
+                const remaining = puzzle.words.length - foundWords.size;
+                if (remaining > 0) {
+                    alert(`You've found ${foundWords.size} out of ${puzzle.words.length} words. ${remaining} remaining!`);
+                }
+            }
+        }
+
+        function revealPuzzle() {
+            const puzzle = PUZZLES[currentLevel];
+            
+            if (puzzle.type === 'crossword') {
+                const inputs = document.querySelectorAll('input.grid-input');
+                inputs.forEach(input => {
+                    input.value = input.dataset.answer;
+                });
+            } else {
+                // Reveal all words in word search
+                puzzle.solutions.forEach(solution => {
+                    if (!foundWords.has(solution.word)) {
+                        foundWords.add(solution.word);
+                        markWordFound(solution);
+                    }
+                });
+            }
+        }
+
+        // ======== LEVEL NAVIGATION ========
+        function loadLevel(level) {
+            currentLevel = level;
+            const puzzle = PUZZLES[currentLevel];
+            
+            updateUI();
+            
+            if (puzzle.type === 'crossword') {
+                createCrossword(puzzle);
+                createCrosswordClues(puzzle);
+            } else {
+                createWordSearch(puzzle);
+                createWordList(puzzle);
+            }
+            
+            createLevelSelector();
+            saveProgress();
+        }
+
+        function nextLevel() {
+            if (currentLevel < PUZZLES.length - 1) {
+                loadLevel(currentLevel + 1);
+            }
+        }
+
+        function previousLevel() {
+            if (currentLevel > 0) {
+                loadLevel(currentLevel - 1);
+            }
+        }
+
+        // ======== INITIALIZATION ========
+        function initGame() {
+            loadProgress();
+            createLevelSelector();
+            loadLevel(currentLevel);
+        }
+
+        window.onload = initGame;
     </script>
 </body>
 </html>
