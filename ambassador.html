@@ -345,8 +345,9 @@
                             document.getElementById('profile-name').innerText = userData.name;
                             document.getElementById('profile-email').innerText = userData.email || user.email;
                             
-                            // Set initials
-                            const initials = userData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                            // Set initials - handle edge cases
+                            const nameParts = userData.name.split(' ').filter(n => n.trim().length > 0);
+                            const initials = nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'A';
                             document.getElementById('profile-initials').innerText = initials;
                             
                             this.switchTab('profile');

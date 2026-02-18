@@ -1265,24 +1265,12 @@
                 if (!appDoc.exists()) return;
                 
                 const app = appDoc.data();
-                alert(`
-Application Details:
-
-Name: ${app.name}
-Email: ${app.email}
-Phone: ${app.phone}
-University: ${app.university}
-Year: ${app.year}
-Field: ${app.field}
-
-Motivation:
-${app.motivation}
-
-Experience:
-${app.experience || 'Not provided'}
-
-Social Media: ${app.social || 'Not provided'}
-                `.trim());
+                const details = `Application Details:\n\nName: ${app.name}\nEmail: ${app.email}\nPhone: ${app.phone}\nUniversity: ${app.university}\nYear: ${app.year}\nField: ${app.field}\n\nMotivation:\n${app.motivation}\n\nExperience:\n${app.experience || 'Not provided'}\n\nSocial Media: ${app.social || 'Not provided'}`;
+                
+                // Use confirm dialog with better formatting
+                if (confirm(details + '\n\n---\nPress OK to close')) {
+                    // User acknowledged
+                }
             },
 
             async approveApplication(appId, email, name) {
@@ -1300,6 +1288,9 @@ Social Media: ${app.social || 'Not provided'}
                     const userSnap = await getDocs(usersQuery);
                     
                     if (!userSnap.empty) {
+                        if (userSnap.docs.length > 1) {
+                            console.warn(`Multiple users found with email ${email}. Promoting first match.`);
+                        }
                         const userDoc = userSnap.docs[0];
                         await updateDoc(doc(db, "users", userDoc.id), { role: 'ambassador' });
                         await this.logAction('AMBASSADOR_APPROVED', `Promoted ${name} (${email}) to ambassador`);
