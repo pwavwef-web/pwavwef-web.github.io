@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner - Ambassador Portal</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        ambassadorPurple: '#9333EA'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col text-white">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-purple-500/30">
+            <div class="text-5xl mb-4">🎓</div>
+            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 mb-2">Ambassador Portal</h1>
+            <p class="text-sm text-gray-400 mb-6">AZ Learner • Leadership Access</p>
+            <input type="email" id="login-email" placeholder="Ambassador Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-purple-400 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-purple-400 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/50 active:scale-95 transition-all mb-4">
+                Sign In 🔓
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+            <p class="text-xs text-gray-500 mt-4">
+                <a href="index.html" class="text-purple-400 hover:underline">← Back to Home</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-content" class="hidden flex-1 flex flex-col">
+        <!-- Header -->
+        <div class="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700 px-6 py-4 flex justify-between items-center shadow-lg sticky top-0 z-10">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
+                    AZ AMBASSADOR
+                </h1>
+                <p id="ambassador-name" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-700 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Logout <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-gray-800/50 border-b border-gray-700 px-6 py-2 overflow-x-auto flex gap-3">
+            <button onclick="app.switchTab('profile')" id="tab-profile"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-user mr-2"></i>Profile
+            </button>
+            <button onclick="app.switchTab('programs')" id="tab-programs"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-calendar-days mr-2"></i>Programs
+            </button>
+            <button onclick="app.switchTab('courses')" id="tab-courses"
+                class="tab-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-book mr-2"></i>Courses
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+            
+            <!-- Profile Tab -->
+            <div id="view-profile" class="tab-view space-y-6">
+                <div class="bg-gradient-to-br from-purple-900/40 to-gray-800 p-6 rounded-xl border border-purple-500/30 shadow-lg">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-3xl font-black text-white">
+                            <span id="profile-initials">A</span>
+                        </div>
+                        <div>
+                            <h2 id="profile-name" class="text-2xl font-black text-white">Ambassador</h2>
+                            <p id="profile-email" class="text-sm text-gray-400">ambassador@email.com</p>
+                            <span class="inline-block mt-1 px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">
+                                Ambassador
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-purple-400"></i>
+                            Your Impact
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 text-sm">Events Attended</span>
+                                <span id="stats-events" class="text-2xl font-bold text-purple-400">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 text-sm">Students Reached</span>
+                                <span id="stats-students" class="text-2xl font-bold text-blue-400">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 text-sm">Hours Contributed</span>
+                                <span id="stats-hours" class="text-2xl font-bold text-orange-400">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-award text-orange-400"></i>
+                            Achievements
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3 p-2 bg-gray-700/50 rounded-lg">
+                                <div class="text-2xl">🎯</div>
+                                <div>
+                                    <p class="text-sm font-semibold text-white">Welcome Aboard!</p>
+                                    <p class="text-xs text-gray-400">Joined the ambassador program</p>
+                                </div>
+                            </div>
+                            <div id="achievements-list" class="text-sm text-gray-500 text-center py-4">
+                                More achievements coming soon...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                        Ambassador Resources
+                    </h3>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <a href="#" class="p-4 bg-gradient-to-br from-blue-900/30 to-gray-900 rounded-lg border border-blue-500/30 hover:border-blue-400 transition text-center">
+                            <div class="text-3xl mb-2">📚</div>
+                            <h4 class="font-bold text-white text-sm mb-1">Training Materials</h4>
+                            <p class="text-xs text-gray-400">Access guides and resources</p>
+                        </a>
+                        <a href="#" class="p-4 bg-gradient-to-br from-purple-900/30 to-gray-900 rounded-lg border border-purple-500/30 hover:border-purple-400 transition text-center">
+                            <div class="text-3xl mb-2">💬</div>
+                            <h4 class="font-bold text-white text-sm mb-1">Community Chat</h4>
+                            <p class="text-xs text-gray-400">Connect with other ambassadors</p>
+                        </a>
+                        <a href="#" class="p-4 bg-gradient-to-br from-orange-900/30 to-gray-900 rounded-lg border border-orange-500/30 hover:border-orange-400 transition text-center">
+                            <div class="text-3xl mb-2">🎁</div>
+                            <h4 class="font-bold text-white text-sm mb-1">Rewards</h4>
+                            <p class="text-xs text-gray-400">View your earned perks</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Programs Tab -->
+            <div id="view-programs" class="tab-view hidden space-y-6">
+                <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/30">
+                    <h2 class="text-2xl font-bold text-white mb-2">Upcoming Programs</h2>
+                    <p class="text-sm text-gray-300">Stay updated with ambassador events and training sessions</p>
+                </div>
+
+                <div id="programs-list" class="space-y-4">
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 text-center">
+                        <div class="text-5xl mb-3">📅</div>
+                        <p class="text-gray-400">No upcoming programs scheduled</p>
+                        <p class="text-sm text-gray-500 mt-2">Check back later for new events!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Tab -->
+            <div id="view-courses" class="tab-view hidden space-y-6">
+                <div class="bg-gradient-to-br from-green-900/40 to-gray-800 p-6 rounded-xl border border-green-500/30">
+                    <h2 class="text-2xl font-bold text-white mb-2">Ambassador Courses</h2>
+                    <p class="text-sm text-gray-300">Learn and grow with our curated training content</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-green-500/50 transition">
+                        <div class="text-3xl mb-3">🎯</div>
+                        <h3 class="font-bold text-white mb-2">Leadership Fundamentals</h3>
+                        <p class="text-sm text-gray-400 mb-4">Learn the basics of student leadership and community building</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-green-400 font-semibold">4 modules</span>
+                            <button class="text-xs bg-green-600 text-white px-3 py-1 rounded-full font-semibold hover:bg-green-500 transition">
+                                Start →
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-blue-500/50 transition">
+                        <div class="text-3xl mb-3">📢</div>
+                        <h3 class="font-bold text-white mb-2">Marketing & Outreach</h3>
+                        <p class="text-sm text-gray-400 mb-4">Master the art of promoting AZ Learner on your campus</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-blue-400 font-semibold">5 modules</span>
+                            <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded-full font-semibold hover:bg-blue-500 transition">
+                                Start →
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-purple-500/50 transition">
+                        <div class="text-3xl mb-3">🤝</div>
+                        <h3 class="font-bold text-white mb-2">Event Management</h3>
+                        <p class="text-sm text-gray-400 mb-4">Plan and execute successful campus events</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-purple-400 font-semibold">6 modules</span>
+                            <button class="text-xs bg-purple-600 text-white px-3 py-1 rounded-full font-semibold hover:bg-purple-500 transition">
+                                Start →
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-orange-500/50 transition">
+                        <div class="text-3xl mb-3">💡</div>
+                        <h3 class="font-bold text-white mb-2">Innovation & Ideas</h3>
+                        <p class="text-sm text-gray-400 mb-4">Think creatively to solve student problems</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-orange-400 font-semibold">3 modules</span>
+                            <button class="text-xs bg-orange-600 text-white px-3 py-1 rounded-full font-semibold hover:bg-orange-500 transition">
+                                Start →
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-pink-500/50 transition">
+                        <div class="text-3xl mb-3">🎤</div>
+                        <h3 class="font-bold text-white mb-2">Public Speaking</h3>
+                        <p class="text-sm text-gray-400 mb-4">Build confidence in presenting to groups</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-pink-400 font-semibold">4 modules</span>
+                            <button class="text-xs bg-pink-600 text-white px-3 py-1 rounded-full font-semibold hover:bg-pink-500 transition">
+                                Start →
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-yellow-500/50 transition">
+                        <div class="text-3xl mb-3">📊</div>
+                        <h3 class="font-bold text-white mb-2">Impact Measurement</h3>
+                        <p class="text-sm text-gray-400 mb-4">Track and report your ambassador activities</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-yellow-400 font-semibold">3 modules</span>
+                            <button class="text-xs bg-yellow-600 text-white px-3 py-1 rounded-full font-semibold hover:bg-yellow-500 transition">
+                                Start →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+
+        window.authManager = {
+            async login() {
+                try {
+                    await signInWithEmailAndPassword(
+                        auth, 
+                        document.getElementById('login-email').value, 
+                        document.getElementById('login-pass').value
+                    );
+                } catch (err) { 
+                    document.getElementById('login-msg').innerText = "Login failed: " + err.message; 
+                }
+            },
+            logout() { 
+                signOut(auth); 
+            }
+        };
+
+        window.app = {
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            // Allow ambassadors and admins to access
+                            if (userData.role !== 'ambassador' && userData.role !== 'admin') {
+                                alert("Access Denied: This portal is for ambassadors only.");
+                                signOut(auth);
+                                return;
+                            }
+                            
+                            currentUser = { ...userData, uid: user.uid };
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            
+                            // Update profile info
+                            document.getElementById('ambassador-name').innerText = `Welcome, ${userData.name}`;
+                            document.getElementById('profile-name').innerText = userData.name;
+                            document.getElementById('profile-email').innerText = userData.email || user.email;
+                            
+                            // Set initials - handle edge cases
+                            const nameParts = userData.name.split(' ').filter(n => n.trim().length > 0);
+                            const initials = nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'A';
+                            document.getElementById('profile-initials').innerText = initials;
+                            
+                            this.switchTab('profile');
+                            this.loadPrograms();
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchTab(tab) {
+                // Hide all tab views
+                document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+                // Update tab button styles
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('bg-purple-600', 'text-white', 'bg-gray-700', 'text-gray-400');
+                    if (btn.id === `tab-${tab}`) {
+                        btn.classList.add('bg-purple-600', 'text-white');
+                    } else {
+                        btn.classList.add('bg-gray-700', 'text-gray-400');
+                    }
+                });
+            },
+
+            loadPrograms() {
+                onSnapshot(query(collection(db, "ambassador_programs"), orderBy('datetime', 'desc')), (snap) => {
+                    const list = document.getElementById('programs-list');
+                    
+                    if (snap.empty) {
+                        list.innerHTML = `
+                            <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 text-center">
+                                <div class="text-5xl mb-3">📅</div>
+                                <p class="text-gray-400">No upcoming programs scheduled</p>
+                                <p class="text-sm text-gray-500 mt-2">Check back later for new events!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const prog = d.data();
+                        const date = prog.datetime ? new Date(prog.datetime).toLocaleString() : 'Date TBD';
+                        
+                        list.innerHTML += `
+                            <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 hover:border-purple-500/50 transition">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="text-xl font-bold text-white flex-1">${prog.title}</h3>
+                                    <span class="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">Upcoming</span>
+                                </div>
+                                <p class="text-gray-300 mb-4">${prog.description || 'No description provided'}</p>
+                                <div class="flex flex-wrap gap-4 text-sm text-gray-400">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-calendar text-purple-400"></i>
+                                        <span>${date}</span>
+                                    </div>
+                                    ${prog.location ? `
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-map-marker-alt text-blue-400"></i>
+                                            <span>${prog.location}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
