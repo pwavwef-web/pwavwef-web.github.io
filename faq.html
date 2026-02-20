@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner FAQ - Frequently Asked Questions about AZ Learner, the ultimate student companion.">
+    <title>FAQ | AZ Learner</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+        }
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .faq-item details summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        .faq-item details summary::-webkit-details-marker { display: none; }
+        .faq-item details[open] summary .chevron { transform: rotate(180deg); }
+        .chevron { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-animated"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-4 sm:px-6 py-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl sm:text-2xl font-extrabold tracking-tighter">
+                <span class="bg-white text-blue-900 px-2 py-1 rounded mr-1">AZ</span> LEARNER
+            </a>
+            <a href="index.html" class="text-sm font-medium text-gray-300 hover:text-white transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Back to Home
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pt-32 pb-16 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-300 text-sm font-semibold mb-6">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Frequently Asked Questions
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">Got Questions?</h1>
+            <p class="text-gray-400 text-lg max-w-xl mx-auto">Everything you need to know about AZ Learner. Can't find an answer? <a href="mailto:info@azlearner.me" class="text-blue-400 hover:text-blue-300 underline">Contact us</a>.</p>
+        </div>
+    </section>
+
+    <!-- FAQ Sections -->
+    <section class="pb-24 px-6">
+        <div class="max-w-4xl mx-auto space-y-10">
+
+            <!-- General -->
+            <div>
+                <h2 class="text-xl font-bold text-blue-400 mb-4 uppercase tracking-wider">General</h2>
+                <div class="space-y-3 faq-item">
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            What is AZ Learner?
+                            <svg class="chevron w-5 h-5 text-blue-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            AZ Learner is the all-in-one student companion built for university students — particularly at UCC, Cape Coast. It combines tools like a GPA calculator, event tracker, study countdown timers, a student blog, past questions, campus maps, and a community chat, all in one sleek platform.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            Who can use AZ Learner?
+                            <svg class="chevron w-5 h-5 text-blue-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            AZ Learner is designed for any student who wants to stay organized, connected, and ahead of their academic journey. While it has special features tailored for University of Cape Coast (UCC) students, students from any institution can benefit from the productivity and social tools available.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            Is AZ Learner free to use?
+                            <svg class="chevron w-5 h-5 text-blue-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            Yes! AZ Learner is free to use for all students. Most core features are completely free. Some premium features may be available through optional upgrade plans, which offer extra benefits like enhanced printing credits and VIP status on the leaderboard.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How do I get started?
+                            <svg class="chevron w-5 h-5 text-blue-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            Simply visit <a href="https://app.azlearner.me" target="_blank" class="text-blue-400 hover:underline">app.azlearner.me</a> in your browser, or download the Android app from the Google Play Store. Create an account with your name, school, and a password, and you're ready to go!
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div>
+                <h2 class="text-xl font-bold text-orange-400 mb-4 uppercase tracking-wider">Features</h2>
+                <div class="space-y-3 faq-item">
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            What features does AZ Learner offer?
+                            <svg class="chevron w-5 h-5 text-orange-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            AZ Learner packs a wide range of student-focused tools:<br><br>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li><strong class="text-white">GPA Calculator</strong> — Calculate and track your cumulative GPA</li>
+                                <li><strong class="text-white">Event Board</strong> — Stay updated on campus events and deadlines</li>
+                                <li><strong class="text-white">Countdown Timers</strong> — Count down to exams, assignments, and important dates</li>
+                                <li><strong class="text-white">Student Blog</strong> — Read and share articles, tips, and campus news</li>
+                                <li><strong class="text-white">Past Questions</strong> — Access a library of past exam questions</li>
+                                <li><strong class="text-white">Campus Map</strong> — Navigate the UCC campus with ease</li>
+                                <li><strong class="text-white">Print Service</strong> — Send documents to be printed on campus</li>
+                                <li><strong class="text-white">Leaderboard</strong> — Compete with peers and earn recognition</li>
+                                <li><strong class="text-white">Community Chat</strong> — Connect with fellow students in real time</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How does the Print Service work?
+                            <svg class="chevron w-5 h-5 text-orange-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            The AZ Learner Print Service lets you upload documents (PDF, Word, images) directly in the app and have them printed at a designated point on campus. Simply upload your file, choose your print settings, pay a small fee, and pick up your documents. It's fast, convenient, and saves you the stress of long queues.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How does the GPA Calculator work?
+                            <svg class="chevron w-5 h-5 text-orange-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            Enter your course name, credit hours, and the grade you received (or expect to receive) for each course. The calculator uses standard grade-point weighting to give you your semester GPA and cumulative GPA. You can save results and track your academic progress over time.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            Is there a mobile app?
+                            <svg class="chevron w-5 h-5 text-orange-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            Yes! The AZ Learner Android app is available on the <a href="https://play.google.com/store/apps/details?id=com.francis.azlearner" target="_blank" class="text-blue-400 hover:underline">Google Play Store</a>. An iOS version is planned for the future. You can also use the full web app at <a href="https://app.azlearner.me" target="_blank" class="text-blue-400 hover:underline">app.azlearner.me</a> on any device.
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Account & Security -->
+            <div>
+                <h2 class="text-xl font-bold text-green-400 mb-4 uppercase tracking-wider">Account &amp; Security</h2>
+                <div class="space-y-3 faq-item">
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How do I reset my password?
+                            <svg class="chevron w-5 h-5 text-green-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            On the login screen, tap "Forgot Password?" and enter your registered email address. You'll receive a password reset link in your inbox. If you don't receive it within a few minutes, check your spam folder or <a href="mailto:info@azlearner.me" class="text-blue-400 hover:underline">contact support</a>.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            Is my data safe on AZ Learner?
+                            <svg class="chevron w-5 h-5 text-green-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            Yes. We take your privacy seriously. Your data is stored securely and is never sold to third parties. For full details on what we collect and how we use it, please read our <a href="privacy-policy.html" class="text-blue-400 hover:underline">Privacy Policy</a>.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            Can I delete my account?
+                            <svg class="chevron w-5 h-5 text-green-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            Yes. You can request account deletion by emailing us at <a href="mailto:info@azlearner.me" class="text-blue-400 hover:underline">info@azlearner.me</a> with the subject "Delete My Account." We will process your request within 7 business days and permanently remove your data from our systems.
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Ambassador Program -->
+            <div>
+                <h2 class="text-xl font-bold text-yellow-400 mb-4 uppercase tracking-wider">Ambassador Program</h2>
+                <div class="space-y-3 faq-item">
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            What is the AZ Learner Ambassador Program?
+                            <svg class="chevron w-5 h-5 text-yellow-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            The Ambassador Program allows passionate students to represent AZ Learner on their campuses. Ambassadors help spread the word, onboard new users, and organize campus events. In return, they receive exclusive perks, recognition, and the chance to grow their leadership skills.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How do I become an ambassador?
+                            <svg class="chevron w-5 h-5 text-yellow-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            You can apply to become an AZ Learner Ambassador by filling out the sign-up form on the <a href="ambassadorsignup.html" class="text-blue-400 hover:underline">Ambassador Sign-Up page</a>. Applications are reviewed periodically, and successful applicants will be contacted via email.
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Support -->
+            <div>
+                <h2 class="text-xl font-bold text-purple-400 mb-4 uppercase tracking-wider">Support</h2>
+                <div class="space-y-3 faq-item">
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How do I report a bug or suggest a feature?
+                            <svg class="chevron w-5 h-5 text-purple-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            We love feedback! Send bug reports and feature requests to <a href="mailto:info@azlearner.me" class="text-blue-400 hover:underline">info@azlearner.me</a> or reach us on <a href="https://wa.me/233557535673" target="_blank" class="text-blue-400 hover:underline">WhatsApp</a>. Your input directly shapes the future of AZ Learner.
+                        </div>
+                    </details>
+
+                    <details class="glass-panel rounded-2xl overflow-hidden group">
+                        <summary class="flex items-center justify-between px-6 py-5 text-white font-semibold text-base hover:bg-white/5 transition">
+                            How can I contact the AZ Learner team?
+                            <svg class="chevron w-5 h-5 text-purple-400 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-6 pb-6 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                            You can reach us through any of the following channels:<br><br>
+                            <ul class="space-y-1">
+                                <li>📧 Email: <a href="mailto:info@azlearner.me" class="text-blue-400 hover:underline">info@azlearner.me</a></li>
+                                <li>💬 WhatsApp: <a href="https://wa.me/233557535673" target="_blank" class="text-blue-400 hover:underline">+233 557 535 673</a></li>
+                                <li>🐦 Twitter/X: <a href="https://twitter.com/az_learner" target="_blank" class="text-blue-400 hover:underline">@az_learner</a></li>
+                                <li>🎵 TikTok: <a href="https://tiktok.com/@azlearner0" target="_blank" class="text-blue-400 hover:underline">@azlearner0</a></li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="pb-24 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-panel rounded-3xl p-10 text-center border border-white/10">
+                <h2 class="text-2xl font-extrabold mb-3">Still have questions?</h2>
+                <p class="text-gray-400 mb-6">Our team is always happy to help. Don't hesitate to reach out.</p>
+                <a href="mailto:info@azlearner.me" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-base transition hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Email Us
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-10 pb-8">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <div class="text-xl font-black tracking-tight mb-2">AZ LEARNER</div>
+            <p class="text-gray-500 text-sm mb-4">UCC • Cape Coast • The World</p>
+            <div class="flex justify-center gap-6 text-sm text-gray-500 mb-4">
+                <a href="index.html" class="hover:text-white transition">Home</a>
+                <a href="faq.html" class="hover:text-white transition text-blue-400">FAQ</a>
+                <a href="privacy-policy.html" class="hover:text-white transition">Privacy Policy</a>
+            </div>
+            <div class="text-xs text-gray-600">&copy; 2026 Francis Pwavwe Production. Powered by Sunlight &amp; Ambition.</div>
+        </div>
+    </footer>
+
+</body>
+</html>
