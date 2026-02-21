@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Appreciation – AZ Learner Team</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Dancing+Script:wght@700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* ── Page wrapper (dark site chrome) ─────────────────────────── */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem 1rem 3rem;
+        }
+
+        @keyframes gradientBG {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ── Action bar (hidden on print) ─────────────────────────────── */
+        .action-bar {
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn:active { transform: scale(0.96); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FFAB40, #ff8c00);
+            color: #1a1a1a;
+            box-shadow: 0 4px 14px rgba(255,171,64,.4);
+        }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(255,171,64,.6); }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.14); }
+
+        /* ── Certificate card ─────────────────────────────────────────── */
+        .cert-wrapper {
+            width: 100%;
+            max-width: 860px;
+        }
+
+        .certificate {
+            background: #fff;
+            color: #1a1a1a;
+            position: relative;
+            padding: 60px 70px;
+            border-radius: 8px;
+            box-shadow: 0 30px 80px rgba(0,0,0,.5);
+            /* Elegant double-rule border */
+            border: 3px solid #1e40af;
+            outline: 6px solid #fff;
+            outline-offset: -14px;
+        }
+
+        /* Gold corner ornaments */
+        .certificate::before,
+        .certificate::after {
+            content: '✦';
+            position: absolute;
+            font-size: 1.5rem;
+            color: #FFAB40;
+        }
+        .certificate::before { top: 18px; left: 22px; }
+        .certificate::after  { bottom: 18px; right: 22px; }
+
+        /* ── Certificate typography ──────────────────────────────────── */
+        .cert-org {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: #1e40af;
+            margin-bottom: 0.25rem;
+        }
+
+        .cert-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.15;
+            margin-bottom: 0.5rem;
+        }
+
+        .cert-subtitle {
+            font-size: 0.8rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        .cert-divider {
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #1e40af, #FFAB40);
+            margin: 0 auto 2rem;
+            border-radius: 2px;
+        }
+
+        .cert-body {
+            font-size: 0.95rem;
+            color: #374151;
+            line-height: 1.8;
+            max-width: 640px;
+            margin: 0 auto 2rem;
+        }
+
+        /* recipient names */
+        .recipient-name {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.8rem;
+            color: #1e40af;
+            line-height: 1.3;
+        }
+
+        .names-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.25rem 2.5rem;
+            margin: 1.25rem 0;
+        }
+
+        .cert-reason {
+            font-size: 0.9rem;
+            color: #374151;
+            line-height: 1.8;
+            max-width: 640px;
+            margin: 0 auto 2.5rem;
+        }
+
+        /* ── Signature row ───────────────────────────────────────────── */
+        .sig-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            margin-top: 2.5rem;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .sig-block {
+            text-align: center;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .sig-line {
+            border-top: 1.5px solid #9ca3af;
+            margin-bottom: 0.4rem;
+        }
+
+        .sig-name {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.2rem;
+            color: #1e40af;
+        }
+
+        .sig-role {
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+
+        /* award seal */
+        .seal {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border: 3px solid #FFAB40;
+            box-shadow: 0 0 0 4px rgba(255,171,64,.2);
+        }
+
+        .seal-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.45rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #fff;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .seal-icon {
+            font-size: 1.5rem;
+            color: #FFAB40;
+            margin-bottom: 0.1rem;
+        }
+
+        /* cert id / date footer */
+        .cert-footer {
+            margin-top: 1.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .cert-footer span {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Print styles ────────────────────────────────────────────── */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+
+            body {
+                background: #fff !important;
+                animation: none !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            .action-bar,
+            .no-print {
+                display: none !important;
+            }
+
+            .cert-wrapper {
+                max-width: 100% !important;
+            }
+
+            .certificate {
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                padding: 50px 60px !important;
+                margin: 0 !important;
+                min-height: 100vh;
+            }
+        }
+
+        /* ── Responsive tweaks ───────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .certificate {
+                padding: 36px 28px;
+            }
+            .cert-title {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Action bar ──────────────────────────────────────────────── -->
+    <div class="action-bar no-print">
+        <a href="index.html" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-download"></i> Download as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Certificate ─────────────────────────────────────────────── -->
+    <div class="cert-wrapper">
+        <div class="certificate" id="certificate">
+
+            <!-- Header -->
+            <div style="text-align:center;">
+                <p class="cert-org">AZ Learner &nbsp;|&nbsp; azlearner.me</p>
+                <h1 class="cert-title">Certificate of Appreciation</h1>
+                <p class="cert-subtitle">Presented with Pride &amp; Gratitude</p>
+                <div class="cert-divider"></div>
+            </div>
+
+            <!-- Body -->
+            <p class="cert-body" style="text-align:center;">
+                This certificate is proudly awarded to the outstanding individuals who dedicated their
+                time, talent, and passion to bring <strong>AZ Learner</strong> to life.
+                Because of your hard work and commitment, the platform is now
+                <strong>live and serving students</strong> across the community.
+            </p>
+
+            <!-- Recipients -->
+            <div style="text-align:center;">
+                <p style="font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-bottom:0.25rem;">
+                    Presented to
+                </p>
+                <!-- ✏️  Edit names below to match your team -->
+                <div class="names-grid">
+                    <span class="recipient-name">Francis Pwavwe</span>
+                    <span class="recipient-name">Emmanuel Larbi</span>
+                    <span class="recipient-name">Team Member Three</span>
+                    <span class="recipient-name">Team Member Four</span>
+                    <span class="recipient-name">Team Member Five</span>
+                </div>
+            </div>
+
+            <!-- Reason -->
+            <p class="cert-reason" style="text-align:center;">
+                In recognition of your exceptional contributions to the <em>AZ Learner</em> project
+                during the <strong>2024 / 2025 Academic Semester</strong>. Your collaboration, creativity,
+                and relentless dedication have made this vision a reality. The squad printed,
+                chatted, grinded — and shined. ✨
+            </p>
+
+            <!-- Signature row -->
+            <div class="sig-row">
+                <div class="sig-block">
+                    <div class="sig-name" style="margin-bottom:0.3rem;">Francis Pwavwe</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-role">Founder &amp; Developer</div>
+                </div>
+
+                <div class="sig-block">
+                    <div class="seal">
+                        <span class="seal-icon">🎓</span>
+                        <p class="seal-text">AZ Learner<br>Official</p>
+                    </div>
+                </div>
+
+                <div class="sig-block">
+                    <div class="sig-name" style="margin-bottom:0.3rem;">The AZ Learner Team</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-role">End of Semester · 2025</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="cert-footer">
+                <span>🌐 azlearner.me</span>
+                <span>Certificate · Academic Year 2024/2025</span>
+                <span>🎓 Print · Chat · Grind · Shine</span>
+            </div>
+
+        </div><!-- /.certificate -->
+    </div><!-- /.cert-wrapper -->
+
+</body>
+</html>
