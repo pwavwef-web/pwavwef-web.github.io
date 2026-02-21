@@ -95,8 +95,8 @@
 
         /* ── Certificate card ── */
         #certificate {
-            width: 100%;
-            max-width: 860px;
+            width: 794px;
+            min-height: 1123px;
             background: #ffffff;
             border-radius: 4px;
             position: relative;
@@ -336,10 +336,54 @@
             font-family: monospace;
         }
 
+        /* Signature canvas */
+        .sig-canvas-wrap {
+            position: relative;
+            width: 140px;
+            margin: 0 auto 4px;
+            cursor: crosshair;
+        }
+
+        .sig-canvas {
+            display: block;
+            width: 140px;
+            height: 60px;
+            border: 1px dashed #d4af37;
+            border-radius: 4px;
+            background: transparent;
+            touch-action: none;
+        }
+
+        .sig-canvas-wrap.drag-over .sig-canvas {
+            border-color: #448AFF;
+            background: rgba(68,138,255,0.06);
+        }
+
+        .sig-drag-hint {
+            font-size: 9px;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 2px;
+            pointer-events: none;
+        }
+
+        .sig-clear-btn {
+            font-size: 9px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 1px 4px;
+            margin-bottom: 2px;
+            font-family: inherit;
+        }
+
+        .sig-clear-btn:hover { color: #ef4444; }
+
         /* ── Print styles ── */
         @media print {
             @page {
-                size: A4 landscape;
+                size: A4 portrait;
                 margin: 0;
             }
 
@@ -356,11 +400,16 @@
             }
 
             #certificate {
-                max-width: 100%;
-                width: 100%;
+                width: 794px;
+                min-height: 1123px;
                 border-radius: 0;
                 box-shadow: none;
                 page-break-inside: avoid;
+            }
+
+            .sig-clear-btn,
+            .sig-drag-hint {
+                display: none !important;
             }
         }
     </style>
@@ -458,9 +507,18 @@
             <!-- Signatures -->
             <div class="cert-signatures">
                 <div class="sig-block">
+                    <div class="sig-canvas-wrap" id="wrap-francis"
+                         ondragover="onDragOver(event,'wrap-francis')"
+                         ondragleave="onDragLeave('wrap-francis')"
+                         ondrop="onDrop(event,'canvas-francis')">
+                        <canvas class="sig-canvas" id="canvas-francis" width="140" height="60"
+                                aria-label="Signature canvas for Francis Pwavwe"></canvas>
+                    </div>
+                    <div class="sig-drag-hint" aria-hidden="true">Sign above or drop image</div>
+                    <button class="sig-clear-btn" onclick="clearSig('canvas-francis')" aria-label="Clear Francis Pwavwe signature">✕ Clear</button>
                     <div class="sig-line"></div>
-                    <div class="sig-name">AZ Learner Team</div>
-                    <div class="sig-title">Founders &amp; Leadership</div>
+                    <div class="sig-name">Francis Pwavwe</div>
+                    <div class="sig-title">Founder</div>
                 </div>
                 <div class="sig-block">
                     <div class="cert-seal">🏅</div>
@@ -468,9 +526,18 @@
                     <div class="sig-title">AZ LEARNER</div>
                 </div>
                 <div class="sig-block">
+                    <div class="sig-canvas-wrap" id="wrap-andy"
+                         ondragover="onDragOver(event,'wrap-andy')"
+                         ondragleave="onDragLeave('wrap-andy')"
+                         ondrop="onDrop(event,'canvas-andy')">
+                        <canvas class="sig-canvas" id="canvas-andy" width="140" height="60"
+                                aria-label="Signature canvas for Andy Anim"></canvas>
+                    </div>
+                    <div class="sig-drag-hint" aria-hidden="true">Sign above or drop image</div>
+                    <button class="sig-clear-btn" onclick="clearSig('canvas-andy')" aria-label="Clear Andy Anim signature">✕ Clear</button>
                     <div class="sig-line"></div>
-                    <div class="sig-name">Ambassador Program</div>
-                    <div class="sig-title">Coordinator</div>
+                    <div class="sig-name">Andy Anim</div>
+                    <div class="sig-title">Chief of Ambassador Program</div>
                 </div>
             </div>
 
@@ -522,6 +589,93 @@
         function updateName(value) {
             const safe = value.replace(/[<>"'&]/g, '').substring(0, 80);
             document.getElementById('cert-recipient-name').textContent = safe.trim() || 'Ambassador Name';
+        }
+        // ── Signature pads ───────────────────────────────────────────────
+        (function () {
+            const pads = ['canvas-francis', 'canvas-andy'];
+
+            pads.forEach(function (id) {
+                const canvas = document.getElementById(id);
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+                let lastX = 0, lastY = 0;
+
+                function pos(e) {
+                    const r = canvas.getBoundingClientRect();
+                    const src = e.touches ? e.touches[0] : e;
+                    return [src.clientX - r.left, src.clientY - r.top];
+                }
+
+                function start(e) {
+                    drawing = true;
+                    [lastX, lastY] = pos(e);
+                    e.preventDefault();
+                }
+
+                function move(e) {
+                    if (!drawing) return;
+                    e.preventDefault();
+                    const [x, y] = pos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = 1.8;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
+                    [lastX, lastY] = [x, y];
+                }
+
+                function stop() { drawing = false; }
+
+                canvas.addEventListener('mousedown', start);
+                canvas.addEventListener('mousemove', move);
+                canvas.addEventListener('mouseup', stop);
+                canvas.addEventListener('mouseleave', stop);
+                canvas.addEventListener('touchstart', start, { passive: false });
+                canvas.addEventListener('touchmove', move, { passive: false });
+                canvas.addEventListener('touchend', stop);
+            });
+        })();
+
+        function clearSig(id) {
+            const canvas = document.getElementById(id);
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function onDragOver(e, wrapId) {
+            e.preventDefault();
+            document.getElementById(wrapId).classList.add('drag-over');
+        }
+
+        function onDragLeave(wrapId) {
+            document.getElementById(wrapId).classList.remove('drag-over');
+        }
+
+        function onDrop(e, canvasId) {
+            e.preventDefault();
+            const wrapId = 'wrap-' + canvasId.replace('canvas-', '');
+            document.getElementById(wrapId).classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                alert('Please drop an image file (PNG, JPG, etc.).');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.getElementById(canvasId);
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                    const w = img.width * scale, h = img.height * scale;
+                    ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
         }
     </script>
 
