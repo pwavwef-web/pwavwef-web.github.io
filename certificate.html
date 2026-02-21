@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner – Certificate of Appreciation</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            gap: 28px;
+        }
+
+        /* ── Controls (hidden on print) ── */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls label {
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .controls input[type="text"] {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            min-width: 240px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .controls input[type="text"]:focus {
+            border-color: #FFAB40;
+        }
+
+        .controls input[type="text"]::placeholder { color: #94a3b8; }
+
+        .btn {
+            padding: 11px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .btn:active { transform: scale(0.96); }
+
+        .btn-print {
+            background: linear-gradient(135deg, #FFAB40, #ff8f00);
+            color: #0f172a;
+        }
+
+        .btn-print:hover { opacity: 0.9; }
+
+        .btn-back {
+            background: rgba(255,255,255,0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .btn-back:hover { background: rgba(255,255,255,0.14); }
+
+        .tip {
+            font-size: 12px;
+            color: #64748b;
+            max-width: 560px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* ── Certificate card ── */
+        #certificate {
+            width: 100%;
+            max-width: 860px;
+            background: #ffffff;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            /* shadow for screen */
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        }
+
+        /* Outer decorative border */
+        #certificate::before {
+            content: '';
+            position: absolute;
+            inset: 14px;
+            border: 2px solid #b8860b;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Inner gold hairline */
+        #certificate::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            border: 1px solid #d4af37;
+            border-radius: 1px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Corner ornaments */
+        .corner {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            z-index: 2;
+        }
+
+        .corner svg { width: 100%; height: 100%; }
+
+        .corner.tl { top: 10px;    left: 10px; }
+        .corner.tr { top: 10px;    right: 10px;  transform: scaleX(-1); }
+        .corner.bl { bottom: 10px; left: 10px;   transform: scaleY(-1); }
+        .corner.br { bottom: 10px; right: 10px;  transform: scale(-1); }
+
+        /* Top colour bar */
+        .cert-header-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #1e3a8a, #448AFF, #FFAB40, #448AFF, #1e3a8a);
+        }
+
+        /* Bottom colour bar */
+        .cert-footer-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #1e3a8a, #448AFF, #FFAB40, #448AFF, #1e3a8a);
+        }
+
+        /* Body padding */
+        .cert-body {
+            padding: 48px 72px 44px;
+            text-align: center;
+            position: relative;
+            z-index: 3;
+        }
+
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-family: 'Cinzel', serif;
+            font-size: 100px;
+            font-weight: 900;
+            color: rgba(68,138,255,0.055);
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+            z-index: 0;
+        }
+
+        /* ── Certificate content ── */
+        .cert-logo-emoji {
+            font-size: 48px;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .cert-org {
+            font-family: 'Cinzel', serif;
+            font-size: 13px;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: #448AFF;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .cert-title {
+            font-family: 'Cinzel', serif;
+            font-size: 30px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+
+        .cert-subtitle {
+            font-size: 11px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 28px;
+        }
+
+        /* Horizontal divider */
+        .cert-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 auto 28px;
+            max-width: 500px;
+        }
+
+        .cert-divider::before,
+        .cert-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #d4af37);
+        }
+
+        .cert-divider::after {
+            background: linear-gradient(90deg, #d4af37, transparent);
+        }
+
+        .cert-divider span {
+            color: #FFAB40;
+            font-size: 18px;
+        }
+
+        .cert-presented {
+            font-size: 13px;
+            color: #64748b;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .cert-name {
+            font-family: 'Cinzel', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #1e3a8a;
+            line-height: 1.2;
+            border-bottom: 2px solid #d4af37;
+            display: inline-block;
+            padding-bottom: 6px;
+            margin-bottom: 28px;
+            min-width: 320px;
+        }
+
+        .cert-body-text {
+            font-size: 14.5px;
+            color: #374151;
+            line-height: 1.8;
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        .cert-body-text strong {
+            color: #0f172a;
+        }
+
+        .cert-highlight {
+            display: inline-block;
+            background: linear-gradient(135deg, #1e3a8a, #448AFF);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            padding: 6px 20px;
+            border-radius: 30px;
+            margin-bottom: 36px;
+        }
+
+        /* Signatures */
+        .cert-signatures {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .sig-block {
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .sig-line {
+            width: 140px;
+            height: 1px;
+            background: #0f172a;
+            margin: 0 auto 6px;
+        }
+
+        .sig-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .sig-title {
+            font-size: 10px;
+            color: #64748b;
+            letter-spacing: 0.06em;
+        }
+
+        .cert-seal {
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .cert-date {
+            font-size: 11px;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+            margin-top: 8px;
+        }
+
+        .cert-id {
+            font-size: 10px;
+            color: #cbd5e1;
+            letter-spacing: 0.06em;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+
+        /* ── Print styles ── */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+
+            body {
+                background: #fff !important;
+                padding: 0;
+                margin: 0;
+                display: block;
+            }
+
+            .controls,
+            .tip {
+                display: none !important;
+            }
+
+            #certificate {
+                max-width: 100%;
+                width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Controls (hidden when printing) -->
+    <div class="controls">
+        <a href="index.html" class="btn btn-back">← Back to AZ Learner</a>
+        <label for="recipientInput">Recipient Name:</label>
+        <input
+            type="text"
+            id="recipientInput"
+            placeholder="Enter ambassador name…"
+            oninput="updateName(this.value)"
+        >
+        <button class="btn btn-print" onclick="window.print()">🖨️ Download / Print as PDF</button>
+    </div>
+
+    <p class="tip">
+        To save as PDF: click <strong>Download / Print as PDF</strong>, then choose <em>"Save as PDF"</em> as the printer
+        in the dialog. For Canva editing, download the PDF and import it into a new Canva project.
+    </p>
+
+    <!-- Certificate -->
+    <div id="certificate">
+
+        <!-- Corner ornaments -->
+        <div class="corner tl">
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4 L4 28 M4 4 L28 4" stroke="#d4af37" stroke-width="1.5"/>
+                <path d="M4 4 L20 20" stroke="#d4af37" stroke-width="1"/>
+                <circle cx="4" cy="4" r="3" fill="#FFAB40"/>
+                <circle cx="4" cy="28" r="2" fill="#d4af37"/>
+                <circle cx="28" cy="4" r="2" fill="#d4af37"/>
+            </svg>
+        </div>
+        <div class="corner tr">
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4 L4 28 M4 4 L28 4" stroke="#d4af37" stroke-width="1.5"/>
+                <path d="M4 4 L20 20" stroke="#d4af37" stroke-width="1"/>
+                <circle cx="4" cy="4" r="3" fill="#FFAB40"/>
+                <circle cx="4" cy="28" r="2" fill="#d4af37"/>
+                <circle cx="28" cy="4" r="2" fill="#d4af37"/>
+            </svg>
+        </div>
+        <div class="corner bl">
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4 L4 28 M4 4 L28 4" stroke="#d4af37" stroke-width="1.5"/>
+                <path d="M4 4 L20 20" stroke="#d4af37" stroke-width="1"/>
+                <circle cx="4" cy="4" r="3" fill="#FFAB40"/>
+                <circle cx="4" cy="28" r="2" fill="#d4af37"/>
+                <circle cx="28" cy="4" r="2" fill="#d4af37"/>
+            </svg>
+        </div>
+        <div class="corner br">
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4 L4 28 M4 4 L28 4" stroke="#d4af37" stroke-width="1.5"/>
+                <path d="M4 4 L20 20" stroke="#d4af37" stroke-width="1"/>
+                <circle cx="4" cy="4" r="3" fill="#FFAB40"/>
+                <circle cx="4" cy="28" r="2" fill="#d4af37"/>
+                <circle cx="28" cy="4" r="2" fill="#d4af37"/>
+            </svg>
+        </div>
+
+        <div class="cert-header-bar"></div>
+
+        <div class="cert-body">
+
+            <!-- Watermark -->
+            <div class="watermark">AZ LEARNER</div>
+
+            <!-- Heading -->
+            <div class="cert-logo-emoji">🎓</div>
+            <div class="cert-org">AZ Learner</div>
+            <div class="cert-title">Certificate of Appreciation</div>
+            <div class="cert-subtitle">The Squad Companion · End of Semester</div>
+
+            <div class="cert-divider"><span>✦</span></div>
+
+            <!-- Recipient -->
+            <div class="cert-presented">This certificate is proudly presented to</div>
+            <div class="cert-name" id="cert-recipient-name">Ambassador Name</div>
+
+            <!-- Body text -->
+            <p class="cert-body-text">
+                In heartfelt recognition of your <strong>outstanding dedication, leadership, and teamwork</strong>
+                as an AZ Learner Ambassador during this semester.
+                Your relentless efforts in promoting AZ Learner across campus, onboarding fellow students,
+                and championing a culture of learning have been the driving force behind this milestone.
+            </p>
+
+            <div class="cert-highlight">🚀 &nbsp;AZ Learner is NOW LIVE — and it's because of YOU</div>
+
+            <!-- Signatures -->
+            <div class="cert-signatures">
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">AZ Learner Team</div>
+                    <div class="sig-title">Founders &amp; Leadership</div>
+                </div>
+                <div class="sig-block">
+                    <div class="cert-seal">🏅</div>
+                    <div class="sig-name" id="cert-seal-label">Official Seal</div>
+                    <div class="sig-title">AZ LEARNER</div>
+                </div>
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">Ambassador Program</div>
+                    <div class="sig-title">Coordinator</div>
+                </div>
+            </div>
+
+            <div class="cert-date" id="cert-date-display"></div>
+            <div class="cert-id" id="cert-id-display"></div>
+
+        </div>
+
+        <div class="cert-footer-bar"></div>
+    </div>
+
+    <script>
+        // ── Set today's date ──────────────────────────────────────────────
+        (function () {
+            const now = new Date();
+            const months = ['January','February','March','April','May','June',
+                            'July','August','September','October','November','December'];
+            const dateStr = `${months[now.getMonth()]} ${now.getFullYear()}`;
+            document.getElementById('cert-date-display').textContent = 'Issued: ' + dateStr;
+
+            // Unique cert ID using crypto.randomUUID (falls back to getRandomValues for older browsers)
+            let uniquePart;
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                uniquePart = crypto.randomUUID().split('-')[0].toUpperCase();
+            } else {
+                const buf = new Uint8Array(4);
+                crypto.getRandomValues(buf);
+                uniquePart = Array.from(buf, b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+            }
+            const id = 'AZL-' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + uniquePart;
+            document.getElementById('cert-id-display').textContent = 'Certificate ID: ' + id;
+        })();
+
+        // ── Pre-fill name from URL ?name=... ─────────────────────────────
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const nameParam = params.get('name');
+            if (nameParam) {
+                // Sanitize: allow only printable non-HTML characters, max 80 chars
+                const safe = nameParam.replace(/[<>"'&]/g, '').substring(0, 80).trim();
+                if (safe) {
+                    document.getElementById('cert-recipient-name').textContent = safe;
+                    document.getElementById('recipientInput').value = safe;
+                }
+            }
+        })();
+
+        // ── Live name update ──────────────────────────────────────────────
+        function updateName(value) {
+            const safe = value.replace(/[<>"'&]/g, '').substring(0, 80);
+            document.getElementById('cert-recipient-name').textContent = safe.trim() || 'Ambassador Name';
+        }
+    </script>
+
+</body>
+</html>
