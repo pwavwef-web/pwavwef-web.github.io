@@ -287,7 +287,7 @@
                 const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
                 const done = courseCompletedModules(c);
                 const total = c.modules.length;
-                const allDone = done === total;
+                const allDone = done === total && total > 0;
                 const card = document.createElement('div');
                 card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer relative`;
                 card.addEventListener('click', () => openCourse(c.id));
@@ -357,11 +357,12 @@
 
                 const body = document.createElement('div');
                 body.className = 'px-4 pb-4 hidden text-gray-300 text-sm leading-relaxed';
-                // Render content with newlines
+                // Render content with newlines - escape HTML to prevent XSS
+                const escapeHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
                 const contentLines = (mod.content || '').split('\n');
                 body.innerHTML = contentLines.map(line => line.startsWith('•') 
-                    ? `<span class="block pl-3 py-0.5 text-gray-300">${line}</span>` 
-                    : `<p class="mb-2">${line}</p>`
+                    ? `<span class="block pl-3 py-0.5 text-gray-300">${escapeHtml(line)}</span>` 
+                    : `<p class="mb-2">${escapeHtml(line)}</p>`
                 ).join('');
 
                 if (!completed) {

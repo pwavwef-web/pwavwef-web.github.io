@@ -1842,9 +1842,9 @@
             },
 
             async resetChallenges() {
-                if (!confirm('Force reset all ambassador challenge progress for the current month? This clears all ambassadors\' localStorage progress.')) return;
-                await this.logAction('CHALLENGES_RESET', `Monthly challenges force-reset by ${currentUser.name}`);
-                alert('✅ Challenges will reset for all ambassadors on their next visit. Note: localStorage data is per-user-device.');
+                if (!confirm('Log a challenge reset event in the admin log?\n\nNote: Challenges automatically reset for each ambassador on the 1st of every month based on their device date. This action only creates an audit log entry and does not directly clear any ambassador\'s progress.')) return;
+                await this.logAction('CHALLENGES_RESET', `Monthly challenges reset event logged by ${currentUser.name} on ${new Date().toLocaleDateString()}`);
+                alert('✅ Reset event logged. Ambassadors\' challenge progress automatically resets each month based on their browser date.');
             },
 
             async scheduleAmbProgram() {
@@ -1912,7 +1912,7 @@
                     if (totalEl) totalEl.textContent = ambSnap.size;
                     if (pendEl) pendEl.textContent = appSnap.size;
                     if (progEl) progEl.textContent = progSnap.size;
-                    if (resEl) resEl.textContent = resSnap.size + 5; // +5 built-in resources
+                    if (resEl) resEl.textContent = resSnap.size + 5; // +5 built-in PDF guides
 
                     const leaderboardEl = document.getElementById('amb-leaderboard-list');
                     if (leaderboardEl) {

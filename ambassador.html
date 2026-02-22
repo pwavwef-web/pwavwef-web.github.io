@@ -1028,30 +1028,45 @@
                 const resource = resources[type];
                 if (!resource) return;
 
-                // Generate a plain-text PDF blob using a printable HTML page
-                const lines = [];
-                lines.push(resource.title);
-                lines.push('='.repeat(resource.title.length));
-                lines.push('');
-                lines.push('AZ Learner Ambassador Program');
-                lines.push(`Generated: ${new Date().toLocaleDateString()}`);
-                lines.push('');
-                resource.sections.forEach(s => {
-                    lines.push(s.heading);
-                    lines.push('-'.repeat(s.heading.length));
-                    lines.push(s.body);
-                    lines.push('');
-                });
-                lines.push('---');
-                lines.push('AZ Learner | ambassador.html | Confidential — For Ambassadors Only');
+                // Generate PDF using jsPDF
+                // Validate type to prevent path traversal
+                const safeTypes = ['marketing', 'leadership', 'communication', 'events', 'handbook'];
+                if (!safeTypes.includes(type)) return;
 
-                const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${type}-guide.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
+                // Open a printable window so the user can Save as PDF via browser print dialog
+                const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const sectionsHtml = resource.sections.map(s => `
+                    <div class="section">
+                        <h2>${escHtml(s.heading)}</h2>
+                        <div class="body">${escHtml(s.body).replace(/\n/g,'<br>')}</div>
+                    </div>`).join('');
+
+                const printWin = window.open('', '_blank', 'width=800,height=900');
+                printWin.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>${escHtml(resource.title)}</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 40px; color: #222; font-size: 12pt; }
+  header { background: #1a1a2e; color: #ffab40; padding: 20px; margin-bottom: 30px; border-radius: 8px; }
+  header h1 { margin: 0 0 6px 0; font-size: 16pt; }
+  header p { margin: 0; color: #aaa; font-size: 9pt; }
+  .section { margin-bottom: 24px; page-break-inside: avoid; }
+  .section h2 { font-size: 13pt; color: #1a56db; border-bottom: 2px solid #1a56db; padding-bottom: 4px; margin-bottom: 10px; }
+  .section .body { line-height: 1.7; color: #333; }
+  footer { margin-top: 40px; font-size: 8pt; color: #999; border-top: 1px solid #ddd; padding-top: 8px; }
+  @media print { body { margin: 20px; } }
+</style>
+</head><body>
+<header>
+  <h1>AZ Learner Ambassador Program</h1>
+  <p>${escHtml(resource.title)} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()} &nbsp;|&nbsp; Confidential</p>
+</header>
+${sectionsHtml}
+<footer>AZ Learner Ambassador Program &nbsp;|&nbsp; Confidential — For Ambassadors Only</footer>
+<script>window.onload = function(){ window.print(); }<\/script>
+</body></html>`);
+                printWin.document.close();
             },
 
             switchTab(tab) {
