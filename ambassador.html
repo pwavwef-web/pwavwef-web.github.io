@@ -270,10 +270,13 @@
                         </div>
 
                         <div class="mt-8 p-6 bg-blue-900/20 border border-blue-500/30 rounded-xl">
-                            <h3 class="text-lg font-bold text-white mb-2">
-                                <i class="fas fa-download"></i> Resource Library
-                            </h3>
-                            <p class="text-sm text-gray-400 mb-4">Download ambassador guides, templates, and promotional materials as PDF</p>
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="text-lg font-bold text-white">
+                                    <i class="fas fa-folder-open text-blue-400"></i> Resource Library
+                                </h3>
+                                <span class="text-xs text-blue-300 bg-blue-900/40 border border-blue-500/30 px-3 py-1 rounded-full font-bold">6 resources</span>
+                            </div>
+                            <p class="text-sm text-gray-200 mb-4">Download ambassador guides, templates, and toolkits. Each resource is available as a formatted PDF — use them to plan events, craft messages, and track your monthly impact.</p>
                             <div class="grid sm:grid-cols-2 gap-3" id="resource-library-grid">
                                 <!-- Rendered by JS -->
                             </div>
@@ -716,27 +719,35 @@
 
                 // Render Resource Library
                 const RESOURCES = [
-                    { id: 'ambassador-handbook', title: 'Ambassador Handbook 2026', desc: 'Complete guide for all AZ Learner ambassadors', icon: 'book', color: 'blue' },
-                    { id: 'marketing-templates', title: 'Marketing Templates Pack', desc: 'Social media and flyer templates for campus outreach', icon: 'image', color: 'orange' },
-                    { id: 'event-planning-kit', title: 'Event Planning Kit', desc: 'Checklists, agendas, and run-of-show templates', icon: 'calendar-check', color: 'purple' },
-                    { id: 'communication-guide', title: 'Communication Style Guide', desc: 'AZ Learner tone of voice and messaging guidelines', icon: 'comments', color: 'green' },
-                    { id: 'study-group-guide', title: 'Study Group Facilitation Guide', desc: 'Step-by-step guide for running effective study groups', icon: 'users', color: 'orange' },
-                    { id: 'monthly-report', title: 'Monthly Impact Report Template', desc: 'Submit your monthly ambassador activity report', icon: 'chart-bar', color: 'blue' },
+                    { id: 'ambassador-handbook', title: 'Ambassador Handbook 2026', desc: 'Your complete guide covering roles, responsibilities, conduct, and benefits. Essential reading for every ambassador.', icon: 'book', color: 'blue', tag: 'Guide', meta: '8 pages · All ambassadors' },
+                    { id: 'marketing-templates', title: 'Marketing Templates Pack', desc: 'Ready-to-use captions, WhatsApp messages, and flyer text for campus outreach. Copy, personalise, and post.', icon: 'image', color: 'orange', tag: 'Templates', meta: '6 pages · Outreach' },
+                    { id: 'event-planning-kit', title: 'Event Planning Kit', desc: 'Pre-event and post-event checklists, a run-of-show template, and guidance for virtual and in-person sessions.', icon: 'calendar-check', color: 'purple', tag: 'Toolkit', meta: '5 pages · Events' },
+                    { id: 'communication-guide', title: 'Communication Style Guide', desc: 'AZ Learner\'s tone of voice, messaging do\'s and don\'ts, and approved brand language every ambassador should know.', icon: 'comments', color: 'green', tag: 'Guide', meta: '4 pages · Communications' },
+                    { id: 'study-group-guide', title: 'Study Group Facilitation Guide', desc: 'Step-by-step facilitation tips, icebreakers, discussion structures, and advice for managing group dynamics.', icon: 'users', color: 'orange', tag: 'Guide', meta: '5 pages · Facilitation' },
+                    { id: 'monthly-report', title: 'Monthly Impact Report Template', desc: 'Fill-in template for your monthly ambassador activity — referrals, events hosted, courses completed, and reflections.', icon: 'chart-bar', color: 'blue', tag: 'Template', meta: '2 pages · Reporting' },
                 ];
                 const rlGrid = document.getElementById('resource-library-grid');
                 if (rlGrid) {
                     rlGrid.innerHTML = '';
                     RESOURCES.forEach(r => {
-                        const colorMap = { blue: 'text-blue-400 bg-blue-900/20 border-blue-500/20', orange: 'text-orange-400 bg-orange-900/20 border-orange-500/20', purple: 'text-purple-400 bg-purple-900/20 border-purple-500/20', green: 'text-green-400 bg-green-900/20 border-green-500/20' };
+                        const colorMap = { blue: 'text-blue-400 bg-blue-900/30 border-blue-500/30', orange: 'text-orange-400 bg-orange-900/30 border-orange-500/30', purple: 'text-purple-400 bg-purple-900/30 border-purple-500/30', green: 'text-green-400 bg-green-900/30 border-green-500/30' };
                         const c = colorMap[r.color] || colorMap.blue;
+                        const iconColor = c.split(' ')[0];
+                        const bgBorder = c.split(' ').slice(1).join(' ');
                         rlGrid.innerHTML += `
-                            <div class="flex items-center gap-3 p-3 ${c.split(' ').slice(1).join(' ')} rounded-xl border">
-                                <i class="fas fa-${r.icon} ${c.split(' ')[0]} text-xl flex-shrink-0"></i>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-white text-sm font-bold">${r.title}</p>
-                                    <p class="text-gray-400 text-xs">${r.desc}</p>
+                            <div class="flex items-start gap-3 p-4 ${bgBorder} rounded-xl border">
+                                <div class="bg-gray-800/60 p-2.5 rounded-lg flex-shrink-0 mt-0.5">
+                                    <i class="fas fa-${r.icon} ${iconColor} text-lg"></i>
                                 </div>
-                                <button onclick="portal.downloadResourcePDF('${r.id}', '${r.title}', '${r.desc}')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg flex items-center gap-1 flex-shrink-0 transition">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                                        <p class="text-white text-sm font-bold leading-tight">${r.title}</p>
+                                        <span class="text-xs ${iconColor} font-bold bg-gray-900/60 px-2 py-0.5 rounded-full">${r.tag}</span>
+                                    </div>
+                                    <p class="text-gray-200 text-xs leading-relaxed mb-1.5">${r.desc}</p>
+                                    <p class="text-gray-400 text-xs">${r.meta}</p>
+                                </div>
+                                <button onclick="portal.downloadResourcePDF('${r.id}', '${r.title}', '${r.desc}')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg flex items-center gap-1 flex-shrink-0 transition mt-0.5">
                                     <i class="fas fa-file-pdf text-red-400"></i> PDF
                                 </button>
                             </div>`;
@@ -845,6 +856,115 @@
                         '□ Send feedback form',
                         '□ Log attendance in the portal',
                         '□ Submit event report within 3 days',
+                    ],
+                    'communication-guide': [
+                        'COMMUNICATION STYLE GUIDE',
+                        '',
+                        'This guide defines the tone of voice and messaging standards for AZ Learner ambassadors.',
+                        '',
+                        'OUR TONE:',
+                        '• Friendly — we are approachable and warm, not corporate or stiff',
+                        '• Encouraging — we motivate students to try, learn, and grow',
+                        '• Clear — we use plain language, avoid jargon, and get to the point',
+                        '• Professional — we represent a trusted academic platform',
+                        '',
+                        'WRITING DO\'S:',
+                        '• Use short sentences and active voice',
+                        '• Address the reader directly (use "you")',
+                        '• Lead with the benefit, then the feature',
+                        '• Use exclamation marks sparingly — max one per message',
+                        '',
+                        'WRITING DON\'TS:',
+                        '• Don\'t make claims you can\'t back up ("the best app ever")',
+                        '• Don\'t use slang or memes in official communications',
+                        '• Don\'t copy text from other platforms without adapting it',
+                        '• Don\'t share AZ Learner content that hasn\'t been approved',
+                        '',
+                        'EXAMPLE — GOOD:',
+                        '"Struggling with revision? AZ Learner organises your study schedule',
+                        'and connects you with top students. Sign up free: [link]"',
+                        '',
+                        'EXAMPLE — AVOID:',
+                        '"OMG this app is literally life-changing lol you NEED to try it!!!!"',
+                        '',
+                        'AZ LEARNER BRAND COLOURS:',
+                        '• Orange: #FFAB40 (primary accent)',
+                        '• Blue: #448AFF (secondary accent)',
+                        '',
+                        'For brand assets (logo, colour swatches), visit the portal Resource Library.',
+                    ],
+                    'study-group-guide': [
+                        'STUDY GROUP FACILITATION GUIDE',
+                        '',
+                        'Hosting great study groups is one of the most impactful things an ambassador can do.',
+                        '',
+                        'BEFORE THE SESSION:',
+                        '• Choose a specific topic or AZ Learner course module to focus on',
+                        '• Share the agenda 24 hours in advance via WhatsApp',
+                        '• Prepare 3–5 discussion questions',
+                        '• Limit group size to 6–12 students for best engagement',
+                        '• Test your tech if running virtually',
+                        '',
+                        'FACILITATION TECHNIQUES:',
+                        '• Start with a 5-minute icebreaker ("What\'s one thing you find hard about this topic?")',
+                        '• Use think-pair-share: individual reflection → partner discussion → group share',
+                        '• Assign a timekeeper and note-taker at the start',
+                        '• Encourage quieter students with direct, open questions',
+                        '• Avoid lecturing — guide the discussion, don\'t dominate it',
+                        '',
+                        'HANDLING DIFFICULT MOMENTS:',
+                        '• If one person dominates: "Thanks — let\'s hear from someone who hasn\'t shared yet."',
+                        '• If discussion stalls: share a statement for the group to agree or disagree with',
+                        '• If conflict arises: validate both sides, then refocus on the topic',
+                        '',
+                        'CLOSING THE SESSION:',
+                        '• Summarise 3 key takeaways',
+                        '• Set a clear next step ("Complete module 2 before next session")',
+                        '• Ask for quick verbal feedback: "One word for today\'s session?"',
+                        '• Log attendance in the portal within 24 hours',
+                    ],
+                    'monthly-report': [
+                        'MONTHLY IMPACT REPORT TEMPLATE',
+                        '',
+                        'Submit your monthly ambassador report by the 5th of the following month.',
+                        '',
+                        'SECTION 1 — PERSONAL DETAILS',
+                        'Full Name:',
+                        'University:',
+                        'Month & Year:',
+                        '',
+                        'SECTION 2 — OUTREACH ACTIVITY',
+                        'New students referred this month:',
+                        'Referral link clicks (approx):',
+                        'Social media posts published:',
+                        'Campus tabling sessions held:',
+                        '',
+                        'SECTION 3 — EVENTS & PROGRAMS',
+                        'Study groups or events hosted:',
+                        'Total attendees across all sessions:',
+                        'Ambassador program sessions attended:',
+                        'Brief description of event(s):',
+                        '',
+                        'SECTION 4 — LEARNING',
+                        'AZ Learner courses completed this month:',
+                        'Course modules completed this month:',
+                        'Topics or skills studied:',
+                        '',
+                        'SECTION 5 — REFLECTION',
+                        'What went well this month?',
+                        'What would you do differently?',
+                        'Any support or resources needed from the core team?',
+                        '',
+                        'SECTION 6 — ACHIEVEMENT POINTS ESTIMATE',
+                        'Referrals: ___ x 75 pts = ___',
+                        'Courses completed: ___ x 100 pts = ___',
+                        'Programs attended: ___ x 50 pts = ___',
+                        'Challenges completed: ___ x 200 pts = ___',
+                        'Total estimated this month: ___',
+                        '',
+                        '(Check your portal leaderboard for live point totals)',
+                        '',
+                        'Submit completed reports to your campus coordinator.',
                     ],
                 };
 
