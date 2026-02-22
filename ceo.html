@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – CEO Command ⚡</title>
+    <link rel="icon" type="image/png" href="adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        goldAccent: '#FFD700',
+                        darkBg: '#1a1a1a',
+                        darkCard: '#2d2d2d',
+                        success: '#00E676'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #0a0a0f;
+            color: white;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        .ceo-glow {
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+        }
+
+        .page-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .page-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(68, 138, 255, 0.2);
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
+    </style>
+</head>
+
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-yellow-600/40 ceo-glow">
+            <div class="text-5xl mb-4">⚡</div>
+            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400 mb-2 tracking-tighter">CEO Hub</h1>
+            <p class="text-sm text-gray-500 mb-6">Classified · Executive Access Only</p>
+            <input type="email" id="login-email" placeholder="CEO Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-yellow-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-yellow-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">
+                Authenticate ⚡
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-yellow-600/30 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10 ceo-glow">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-200">
+                    ⚡ CEO COMMAND
+                </h1>
+                <p id="ceo-name-display" class="text-xs text-yellow-600/80 font-mono">Executive Session Active</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="admin.html" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 border border-gray-700">
+                    <i class="fa-solid fa-shield-halved"></i> Admin HQ
+                </a>
+                <button onclick="authManager.logout()"
+                    class="bg-red-900/30 hover:bg-red-900/60 text-red-400 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 border border-red-900/50">
+                    Logout <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav Tabs -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0 items-center">
+            <button onclick="ceo.switchView('overview')" id="nav-overview"
+                class="ceo-nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-eye mr-2"></i>Overview
+            </button>
+            <button onclick="ceo.switchView('godmode')" id="nav-godmode"
+                class="ceo-nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-bolt mr-2"></i>God Mode
+            </button>
+            <button onclick="ceo.switchView('pages')" id="nav-pages"
+                class="ceo-nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-sitemap mr-2"></i>All Pages
+            </button>
+            <button onclick="ceo.switchView('platform')" id="nav-platform"
+                class="ceo-nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition">
+                <i class="fa-solid fa-sliders mr-2"></i>Platform
+            </button>
+            <a href="database.html"
+                class="px-4 py-2 rounded-lg bg-blue-900/40 text-blue-300 font-bold text-sm whitespace-nowrap border border-blue-500/30 hover:bg-blue-900/60 transition flex items-center gap-2">
+                <i class="fa-solid fa-database mr-1"></i>Database
+            </a>
+        </div>
+
+        <!-- Views -->
+        <div class="flex-1 overflow-y-auto bg-[#0a0a0f]">
+
+            <!-- Overview View -->
+            <div id="view-overview" class="ceo-view p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-r from-yellow-900/20 to-orange-900/10 border border-yellow-600/30 rounded-2xl p-6">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1">Platform Command Center</h2>
+                    <p class="text-gray-400 text-sm">Full executive oversight · AZ Learner Operations</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Users</h3>
+                        <p class="text-3xl font-black text-white" id="stat-users">–</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Admins</h3>
+                        <p class="text-3xl font-black text-purple-400" id="stat-admins">–</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Pages</h3>
+                        <p class="text-3xl font-black text-blueAccent">24</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Status</h3>
+                        <p class="text-lg font-black text-green-400 animate-pulse-gold">● LIVE</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <button onclick="ceo.switchView('godmode')"
+                            class="bg-yellow-900/20 border border-yellow-600/30 hover:bg-yellow-900/40 text-yellow-400 p-4 rounded-xl font-bold text-sm transition flex items-center gap-3">
+                            <i class="fa-solid fa-scroll text-xl"></i>
+                            <span>Executive Order</span>
+                        </button>
+                        <button onclick="ceo.switchView('godmode')"
+                            class="bg-purple-900/20 border border-purple-600/30 hover:bg-purple-900/40 text-purple-400 p-4 rounded-xl font-bold text-sm transition flex items-center gap-3">
+                            <i class="fa-solid fa-user-shield text-xl"></i>
+                            <span>Admin Management</span>
+                        </button>
+                        <a href="database.html"
+                            class="bg-blue-900/20 border border-blue-600/30 hover:bg-blue-900/40 text-blue-400 p-4 rounded-xl font-bold text-sm transition flex items-center gap-3">
+                            <i class="fa-solid fa-database text-xl"></i>
+                            <span>User Database</span>
+                        </a>
+                        <a href="admin.html"
+                            class="bg-orange-900/20 border border-orange-600/30 hover:bg-orange-900/40 text-orange-400 p-4 rounded-xl font-bold text-sm transition flex items-center gap-3">
+                            <i class="fa-solid fa-shield-halved text-xl"></i>
+                            <span>Admin HQ</span>
+                        </a>
+                        <button onclick="ceo.switchView('platform')"
+                            class="bg-green-900/20 border border-green-600/30 hover:bg-green-900/40 text-green-400 p-4 rounded-xl font-bold text-sm transition flex items-center gap-3">
+                            <i class="fa-solid fa-sliders text-xl"></i>
+                            <span>Platform Tools</span>
+                        </button>
+                        <button onclick="ceo.switchView('pages')"
+                            class="bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-300 p-4 rounded-xl font-bold text-sm transition flex items-center gap-3">
+                            <i class="fa-solid fa-sitemap text-xl"></i>
+                            <span>All Pages</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Log -->
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Recent System Activity</h3>
+                    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-950 text-gray-500 uppercase font-bold">
+                                <tr>
+                                    <th class="px-4 py-3">Time</th>
+                                    <th class="px-4 py-3">Officer</th>
+                                    <th class="px-4 py-3">Action</th>
+                                    <th class="px-4 py-3">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-logs" class="divide-y divide-gray-800 text-gray-300 font-mono"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- God Mode View -->
+            <div id="view-godmode" class="ceo-view hidden p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-r from-yellow-900/20 to-gray-900 border border-yellow-600/40 rounded-2xl p-5">
+                    <h2 class="text-xl font-black text-yellow-400 flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-bolt"></i> God Mode
+                    </h2>
+                    <p class="text-gray-500 text-xs">Executive-only controls · Handle with care</p>
+                </div>
+
+                <!-- Executive Order -->
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-scroll"></i> Executive Order
+                    </h2>
+                    <p class="text-gray-500 text-xs mb-4">Send a VIP gold alert to all users on the platform.</p>
+                    <input id="vip-title" type="text" placeholder="Subject"
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Direct command..."
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-24 focus:border-yellow-500 outline-none resize-none"></textarea>
+                    <button onclick="ceo.sendVIPBroadcast()"
+                        class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">
+                        Publish Gold Alert 🔔
+                    </button>
+                </div>
+
+                <!-- Inner Circle -->
+                <div class="bg-gradient-to-br from-purple-900/60 to-gray-900 p-6 rounded-xl border border-purple-500/60 shadow-lg">
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic flex items-center gap-2">
+                        <i class="fa-solid fa-circle-dot text-purple-400"></i> Inner Circle ⭕
+                    </h2>
+                    <p class="text-gray-500 text-xs mb-4">Promote or demote platform administrators.</p>
+                    <div class="flex gap-2 mb-4">
+                        <input id="admin-email-input" type="email" placeholder="Promote Email..."
+                            class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="ceo.addAdminByEmail()"
+                            class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500 transition">Promote</button>
+                    </div>
+                    <div class="bg-black/30 rounded-lg overflow-hidden border border-purple-500/20">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-purple-900/30 text-[10px] uppercase text-purple-300">
+                                <tr>
+                                    <th class="px-4 py-2">Name</th>
+                                    <th class="px-4 py-2">Email</th>
+                                    <th class="px-4 py-2">Role</th>
+                                    <th class="px-4 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-admins" class="divide-y divide-purple-900/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="bg-red-950/20 border border-red-800/40 p-6 rounded-xl">
+                    <h2 class="text-xl font-black text-red-500 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Danger Zone
+                    </h2>
+                    <p class="text-gray-500 text-xs mb-4">Irreversible platform-level operations.</p>
+                    <div class="flex gap-2">
+                        <input id="ban-email-god" type="email" placeholder="Target Email to Ban..."
+                            class="flex-1 p-3 rounded bg-gray-900 border border-red-800/50 text-white outline-none focus:border-red-500">
+                        <button onclick="ceo.banUser()"
+                            class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded font-bold transition">BAN</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Pages View -->
+            <div id="view-pages" class="ceo-view hidden p-4 md:p-6 space-y-6">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                    <h2 class="text-xl font-black text-white flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-sitemap text-blueAccent"></i> Platform Pages
+                    </h2>
+                    <p class="text-gray-500 text-xs">All active pages on azlearner.me</p>
+                </div>
+
+                <!-- Public Pages -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">🌐 Public Pages</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <a href="index.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-house text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Landing Page</p>
+                            <p class="text-gray-600 text-[10px]">index.html</p>
+                        </a>
+                        <a href="home.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-grid-2 text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Home / App</p>
+                            <p class="text-gray-600 text-[10px]">home.html</p>
+                        </a>
+                        <a href="app.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-mobile-screen text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">App Download</p>
+                            <p class="text-gray-600 text-[10px]">app.html</p>
+                        </a>
+                        <a href="courses.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-book-open text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Courses</p>
+                            <p class="text-gray-600 text-[10px]">courses.html</p>
+                        </a>
+                        <a href="games.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-gamepad text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Games</p>
+                            <p class="text-gray-600 text-[10px]">games.html</p>
+                        </a>
+                        <a href="challenges.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-trophy text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Challenges</p>
+                            <p class="text-gray-600 text-[10px]">challenges.html</p>
+                        </a>
+                        <a href="leaderboard.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-ranking-star text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Leaderboard</p>
+                            <p class="text-gray-600 text-[10px]">leaderboard.html</p>
+                        </a>
+                        <a href="wallpapers.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-image text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Wallpapers</p>
+                            <p class="text-gray-600 text-[10px]">wallpapers.html</p>
+                        </a>
+                        <a href="faq.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-circle-question text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">FAQ</p>
+                            <p class="text-gray-600 text-[10px]">faq.html</p>
+                        </a>
+                        <a href="form.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-file-pen text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Print Form</p>
+                            <p class="text-gray-600 text-[10px]">form.html</p>
+                        </a>
+                        <a href="certificate.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-certificate text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Certificate</p>
+                            <p class="text-gray-600 text-[10px]">certificate.html</p>
+                        </a>
+                        <a href="new.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-star text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">What's New</p>
+                            <p class="text-gray-600 text-[10px]">new.html</p>
+                        </a>
+                        <a href="pitch.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-chart-line text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Pitch Deck</p>
+                            <p class="text-gray-600 text-[10px]">pitch.html</p>
+                        </a>
+                        <a href="financial.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-coins text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Financial</p>
+                            <p class="text-gray-600 text-[10px]">financial.html</p>
+                        </a>
+                        <a href="privacy-policy.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-shield text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Privacy Policy</p>
+                            <p class="text-gray-600 text-[10px]">privacy-policy.html</p>
+                        </a>
+                        <a href="terms-of-service.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-file-contract text-blueAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Terms of Service</p>
+                            <p class="text-gray-600 text-[10px]">terms-of-service.html</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Ambassador Pages -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">🎓 Ambassador Pages</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <a href="ambassador.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-orange-500/50 transition">
+                            <i class="fa-solid fa-person-chalkboard text-orangeAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Ambassador Hub</p>
+                            <p class="text-gray-600 text-[10px]">ambassador.html</p>
+                        </a>
+                        <a href="ambassadorsignup.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-orange-500/50 transition">
+                            <i class="fa-solid fa-user-plus text-orangeAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Ambassador Signup</p>
+                            <p class="text-gray-600 text-[10px]">ambassadorsignup.html</p>
+                        </a>
+                        <a href="resume.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-orange-500/50 transition">
+                            <i class="fa-solid fa-file-lines text-orangeAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">CV Builder</p>
+                            <p class="text-gray-600 text-[10px]">resume.html</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Profile / Personal Pages -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">👤 Profile Pages</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <a href="francis.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-green-500/50 transition">
+                            <i class="fa-solid fa-id-card text-green-400 mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Francis Profile</p>
+                            <p class="text-gray-600 text-[10px]">francis.html</p>
+                        </a>
+                        <a href="emmanuel.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-green-500/50 transition">
+                            <i class="fa-solid fa-id-card text-green-400 mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Emmanuel Profile</p>
+                            <p class="text-gray-600 text-[10px]">emmanuel.html</p>
+                        </a>
+                        <a href="narnia.html" class="page-card bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-green-500/50 transition">
+                            <i class="fa-solid fa-compass text-green-400 mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Narnia</p>
+                            <p class="text-gray-600 text-[10px]">narnia.html</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Admin / Restricted Pages -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">🔒 Admin / Restricted</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <a href="admin.html" class="page-card bg-gray-900 border border-yellow-800/40 rounded-xl p-4 hover:border-yellow-600/50 transition">
+                            <i class="fa-solid fa-shield-halved text-orangeAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Admin HQ</p>
+                            <p class="text-gray-600 text-[10px]">admin.html</p>
+                        </a>
+                        <a href="cvadmin.html" class="page-card bg-gray-900 border border-yellow-800/40 rounded-xl p-4 hover:border-yellow-600/50 transition">
+                            <i class="fa-solid fa-user-gear text-orangeAccent mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">CV Admin</p>
+                            <p class="text-gray-600 text-[10px]">cvadmin.html</p>
+                        </a>
+                        <a href="database.html" class="page-card bg-gray-900 border border-blue-800/40 rounded-xl p-4 hover:border-blue-600/50 transition">
+                            <i class="fa-solid fa-database text-blue-400 mb-2 block"></i>
+                            <p class="font-bold text-white text-sm">Database</p>
+                            <p class="text-gray-600 text-[10px]">database.html</p>
+                        </a>
+                        <a href="ceo.html" class="page-card bg-gray-900 border border-yellow-600/50 rounded-xl p-4 hover:border-yellow-400/70 transition ceo-glow">
+                            <i class="fa-solid fa-bolt text-yellow-400 mb-2 block"></i>
+                            <p class="font-bold text-yellow-300 text-sm">CEO Hub ⚡</p>
+                            <p class="text-gray-600 text-[10px]">ceo.html</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform Management View -->
+            <div id="view-platform" class="ceo-view hidden p-4 md:p-6 space-y-6">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                    <h2 class="text-xl font-black text-white flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-sliders text-green-400"></i> Platform Management
+                    </h2>
+                    <p class="text-gray-500 text-xs">General controls for platform-wide settings and operations</p>
+                </div>
+
+                <!-- Broadcast Section -->
+                <div class="bg-gray-900 border border-gray-800 p-6 rounded-xl">
+                    <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn text-blueAccent"></i> Platform Broadcast
+                    </h3>
+                    <p class="text-gray-500 text-xs mb-4">Send an announcement to all users. For VIP gold alerts, use God Mode.</p>
+                    <input id="platform-broadcast-title" type="text" placeholder="Announcement Title"
+                        class="w-full mb-3 p-3 rounded bg-gray-950 border border-gray-700 text-white outline-none focus:border-blueAccent">
+                    <textarea id="platform-broadcast-body" placeholder="Message content..."
+                        class="w-full mb-3 p-3 rounded bg-gray-950 border border-gray-700 text-white h-20 outline-none focus:border-blueAccent resize-none"></textarea>
+                    <button onclick="ceo.sendBroadcast()"
+                        class="bg-blueAccent hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold transition">
+                        Broadcast 📡
+                    </button>
+                </div>
+
+                <!-- Platform Links Grid -->
+                <div class="bg-gray-900 border border-gray-800 p-6 rounded-xl">
+                    <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-link text-green-400"></i> Key Platform Links
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <a href="https://azlearner.me" target="_blank" class="flex items-center gap-3 p-3 bg-gray-950 border border-gray-700 rounded-lg hover:border-green-500/50 transition">
+                            <i class="fa-solid fa-globe text-green-400"></i>
+                            <div>
+                                <p class="font-bold text-white text-sm">Main Website</p>
+                                <p class="text-gray-500 text-xs">azlearner.me</p>
+                            </div>
+                            <i class="fa-solid fa-external-link ml-auto text-gray-600 text-xs"></i>
+                        </a>
+                        <a href="admin.html" class="flex items-center gap-3 p-3 bg-gray-950 border border-gray-700 rounded-lg hover:border-orange-500/50 transition">
+                            <i class="fa-solid fa-shield-halved text-orangeAccent"></i>
+                            <div>
+                                <p class="font-bold text-white text-sm">Admin Command</p>
+                                <p class="text-gray-500 text-xs">admin.html</p>
+                            </div>
+                        </a>
+                        <a href="database.html" class="flex items-center gap-3 p-3 bg-gray-950 border border-gray-700 rounded-lg hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-database text-blue-400"></i>
+                            <div>
+                                <p class="font-bold text-white text-sm">User Database</p>
+                                <p class="text-gray-500 text-xs">database.html</p>
+                            </div>
+                        </a>
+                        <a href="financial.html" class="flex items-center gap-3 p-3 bg-gray-950 border border-gray-700 rounded-lg hover:border-green-500/50 transition">
+                            <i class="fa-solid fa-coins text-green-400"></i>
+                            <div>
+                                <p class="font-bold text-white text-sm">Financial Overview</p>
+                                <p class="text-gray-500 text-xs">financial.html</p>
+                            </div>
+                        </a>
+                        <a href="pitch.html" class="flex items-center gap-3 p-3 bg-gray-950 border border-gray-700 rounded-lg hover:border-blue-500/50 transition">
+                            <i class="fa-solid fa-chart-line text-blue-400"></i>
+                            <div>
+                                <p class="font-bold text-white text-sm">Investor Pitch Deck</p>
+                                <p class="text-gray-500 text-xs">pitch.html</p>
+                            </div>
+                        </a>
+                        <a href="ambassador.html" class="flex items-center gap-3 p-3 bg-gray-950 border border-gray-700 rounded-lg hover:border-orange-500/50 transition">
+                            <i class="fa-solid fa-person-chalkboard text-orangeAccent"></i>
+                            <div>
+                                <p class="font-bold text-white text-sm">Ambassador Hub</p>
+                                <p class="text-gray-500 text-xs">ambassador.html</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- System Info -->
+                <div class="bg-gray-900 border border-gray-800 p-6 rounded-xl">
+                    <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-blueAccent"></i> System Information
+                    </h3>
+                    <div class="space-y-3 text-sm font-mono">
+                        <div class="flex justify-between py-2 border-b border-gray-800">
+                            <span class="text-gray-500">Platform</span>
+                            <span class="text-white font-bold">AZ Learner</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-gray-800">
+                            <span class="text-gray-500">Domain</span>
+                            <span class="text-green-400">azlearner.me</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-gray-800">
+                            <span class="text-gray-500">Backend</span>
+                            <span class="text-blueAccent">Firebase (az-learner)</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-gray-800">
+                            <span class="text-gray-500">Project ID</span>
+                            <span class="text-gray-300">az-learner</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-gray-800">
+                            <span class="text-gray-500">Auth Domain</span>
+                            <span class="text-gray-300">az-learner.firebaseapp.com</span>
+                        </div>
+                        <div class="flex justify-between py-2">
+                            <span class="text-gray-500">CEO Access</span>
+                            <span class="text-yellow-400 animate-pulse-gold">● ACTIVE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDocs, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const CEO_EMAIL = "pwavwef@gmail.com";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msgEl = document.getElementById('login-msg');
+                msgEl.innerText = '';
+
+                if (email !== CEO_EMAIL) {
+                    msgEl.innerText = "⛔ Access Denied: CEO credentials required.";
+                    return;
+                }
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msgEl.innerText = "Auth Failed: " + err.message;
+                }
+            },
+            logout() {
+                if (currentUser) ceo.logAction('CEO_EXIT', 'CEO session terminated.');
+                signOut(auth);
+            }
+        };
+
+        window.ceo = {
+            async logAction(type, details) {
+                if (!currentUser) return;
+                await addDoc(collection(db, "admin_logs"), {
+                    type, user: currentUser.name, email: currentUser.email,
+                    details, timestamp: serverTimestamp()
+                });
+            },
+
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        if (user.email !== CEO_EMAIL) {
+                            alert("⛔ Access Denied: This page is for the CEO only.");
+                            signOut(auth);
+                            return;
+                        }
+                        currentUser = { name: user.displayName || user.email, email: user.email, uid: user.uid };
+                        document.getElementById('auth-overlay').classList.add('hidden');
+                        document.getElementById('app-content').classList.remove('hidden');
+                        document.getElementById('ceo-name-display').innerText = `CEO · ${user.email}`;
+                        this.logAction('CEO_ENTRY', 'CEO session initialized.');
+                        this.startListeners();
+                        this.switchView('overview');
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchView(view) {
+                document.querySelectorAll('.ceo-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${view}`).classList.remove('hidden');
+                document.querySelectorAll('.ceo-nav-btn').forEach(btn => {
+                    btn.classList.remove('bg-yellow-600', 'text-black', 'bg-gray-800', 'text-gray-400');
+                    if (btn.id === `nav-${view}`) btn.classList.add('bg-yellow-600', 'text-black');
+                    else btn.classList.add('bg-gray-800', 'text-gray-400');
+                });
+            },
+
+            startListeners() {
+                // Load stats and admins (use same limit as database.html)
+                const USER_LIMIT = 500;
+                getDocs(query(collection(db, "users"), limit(USER_LIMIT))).then(snap => {
+                    let total = 0, admins = 0;
+                    let aHtml = '';
+                    snap.forEach(d => {
+                        const u = d.data();
+                        total++;
+                        if (u.role === 'admin') {
+                            admins++;
+                            aHtml += `<tr class="border-b border-purple-900/20">
+                                <td class="px-4 py-3 font-bold text-white">${u.name}</td>
+                                <td class="px-4 py-3 text-xs text-gray-400">${u.email || '-'}</td>
+                                <td class="px-4 py-3 text-xs text-purple-300">${u.role}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <button data-uid="${d.id}" class="demote-btn text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button>
+                                </td>
+                            </tr>`;
+                        }
+                    });
+                    const suffix = snap.size >= USER_LIMIT ? '+' : '';
+                    document.getElementById('stat-users').innerText = total + suffix;
+                    document.getElementById('stat-admins').innerText = admins;
+                    const adminList = document.getElementById('list-admins');
+                    if (adminList) {
+                        adminList.innerHTML = aHtml || '<tr><td colspan="4" class="px-4 py-4 text-gray-500 text-center text-xs">No admins found.</td></tr>';
+                        adminList.addEventListener('click', (e) => {
+                            const btn = e.target.closest('.demote-btn');
+                            if (btn) ceo.toggleUserRole(btn.dataset.uid);
+                        });
+                    }
+                });
+
+                // Recent activity logs
+                onSnapshot(query(collection(db, "admin_logs"), orderBy('timestamp', 'desc'), limit(20)), (snap) => {
+                    const list = document.getElementById('overview-logs');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const l = d.data();
+                        const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleString() : 'Just now';
+                        let typeColor = 'text-gray-400';
+                        if (l.type === 'CEO_ENTRY' || l.type === 'SYSTEM_ENTRY') typeColor = 'text-green-400';
+                        if (l.type === 'CEO_EXIT' || l.type === 'SYSTEM_EXIT') typeColor = 'text-red-400';
+                        if (l.type === 'MISSION_COMPLETE') typeColor = 'text-yellow-400';
+                        list.innerHTML += `<tr class="hover:bg-gray-900/50 transition">
+                            <td class="px-4 py-3 text-[10px] opacity-70 whitespace-nowrap">${time}</td>
+                            <td class="px-4 py-3 font-bold text-white text-xs">${l.user}</td>
+                            <td class="px-4 py-3 font-bold text-[10px] uppercase ${typeColor}">${l.type}</td>
+                            <td class="px-4 py-3 truncate max-w-xs text-[10px]" title="${l.details}">${l.details}</td>
+                        </tr>`;
+                    });
+                    if (snap.empty) list.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-600 text-xs">No activity logs yet.</td></tr>';
+                });
+            },
+
+            async sendVIPBroadcast() {
+                const title = document.getElementById('vip-title').value.trim();
+                const body = document.getElementById('vip-body').value.trim();
+                if (!title) return alert("Please enter a subject.");
+                await addDoc(collection(db, "global_announcements"), { title, body, isVIP: true, timestamp: Date.now() });
+                await this.logAction('VIP_BROADCAST', `Executive Order published: "${title}"`);
+                document.getElementById('vip-title').value = '';
+                document.getElementById('vip-body').value = '';
+                alert("Executive Order Published 📜");
+            },
+
+            async addAdminByEmail() {
+                const email = document.getElementById('admin-email-input').value.trim();
+                if (!email) return;
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if (snap.empty) { alert("User not found in database."); return; }
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); });
+                await this.logAction('ADMIN_PROMOTED', `Promoted ${email} to admin`);
+                alert(`✅ Promoted ${email} to Admin.`);
+                document.getElementById('admin-email-input').value = '';
+                this.startListeners();
+            },
+
+            async toggleUserRole(uid, currentRole) {
+                if (confirm("Revoke admin status for this user?")) {
+                    await updateDoc(doc(db, "users", uid), { role: "student" });
+                    await this.logAction('ADMIN_DEMOTED', `Demoted user uid: ${uid}`);
+                    this.startListeners();
+                }
+            },
+
+            async banUser() {
+                const email = document.getElementById('ban-email-god').value.trim();
+                if (!email) return;
+                if (!confirm(`⚠️ Ban user: ${email}? This is irreversible.`)) return;
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if (snap.empty) return alert("Target not found in database.");
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
+                await this.logAction('USER_BANNED', `Banned user: ${email}`);
+                alert("🔨 User banned.");
+                document.getElementById('ban-email-god').value = '';
+            },
+
+            async sendBroadcast() {
+                const title = document.getElementById('platform-broadcast-title').value.trim();
+                const body = document.getElementById('platform-broadcast-body').value.trim();
+                if (!title) return alert("Please enter a title.");
+                await addDoc(collection(db, "global_announcements"), { title, body, timestamp: Date.now() });
+                await this.logAction('PLATFORM_BROADCAST', `Broadcast sent: "${title}"`);
+                document.getElementById('platform-broadcast-title').value = '';
+                document.getElementById('platform-broadcast-body').value = '';
+                alert("📡 Broadcast transmitted.");
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => ceo.init());
+    </script>
+</body>
+
+</html>

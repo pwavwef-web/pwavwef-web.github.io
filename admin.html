@@ -114,12 +114,9 @@
             <button onclick="app.switchView('broadcast')" id="nav-broadcast"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
                     class="fa-solid fa-bullhorn mr-2"></i>Comms</button>
-            <button onclick="app.switchView('users')" id="nav-users"
-                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
-                    class="fa-solid fa-users mr-2"></i>DB</button>
-            <button onclick="app.switchView('godmode')" id="nav-godmode"
-                class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i
-                    class="fa-solid fa-bolt mr-2"></i>God Mode</button>
+            <a href="ceo.html"
+                class="px-4 py-2 rounded-lg bg-yellow-600/20 text-yellow-400 font-bold text-sm whitespace-nowrap border border-yellow-600/30 hover:bg-yellow-600/40 transition flex items-center gap-2"><i
+                    class="fa-solid fa-bolt mr-1"></i>CEO Hub ⚡</a>
         </div>
 
         <div class="flex-1 overflow-hidden flex flex-col bg-[#0f1115]">
@@ -578,72 +575,6 @@
                 <div id="list-broadcasts" class="space-y-2"></div>
             </div>
 
-            <div id="view-users" class="admin-view hidden space-y-8 overflow-y-auto p-4 md:p-6 h-full">
-                <div>
-                    <h2 class="text-xl font-bold mb-4">Personnel Database</h2>
-                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
-                        <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]">
-                                <tr>
-                                    <th class="px-4 py-3">Identity</th>
-                                    <th class="px-4 py-3">Comms</th>
-                                    <th class="px-4 py-3">Clearance</th>
-                                </tr>
-                            </thead>
-                            <tbody id="list-users" class="divide-y divide-gray-700"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="bg-red-900/10 border border-red-500/30 p-6 rounded-xl">
-                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest">
-                        <i class="fa-solid fa-gavel"></i> Disciplinary Action
-                    </h3>
-                    <div class="flex gap-2">
-                        <input id="ban-email-input" type="email" placeholder="Target Email..."
-                            class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
-                        <button onclick="app.banUser()"
-                            class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-godmode" class="admin-view hidden space-y-8 overflow-y-auto p-4 md:p-6 h-full">
-                <div
-                    class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
-                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i
-                            class="fa-solid fa-scroll"></i> Executive Order</h2>
-                    <input id="vip-title" type="text" placeholder="Subject"
-                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
-                    <textarea id="vip-body" placeholder="Direct command..."
-                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
-                    <button onclick="app.sendVIPBroadcast()"
-                        class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish
-                        Gold Alert 🔔</button>
-                </div>
-                <div
-                    class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
-                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">Inner Circle ⭕</h2>
-                    <div class="flex gap-2 mb-4">
-                        <input id="admin-email-input" type="email" placeholder="Promote Email..."
-                            class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
-                        <button onclick="app.addAdminByEmail()"
-                            class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
-                    </div>
-                    <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
-                        <table class="w-full text-left text-sm text-gray-300">
-                            <thead class="bg-purple-900/30 text-[10px] uppercase text-purple-300">
-                                <tr>
-                                    <th class="px-4 py-2">Name</th>
-                                    <th class="px-4 py-2">Role</th>
-                                    <th class="px-4 py-2 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="list-admins" class="divide-y divide-purple-900/20"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -718,9 +649,6 @@
                             document.getElementById('app-content').classList.remove('hidden');
                             document.getElementById('admin-name-display').innerText = `Officer ${userData.name}`;
 
-                            if (user.email === "pwavwef@gmail.com") {
-                                document.getElementById('nav-godmode').classList.remove('hidden');
-                            }
                             this.startListeners();
                             this.switchView('dash');
                         }
@@ -764,9 +692,6 @@
                             document.getElementById('app-content').classList.remove('hidden');
                             document.getElementById('admin-name-display').innerText = `Officer ${userData.name}`;
 
-                            if (user.email === "pwavwef@gmail.com") {
-                                document.getElementById('nav-godmode').classList.remove('hidden');
-                            }
                             this.startListeners();
                             this.switchView('dash');
                         }
@@ -1220,24 +1145,17 @@
 
                 // Users & Populate Assignee Dropdown
                 getDocs(query(collection(db, "users"), limit(100))).then(snap => {
-                    const list = document.getElementById('list-users');
-                    const adminListHtml = document.getElementById('list-admins');
                     const dropdown = document.getElementById('team-task-assignee');
                     document.getElementById('stat-users').innerText = snap.size + "+";
 
-                    let uHtml = ''; let aHtml = ''; let opts = '<option value="Unassigned">Anyone</option>';
+                    let opts = '<option value="Unassigned">Anyone</option>';
 
                     snap.forEach(d => {
                         const u = d.data();
-                        uHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-gray-300">${u.name}</td><td class="px-4 py-3">${u.phone || '-'}</td><td class="px-4 py-3"><span class="bg-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td></tr>`;
-
                         if (u.role === 'admin') {
-                            aHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.role}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${d.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button></td></tr>`;
                             opts += `<option value="${u.name}">${u.name}</option>`;
                         }
                     });
-                    list.innerHTML = uHtml;
-                    adminListHtml.innerHTML = aHtml;
                     dropdown.innerHTML = opts;
                 });
 
@@ -1649,46 +1567,12 @@
 
             async deleteBroadcast(id) { if (confirm("Retract Signal?")) await deleteDoc(doc(db, "global_announcements", id)); },
 
-            async sendVIPBroadcast() {
-                const title = document.getElementById('vip-title').value;
-                const body = document.getElementById('vip-body').value;
-                await addDoc(collection(db, "global_announcements"), { title, body, isVIP: true, timestamp: Date.now() });
-                alert("Executive Order Published 📜");
-            },
-
-            async banUser() {
-                const email = document.getElementById('ban-email-input').value.trim();
-                if (!email) return;
-                const q = query(collection(db, "users"), where("email", "==", email));
-                const snap = await getDocs(q);
-                if (snap.empty) return alert("Target not found in DB.");
-                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
-                alert("Hammer Dropped 🔨");
-            },
-
             async flushRequests() {
                 if (!confirm("Warning: This will wipe all service logs. Proceed?")) return;
                 const q = query(collection(db, "print_orders"));
                 const snap = await getDocs(q);
                 snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
                 alert("Logs Purged.");
-            },
-
-            async addAdminByEmail() {
-                const email = document.getElementById('admin-email-input').value.trim();
-                if (!email) return;
-                const q = query(collection(db, "users"), where("email", "==", email));
-                const snap = await getDocs(q);
-                if (snap.empty) { alert("User not found!"); return; }
-                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); });
-                alert(`Promoted ${email} to Command.`);
-            },
-
-            async toggleUserRole(uid, currentRole) {
-                if (confirm(`Revoke admin status for this user?`)) {
-                    const newRole = currentRole === 'admin' ? 'student' : 'admin';
-                    await updateDoc(doc(db, "users", uid), { role: newRole });
-                }
             },
 
             async compressImage(file) {
