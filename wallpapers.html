@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner Wallpapers – Free Android, Desktop & iOS Downloads</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: #020617;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated hero background ── */
+        .hero-bg {
+            background: linear-gradient(135deg, #020617 0%, #0f172a 35%, #1e1b4b 65%, #12092b 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        /* ── Glass panel ── */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* ── Shimmer text ── */
+        @keyframes shimmer {
+            0%   { background-position: -300% center; }
+            100% { background-position:  300% center; }
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg, #FFAB40, #fff 40%, #FFAB40 70%, #fff);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 5s linear infinite;
+        }
+
+        /* ── Float animation ── */
+        @keyframes float {
+            0%, 100% { transform: translateY(0);    }
+            50%       { transform: translateY(-12px); }
+        }
+        .float-anim { animation: float 4s ease-in-out infinite; }
+
+        /* ── Pulse badge ── */
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.7; transform: scale(1.06); }
+        }
+        .pulse-badge { animation: pulse-badge 2.5s ease-in-out infinite; }
+
+        /* ── Tabs ── */
+        .tab-btn {
+            position: relative;
+            padding: 14px 28px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            transition: color 0.3s;
+            white-space: nowrap;
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%; right: 50%;
+            height: 3px;
+            background: #FFAB40;
+            border-radius: 3px 3px 0 0;
+            transition: left 0.3s, right 0.3s;
+        }
+        .tab-btn.active { color: #FFAB40; }
+        .tab-btn.active::after { left: 0; right: 0; }
+        .tab-btn:hover:not(.active) { color: #e2e8f0; }
+
+        /* ── Sections ── */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ── Wallpaper card ── */
+        .wallpaper-card {
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            transition: transform 0.35s cubic-bezier(.22,.61,.36,1), box-shadow 0.35s ease;
+            cursor: default;
+        }
+        .wallpaper-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+            border-color: rgba(255,171,64,0.35);
+        }
+
+        .canvas-preview {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .card-footer {
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.35);
+        }
+
+        /* ── Download button ── */
+        .dl-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 9px 0;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #3b82f6, #7c3aed);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .dl-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .dl-btn:hover::before { opacity: 1; }
+        .dl-btn:active { transform: scale(0.96); }
+        .dl-btn span { position: relative; }
+
+        /* ── Stats counter ── */
+        .stat-card {
+            border-radius: 14px;
+            padding: 14px 20px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 32px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 9999;
+            transition: transform 0.4s cubic-bezier(.22,.61,.36,1);
+            pointer-events: none;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── Loading spinner ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #FFAB40;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 60px auto;
+        }
+
+        /* ── Category header accent ── */
+        .cat-accent {
+            display: inline-block;
+            width: 4px;
+            height: 100%;
+            border-radius: 4px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     NAV
+══════════════════════════════ -->
+<nav class="glass border-b border-white/10 sticky top-0 z-50 px-5 py-3 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-3 group">
+        <img src="favicon1.png" alt="AZ Learner" class="h-8 w-8 rounded-lg" onerror="this.style.display='none'">
+        <span class="font-black text-white text-lg tracking-tight">AZ Learner</span>
+    </a>
+    <a href="index.html"
+       class="text-xs font-semibold text-gray-400 hover:text-white transition flex items-center gap-1.5 glass px-3 py-1.5 rounded-full">
+        ← Back to Home
+    </a>
+</nav>
+
+<!-- ══════════════════════════════
+     HERO
+══════════════════════════════ -->
+<div class="hero-bg py-20 px-4 text-center">
+    <!-- Blobs -->
+    <div class="hero-blob w-[500px] h-[500px]" style="background:#7b2ff7;top:-100px;left:-120px;"></div>
+    <div class="hero-blob w-[400px] h-[400px]" style="background:#FFAB40;bottom:-80px;right:-80px;"></div>
+    <div class="hero-blob w-[300px] h-[300px]" style="background:#0ea5e9;top:30%;left:55%;"></div>
+
+    <div class="relative z-10 max-w-3xl mx-auto">
+        <div class="text-6xl mb-5 float-anim select-none">🎨</div>
+
+        <h1 class="text-5xl md:text-7xl font-black leading-tight mb-5">
+            <span class="shimmer-text">AZ LEARNER</span><br>
+            <span class="text-white">WALLPAPERS</span>
+        </h1>
+
+        <p class="text-slate-400 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+            45 exclusive, stunning wallpapers crafted for students who mean business.<br>
+            <span class="text-orange-400 font-semibold">Free. Fire. Yours.</span>
+        </p>
+
+        <!-- Stats row -->
+        <div class="flex justify-center gap-4 flex-wrap">
+            <div class="stat-card glass pulse-badge">
+                <div class="text-3xl font-black text-green-400">15</div>
+                <div class="text-xs text-gray-400 mt-1 font-semibold">📱 Android</div>
+            </div>
+            <div class="stat-card glass pulse-badge" style="animation-delay:.4s">
+                <div class="text-3xl font-black text-blue-400">15</div>
+                <div class="text-xs text-gray-400 mt-1 font-semibold">🖥️ Desktop AZ</div>
+            </div>
+            <div class="stat-card glass pulse-badge" style="animation-delay:.8s">
+                <div class="text-3xl font-black text-purple-400">15</div>
+                <div class="text-xs text-gray-400 mt-1 font-semibold">🍎 iOS</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="text-3xl font-black text-orange-400">FREE</div>
+                <div class="text-xs text-gray-400 mt-1 font-semibold">✦ Always</div>
+            </div>
+        </div>
+
+        <!-- Scroll hint -->
+        <p class="text-gray-600 text-xs mt-8">↓ Pick your category below and start downloading ↓</p>
+    </div>
+</div>
+
+<!-- ══════════════════════════════
+     TABS
+══════════════════════════════ -->
+<div class="glass border-b border-white/10 sticky top-[57px] z-40 overflow-x-auto">
+    <div class="max-w-6xl mx-auto flex">
+        <button id="tab-android" class="tab-btn active" onclick="showTab('android')">
+            📱 Android (15)
+        </button>
+        <button id="tab-desktop" class="tab-btn" onclick="showTab('desktop')">
+            🖥️ Desktop AZ (15)
+        </button>
+        <button id="tab-ios" class="tab-btn" onclick="showTab('ios')">
+            🍎 iOS (15)
+        </button>
+    </div>
+</div>
+
+<!-- ══════════════════════════════
+     MAIN CONTENT
+══════════════════════════════ -->
+<div class="max-w-6xl mx-auto px-4 py-10">
+
+    <!-- ── ANDROID ── -->
+    <section id="android-section" class="section active">
+        <div class="mb-8 flex items-start gap-3">
+            <div>
+                <h2 class="text-2xl font-black text-white flex items-center gap-2">
+                    <span class="text-green-400 text-3xl">📱</span> Android Wallpapers
+                </h2>
+                <p class="text-slate-400 text-sm mt-1">1080 × 1920 FHD+ · OLED-friendly dark art · Click ⬇ to download full-res PNG</p>
+            </div>
+        </div>
+        <div id="android-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+            <div class="col-span-full flex justify-center"><div class="spinner"></div></div>
+        </div>
+    </section>
+
+    <!-- ── DESKTOP ── -->
+    <section id="desktop-section" class="section">
+        <div class="mb-8 flex items-start gap-3">
+            <div>
+                <h2 class="text-2xl font-black text-white flex items-center gap-2">
+                    <span class="text-blue-400 text-3xl">🖥️</span> Desktop AZ Learner Wallpapers
+                </h2>
+                <p class="text-slate-400 text-sm mt-1">1920 × 1080 Full HD · AZ Learner branded · Represent the movement on your screen</p>
+            </div>
+        </div>
+        <div id="desktop-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full flex justify-center"><div class="spinner"></div></div>
+        </div>
+    </section>
+
+    <!-- ── iOS ── -->
+    <section id="ios-section" class="section">
+        <div class="mb-8 flex items-start gap-3">
+            <div>
+                <h2 class="text-2xl font-black text-white flex items-center gap-2">
+                    <span class="text-purple-400 text-3xl">🍎</span> iOS Wallpapers
+                </h2>
+                <p class="text-slate-400 text-sm mt-1">1170 × 2532 · Crafted for iPhone 13/14/15 Pro · Fluid & cinematic</p>
+            </div>
+        </div>
+        <div id="ios-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+            <div class="col-span-full flex justify-center"><div class="spinner"></div></div>
+        </div>
+    </section>
+
+</div>
+
+<!-- Footer -->
+<footer class="glass border-t border-white/10 py-10 text-center mt-10">
+    <p class="text-gray-500 text-sm">
+        © 2025 Francis Pwavwe Production · AZ Learner Wallpapers ·
+        <a href="index.html" class="text-blue-400 hover:text-blue-300 transition font-semibold">Back to App →</a>
+    </p>
+    <p class="text-gray-700 text-xs mt-2">All wallpapers are original generative art. Free for personal use.</p>
+</footer>
+
+<!-- Toast -->
+<div id="toast">✅ Downloading…</div>
+
+<!-- ══════════════════════════════
+     JAVASCRIPT ENGINE
+══════════════════════════════ -->
+<script>
+// ───────────────────────────────────────────────
+// 1.  WALLPAPER DATA
+// ───────────────────────────────────────────────
+const WALLPAPERS = {
+    android: [
+        { id:'a1',  title:'Deep Nebula',      pattern:'cosmic',        colors:['#0a0020','#2d0060','#7b2ff7','#e040fb','#ff4081'] },
+        { id:'a2',  title:'Neon Pulse',       pattern:'neon',          bgColor:'#030010', colors:['#ff00ff','#00ffff','#ff0090','#9900ff'] },
+        { id:'a3',  title:'Emerald Circuit',  pattern:'hexgrid',       bgColor:'#001a0d', bgColor2:'#002211', colors:['#00ff88','#00cc66','#88ffcc','#00ff44'] },
+        { id:'a4',  title:'Ocean Depths',     pattern:'waves',         colors:['#001a3a','#003366','#0055aa','#0088cc','#00aadd'] },
+        { id:'a5',  title:'Solar Storm',      pattern:'cosmic',        colors:['#1a0500','#660000','#cc2200','#ff4400','#ff8800','#ffcc00'] },
+        { id:'a6',  title:'Crystal Caves',    pattern:'frost',         colors:['#001233','#0a2463','#1e6fff','#87ceeb','#cce8ff'] },
+        { id:'a7',  title:'Rose Cascade',     pattern:'liquid',        bgColor:'#100010', colors:['#cc0066','#ff0099','#ff44aa','#ff88cc','#ffbbdd'] },
+        { id:'a8',  title:'Galaxy Spiral',    pattern:'cosmic',        colors:['#000000','#0d0030','#2d0880','#5500ff','#9933ff','#ffffff'] },
+        { id:'a9',  title:'Matrix Rain',      pattern:'neon',          bgColor:'#000a00', colors:['#00ff00','#00cc00','#00ee00','#44ff44'] },
+        { id:'a10', title:'Lava Lamp',        pattern:'liquid',        bgColor:'#0a0300', colors:['#ff2200','#ff5500','#ff8800','#ffaa00','#ffdd00'] },
+        { id:'a11', title:'Aurora Dreams',    pattern:'aurora',        bgColor:'#010d1a', colors:['#00ff88','#00ccff','#aa00ff','#0088ff','#00ffcc'] },
+        { id:'a12', title:'Cherry Blossom',   pattern:'liquid',        bgColor:'#150010', colors:['#ff2266','#ff4488','#ff99bb','#ffccdd','#ffe0ee'] },
+        { id:'a13', title:'Dark Prism',       pattern:'prism',         bgColor:'#050508', colors:[] },
+        { id:'a14', title:'Teal Abyss',       pattern:'waves',         colors:['#001a1a','#003333','#006666','#009999','#00cccc','#00eeee'] },
+        { id:'a15', title:'Carbon Hex',       pattern:'hexgrid',       bgColor:'#080808', bgColor2:'#111116', colors:['#222233','#334455','#556677','#778899'] }
+    ],
+    desktop: [
+        { id:'d1',  title:'Study Hard, Shine Bright', pattern:'branded', colors:['#0f172a','#1e3a8a','#3b82f6','#7c3aed'], text:'STUDY HARD\nSHINE BRIGHT', subtitle:'azlearner.me' },
+        { id:'d2',  title:'Knowledge Is Power', pattern:'branded', colors:['#1a0a00','#4a1500','#994400','#cc6600','#ff8c00','#ffab40'], text:'KNOWLEDGE\nIS POWER', subtitle:'Your Academic Companion' },
+        { id:'d3',  title:'Connect. Learn. Grow.', pattern:'branded', colors:['#000d1a','#001a3a','#002d66','#0044aa'], text:'CONNECT.\nLEARN. GROW.', subtitle:'AZ Learner Community' },
+        { id:'d4',  title:'Chase the Grade A', pattern:'branded', colors:['#0d0020','#2d0060','#6600cc','#aa00ff','#cc66ff'], text:'CHASE THE\nGRADE A', subtitle:'GPA Calculator & Tracker' },
+        { id:'d5',  title:'Night Owl Scholar', pattern:'branded', colors:['#010408','#080d1a','#111827','#1f2d4a'], text:'THE LATE NIGHT\nSCHOLAR', subtitle:'Burning midnight oil since 2024' },
+        { id:'d6',  title:'Print & Deliver', pattern:'branded', colors:['#020c1a','#0a2040','#0033aa','#0055cc','#448aff'], text:'PRINT.\nDELIVER.', subtitle:'Campus Print & Delivery at Your Fingertips' },
+        { id:'d7',  title:'Built Different', pattern:'branded', colors:['#001a33','#003366','#0055aa','#0077cc','#22aaff'], text:'BUILT\nDIFFERENT', subtitle:'GPA Goals Unlocked with AZ Learner' },
+        { id:'d8',  title:'Own Your Campus', pattern:'branded', colors:['#1a0a00','#3d2000','#7a4400','#b36600','#ff9900','#ffc233'], text:'OWN YOUR\nCAMPUS', subtitle:'UCC & Beyond' },
+        { id:'d9',  title:'Never Get Caught', pattern:'branded', colors:['#0a0020','#1a0040','#330099','#5500dd','#8833ff'], text:'NEVER GET\nCAUGHT OFF GUARD', subtitle:'Past Questions Library' },
+        { id:'d10', title:'Better Together', pattern:'branded', colors:['#001a2a','#003355','#006688','#0088aa','#00aabb'], text:'BETTER\nTOGETHER', subtitle:'Course Chat Circles' },
+        { id:'d11', title:'Exam Mode: Activated', pattern:'branded', colors:['#1a0000','#3a0000','#660000','#990000','#cc1111'], text:'EXAM MODE:\nACTIVATED', subtitle:'Lock In. Level Up.' },
+        { id:'d12', title:'Your Moment Is Coming', pattern:'branded', colors:['#1a1400','#3d2e00','#7a5c00','#b38a00','#e6b800','#ffe566'], text:'YOUR MOMENT\nIS COMING', subtitle:'Keep Going. Keep Growing.' },
+        { id:'d13', title:'The AZ Scholar', pattern:'branded', colors:['#00001a','#000033','#00006a','#0000aa','#2222cc'], text:'THE AZ\nSCHOLAR', subtitle:'Excellence is the Standard' },
+        { id:'d14', title:'Digital Learner', pattern:'branded', colors:['#001a10','#003a20','#006040','#009960','#00cc80'], text:'DIGITAL.\nSMART. AHEAD.', subtitle:'Study Smarter with AZ Learner' },
+        { id:'d15', title:'The AZ Legacy', pattern:'branded', colors:['#0d0020','#2a0050','#5500cc','#8800ff','#bb44ff','#ff99ff'], text:'THE AZ\nLEGACY', subtitle:'azlearner.me · Francis Pwavwe Production' }
+    ],
+    ios: [
+        { id:'i1',  title:'Liquid Glass',     pattern:'liquid',        bgColor:'#0a0d1a', colors:['#4466ff','#7755ff','#aa44ee','#ff44cc','#66aaff'] },
+        { id:'i2',  title:'Aurora Night',     pattern:'aurora',        bgColor:'#01070f', colors:['#00d4aa','#00aaff','#6600ff','#00ff88','#00ccdd'] },
+        { id:'i3',  title:'Morphic Blue',     pattern:'liquid',        bgColor:'#020c28', colors:['#0055ff','#0033cc','#0099ff','#55bbff','#0077dd'] },
+        { id:'i4',  title:'Peach Ember',      pattern:'liquid',        bgColor:'#1a0a00', colors:['#ff8844','#ff6622','#cc3300','#ff9966','#ffbb88'] },
+        { id:'i5',  title:'Mint Matrix',      pattern:'hexgrid',       bgColor:'#001a0d', bgColor2:'#002211', colors:['#00ff99','#00dd77','#00bbaa','#00ddcc'] },
+        { id:'i6',  title:'Starlight Gold',   pattern:'particles',     bgColor:'#0a0800', colors:['#ffd700','#ffaa00','#ff8800','#ffeeaa','#ffffff'] },
+        { id:'i7',  title:'Velvet Mist',      pattern:'liquid',        bgColor:'#0d0020', colors:['#6600cc','#4400aa','#8833ff','#cc66ff','#dd99ff'] },
+        { id:'i8',  title:'Electric Dreams',  pattern:'neon',          bgColor:'#000000', colors:['#00ffff','#0088ff','#0044ff','#4400ff','#8800ff'] },
+        { id:'i9',  title:'Ice Crystal',      pattern:'frost',         colors:['#000d1a','#001a33','#002244','#003366','#0044aa'] },
+        { id:'i10', title:'Amber Glow',       pattern:'cosmic',        colors:['#1a0800','#4d1500','#8b2500','#cc4400','#ff7700','#ffcc44'] },
+        { id:'i11', title:'Abyss Blue',       pattern:'waves',         colors:['#000d1a','#001a33','#00264d','#003366','#004080','#0055aa'] },
+        { id:'i12', title:'Coral Sunrise',    pattern:'liquid',        bgColor:'#150005', colors:['#ff2244','#ff4466','#ff6688','#ff99aa','#ffbbcc'] },
+        { id:'i13', title:'Storm Surge',      pattern:'waves',         colors:['#050508','#0d0d1a','#1a1a2e','#252540','#333355','#555577'] },
+        { id:'i14', title:'Berry Night',      pattern:'cosmic',        colors:['#0d0018','#2d0044','#550066','#880099','#bb22cc','#ee55ff'] },
+        { id:'i15', title:'Cloud Atlas',      pattern:'liquid',        bgColor:'#020d1a', colors:['#336699','#4477aa','#5588bb','#7799cc','#99bbdd'] }
+    ]
+};
+
+// Full-resolution download sizes
+const FULL_DIMS = {
+    android: { w: 1080, h: 1920 },
+    desktop:  { w: 1920, h: 1080 },
+    ios:      { w: 1170, h: 2532 }
+};
+
+// Preview canvas sizes
+const PREV = {
+    android: { w: 270, h: 480 },
+    desktop:  { w: 480, h: 270 },
+    ios:      { w: 270, h: 584 }
+};
+
+// ───────────────────────────────────────────────
+// 2.  SEEDED RNG
+// ───────────────────────────────────────────────
+function makeRNG(seed) {
+    let s = seed >>> 0;
+    return () => {
+        s = (Math.imul(1664525, s) + 1013904223) | 0;
+        return (s >>> 0) / 0xFFFFFFFF;
+    };
+}
+
+// ───────────────────────────────────────────────
+// 3.  HELPERS
+// ───────────────────────────────────────────────
+function rgba(hex, a) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${a})`;
+}
+
+function pickSeed(id) {
+    return id.split('').reduce((acc, c) => acc * 31 + c.charCodeAt(0), 7) >>> 0;
+}
+
+// ───────────────────────────────────────────────
+// 4.  PATTERN RENDERERS
+// ───────────────────────────────────────────────
+
+/* ── COSMIC / NEBULA ── */
+function drawCosmic(ctx, w, h, wp, rng) {
+    const nc = wp.colors.length;
+    const bg = ctx.createLinearGradient(0, 0, w * 0.6, h);
+    wp.colors.forEach((c, i) => bg.addColorStop(i / (nc - 1), c));
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Nebula clouds
+    for (let i = 0; i < 8; i++) {
+        const x = rng() * w, y = rng() * h;
+        const r = (0.1 + rng() * 0.4) * Math.max(w, h);
+        const c = wp.colors[Math.floor(rng() * nc)];
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, rgba(c, 0.38));
+        g.addColorStop(0.5, rgba(c, 0.12));
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+
+    // Stars
+    const ns = Math.min(350, Math.floor(w * h / 7000));
+    for (let i = 0; i < ns; i++) {
+        const x = rng() * w, y = rng() * h, r = rng() * 1.8 + 0.2;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + rng() * 0.7})`; ctx.fill();
+    }
+
+    // Bright star glows
+    for (let i = 0; i < 10; i++) {
+        const x = rng() * w, y = rng() * h, R = 45 * (w / 1080);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+        g.addColorStop(0, 'rgba(255,255,255,0.75)');
+        g.addColorStop(0.3, 'rgba(255,255,255,0.12)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Vignette
+    const vg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w,h)*0.72);
+    vg.addColorStop(0.55, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.65)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── NEON LINES ── */
+function drawNeon(ctx, w, h, wp, rng) {
+    ctx.fillStyle = wp.bgColor || '#000000'; ctx.fillRect(0, 0, w, h);
+    const nc = wp.colors.length;
+
+    for (let i = 0; i < 28; i++) {
+        const c = wp.colors[i % nc];
+        const x1 = rng() * w * 1.6 - w * 0.3;
+        const y1 = rng() * h * 1.4 - h * 0.2;
+        const angle = (-35 + rng() * 70) * Math.PI / 180 + Math.PI / 4;
+        const dist = (0.4 + rng() * 0.8) * Math.hypot(w, h);
+        const x2 = x1 + Math.cos(angle) * dist;
+        const y2 = y1 + Math.sin(angle) * dist;
+        const lw = 0.6 + rng() * 2.2;
+
+        [28, 14, 7].forEach((blur) => {
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.strokeStyle = rgba(c, 0.055 + (28 - blur) * 0.008);
+            ctx.lineWidth = lw + blur; ctx.stroke();
+        });
+
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.stroke();
+    }
+
+    // Vignette
+    const vg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w,h)*0.8);
+    vg.addColorStop(0.45, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.72)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── WAVES ── */
+function drawWaves(ctx, w, h, wp, rng) {
+    const nc = wp.colors.length;
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, wp.colors[0]); bg.addColorStop(1, wp.colors[nc-1]);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    for (let layer = 0; layer < nc - 1; layer++) {
+        const yBase = h * (0.18 + (layer / (nc - 1)) * 0.68);
+        const amp = h * (0.04 + rng() * 0.06);
+        const freq = (1.5 + rng() * 3) / w * Math.PI * 2;
+        const phase = rng() * Math.PI * 2;
+        const freq2 = freq * (1.5 + rng());
+        const phase2 = rng() * Math.PI * 2;
+
+        ctx.beginPath(); ctx.moveTo(-1, h + 1); ctx.lineTo(-1, yBase);
+        for (let x = 0; x <= w + 1; x += 3) {
+            const y = yBase + Math.sin(x * freq + phase) * amp +
+                      Math.sin(x * freq2 + phase2) * amp * 0.35;
+            ctx.lineTo(x, y);
+        }
+        ctx.lineTo(w + 1, h + 1); ctx.closePath();
+
+        const wg = ctx.createLinearGradient(0, yBase - amp, 0, h);
+        wg.addColorStop(0, rgba(wp.colors[layer + 1], 0.88));
+        wg.addColorStop(0.65, rgba(wp.colors[layer + 1], 0.52));
+        wg.addColorStop(1, rgba(wp.colors[layer + 1], 0.18));
+        ctx.fillStyle = wg; ctx.fill();
+    }
+}
+
+/* ── HEX GRID ── */
+function drawHexgrid(ctx, w, h, wp, rng) {
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, wp.bgColor || '#000');
+    bg.addColorStop(1, wp.bgColor2 || wp.bgColor || '#000');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    const nc = wp.colors.length;
+    const size = Math.min(w, h) * 0.055;
+    const hexW = size * 2, hexH = Math.sqrt(3) * size;
+
+    for (let row = -1; row * hexH < h + hexH; row++) {
+        for (let col = -1; col * hexW * 0.75 < w + hexW; col++) {
+            const x = col * hexW * 0.75;
+            const y = row * hexH + (col % 2 !== 0 ? hexH / 2 : 0);
+            const c = wp.colors[Math.floor(rng() * nc)];
+            const filled = rng() < 0.18;
+            const alpha = 0.07 + rng() * 0.22;
+
+            ctx.beginPath();
+            for (let k = 0; k < 6; k++) {
+                const a = (k * 60 - 30) * Math.PI / 180;
+                const hx = x + size * Math.cos(a), hy = y + size * Math.sin(a);
+                k === 0 ? ctx.moveTo(hx, hy) : ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = rgba(c, alpha + 0.18); ctx.lineWidth = 0.8; ctx.stroke();
+            if (filled) { ctx.fillStyle = rgba(c, alpha * 0.75); ctx.fill(); }
+        }
+    }
+
+    // Centre glow
+    const glow = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.min(w,h)*0.55);
+    glow.addColorStop(0, rgba(wp.colors[0], 0.25)); glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── AURORA ── */
+function drawAurora(ctx, w, h, wp, rng) {
+    ctx.fillStyle = wp.bgColor || '#010d1a'; ctx.fillRect(0, 0, w, h);
+
+    // Stars
+    for (let i = 0; i < 220; i++) {
+        const x = rng() * w, y = rng() * h * 0.65, r = rng() * 1.2 + 0.2;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + rng() * 0.7})`; ctx.fill();
+    }
+
+    const nc = wp.colors.length;
+    for (let band = 0; band < nc - 1; band++) {
+        const yC = h * (0.22 + band * 0.13 + rng() * 0.04);
+        const bh = h * (0.08 + rng() * 0.13);
+        const c = wp.colors[band % nc];
+        const N = 14;
+        const topPts = [], botPts = [];
+
+        for (let i = 0; i <= N; i++) {
+            const t = i / N, x = t * w;
+            const w1 = Math.sin(t * Math.PI * 3.2 + band) * bh * 0.32;
+            const w2 = Math.sin(t * Math.PI * 5.5 + band * 0.7) * bh * 0.14;
+            topPts.push({ x, y: yC - bh/2 + w1 + w2 });
+            botPts.push({ x, y: yC + bh/2 + w1 * 0.55 });
+        }
+
+        ctx.beginPath(); ctx.moveTo(topPts[0].x, topPts[0].y);
+        for (let i = 1; i <= N; i++) {
+            const p = topPts[i-1], q = topPts[i];
+            ctx.bezierCurveTo(p.x+(q.x-p.x)*0.4, p.y, q.x-(q.x-p.x)*0.4, q.y, q.x, q.y);
+        }
+        for (let i = N; i >= 0; i--) ctx.lineTo(botPts[i].x, botPts[i].y);
+        ctx.closePath();
+
+        const ag = ctx.createLinearGradient(0, yC - bh, 0, yC + bh);
+        ag.addColorStop(0, rgba(c, 0)); ag.addColorStop(0.5, rgba(c, 0.48)); ag.addColorStop(1, rgba(c, 0));
+        ctx.fillStyle = ag; ctx.fill();
+    }
+
+    // Horizon darken
+    const hor = ctx.createLinearGradient(0, h * 0.68, 0, h);
+    hor.addColorStop(0, 'rgba(0,0,0,0)'); hor.addColorStop(1, 'rgba(0,0,0,0.92)');
+    ctx.fillStyle = hor; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── LIQUID / BLOBS ── */
+function drawLiquid(ctx, w, h, wp, rng) {
+    ctx.fillStyle = wp.bgColor || '#0a0a0a'; ctx.fillRect(0, 0, w, h);
+    const nc = wp.colors.length;
+
+    for (let b = 0; b < 7; b++) {
+        const cx = (0.08 + rng() * 0.84) * w;
+        const cy = (0.08 + rng() * 0.84) * h;
+        const br = (0.14 + rng() * 0.32) * Math.min(w, h);
+        const c = wp.colors[b % nc];
+
+        const numPts = 6 + Math.floor(rng() * 5);
+        const pts = Array.from({length: numPts}, (_, k) => {
+            const a = (k / numPts) * Math.PI * 2 + rng() * 0.6;
+            const r = br * (0.55 + rng() * 0.9);
+            return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+        });
+        pts.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+
+        ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i <= pts.length; i++) {
+            const p0 = pts[(i-1) % pts.length], p1 = pts[i % pts.length];
+            const mx = (p0.x + p1.x) / 2, my = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(p0.x, p0.y, mx, my);
+        }
+        ctx.closePath();
+
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, br * 1.2);
+        g.addColorStop(0, rgba(c, 0.72)); g.addColorStop(0.65, rgba(c, 0.38)); g.addColorStop(1, rgba(c, 0));
+        ctx.fillStyle = g; ctx.fill();
+    }
+
+    // Subtle vignette
+    const vg = ctx.createRadialGradient(w/2, h/2, Math.min(w,h)*0.28, w/2, h/2, Math.max(w,h)*0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.45)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── PARTICLE FIELD ── */
+function drawParticles(ctx, w, h, wp, rng) {
+    ctx.fillStyle = wp.bgColor || '#000000'; ctx.fillRect(0, 0, w, h);
+    const nc = wp.colors.length;
+    const count = Math.min(220, Math.floor(w * h / 4500));
+
+    const pts = Array.from({length: count}, () => ({
+        x: rng() * w, y: rng() * h,
+        r: 0.6 + rng() * 4.5,
+        c: wp.colors[Math.floor(rng() * nc)],
+        a: 0.25 + rng() * 0.75
+    }));
+
+    // Connections
+    const maxD = w * 0.13;
+    for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+            const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+            const d = Math.sqrt(dx*dx + dy*dy);
+            if (d < maxD) {
+                ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y);
+                ctx.strokeStyle = rgba(pts[i].c, (1 - d/maxD) * 0.35);
+                ctx.lineWidth = 0.5; ctx.stroke();
+            }
+        }
+    }
+
+    // Dots
+    pts.forEach(p => {
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
+        g.addColorStop(0, rgba(p.c, p.a * 0.55)); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r*5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = rgba(p.c, p.a); ctx.fill();
+    });
+}
+
+/* ── PRISM ── */
+function drawPrism(ctx, w, h, wp, rng) {
+    ctx.fillStyle = wp.bgColor || '#05050a'; ctx.fillRect(0, 0, w, h);
+
+    // Input beam
+    const py = h * 0.46, px = w * 0.28;
+    const bGrad = ctx.createLinearGradient(0, py, px, py);
+    bGrad.addColorStop(0, 'rgba(255,255,255,0)');
+    bGrad.addColorStop(1, 'rgba(255,255,255,0.75)');
+    ctx.fillStyle = bGrad; ctx.fillRect(0, py-4, px, 8);
+
+    // Prism triangle
+    const ps = Math.min(w,h) * 0.11;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(180,210,255,0.65)'; ctx.lineWidth = 1.8;
+    ctx.fillStyle = 'rgba(180,210,255,0.12)';
+    ctx.beginPath();
+    ctx.moveTo(px - ps, py + ps * 0.72);
+    ctx.lineTo(px + ps, py + ps * 0.72);
+    ctx.lineTo(px,      py - ps);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // Rainbow output rays
+    const numRays = 70, spread = 1.05, baseAngle = -spread / 2;
+    for (let i = 0; i < numRays; i++) {
+        const t = i / numRays;
+        const hue = t * 300;
+        const angle = baseAngle + t * spread;
+        const ex = px + Math.cos(angle) * w * 1.8;
+        const ey = py + Math.sin(angle) * h * 2.2;
+        const g = ctx.createLinearGradient(px, py, (px+ex)/2, (py+ey)/2);
+        g.addColorStop(0, `hsla(${hue},100%,62%,0.65)`);
+        g.addColorStop(1, `hsla(${hue},100%,62%,0)`);
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = g; ctx.lineWidth = (w / 1080) * 1.8; ctx.stroke();
+    }
+
+    // Dark overlay to deepen contrast
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── FROST / ICE CRYSTAL ── */
+function drawFrost(ctx, w, h, wp, rng) {
+    const nc = wp.colors.length;
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, wp.colors[0]);
+    bg.addColorStop(0.5, wp.colors[Math.floor(nc/2)]);
+    bg.addColorStop(1, wp.colors[nc-1]);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    for (let i = 0; i < 22; i++) {
+        const cx = rng() * w, cy = rng() * h;
+        const len = (0.04 + rng() * 0.14) * h;
+        const branches = 4 + Math.floor(rng() * 3);
+
+        for (let b = 0; b < branches; b++) {
+            const angle = (b / branches) * Math.PI * 2;
+            // Main arm
+            const ex = cx + Math.cos(angle) * len, ey = cy + Math.sin(angle) * len;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey);
+            ctx.strokeStyle = `rgba(255,255,255,${0.1 + rng() * 0.3})`;
+            ctx.lineWidth = 0.6 + rng() * 1.8; ctx.stroke();
+
+            // Side branches
+            for (let sb of [-1, 1]) {
+                const sbA = angle + sb * Math.PI * 0.28;
+                const t = 0.35 + rng() * 0.3;
+                const mx = cx + Math.cos(angle) * len * t;
+                const my = cy + Math.sin(angle) * len * t;
+                ctx.beginPath(); ctx.moveTo(mx, my);
+                ctx.lineTo(mx + Math.cos(sbA) * len * 0.4, my + Math.sin(sbA) * len * 0.4);
+                ctx.strokeStyle = `rgba(255,255,255,${0.07 + rng() * 0.2})`;
+                ctx.lineWidth = 0.5; ctx.stroke();
+            }
+        }
+    }
+
+    // Frost shimmer
+    const frost = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w,h)*0.65);
+    frost.addColorStop(0, 'rgba(255,255,255,0.06)'); frost.addColorStop(1, 'rgba(255,255,255,0.18)');
+    ctx.fillStyle = frost; ctx.fillRect(0, 0, w, h);
+}
+
+/* ── BRANDED (Desktop AZ Learner) ── */
+function drawBranded(ctx, w, h, wp, rng) {
+    // Rich gradient background
+    const nc = wp.colors.length;
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    wp.colors.forEach((c, i) => bg.addColorStop(i / (nc-1), c));
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    // Diagonal light rays
+    for (let i = 0; i < 9; i++) {
+        const x = (i / 8) * w * 1.3 - w * 0.15;
+        const g = ctx.createLinearGradient(x, 0, x + h * 0.28, h);
+        g.addColorStop(0, 'rgba(255,255,255,0.025)');
+        g.addColorStop(0.5, 'rgba(255,255,255,0.07)');
+        g.addColorStop(1, 'rgba(255,255,255,0.01)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x + 28, 0);
+        ctx.lineTo(x + 28 + h * 0.55, h); ctx.lineTo(x + h * 0.55, h);
+        ctx.closePath(); ctx.fill();
+    }
+
+    // Particle dust
+    for (let i = 0; i < 90; i++) {
+        const x = rng() * w, y = rng() * h, r = 1 + rng() * 3;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${0.04 + rng() * 0.14})`; ctx.fill();
+    }
+
+    // Centre radial glow
+    const glow = ctx.createRadialGradient(w/2, h*0.38, 0, w/2, h*0.38, Math.min(w,h)*0.5);
+    glow.addColorStop(0, 'rgba(255,255,255,0.14)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
+
+    // ── Text ──
+    const isLand = w > h;
+    const BU = isLand ? h * 0.115 : h * 0.098;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.save();
+
+    // "AZ" big
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 35 * (w/1920);
+    const azG = ctx.createLinearGradient(w/2 - BU, 0, w/2 + BU, 0);
+    azG.addColorStop(0, '#FFAB40'); azG.addColorStop(0.55, '#ffffff'); azG.addColorStop(1, '#FFAB40');
+    ctx.font = `900 ${BU * 1.85}px 'Plus Jakarta Sans', Arial, sans-serif`;
+    ctx.fillStyle = azG; ctx.fillText('AZ', w/2, h * 0.28);
+
+    // "LEARNER"
+    ctx.font = `300 ${BU * 0.52}px 'Plus Jakarta Sans', Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.72)'; ctx.fillText('L E A R N E R', w/2, h * 0.28 + BU * 1.15);
+
+    // Separator line
+    const lW = BU * 3.2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(w/2 - lW/2, h * 0.46); ctx.lineTo(w/2 + lW/2, h * 0.46); ctx.stroke();
+
+    // Main quote text
+    if (wp.text) {
+        ctx.shadowBlur = 22 * (w/1920);
+        const lines = wp.text.split('\n');
+        ctx.font = `800 ${BU * 0.82}px 'Plus Jakarta Sans', Arial, sans-serif`;
+        ctx.fillStyle = '#ffffff';
+        lines.forEach((line, li) => ctx.fillText(line, w/2, h * 0.56 + li * BU * 1.0));
+    }
+
+    // Subtitle
+    if (wp.subtitle) {
+        ctx.shadowBlur = 0;
+        ctx.font = `400 ${BU * 0.33}px 'Plus Jakarta Sans', Arial, sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.48)'; ctx.fillText(wp.subtitle, w/2, h * 0.87);
+    }
+
+    ctx.restore();
+}
+
+// ───────────────────────────────────────────────
+// 5.  MAIN RENDER DISPATCH
+// ───────────────────────────────────────────────
+const RENDERERS = {
+    cosmic: drawCosmic, neon: drawNeon, waves: drawWaves,
+    hexgrid: drawHexgrid, aurora: drawAurora, liquid: drawLiquid,
+    particles: drawParticles, prism: drawPrism, frost: drawFrost,
+    branded: drawBranded
+};
+
+function renderWallpaper(wp, ctx, w, h) {
+    const rng = makeRNG(pickSeed(wp.id));
+    const fn = RENDERERS[wp.pattern];
+    if (fn) fn(ctx, w, h, wp, rng);
+    else {
+        ctx.fillStyle = '#111'; ctx.fillRect(0, 0, w, h);
+    }
+}
+
+// ───────────────────────────────────────────────
+// 6.  DOWNLOAD
+// ───────────────────────────────────────────────
+function downloadWallpaper(wp, category) {
+    const dims = FULL_DIMS[category];
+    const offscreen = document.createElement('canvas');
+    offscreen.width = dims.w; offscreen.height = dims.h;
+    const ctx = offscreen.getContext('2d');
+    renderWallpaper(wp, ctx, dims.w, dims.h);
+
+    const link = document.createElement('a');
+    const safeName = wp.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    link.download = `azlearner-${category}-${safeName}.png`;
+    link.href = offscreen.toDataURL('image/png');
+    link.click();
+
+    showToast(`⬇ Downloading: ${wp.title}`);
+}
+
+// ───────────────────────────────────────────────
+// 7.  TOAST HELPER
+// ───────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ───────────────────────────────────────────────
+// 8.  BUILD UI
+// ───────────────────────────────────────────────
+function buildGrid(category) {
+    const grid = document.getElementById(`${category}-grid`);
+    grid.innerHTML = '';
+    const prev = PREV[category];
+
+    WALLPAPERS[category].forEach((wp, idx) => {
+        // Canvas preview
+        const canvas = document.createElement('canvas');
+        canvas.width = prev.w; canvas.height = prev.h;
+        canvas.className = 'canvas-preview';
+        canvas.title = wp.title;
+
+        // Render async to avoid blocking
+        setTimeout(() => {
+            const ctx = canvas.getContext('2d');
+            renderWallpaper(wp, ctx, prev.w, prev.h);
+        }, idx * 18);
+
+        // Card
+        const card = document.createElement('div');
+        card.className = 'wallpaper-card';
+
+        const footer = document.createElement('div');
+        footer.className = 'card-footer';
+
+        const title = document.createElement('p');
+        title.className = 'text-xs font-bold text-white truncate';
+        title.textContent = wp.title;
+
+        const dimLabel = document.createElement('p');
+        const d = FULL_DIMS[category];
+        dimLabel.className = 'text-xs text-gray-500';
+        dimLabel.textContent = `${d.w}×${d.h}`;
+
+        const btn = document.createElement('button');
+        btn.className = 'dl-btn';
+        btn.innerHTML = '<span>⬇ Download PNG</span>';
+        btn.onclick = () => downloadWallpaper(wp, category);
+
+        footer.appendChild(title);
+        footer.appendChild(dimLabel);
+        footer.appendChild(btn);
+        card.appendChild(canvas);
+        card.appendChild(footer);
+        grid.appendChild(card);
+    });
+}
+
+// ───────────────────────────────────────────────
+// 9.  TAB SWITCHING
+// ───────────────────────────────────────────────
+let builtCategories = new Set();
+
+function showTab(category) {
+    ['android', 'desktop', 'ios'].forEach(c => {
+        document.getElementById(`${c}-section`).classList.remove('active');
+        document.getElementById(`tab-${c}`).classList.remove('active');
+    });
+    document.getElementById(`${category}-section`).classList.add('active');
+    document.getElementById(`tab-${category}`).classList.add('active');
+
+    if (!builtCategories.has(category)) {
+        builtCategories.add(category);
+        buildGrid(category);
+    }
+}
+
+// ───────────────────────────────────────────────
+// 10.  INIT – wait for fonts then render
+// ───────────────────────────────────────────────
+document.fonts.ready.then(() => {
+    showTab('android');
+});
+</script>
+
+</body>
+</html>
