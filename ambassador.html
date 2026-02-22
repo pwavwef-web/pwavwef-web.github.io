@@ -112,6 +112,10 @@
                 class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
                 <i class="fa-solid fa-book"></i> Courses
             </button>
+            <button onclick="portal.switchTab('leaderboard')" id="tab-leaderboard"
+                class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
+                <i class="fa-solid fa-trophy"></i> Leaderboard
+            </button>
         </div>
 
         <!-- Tab Content -->
@@ -265,14 +269,88 @@
                                 <i class="fas fa-download"></i> Resource Library
                             </h3>
                             <p class="text-sm text-gray-400 mb-4">Download ambassador guides, templates, and promotional materials</p>
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                            <a href="courses.html" target="_blank" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
                                 Browse Resources
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Leaderboard Tab -->
+            <div id="view-leaderboard" class="portal-view hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-2xl p-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">
+                            <i class="fas fa-trophy"></i> Ambassador Leaderboard
+                        </h2>
+                        <p class="text-gray-400 text-sm mb-6">Top ambassadors ranked by achievement points</p>
+                        <div id="leaderboard-list" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8">Loading leaderboard...</div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Challenge Banner -->
+                    <div class="glass-panel rounded-2xl p-6 border border-yellow-500/30">
+                        <div class="flex items-start gap-4">
+                            <div class="bg-yellow-500/20 p-3 rounded-lg shrink-0">
+                                <i class="fas fa-fire text-yellow-400 text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white mb-1">Monthly Challenge — February 2026</h3>
+                                <p class="text-sm text-gray-400 mb-3">Complete all tasks this month to earn a bonus badge and 500 extra points.</p>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i class="fas fa-circle-check text-green-400"></i>
+                                        <span class="text-gray-300">Complete one training course</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i class="fas fa-circle text-gray-600"></i>
+                                        <span class="text-gray-400">Recruit 3 new AZ Learner users</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i class="fas fa-circle text-gray-600"></i>
+                                        <span class="text-gray-400">Attend a campus program or event</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Course Detail Modal -->
+    <div id="course-modal" class="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm hidden flex items-start justify-center p-4 overflow-y-auto">
+        <div class="w-full max-w-2xl glass-panel rounded-2xl shadow-2xl mt-8 mb-8">
+            <div id="course-modal-header" class="p-6 border-b border-gray-700 flex justify-between items-start">
+                <div class="flex items-center gap-4">
+                    <div id="course-modal-icon-wrap" class="p-3 rounded-lg">
+                        <i id="course-modal-icon" class="fas fa-book text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 id="course-modal-title" class="text-xl font-bold text-white"></h2>
+                        <p id="course-modal-desc" class="text-sm text-gray-400 mt-1"></p>
+                    </div>
+                </div>
+                <button onclick="portal.closeCourseModal()" class="text-gray-400 hover:text-white text-2xl leading-none ml-4">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Course Modules</h3>
+                <div id="course-modal-modules" class="space-y-3"></div>
+                <div class="mt-6 pt-6 border-t border-gray-700 flex gap-3">
+                    <button onclick="portal.closeCourseModal()" class="flex-1 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold transition">
+                        Close
+                    </button>
+                    <button id="course-modal-start-btn" class="flex-1 py-2 rounded-lg bg-blueAccent hover:bg-blue-600 text-white text-sm font-bold transition">
+                        Start Learning
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -296,6 +374,125 @@
         const auth = getAuth(app);
         let currentUser = null;
         let isAmbassador = false;
+
+        const HARDCODED_COURSES = [
+            {
+                id: 'marketing-outreach',
+                title: 'Marketing & Outreach',
+                description: 'Learn how to effectively promote AZ Learner on campus and grow your community.',
+                color: 'blue',
+                icon: 'bullhorn',
+                duration: '2 hrs',
+                isPublished: true,
+                modules: [
+                    {
+                        order: 1,
+                        title: 'Understanding Your Audience',
+                        type: 'text',
+                        content: 'Identify your campus demographics, map student pain points, and craft messages that resonate with different peer groups. Learn how to segment your audience by faculty, year group, and interest to deliver the right message at the right time.'
+                    },
+                    {
+                        order: 2,
+                        title: 'Social Media Strategy',
+                        type: 'text',
+                        content: 'Build a content calendar for Instagram, TikTok, and WhatsApp to grow AZ Learner visibility on campus. Learn best practices for each platform, how to create short-form video content, and how to measure engagement to improve future posts.'
+                    },
+                    {
+                        order: 3,
+                        title: 'On-Campus Activation',
+                        type: 'text',
+                        content: 'Plan and run tabling events, peer-to-peer demos, and referral drives. Learn how to set up an eye-catching booth, demo the app to sceptical students, and collect sign-ups effectively using your unique referral code.'
+                    }
+                ]
+            },
+            {
+                id: 'leadership-development',
+                title: 'Leadership Development',
+                description: 'Develop the skills to lead study groups, mentor peers, and grow as a campus leader.',
+                color: 'orange',
+                icon: 'users',
+                duration: '2.5 hrs',
+                isPublished: true,
+                modules: [
+                    {
+                        order: 1,
+                        title: 'Effective Study-Group Facilitation',
+                        type: 'text',
+                        content: 'Learn how to lead productive study groups and keep participants engaged throughout a session. Discover techniques for setting clear agendas, managing time, dealing with dominant or disengaged members, and making every participant feel valued.'
+                    },
+                    {
+                        order: 2,
+                        title: 'Mentoring Peers',
+                        type: 'text',
+                        content: 'Build trust with fellow students, give constructive feedback, and help them set realistic academic goals. Explore active listening, motivational techniques, and how to identify when a peer needs extra support beyond academic guidance.'
+                    },
+                    {
+                        order: 3,
+                        title: 'Managing Conflict',
+                        type: 'text',
+                        content: 'Learn to resolve disputes fairly and maintain a positive ambassador team culture. Understand the root causes of interpersonal conflict, practice de-escalation strategies, and know when to escalate issues to the AZ Learner core team.'
+                    }
+                ]
+            },
+            {
+                id: 'communication-skills',
+                title: 'Communication Skills',
+                description: 'Master public speaking, written communication, and active listening to engage your campus.',
+                color: 'green',
+                icon: 'comments',
+                duration: '2 hrs',
+                isPublished: true,
+                modules: [
+                    {
+                        order: 1,
+                        title: 'Public Speaking Fundamentals',
+                        type: 'text',
+                        content: 'Structure a short talk, control nerves, and make a strong first impression. Practice the PREP framework (Point, Reason, Example, Point) for impromptu and prepared speeches, and learn how body language amplifies your message.'
+                    },
+                    {
+                        order: 2,
+                        title: 'Written Communication',
+                        type: 'text',
+                        content: 'Craft clear emails, WhatsApp messages, and social-media captions that get results. Learn the principles of plain language, how to write a compelling call to action, and common mistakes that make professional communication less effective.'
+                    },
+                    {
+                        order: 3,
+                        title: 'Active Listening',
+                        type: 'text',
+                        content: 'Understand student feedback deeply and respond with empathy. Active listening is more than hearing words — it is about understanding intent, asking clarifying questions, summarising what you heard, and validating the speaker\'s perspective before responding.'
+                    }
+                ]
+            },
+            {
+                id: 'event-planning',
+                title: 'Event Planning',
+                description: 'Organise impactful study sessions, campus events, and AZ Learner activations.',
+                color: 'purple',
+                icon: 'calendar-check',
+                duration: '2 hrs',
+                isPublished: true,
+                modules: [
+                    {
+                        order: 1,
+                        title: 'Event Ideation & Scoping',
+                        type: 'text',
+                        content: 'Choose the right event type, set clear goals, and define your target audience before you begin planning. Learn how to do a quick feasibility check — budget, venue availability, expected attendance — so you only invest time in events that can actually happen.'
+                    },
+                    {
+                        order: 2,
+                        title: 'Logistics & Promotion',
+                        type: 'text',
+                        content: 'Secure a venue, recruit volunteers, and create buzz on campus. Build a simple run-of-show document, assign clear roles to your volunteer team, and create a promotion timeline that starts at least two weeks before the event date.'
+                    },
+                    {
+                        order: 3,
+                        title: 'Post-Event Recap',
+                        type: 'text',
+                        content: 'Collect feedback, calculate impact, and report results back to the AZ Learner team. Use a short NPS survey to measure satisfaction, count new sign-ups attributed to the event, and document lessons learned so future events are even better.'
+                    }
+                ]
+            }
+        ];
 
         window.authManager = {
             async login() {
@@ -383,6 +580,7 @@
                 this.loadProfile(userData);
                 this.loadPrograms();
                 this.loadCourses();
+                this.loadLeaderboard();
                 this.switchTab('profile');
             },
 
@@ -464,30 +662,38 @@
                 };
 
                 const coursesGrid = document.getElementById('courses-grid');
-                const snap = await getDocs(
-                    query(collection(db, 'courses'), where('isPublished', '==', true))
-                );
-                coursesGrid.innerHTML = '';
 
-                if (snap.empty) {
-                    document.getElementById('stat-courses').innerText = 0;
-                    coursesGrid.innerHTML = '<div class="text-center text-gray-500 py-8 col-span-2">No courses available yet</div>';
-                    return;
+                let courses = [];
+                try {
+                    const snap = await getDocs(
+                        query(collection(db, 'courses'), where('isPublished', '==', true))
+                    );
+                    if (!snap.empty) {
+                        snap.forEach(docSnap => courses.push({ id: docSnap.id, ...docSnap.data() }));
+                    }
+                } catch (e) {
+                    console.warn('Firestore courses unavailable, using hardcoded data:', e);
                 }
 
-                snap.forEach(docSnap => {
-                    const c = docSnap.data();
+                if (courses.length === 0) {
+                    courses = HARDCODED_COURSES;
+                }
+
+                coursesGrid.innerHTML = '';
+                document.getElementById('stat-courses').innerText = courses.length;
+
+                courses.forEach(c => {
                     const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
 
                     const card = document.createElement('div');
                     card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
-                    card.addEventListener('click', () => portal.openCourse(docSnap.id));
+                    card.addEventListener('click', () => portal.openCourse(c.id, courses));
 
                     const inner = document.createElement('div');
                     inner.className = 'flex items-start gap-4';
 
                     const iconWrap = document.createElement('div');
-                    iconWrap.className = `${cls.iconBg} p-3 rounded-lg`;
+                    iconWrap.className = `${cls.iconBg} p-3 rounded-lg shrink-0`;
                     const icon = document.createElement('i');
                     icon.className = `fas fa-${c.icon} ${cls.icon} text-2xl`;
                     iconWrap.appendChild(icon);
@@ -502,21 +708,113 @@
                     desc.className = 'text-sm text-gray-400 mb-3';
                     desc.textContent = c.description;
 
+                    const metaRow = document.createElement('div');
+                    metaRow.className = 'flex items-center gap-3';
+
                     const badge = document.createElement('span');
                     badge.className = `text-xs ${cls.badge} font-bold`;
-                    badge.textContent = `${c.modules?.length ?? 0} modules`;
+                    badge.textContent = c.duration || '';
 
-                    textWrap.append(title, desc, badge);
+                    const modCount = document.createElement('span');
+                    modCount.className = 'text-xs text-gray-500';
+                    modCount.textContent = `${c.modules?.length ?? 0} modules`;
+
+                    metaRow.append(badge, modCount);
+                    textWrap.append(title, desc, metaRow);
                     inner.append(iconWrap, textWrap);
                     card.appendChild(inner);
                     coursesGrid.appendChild(card);
                 });
-                document.getElementById('stat-courses').innerText = snap.size;
             },
 
-            openCourse(courseId) {
-                // Course detail view — to be implemented
-                console.log('Opening course:', courseId);
+            openCourse(courseId, coursesData) {
+                const allCourses = coursesData || HARDCODED_COURSES;
+                const course = allCourses.find(c => c.id === courseId);
+                if (!course) return;
+
+                const COLOR_CLASSES = {
+                    blue:   { iconBg: 'bg-blue-500/20',   icon: 'text-blue-400'   },
+                    orange: { iconBg: 'bg-orange-500/20', icon: 'text-orange-400' },
+                    green:  { iconBg: 'bg-green-500/20',  icon: 'text-green-400'  },
+                    purple: { iconBg: 'bg-purple-500/20', icon: 'text-purple-400' },
+                };
+                const cls = COLOR_CLASSES[course.color] ?? COLOR_CLASSES.blue;
+
+                document.getElementById('course-modal-title').textContent = course.title;
+                document.getElementById('course-modal-desc').textContent = course.description;
+                document.getElementById('course-modal-icon-wrap').className = `${cls.iconBg} p-3 rounded-lg`;
+                document.getElementById('course-modal-icon').className = `fas fa-${course.icon} ${cls.icon} text-2xl`;
+
+                const modulesContainer = document.getElementById('course-modal-modules');
+                modulesContainer.innerHTML = '';
+                (course.modules || []).forEach(mod => {
+                    const item = document.createElement('details');
+                    item.className = 'bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden';
+
+                    const summary = document.createElement('summary');
+                    summary.className = 'flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition list-none';
+                    summary.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="bg-gray-700 text-gray-300 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0">${mod.order}</span>
+                            <span class="text-white font-semibold text-sm">${mod.title}</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform"></i>`;
+
+                    const content = document.createElement('div');
+                    content.className = 'px-5 pb-5 pt-1 text-gray-400 text-sm leading-relaxed border-t border-gray-700';
+                    content.textContent = mod.content;
+
+                    item.append(summary, content);
+                    modulesContainer.appendChild(item);
+                });
+
+                document.getElementById('course-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeCourseModal() {
+                document.getElementById('course-modal').classList.add('hidden');
+                document.body.style.overflow = '';
+            },
+
+            async loadLeaderboard() {
+                const leaderboardList = document.getElementById('leaderboard-list');
+                try {
+                    const snap = await getDocs(
+                        query(collection(db, 'ambassadors'), orderBy('achievementPoints', 'desc'))
+                    );
+
+                    if (snap.empty) {
+                        leaderboardList.innerHTML = '<div class="text-center text-gray-500 py-8">No leaderboard data yet</div>';
+                        return;
+                    }
+
+                    leaderboardList.innerHTML = '';
+                    const medals = ['🥇', '🥈', '🥉'];
+                    let rank = 0;
+                    snap.forEach(d => {
+                        rank++;
+                        const amb = d.data();
+                        const name = amb.name || amb.fullName || 'Ambassador';
+                        const pts = amb.achievementPoints ?? 0;
+                        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+                        const row = document.createElement('div');
+                        row.className = `flex items-center gap-4 p-4 rounded-xl ${rank <= 3 ? 'bg-yellow-900/10 border border-yellow-500/20' : 'bg-gray-800/30 border border-gray-700/50'}`;
+                        row.innerHTML = `
+                            <span class="text-xl w-8 text-center shrink-0">${medals[rank - 1] || rank}</span>
+                            <div class="w-10 h-10 bg-gradient-to-br from-orangeAccent to-orange-600 rounded-full flex items-center justify-center text-sm font-bold shrink-0">${initials}</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white font-bold text-sm truncate">${name}</p>
+                                <p class="text-gray-500 text-xs truncate">${amb.university || ''}</p>
+                            </div>
+                            <span class="text-yellow-400 font-bold text-sm shrink-0">${pts} pts</span>`;
+                        leaderboardList.appendChild(row);
+                    });
+                } catch (e) {
+                    console.warn('Could not load leaderboard:', e);
+                    leaderboardList.innerHTML = '<div class="text-center text-gray-500 py-8">Leaderboard unavailable</div>';
+                }
             },
 
             switchTab(tab) {
