@@ -1,6 +1,0 @@
-127.0.0.1 - - [22/Feb/2026 18:04:08] "GET /resume.html HTTP/1.1" 200 -
-127.0.0.1 - - [22/Feb/2026 18:04:11] "GET /resume.html HTTP/1.1" 200 -
-127.0.0.1 - - [22/Feb/2026 18:04:11] "GET /favicon1.png HTTP/1.1" 200 -
-127.0.0.1 - - [22/Feb/2026 18:04:35] "GET /resume.html HTTP/1.1" 200 -
-127.0.0.1 - - [22/Feb/2026 18:04:48] "GET /cvadmin.html HTTP/1.1" 200 -
-127.0.0.1 - - [22/Feb/2026 18:04:48] "GET /adminfavicon.png HTTP/1.1" 200 -
