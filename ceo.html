@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – CEO Command 🏛️</title>
+    <link rel="icon" type="image/png" href="adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        goldAccent: '#FFD700',
+                        darkBg: '#1a1a1a',
+                        darkCard: '#2d2d2d',
+                        success: '#00E676'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #0a0a0f;
+            color: white;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .ceo-view { display: none; }
+        .ceo-view.active-view { display: flex; flex-direction: column; }
+        .nav-btn.active { background: rgba(255,215,0,0.2); color: #FFD700; border-color: rgba(255,215,0,0.4); }
+        .page-link-card { transition: all 0.2s; }
+        .page-link-card:hover { transform: translateY(-2px); border-color: rgba(255,215,0,0.5); }
+    </style>
+</head>
+
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-yellow-700/40">
+            <div class="text-5xl mb-4">🏛️</div>
+            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400 mb-2 tracking-tighter">CEO Command</h1>
+            <p class="text-sm text-gray-500 mb-6">Restricted · Executive Access Only</p>
+            <input type="email" id="login-email" placeholder="CEO Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-yellow-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-yellow-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Initialize Session 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-yellow-700/30 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-300">AZ LEARNER · CEO</h1>
+                <p id="ceo-name-display" class="text-xs text-gray-400 font-mono">Standby...</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="admin.html" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-shield"></i> Admin HQ
+                </a>
+                <button onclick="authManager.logout()"
+                    class="bg-gray-800 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">Abort <i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0 items-center">
+            <button onclick="app.switchView('overview')" id="nav-overview"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-compass mr-2"></i>Overview</button>
+            <button onclick="app.switchView('godmode')" id="nav-godmode"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-bolt mr-2 text-yellow-400"></i>God Mode</button>
+            <button onclick="app.switchView('database')" id="nav-database"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-database mr-2 text-blue-400"></i>Database</button>
+            <button onclick="app.switchView('platform')" id="nav-platform"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-sliders mr-2 text-green-400"></i>Platform</button>
+            <button onclick="app.switchView('pages')" id="nav-pages"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-sitemap mr-2 text-purple-400"></i>All Pages</button>
+        </div>
+
+        <div class="flex-1 overflow-hidden flex flex-col bg-[#0a0a0f]">
+
+            <!-- OVERVIEW VIEW -->
+            <div id="view-overview" class="ceo-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-2xl border border-yellow-700/40">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1">Executive Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Full platform visibility. CEO eyes only.</p>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Users</h3>
+                        <p class="text-3xl font-black text-white" id="stat-users">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Admins</h3>
+                        <p class="text-3xl font-black text-yellow-400" id="stat-admins">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Ambassadors</h3>
+                        <p class="text-3xl font-black text-orange-400" id="stat-ambassadors">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Announcements</h3>
+                        <p class="text-3xl font-black text-blue-400" id="stat-announcements">—</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="app.switchView('godmode')"
+                            class="bg-yellow-900/30 hover:bg-yellow-900/50 border border-yellow-700/40 p-4 rounded-xl text-left transition">
+                            <div class="text-2xl mb-2">⚡</div>
+                            <p class="text-sm font-bold text-yellow-300">God Mode</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Executive orders & admin control</p>
+                        </button>
+                        <button onclick="app.switchView('database')"
+                            class="bg-blue-900/30 hover:bg-blue-900/50 border border-blue-700/40 p-4 rounded-xl text-left transition">
+                            <div class="text-2xl mb-2">🗄️</div>
+                            <p class="text-sm font-bold text-blue-300">Database</p>
+                            <p class="text-[10px] text-gray-500 mt-1">User records & access control</p>
+                        </button>
+                        <button onclick="app.switchView('platform')"
+                            class="bg-green-900/30 hover:bg-green-900/50 border border-green-700/40 p-4 rounded-xl text-left transition">
+                            <div class="text-2xl mb-2">🛠️</div>
+                            <p class="text-sm font-bold text-green-300">Platform</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Settings & management tools</p>
+                        </button>
+                        <button onclick="app.switchView('pages')"
+                            class="bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/40 p-4 rounded-xl text-left transition">
+                            <div class="text-2xl mb-2">🗺️</div>
+                            <p class="text-sm font-bold text-purple-300">All Pages</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Navigate the entire platform</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Logs -->
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Recent Activity</h3>
+                    <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-900 text-gray-500 uppercase font-bold">
+                                <tr>
+                                    <th class="px-4 py-3">Time</th>
+                                    <th class="px-4 py-3">Officer</th>
+                                    <th class="px-4 py-3">Action</th>
+                                    <th class="px-4 py-3 hidden md:table-cell">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-logs" class="divide-y divide-gray-700/50 text-gray-300 font-mono"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GOD MODE VIEW -->
+            <div id="view-godmode" class="ceo-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-2xl border border-yellow-700/40">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-bolt"></i> God Mode</h2>
+                    <p class="text-gray-400 text-sm">Maximum authority controls. CEO-exclusive.</p>
+                </div>
+
+                <!-- Executive Order -->
+                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-scroll"></i> Executive Order
+                    </h2>
+                    <p class="text-xs text-gray-500 mb-4">Broadcast a priority announcement to all users on the platform instantly.</p>
+                    <input id="vip-title" type="text" placeholder="Subject / Title"
+                        class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Executive directive..."
+                        class="w-full mb-4 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-24 focus:border-yellow-500 outline-none resize-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()"
+                        class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-black py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">
+                        Publish Gold Alert 🔔
+                    </button>
+                </div>
+
+                <!-- Inner Circle -->
+                <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic flex items-center gap-2">
+                        <i class="fa-solid fa-crown text-yellow-400"></i> Inner Circle ⭕
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-4">Promote trusted users to Admin Command. Only the CEO can grant or revoke admin status.</p>
+                    <div class="flex gap-2 mb-4">
+                        <input id="admin-email-input" type="email" placeholder="Promote by email..."
+                            class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="app.addAdminByEmail()"
+                            class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500 whitespace-nowrap">Promote</button>
+                    </div>
+                    <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-purple-900/30 text-[10px] uppercase text-purple-300">
+                                <tr>
+                                    <th class="px-4 py-2">Name</th>
+                                    <th class="px-4 py-2">Email</th>
+                                    <th class="px-4 py-2">Role</th>
+                                    <th class="px-4 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-admins" class="divide-y divide-purple-900/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Purge Controls -->
+                <div class="bg-red-900/10 border border-red-500/30 p-6 rounded-xl">
+                    <h3 class="text-red-400 font-black mb-2 uppercase flex items-center gap-2 text-sm tracking-widest">
+                        <i class="fa-solid fa-skull-crossbones"></i> Nuclear Options
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-4">These actions are irreversible. Proceed with full awareness.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button onclick="app.flushRequests()"
+                            class="bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-trash"></i> Purge Service Logs
+                        </button>
+                        <button onclick="app.purgeAnnouncements()"
+                            class="bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-bullhorn"></i> Clear All Announcements
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATABASE VIEW -->
+            <div id="view-database" class="ceo-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-blue-900/30 to-gray-900 p-6 rounded-2xl border border-blue-700/40">
+                    <h2 class="text-2xl font-black text-blue-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-database"></i> Personnel Database</h2>
+                    <p class="text-gray-400 text-sm">Full access to all user records. Managed exclusively by CEO.</p>
+                </div>
+
+                <!-- Search & Filter -->
+                <div class="flex gap-3 flex-wrap">
+                    <input id="db-search" type="text" placeholder="Search by name or email..."
+                        class="flex-1 min-w-[200px] p-3 rounded-lg bg-gray-800 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm"
+                        oninput="app.filterUsers()">
+                    <select id="db-role-filter" onchange="app.filterUsers()"
+                        class="p-3 rounded-lg bg-gray-800 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <option value="">All Roles</option>
+                        <option value="student">Students</option>
+                        <option value="admin">Admins</option>
+                        <option value="ambassador">Ambassadors</option>
+                        <option value="banned">Banned</option>
+                    </select>
+                </div>
+
+                <!-- Users Table -->
+                <div class="bg-gray-800/80 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
+                    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                        <span class="text-sm font-bold text-gray-300">User Records</span>
+                        <span id="db-user-count" class="text-xs text-gray-500 font-mono">Loading...</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-900/50 text-gray-200 uppercase text-[10px]">
+                                <tr>
+                                    <th class="px-4 py-3">Identity</th>
+                                    <th class="px-4 py-3">Email</th>
+                                    <th class="px-4 py-3">Phone</th>
+                                    <th class="px-4 py-3">Clearance</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-users" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Disciplinary Action -->
+                <div class="bg-red-900/10 border border-red-500/30 p-6 rounded-xl">
+                    <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest">
+                        <i class="fa-solid fa-gavel"></i> Disciplinary Action
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-4">Ban a user by email address. This sets their role to "banned" and locks them out.</p>
+                    <div class="flex gap-2">
+                        <input id="ban-email-input" type="email" placeholder="Target Email..."
+                            class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                        <button onclick="app.banUser()"
+                            class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLATFORM MANAGEMENT VIEW -->
+            <div id="view-platform" class="ceo-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-green-900/30 to-gray-900 p-6 rounded-2xl border border-green-700/40">
+                    <h2 class="text-2xl font-black text-green-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Platform Management</h2>
+                    <p class="text-gray-400 text-sm">Global platform controls and configuration. CEO-level tools.</p>
+                </div>
+
+                <!-- Platform Status -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-sm font-black text-gray-300 mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400"></i> Platform Health</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-400">Web App (azlearner.me)</span>
+                                <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">LIVE</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-400">Admin Panel</span>
+                                <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">LIVE</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-400">CEO Command</span>
+                                <span class="bg-yellow-900/50 text-yellow-400 px-2 py-1 rounded font-bold border border-yellow-700/40">YOU ARE HERE</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-400">Firebase Backend</span>
+                                <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">CONNECTED</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-400">Android App</span>
+                                <span class="bg-blue-900/50 text-blue-400 px-2 py-1 rounded font-bold border border-blue-700/40">DEPLOYED</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-sm font-black text-gray-300 mb-4 flex items-center gap-2"><i class="fa-solid fa-bell text-orange-400"></i> System Broadcast</h3>
+                        <p class="text-xs text-gray-500 mb-3">Send a standard platform-wide notification to all users.</p>
+                        <input id="sys-broadcast-title" type="text" placeholder="Notification title..."
+                            class="w-full mb-2 p-2.5 rounded bg-gray-900 border border-gray-600 text-white outline-none focus:border-orange-500 text-sm">
+                        <textarea id="sys-broadcast-body" placeholder="Message body..."
+                            class="w-full mb-3 p-2.5 rounded bg-gray-900 border border-gray-600 text-white h-16 outline-none focus:border-orange-500 text-sm resize-none"></textarea>
+                        <button onclick="app.sendSystemBroadcast()"
+                            class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 rounded-lg transition text-sm">
+                            Broadcast 📡
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Platform Links Management -->
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-black text-gray-300 mb-4 flex items-center gap-2"><i class="fa-solid fa-link text-blue-400"></i> Platform Navigation Map</h3>
+                    <p class="text-xs text-gray-500 mb-4">All active pages and their direct access links.</p>
+                    <div id="platform-nav-map" class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs"></div>
+                </div>
+
+                <!-- Data Export -->
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-black text-gray-300 mb-4 flex items-center gap-2"><i class="fa-solid fa-file-export text-purple-400"></i> Data Operations</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button onclick="app.exportUsers()"
+                            class="bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-700/40 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-download"></i> Export User List (CSV)
+                        </button>
+                        <button onclick="app.exportLogs()"
+                            class="bg-blue-900/30 hover:bg-blue-900/50 text-blue-300 border border-blue-700/40 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-download"></i> Export Activity Logs (CSV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALL PAGES VIEW -->
+            <div id="view-pages" class="ceo-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-purple-900/30 to-gray-900 p-6 rounded-2xl border border-purple-700/40">
+                    <h2 class="text-2xl font-black text-purple-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-sitemap"></i> All Platform Pages</h2>
+                    <p class="text-gray-400 text-sm">Direct links to every page on the AZ Learner platform.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Public Pages -->
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-globe text-blue-400"></i> Public Pages</h3>
+                        <div class="space-y-2" id="pages-public"></div>
+                    </div>
+
+                    <!-- Student Pages -->
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-green-400"></i> Student Features</h3>
+                        <div class="space-y-2" id="pages-student"></div>
+                    </div>
+
+                    <!-- Admin Pages -->
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-shield text-orange-400"></i> Admin & Internal</h3>
+                        <div class="space-y-2" id="pages-admin"></div>
+                    </div>
+
+                    <!-- CEO Pages -->
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-yellow-700/30">
+                        <h3 class="text-xs font-black text-yellow-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-crown"></i> CEO-Only Pages</h3>
+                        <div class="space-y-2" id="pages-ceo"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+        let allUsersCache = [];
+
+        const CEO_EMAIL = "pwavwef@gmail.com";
+
+        const ALL_PAGES = {
+            public: [
+                { name: "Home", url: "home.html", icon: "fa-house", desc: "Landing page" },
+                { name: "Index / App", url: "index.html", icon: "fa-rocket", desc: "Main app entry" },
+                { name: "Pitch Deck", url: "pitch.html", icon: "fa-chart-line", desc: "Investor pitch" },
+                { name: "FAQ", url: "faq.html", icon: "fa-circle-question", desc: "Frequently asked questions" },
+                { name: "Privacy Policy", url: "privacy-policy.html", icon: "fa-shield-halved", desc: "Privacy policy" },
+                { name: "Terms of Service", url: "terms-of-service.html", icon: "fa-scale-balanced", desc: "Terms & conditions" },
+                { name: "Form", url: "form.html", icon: "fa-file-lines", desc: "General form" },
+                { name: "Narnia", url: "narnia.html", icon: "fa-door-open", desc: "Secret page" },
+            ],
+            student: [
+                { name: "App (Web)", url: "app.html", icon: "fa-laptop", desc: "Main student web app" },
+                { name: "Courses", url: "courses.html", icon: "fa-book-open", desc: "Course listings" },
+                { name: "Games", url: "games.html", icon: "fa-gamepad", desc: "Campus games" },
+                { name: "Challenges", url: "challenges.html", icon: "fa-trophy", desc: "Ambassador challenges" },
+                { name: "Leaderboard", url: "leaderboard.html", icon: "fa-ranking-star", desc: "Points leaderboard" },
+                { name: "Certificate", url: "certificate.html", icon: "fa-certificate", desc: "Certificates" },
+                { name: "Wallpapers", url: "wallpapers.html", icon: "fa-image", desc: "Campus wallpapers" },
+                { name: "CV Builder", url: "resume.html", icon: "fa-id-card", desc: "CV/resume builder" },
+                { name: "Financial", url: "financial.html", icon: "fa-coins", desc: "Financial tools" },
+                { name: "Ambassador Hub", url: "ambassador.html", icon: "fa-user-tie", desc: "Ambassador portal" },
+                { name: "Ambassador Signup", url: "ambassadorsignup.html", icon: "fa-user-plus", desc: "Join as ambassador" },
+                { name: "Gallery / New", url: "new.html", icon: "fa-images", desc: "New features" },
+            ],
+            admin: [
+                { name: "Admin HQ", url: "admin.html", icon: "fa-shield", desc: "Admin command center" },
+                { name: "CV Admin", url: "cvadmin.html", icon: "fa-user-gear", desc: "CV admin tools" },
+                { name: "Emmanuel", url: "emmanuel.html", icon: "fa-user-secret", desc: "Emmanuel panel" },
+                { name: "Francis", url: "francis.html", icon: "fa-star", desc: "Francis panel" },
+                { name: "Database", url: "database.html", icon: "fa-database", desc: "Full user database" },
+            ],
+            ceo: [
+                { name: "CEO Command", url: "ceo.html", icon: "fa-crown", desc: "You are here" },
+                { name: "Database", url: "database.html", icon: "fa-database", desc: "Personnel database" },
+            ]
+        };
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.innerText = "Auth Failed: " + err.message;
+                }
+            },
+            logout() {
+                if (currentUser) app.logAction('CEO_EXIT', `CEO ${currentUser.name} disconnected.`);
+                signOut(auth);
+            }
+        };
+
+        window.app = {
+            async logAction(type, details) {
+                if (!currentUser) return;
+                await addDoc(collection(db, "admin_logs"), {
+                    type, user: currentUser.name, email: currentUser.email,
+                    details, timestamp: serverTimestamp()
+                });
+            },
+
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        if (user.email !== CEO_EMAIL) {
+                            document.getElementById('login-msg').innerText = "⛔ CEO access only.";
+                            signOut(auth);
+                            return;
+                        }
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            currentUser = { ...userDoc.data(), uid: user.uid };
+                            this.logAction('CEO_ENTRY', `CEO session initialized.`);
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('ceo-name-display').innerText = `CEO · ${currentUser.name}`;
+                            this.startListeners();
+                            this.switchView('overview');
+                        } else {
+                            document.getElementById('login-msg').innerText = "Profile not found.";
+                            signOut(auth);
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchView(view) {
+                document.querySelectorAll('.ceo-view').forEach(v => v.classList.remove('active-view'));
+                document.getElementById(`view-${view}`).classList.add('active-view');
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.id === `nav-${view}`) btn.classList.add('active');
+                });
+            },
+
+            startListeners() {
+                // Stats
+                getDocs(query(collection(db, "users"), limit(500))).then(snap => {
+                    let admins = 0, ambassadors = 0;
+                    allUsersCache = [];
+                    snap.forEach(d => {
+                        const u = { id: d.id, ...d.data() };
+                        allUsersCache.push(u);
+                        if (u.role === 'admin') admins++;
+                        if (u.role === 'ambassador') ambassadors++;
+                    });
+                    document.getElementById('stat-users').innerText = snap.size;
+                    document.getElementById('stat-admins').innerText = admins;
+                    document.getElementById('stat-ambassadors').innerText = ambassadors;
+                    this.renderUserTable(allUsersCache);
+                    this.renderAdminList(allUsersCache);
+                });
+
+                getDocs(query(collection(db, "global_announcements"), limit(100))).then(snap => {
+                    document.getElementById('stat-announcements').innerText = snap.size;
+                });
+
+                // Recent activity logs
+                onSnapshot(query(collection(db, "admin_logs"), orderBy('timestamp', 'desc'), limit(10)), (snap) => {
+                    const list = document.getElementById('overview-logs');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const l = d.data();
+                        const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleString() : 'Just now';
+                        let typeColor = 'text-gray-400';
+                        if (l.type === 'SYSTEM_ENTRY' || l.type === 'CEO_ENTRY') typeColor = 'text-green-400';
+                        if (l.type === 'SYSTEM_EXIT' || l.type === 'CEO_EXIT') typeColor = 'text-red-400';
+                        if (l.type === 'MISSION_COMPLETE') typeColor = 'text-yellow-400';
+                        list.innerHTML += `<tr class="hover:bg-gray-800/50 transition">
+                            <td class="px-4 py-3 text-[10px] opacity-70 whitespace-nowrap">${time}</td>
+                            <td class="px-4 py-3 font-bold text-white text-[11px]">${l.user}</td>
+                            <td class="px-4 py-3 font-bold text-[10px] uppercase ${typeColor}">${l.type}</td>
+                            <td class="px-4 py-3 truncate max-w-xs text-[11px] hidden md:table-cell" title="${l.details}">${l.details}</td>
+                        </tr>`;
+                    });
+                });
+
+                this.renderAllPages();
+                this.renderPlatformNavMap();
+            },
+
+            renderUserTable(users) {
+                const list = document.getElementById('list-users');
+                const filter = document.getElementById('db-role-filter').value;
+                const search = document.getElementById('db-search').value.toLowerCase();
+                document.getElementById('db-user-count').innerText = `${users.length} records`;
+
+                const filtered = users.filter(u => {
+                    const matchRole = !filter || u.role === filter;
+                    const matchSearch = !search || (u.name && u.name.toLowerCase().includes(search)) || (u.email && u.email.toLowerCase().includes(search));
+                    return matchRole && matchSearch;
+                });
+
+                list.innerHTML = '';
+                if (filtered.length === 0) {
+                    list.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">No users found.</td></tr>';
+                    return;
+                }
+                filtered.forEach(u => {
+                    const roleColor = u.role === 'admin' ? 'text-purple-300 bg-purple-900/40 border-purple-700/40' :
+                        u.role === 'banned' ? 'text-red-300 bg-red-900/40 border-red-700/40' :
+                        u.role === 'ambassador' ? 'text-orange-300 bg-orange-900/40 border-orange-700/40' :
+                        'text-gray-300 bg-gray-700/40 border-gray-600/40';
+                    list.innerHTML += `<tr class="hover:bg-gray-700/30 transition">
+                        <td class="px-4 py-3 font-bold text-gray-200 text-sm">${u.name || '—'}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${u.email || '—'}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${u.phone || '—'}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${roleColor}">${u.role || 'student'}</span></td>
+                        <td class="px-4 py-3 text-right">
+                            ${u.role !== 'admin' && u.email !== CEO_EMAIL ? `<button onclick="app.promoteUser('${u.id}')" class="text-purple-400 hover:text-purple-300 text-[10px] font-bold mr-2">PROMOTE</button>` : ''}
+                            ${u.role === 'admin' && u.email !== CEO_EMAIL ? `<button onclick="app.demoteUser('${u.id}')" class="text-yellow-400 hover:text-yellow-300 text-[10px] font-bold mr-2">DEMOTE</button>` : ''}
+                            ${u.role !== 'banned' && u.email !== CEO_EMAIL ? `<button onclick="app.banUserById('${u.id}', '${u.name}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">BAN</button>` : ''}
+                            ${u.role === 'banned' ? `<button onclick="app.unbanUser('${u.id}', '${u.name}')" class="text-green-400 hover:text-green-300 text-[10px] font-bold">UNBAN</button>` : ''}
+                        </td>
+                    </tr>`;
+                });
+            },
+
+            filterUsers() {
+                this.renderUserTable(allUsersCache);
+            },
+
+            renderAdminList(users) {
+                const list = document.getElementById('list-admins');
+                const admins = users.filter(u => u.role === 'admin');
+                list.innerHTML = '';
+                admins.forEach(u => {
+                    const isCEO = u.email === CEO_EMAIL;
+                    list.innerHTML += `<tr class="border-b border-purple-900/20">
+                        <td class="px-4 py-2 font-bold text-white text-sm">${u.name}${isCEO ? ' 👑' : ''}</td>
+                        <td class="px-4 py-2 text-xs text-gray-400">${u.email || '—'}</td>
+                        <td class="px-4 py-2 text-xs text-purple-300">${u.role}</td>
+                        <td class="px-4 py-2 text-right">
+                            ${!isCEO ? `<button onclick="app.demoteUser('${u.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Demote</button>` : '<span class="text-[10px] text-yellow-400">CEO</span>'}
+                        </td>
+                    </tr>`;
+                });
+            },
+
+            renderAllPages() {
+                const renderSection = (containerId, pages) => {
+                    const container = document.getElementById(containerId);
+                    if (!container) return;
+                    container.innerHTML = '';
+                    pages.forEach(p => {
+                        const isCurrent = p.url === 'ceo.html';
+                        container.innerHTML += `
+                            <a href="${p.url}" class="page-link-card flex items-center gap-3 p-2.5 rounded-lg bg-gray-900/50 border border-gray-700 hover:border-yellow-600/40 transition group" ${isCurrent ? 'style="border-color:rgba(255,215,0,0.3)"' : ''}>
+                                <div class="w-7 h-7 rounded flex items-center justify-center bg-gray-800 flex-shrink-0">
+                                    <i class="fa-solid ${p.icon} text-xs text-gray-400 group-hover:text-yellow-400 transition"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-gray-200 group-hover:text-white truncate">${p.name}${isCurrent ? ' ← You' : ''}</p>
+                                    <p class="text-[10px] text-gray-500">${p.desc}</p>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-600 group-hover:text-yellow-400 ml-auto flex-shrink-0 transition"></i>
+                            </a>`;
+                    });
+                };
+                renderSection('pages-public', ALL_PAGES.public);
+                renderSection('pages-student', ALL_PAGES.student);
+                renderSection('pages-admin', ALL_PAGES.admin);
+                renderSection('pages-ceo', ALL_PAGES.ceo);
+            },
+
+            renderPlatformNavMap() {
+                const container = document.getElementById('platform-nav-map');
+                if (!container) return;
+                const all = [...ALL_PAGES.public, ...ALL_PAGES.student, ...ALL_PAGES.admin];
+                container.innerHTML = '';
+                all.forEach(p => {
+                    container.innerHTML += `<a href="${p.url}" class="flex items-center gap-2 p-2 rounded bg-gray-900/50 border border-gray-700 hover:border-blue-500/40 transition text-gray-400 hover:text-blue-300">
+                        <i class="fa-solid ${p.icon} text-[10px]"></i>
+                        <span class="truncate">${p.name}</span>
+                    </a>`;
+                });
+            },
+
+            async sendVIPBroadcast() {
+                const title = document.getElementById('vip-title').value.trim();
+                const body = document.getElementById('vip-body').value.trim();
+                if (!title || !body) { alert("Please fill in both title and message."); return; }
+                await addDoc(collection(db, "global_announcements"), { title, body, isVIP: true, timestamp: Date.now() });
+                await this.logAction('VIP_BROADCAST', `Executive Order published: "${title}"`);
+                alert("Executive Order Published 📜");
+                document.getElementById('vip-title').value = '';
+                document.getElementById('vip-body').value = '';
+            },
+
+            async sendSystemBroadcast() {
+                const title = document.getElementById('sys-broadcast-title').value.trim();
+                const body = document.getElementById('sys-broadcast-body').value.trim();
+                if (!title || !body) { alert("Please fill in both title and message."); return; }
+                await addDoc(collection(db, "global_announcements"), { title, body, timestamp: Date.now() });
+                await this.logAction('SYS_BROADCAST', `System broadcast sent: "${title}"`);
+                alert("Broadcast sent 📡");
+                document.getElementById('sys-broadcast-title').value = '';
+                document.getElementById('sys-broadcast-body').value = '';
+            },
+
+            async addAdminByEmail() {
+                const email = document.getElementById('admin-email-input').value.trim();
+                if (!email) return;
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if (snap.empty) { alert("User not found!"); return; }
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); });
+                await this.logAction('ADMIN_PROMOTED', `Promoted ${email} to Admin`);
+                alert(`Promoted ${email} to Command.`);
+                document.getElementById('admin-email-input').value = '';
+                // Refresh
+                this.startListeners();
+            },
+
+            async demoteUser(uid) {
+                if (!confirm("Demote this admin to student?")) return;
+                await updateDoc(doc(db, "users", uid), { role: "student" });
+                await this.logAction('ADMIN_DEMOTED', `Demoted user uid: ${uid}`);
+                this.startListeners();
+            },
+
+            async promoteUser(uid) {
+                if (!confirm("Promote this user to Admin?")) return;
+                await updateDoc(doc(db, "users", uid), { role: "admin" });
+                await this.logAction('ADMIN_PROMOTED', `Promoted user uid: ${uid} to admin`);
+                this.startListeners();
+            },
+
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value.trim();
+                if (!email) return;
+                if (email === CEO_EMAIL) { alert("Cannot ban the CEO."); return; }
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if (snap.empty) return alert("Target not found in DB.");
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
+                await this.logAction('USER_BANNED', `Banned user: ${email}`);
+                alert("Hammer Dropped 🔨");
+                document.getElementById('ban-email-input').value = '';
+                this.startListeners();
+            },
+
+            async banUserById(uid, name) {
+                if (!confirm(`Ban ${name}?`)) return;
+                await updateDoc(doc(db, "users", uid), { role: "banned" });
+                await this.logAction('USER_BANNED', `Banned user: ${name} (${uid})`);
+                this.startListeners();
+            },
+
+            async unbanUser(uid, name) {
+                if (!confirm(`Unban ${name}?`)) return;
+                await updateDoc(doc(db, "users", uid), { role: "student" });
+                await this.logAction('USER_UNBANNED', `Unbanned user: ${name}`);
+                this.startListeners();
+            },
+
+            async flushRequests() {
+                if (!confirm("Warning: This will wipe all service logs. Proceed?")) return;
+                const q = query(collection(db, "print_orders"));
+                const snap = await getDocs(q);
+                snap.forEach(d => deleteDoc(doc(db, "print_orders", d.id)));
+                await this.logAction('LOGS_PURGED', 'Service logs purged by CEO');
+                alert("Logs Purged.");
+            },
+
+            async purgeAnnouncements() {
+                if (!confirm("This will delete ALL announcements. This cannot be undone. Proceed?")) return;
+                const snap = await getDocs(collection(db, "global_announcements"));
+                snap.forEach(d => deleteDoc(doc(db, "global_announcements", d.id)));
+                await this.logAction('ANNOUNCEMENTS_PURGED', 'All announcements cleared by CEO');
+                alert("All announcements cleared.");
+            },
+
+            exportUsers() {
+                if (allUsersCache.length === 0) { alert("No user data loaded yet."); return; }
+                const rows = [["Name", "Email", "Phone", "Role"]];
+                allUsersCache.forEach(u => rows.push([u.name || '', u.email || '', u.phone || '', u.role || 'student']));
+                const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `az-users-${Date.now()}.csv`; a.click();
+            },
+
+            async exportLogs() {
+                const snap = await getDocs(query(collection(db, "admin_logs"), orderBy('timestamp', 'desc'), limit(500)));
+                const rows = [["Time", "Officer", "Email", "Type", "Details"]];
+                snap.forEach(d => {
+                    const l = d.data();
+                    const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleString() : '';
+                    rows.push([time, l.user || '', l.email || '', l.type || '', l.details || '']);
+                });
+                const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `az-logs-${Date.now()}.csv`; a.click();
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+
+</html>
