@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Ambassador Leaderboard — top campus ambassadors ranked by achievement points.">
+    <title>Ambassador Leaderboard | AZ Learner</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+        }
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .rank-row:nth-child(1) { background: rgba(255, 215, 0, 0.08); border-color: rgba(255, 215, 0, 0.3); }
+        .rank-row:nth-child(2) { background: rgba(192, 192, 192, 0.08); border-color: rgba(192, 192, 192, 0.3); }
+        .rank-row:nth-child(3) { background: rgba(205, 127, 50, 0.08); border-color: rgba(205, 127, 50, 0.3); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-animated"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-4 sm:px-6 py-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl sm:text-2xl font-extrabold tracking-tighter">
+                <span class="bg-white text-blue-900 px-2 py-1 rounded mr-1">AZ</span> LEARNER
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="ambassador.html" class="text-sm font-medium text-orange-400 hover:text-orange-300 transition hidden sm:block">
+                    <i class="fas fa-user-tie mr-1"></i> Portal
+                </a>
+                <a href="index.html" class="text-sm font-medium text-gray-300 hover:text-white transition flex items-center gap-2">
+                    <i class="fas fa-arrow-left text-xs"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pt-32 pb-12 px-6">
+        <div class="max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-600/20 border border-yellow-500/30 text-yellow-300 text-sm font-semibold mb-6">
+                <i class="fas fa-trophy"></i>
+                Ambassador Leaderboard
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+                Top <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-300">Ambassadors</span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-xl mx-auto">
+                Ambassadors earn points by attending programs, completing training courses, and recruiting new users. The top performers each month earn exclusive badges and recognition.
+            </p>
+        </div>
+    </section>
+
+    <!-- How Points Work -->
+    <section class="pb-10 px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="grid sm:grid-cols-3 gap-4">
+                <div class="glass-panel rounded-2xl p-5 text-center">
+                    <i class="fas fa-calendar-check text-blue-400 text-2xl mb-3"></i>
+                    <p class="text-white font-bold text-sm mb-1">Attend a Program</p>
+                    <p class="text-blue-400 font-extrabold text-xl">+100 pts</p>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 text-center">
+                    <i class="fas fa-graduation-cap text-green-400 text-2xl mb-3"></i>
+                    <p class="text-white font-bold text-sm mb-1">Complete a Course</p>
+                    <p class="text-green-400 font-extrabold text-xl">+150 pts</p>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 text-center">
+                    <i class="fas fa-user-plus text-orange-400 text-2xl mb-3"></i>
+                    <p class="text-white font-bold text-sm mb-1">Recruit a New User</p>
+                    <p class="text-orange-400 font-extrabold text-xl">+50 pts</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leaderboard Table -->
+    <section class="pb-16 px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="glass-panel rounded-3xl overflow-hidden">
+                <div class="px-6 py-5 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="font-bold text-white text-lg"><i class="fas fa-trophy text-yellow-400 mr-2"></i>All-Time Rankings</h2>
+                    <span id="total-count" class="text-xs text-gray-500">Loading...</span>
+                </div>
+                <div id="leaderboard-container" class="divide-y divide-white/5">
+                    <div class="flex items-center justify-center py-16 text-gray-500">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Loading leaderboard...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Monthly Challenge CTA -->
+    <section class="pb-24 px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="glass-panel rounded-3xl p-8 border border-yellow-500/20">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                    <div class="bg-yellow-500/20 p-4 rounded-xl shrink-0">
+                        <i class="fas fa-fire text-yellow-400 text-3xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-extrabold text-white mb-2">Monthly Challenge — February 2026</h3>
+                        <p class="text-gray-400 text-sm mb-4">Complete all three tasks before the end of the month to earn a <strong class="text-yellow-400">🔥 February Champion</strong> badge and <strong class="text-yellow-400">+500 bonus points</strong>.</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-sm">
+                                <i class="fas fa-circle-check text-green-400"></i>
+                                <span class="text-gray-300">Complete one training course in the Ambassador Portal</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm">
+                                <i class="fas fa-circle text-gray-600"></i>
+                                <span class="text-gray-400">Recruit 3 new AZ Learner users with your referral code</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm">
+                                <i class="fas fa-circle text-gray-600"></i>
+                                <span class="text-gray-400">Attend or organise a campus program or event</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="ambassador.html" class="shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white rounded-full font-bold text-sm transition hover:scale-105">
+                        <i class="fas fa-arrow-right"></i> Go to Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-10 pb-8">
+        <div class="max-w-3xl mx-auto px-6 text-center">
+            <div class="text-xl font-black tracking-tight mb-2">AZ LEARNER</div>
+            <p class="text-gray-500 text-sm mb-4">UCC • Cape Coast • The World</p>
+            <div class="flex justify-center gap-6 text-sm text-gray-500 mb-4">
+                <a href="index.html" class="hover:text-white transition">Home</a>
+                <a href="courses.html" class="hover:text-white transition">Courses</a>
+                <a href="leaderboard.html" class="hover:text-white transition text-yellow-400">Leaderboard</a>
+                <a href="ambassador.html" class="hover:text-white transition">Portal</a>
+                <a href="faq.html" class="hover:text-white transition">FAQ</a>
+            </div>
+            <div class="text-xs text-gray-600">&copy; 2026 Francis Pwavwe Production. Powered by Sunlight &amp; Ambition.</div>
+        </div>
+    </footer>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            const totalEl = document.getElementById('total-count');
+            try {
+                const snap = await getDocs(
+                    query(collection(db, 'ambassadors'), orderBy('achievementPoints', 'desc'))
+                );
+
+                if (snap.empty) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-16">No leaderboard data yet. Be the first to earn points!</div>';
+                    totalEl.textContent = '0 ambassadors';
+                    return;
+                }
+
+                totalEl.textContent = `${snap.size} ambassador${snap.size !== 1 ? 's' : ''}`;
+                container.innerHTML = '';
+
+                const medals = ['🥇', '🥈', '🥉'];
+                let rank = 0;
+
+                snap.forEach(d => {
+                    rank++;
+                    const amb = d.data();
+                    const name = amb.name || amb.fullName || 'Ambassador';
+                    const pts = amb.achievementPoints ?? 0;
+                    const university = amb.university || '';
+                    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+                    const row = document.createElement('div');
+                    row.className = `rank-row flex items-center gap-4 px-6 py-4 border border-transparent transition hover:bg-white/5`;
+
+                    const rankEl = document.createElement('span');
+                    rankEl.className = 'text-xl w-8 text-center shrink-0 font-bold';
+                    rankEl.textContent = medals[rank - 1] || String(rank);
+
+                    const avatar = document.createElement('div');
+                    avatar.className = 'w-11 h-11 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-sm font-bold shrink-0';
+                    avatar.textContent = initials;
+
+                    const info = document.createElement('div');
+                    info.className = 'flex-1 min-w-0';
+
+                    const nameEl = document.createElement('p');
+                    nameEl.className = 'text-white font-bold text-sm truncate';
+                    nameEl.textContent = name;
+
+                    const uniEl = document.createElement('p');
+                    uniEl.className = 'text-gray-500 text-xs truncate';
+                    uniEl.textContent = university;
+
+                    info.append(nameEl, uniEl);
+
+                    const ptsEl = document.createElement('div');
+                    ptsEl.className = 'shrink-0 text-right';
+
+                    const ptsNum = document.createElement('p');
+                    ptsNum.className = 'text-yellow-400 font-extrabold text-base';
+                    ptsNum.textContent = pts.toLocaleString();
+
+                    const ptsLabel = document.createElement('p');
+                    ptsLabel.className = 'text-gray-600 text-xs';
+                    ptsLabel.textContent = 'points';
+
+                    ptsEl.append(ptsNum, ptsLabel);
+                    row.append(rankEl, avatar, info, ptsEl);
+                    container.appendChild(row);
+                });
+
+            } catch (e) {
+                console.error('Leaderboard error:', e);
+                container.innerHTML = '<div class="text-center text-gray-500 py-16"><i class="fas fa-exclamation-triangle text-yellow-500 text-2xl mb-3"></i><br>Could not load leaderboard. Please try again later.</div>';
+                totalEl.textContent = '';
+            }
+        }
+
+        loadLeaderboard();
+    </script>
+
+</body>
+</html>

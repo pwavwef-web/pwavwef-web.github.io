@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Ambassador Training Courses — Marketing, Leadership, Communication, and Event Planning modules.">
+    <title>Ambassador Courses | AZ Learner</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+        }
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        details[open] summary .chevron { transform: rotate(180deg); }
+        .chevron { transition: transform 0.3s ease; }
+        details summary { list-style: none; }
+        details summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-animated"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-4 sm:px-6 py-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl sm:text-2xl font-extrabold tracking-tighter">
+                <span class="bg-white text-blue-900 px-2 py-1 rounded mr-1">AZ</span> LEARNER
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="ambassador.html" class="text-sm font-medium text-orange-400 hover:text-orange-300 transition hidden sm:block">
+                    <i class="fas fa-user-tie mr-1"></i> Ambassador Portal
+                </a>
+                <a href="index.html" class="text-sm font-medium text-gray-300 hover:text-white transition flex items-center gap-2">
+                    <i class="fas fa-arrow-left text-xs"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pt-32 pb-12 px-6">
+        <div class="max-w-5xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-600/20 border border-orange-500/30 text-orange-300 text-sm font-semibold mb-6">
+                <i class="fas fa-graduation-cap"></i>
+                Ambassador Training Courses
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+                Learn. Lead. <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">Impact.</span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
+                Four expertly crafted courses designed to help AZ Learner Ambassadors promote the platform, lead their peers, and create lasting impact on campus.
+            </p>
+            <div class="flex flex-wrap justify-center gap-3 text-sm text-gray-400">
+                <span class="flex items-center gap-1"><i class="fas fa-book text-blue-400"></i> 4 Courses</span>
+                <span class="flex items-center gap-1"><i class="fas fa-list-check text-green-400"></i> 12 Modules</span>
+                <span class="flex items-center gap-1"><i class="fas fa-clock text-orange-400"></i> ~8.5 hrs total</span>
+                <span class="flex items-center gap-1"><i class="fas fa-lock-open text-yellow-400"></i> Free for ambassadors</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses -->
+    <section class="pb-24 px-6">
+        <div class="max-w-5xl mx-auto space-y-10">
+
+            <!-- Course 1: Marketing & Outreach -->
+            <div class="glass-panel rounded-3xl overflow-hidden">
+                <div class="bg-blue-900/30 border-b border-blue-500/20 p-8">
+                    <div class="flex items-start gap-5">
+                        <div class="bg-blue-500/20 p-4 rounded-xl shrink-0">
+                            <i class="fas fa-bullhorn text-blue-400 text-3xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">Course 1</span>
+                                <span class="text-xs bg-blue-900/40 text-blue-300 px-2 py-0.5 rounded-full">2 hrs</span>
+                                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">3 modules</span>
+                            </div>
+                            <h2 class="text-2xl font-extrabold text-white mb-2">Marketing & Outreach</h2>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Learn how to effectively promote AZ Learner on campus, reach new student audiences, and drive sign-ups through targeted social media campaigns and on-campus activations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 space-y-3">
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-blue-900/60 text-blue-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">1</span>
+                                <span class="text-white font-semibold text-sm">Understanding Your Audience</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Identify your campus demographics, map student pain points, and craft messages that resonate with different peer groups. Learn how to segment your audience by faculty, year group, and interest to deliver the right message at the right time.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Demographic mapping: faculties, year groups, interests</li>
+                                <li>Identifying student pain points AZ Learner solves</li>
+                                <li>Crafting value propositions for different audiences</li>
+                                <li>Tailoring your message for each channel (in-person vs online)</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-blue-900/60 text-blue-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">2</span>
+                                <span class="text-white font-semibold text-sm">Social Media Strategy</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Build a content calendar for Instagram, TikTok, and WhatsApp to grow AZ Learner visibility on campus. Learn best practices for each platform, how to create short-form video content, and how to measure engagement to improve future posts.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Platform-specific content formats and best times to post</li>
+                                <li>Building a two-week content calendar template</li>
+                                <li>Creating short-form video demos of AZ Learner features</li>
+                                <li>Tracking reach, saves, and referral link clicks</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-blue-900/60 text-blue-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">3</span>
+                                <span class="text-white font-semibold text-sm">On-Campus Activation</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Plan and run tabling events, peer-to-peer demos, and referral drives. Learn how to set up an eye-catching booth, demo the app to sceptical students, and collect sign-ups effectively using your unique referral code.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Choosing high-traffic campus locations for activations</li>
+                                <li>The 60-second app demo script</li>
+                                <li>Using your referral code to track sign-ups</li>
+                                <li>Handling objections and sceptical students</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Course 2: Leadership Development -->
+            <div class="glass-panel rounded-3xl overflow-hidden">
+                <div class="bg-orange-900/30 border-b border-orange-500/20 p-8">
+                    <div class="flex items-start gap-5">
+                        <div class="bg-orange-500/20 p-4 rounded-xl shrink-0">
+                            <i class="fas fa-users text-orange-400 text-3xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="text-xs font-bold text-orange-400 uppercase tracking-wider">Course 2</span>
+                                <span class="text-xs bg-orange-900/40 text-orange-300 px-2 py-0.5 rounded-full">2.5 hrs</span>
+                                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">3 modules</span>
+                            </div>
+                            <h2 class="text-2xl font-extrabold text-white mb-2">Leadership Development</h2>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Develop the skills to lead study groups, mentor peers, and build a positive ambassador team culture. This course equips you to be the kind of leader students and teammates genuinely want to follow.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 space-y-3">
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-orange-900/60 text-orange-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">1</span>
+                                <span class="text-white font-semibold text-sm">Effective Study-Group Facilitation</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Learn how to lead productive study groups and keep participants engaged throughout a session. Discover techniques for setting clear agendas, managing time, dealing with dominant or disengaged members, and making every participant feel valued.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Setting a clear agenda before each session</li>
+                                <li>Timeboxing activities to maintain energy</li>
+                                <li>Managing dominant vs. quiet participants</li>
+                                <li>Closing a session with action items and accountability</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-orange-900/60 text-orange-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">2</span>
+                                <span class="text-white font-semibold text-sm">Mentoring Peers</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Build trust with fellow students, give constructive feedback, and help them set realistic academic goals. Explore active listening, motivational techniques, and how to identify when a peer needs extra support beyond academic guidance.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>The GROW coaching model (Goal, Reality, Options, Way forward)</li>
+                                <li>Giving feedback that motivates rather than discourages</li>
+                                <li>Recognising signs of academic stress or burnout</li>
+                                <li>When and how to refer peers to professional support</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-orange-900/60 text-orange-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">3</span>
+                                <span class="text-white font-semibold text-sm">Managing Conflict</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Learn to resolve disputes fairly and maintain a positive ambassador team culture. Understand the root causes of interpersonal conflict, practice de-escalation strategies, and know when to escalate issues to the AZ Learner core team.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Common sources of conflict in student teams</li>
+                                <li>De-escalation language and neutral framing</li>
+                                <li>Facilitating a structured resolution conversation</li>
+                                <li>When to escalate and how to document incidents</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Course 3: Communication Skills -->
+            <div class="glass-panel rounded-3xl overflow-hidden">
+                <div class="bg-green-900/30 border-b border-green-500/20 p-8">
+                    <div class="flex items-start gap-5">
+                        <div class="bg-green-500/20 p-4 rounded-xl shrink-0">
+                            <i class="fas fa-comments text-green-400 text-3xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="text-xs font-bold text-green-400 uppercase tracking-wider">Course 3</span>
+                                <span class="text-xs bg-green-900/40 text-green-300 px-2 py-0.5 rounded-full">2 hrs</span>
+                                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">3 modules</span>
+                            </div>
+                            <h2 class="text-2xl font-extrabold text-white mb-2">Communication Skills</h2>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Master public speaking, written communication, and active listening to engage your campus community and represent AZ Learner with confidence and clarity in every interaction.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 space-y-3">
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-green-900/60 text-green-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">1</span>
+                                <span class="text-white font-semibold text-sm">Public Speaking Fundamentals</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Structure a short talk, control nerves, and make a strong first impression. Practice the PREP framework (Point, Reason, Example, Point) for impromptu and prepared speeches, and learn how body language amplifies your message.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>The PREP framework for structured speaking</li>
+                                <li>Managing nerves: breathing, pausing, grounding techniques</li>
+                                <li>Eye contact, posture, and gesture best practices</li>
+                                <li>Opening and closing with impact</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-green-900/60 text-green-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">2</span>
+                                <span class="text-white font-semibold text-sm">Written Communication</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Craft clear emails, WhatsApp messages, and social-media captions that get results. Learn the principles of plain language, how to write a compelling call to action, and common mistakes that make professional communication less effective.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Plain language principles: short sentences, active voice</li>
+                                <li>Writing subject lines and opening lines that get opened</li>
+                                <li>Crafting a clear call to action in every message</li>
+                                <li>WhatsApp broadcast etiquette and group message tone</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-green-900/60 text-green-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">3</span>
+                                <span class="text-white font-semibold text-sm">Active Listening</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Understand student feedback deeply and respond with empathy. Active listening is more than hearing words — it is about understanding intent, asking clarifying questions, summarising what you heard, and validating the speaker's perspective before responding.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>The four levels of listening</li>
+                                <li>Asking open-ended clarifying questions</li>
+                                <li>Paraphrasing and summarising to confirm understanding</li>
+                                <li>Responding with empathy without dismissing concerns</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Course 4: Event Planning -->
+            <div class="glass-panel rounded-3xl overflow-hidden">
+                <div class="bg-purple-900/30 border-b border-purple-500/20 p-8">
+                    <div class="flex items-start gap-5">
+                        <div class="bg-purple-500/20 p-4 rounded-xl shrink-0">
+                            <i class="fas fa-calendar-check text-purple-400 text-3xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="text-xs font-bold text-purple-400 uppercase tracking-wider">Course 4</span>
+                                <span class="text-xs bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded-full">2 hrs</span>
+                                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">3 modules</span>
+                            </div>
+                            <h2 class="text-2xl font-extrabold text-white mb-2">Event Planning</h2>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Organise impactful study sessions, campus activations, and AZ Learner events from scratch. Learn ideation, logistics, promotion, and how to measure the real-world impact of every event you run.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 space-y-3">
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-purple-900/60 text-purple-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">1</span>
+                                <span class="text-white font-semibold text-sm">Event Ideation & Scoping</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Choose the right event type, set clear goals, and define your target audience before you begin planning. Learn how to do a quick feasibility check — budget, venue availability, expected attendance — so you only invest time in events that can actually happen.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Event types: study circles, launch parties, tabling days, webinars</li>
+                                <li>Setting SMART event goals (sign-ups, attendance, feedback)</li>
+                                <li>Quick feasibility: budget, venue, timing constraints</li>
+                                <li>Getting approval from your campus ambassador lead</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-purple-900/60 text-purple-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">2</span>
+                                <span class="text-white font-semibold text-sm">Logistics & Promotion</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Secure a venue, recruit volunteers, and create buzz on campus. Build a simple run-of-show document, assign clear roles to your volunteer team, and create a promotion timeline that starts at least two weeks before the event date.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Run-of-show template and role assignments</li>
+                                <li>Two-week promotion timeline and channel mix</li>
+                                <li>Creating flyers and WhatsApp broadcast scripts</li>
+                                <li>Managing RSVPs and day-of logistics</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/5 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-purple-900/60 text-purple-300 text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shrink-0">3</span>
+                                <span class="text-white font-semibold text-sm">Post-Event Recap</span>
+                            </div>
+                            <i class="fas fa-chevron-down chevron text-gray-500 text-xs ml-4 shrink-0"></i>
+                        </summary>
+                        <div class="px-5 pb-5 pt-3 text-gray-400 text-sm leading-relaxed border-t border-gray-700 space-y-3">
+                            <p>Collect feedback, calculate impact, and report results back to the AZ Learner team. Use a short NPS survey to measure satisfaction, count new sign-ups attributed to the event, and document lessons learned so future events are even better.</p>
+                            <p><strong class="text-white">Key topics:</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Running a post-event NPS survey (1–3 questions)</li>
+                                <li>Calculating sign-ups via referral code data</li>
+                                <li>Writing a one-page event recap report</li>
+                                <li>Documenting lessons learned for next time</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="pb-24 px-6">
+        <div class="max-w-5xl mx-auto">
+            <div class="glass-panel rounded-3xl p-10 text-center">
+                <div class="text-5xl mb-4">🎓</div>
+                <h2 class="text-2xl font-extrabold mb-3">Ready to Start Learning?</h2>
+                <p class="text-gray-400 mb-6 max-w-xl mx-auto">Log in to the Ambassador Portal to track your course progress, earn achievement points, and unlock badges as you complete each module.</p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="ambassador.html" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white rounded-full font-bold text-base transition hover:scale-105">
+                        <i class="fas fa-user-tie"></i> Go to Ambassador Portal
+                    </a>
+                    <a href="ambassadorsignup.html" class="inline-flex items-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold text-base transition">
+                        <i class="fas fa-user-plus"></i> Apply to be an Ambassador
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-10 pb-8">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <div class="text-xl font-black tracking-tight mb-2">AZ LEARNER</div>
+            <p class="text-gray-500 text-sm mb-4">UCC • Cape Coast • The World</p>
+            <div class="flex justify-center gap-6 text-sm text-gray-500 mb-4">
+                <a href="index.html" class="hover:text-white transition">Home</a>
+                <a href="courses.html" class="hover:text-white transition text-orange-400">Courses</a>
+                <a href="leaderboard.html" class="hover:text-white transition">Leaderboard</a>
+                <a href="ambassador.html" class="hover:text-white transition">Portal</a>
+                <a href="faq.html" class="hover:text-white transition">FAQ</a>
+            </div>
+            <div class="text-xs text-gray-600">&copy; 2026 Francis Pwavwe Production. Powered by Sunlight &amp; Ambition.</div>
+        </div>
+    </footer>
+
+</body>
+</html>
