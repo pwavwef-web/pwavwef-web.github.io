@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Database 🗄️</title>
+    <link rel="icon" type="image/png" href="adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        darkBg: '#1a1a1a',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0a0a0f; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .db-view { display: none; }
+        .db-view.active-view { display: flex; flex-direction: column; }
+        .nav-btn.active { background: rgba(68,138,255,0.2); color: #448AFF; border-color: rgba(68,138,255,0.4); }
+    </style>
+</head>
+
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-blue-700/40">
+            <div class="text-5xl mb-4">🗄️</div>
+            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2 tracking-tighter">Personnel Database</h1>
+            <p class="text-sm text-gray-500 mb-6">Restricted · CEO Access Only</p>
+            <input type="email" id="login-email" placeholder="CEO Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-blue-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-blue-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-black font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Access Database 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-blue-700/30 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div>
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">AZ DATABASE</h1>
+                <p id="db-user-info" class="text-xs text-gray-400 font-mono">Standby...</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="ceo.html" class="bg-gray-800 hover:bg-yellow-900/40 text-yellow-400 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-crown"></i> CEO Hub
+                </a>
+                <a href="admin.html" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-shield"></i> Admin
+                </a>
+                <button onclick="authManager.logout()"
+                    class="bg-gray-800 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">Abort <i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0 items-center">
+            <button onclick="app.switchView('users')" id="nav-users"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-users mr-2"></i>All Users</button>
+            <button onclick="app.switchView('admins')" id="nav-admins"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-user-shield mr-2 text-purple-400"></i>Admins</button>
+            <button onclick="app.switchView('ambassadors')" id="nav-ambassadors"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-user-tie mr-2 text-orange-400"></i>Ambassadors</button>
+            <button onclick="app.switchView('banned')" id="nav-banned"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-ban mr-2 text-red-400"></i>Banned</button>
+        </div>
+
+        <div class="flex-1 overflow-hidden flex flex-col bg-[#0a0a0f]">
+
+            <!-- Stats Bar -->
+            <div class="bg-gray-900/80 border-b border-gray-800 px-4 py-3 flex gap-6 shrink-0">
+                <div class="text-center">
+                    <p class="text-lg font-black text-white" id="stat-total">—</p>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider">Total</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-lg font-black text-purple-400" id="stat-admins">—</p>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider">Admins</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-lg font-black text-orange-400" id="stat-ambassadors">—</p>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider">Ambassadors</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-lg font-black text-blue-400" id="stat-students">—</p>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider">Students</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-lg font-black text-red-400" id="stat-banned">—</p>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider">Banned</p>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="bg-gray-900/50 border-b border-gray-800 px-4 py-3 flex gap-3 shrink-0">
+                <input id="db-search" type="text" placeholder="Search by name or email..."
+                    class="flex-1 p-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm"
+                    oninput="app.filterAndRender()">
+                <button onclick="app.exportUsers()"
+                    class="bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 border border-blue-700/40 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Export CSV
+                </button>
+            </div>
+
+            <!-- ALL USERS VIEW -->
+            <div id="view-users" class="db-view flex-1 overflow-y-auto">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3">Name</th>
+                                <th class="px-4 py-3">Email</th>
+                                <th class="px-4 py-3 hidden md:table-cell">Phone</th>
+                                <th class="px-4 py-3">Role</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-all-users" class="divide-y divide-gray-800"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ADMINS VIEW -->
+            <div id="view-admins" class="db-view flex-1 overflow-y-auto">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3">Name</th>
+                                <th class="px-4 py-3">Email</th>
+                                <th class="px-4 py-3">Role</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-admins" class="divide-y divide-gray-800"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- AMBASSADORS VIEW -->
+            <div id="view-ambassadors" class="db-view flex-1 overflow-y-auto">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3">Name</th>
+                                <th class="px-4 py-3">Email</th>
+                                <th class="px-4 py-3 hidden md:table-cell">Phone</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-ambassadors" class="divide-y divide-gray-800"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- BANNED VIEW -->
+            <div id="view-banned" class="db-view flex-1 overflow-y-auto">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3">Name</th>
+                                <th class="px-4 py-3">Email</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-banned" class="divide-y divide-gray-800"></tbody>
+                    </table>
+                </div>
+
+                <!-- Ban by email -->
+                <div class="p-4 border-t border-gray-800">
+                    <div class="bg-red-900/10 border border-red-500/30 p-5 rounded-xl max-w-lg">
+                        <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2 text-xs tracking-widest">
+                            <i class="fa-solid fa-gavel"></i> Ban by Email
+                        </h3>
+                        <div class="flex gap-2">
+                            <input id="ban-email-input" type="email" placeholder="Target Email..."
+                                class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500 text-sm">
+                            <button onclick="app.banByEmail()"
+                                class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+        let allUsersCache = [];
+        let currentView = 'users';
+
+        const CEO_EMAIL = "pwavwef@gmail.com";
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.innerText = "Auth Failed: " + err.message;
+                }
+            },
+            logout() {
+                if (currentUser) app.logAction('DB_EXIT', `CEO closed database session.`);
+                signOut(auth);
+            }
+        };
+
+        window.app = {
+            async logAction(type, details) {
+                if (!currentUser) return;
+                await addDoc(collection(db, "admin_logs"), {
+                    type, user: currentUser.name, email: currentUser.email,
+                    details, timestamp: serverTimestamp()
+                });
+            },
+
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        if (user.email !== CEO_EMAIL) {
+                            document.getElementById('login-msg').innerText = "⛔ CEO access only.";
+                            signOut(auth);
+                            return;
+                        }
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            currentUser = { ...userDoc.data(), uid: user.uid };
+                            this.logAction('DB_ENTRY', `CEO opened database.`);
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            document.getElementById('app-content').classList.remove('hidden');
+                            document.getElementById('db-user-info').innerText = `CEO · ${currentUser.name}`;
+                            this.loadUsers();
+                            this.switchView('users');
+                        } else {
+                            document.getElementById('login-msg').innerText = "Profile not found.";
+                            signOut(auth);
+                        }
+                    } else {
+                        document.getElementById('auth-overlay').classList.remove('hidden');
+                        document.getElementById('app-content').classList.add('hidden');
+                    }
+                });
+            },
+
+            switchView(view) {
+                currentView = view;
+                document.querySelectorAll('.db-view').forEach(v => v.classList.remove('active-view'));
+                document.getElementById(`view-${view}`).classList.add('active-view');
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.id === `nav-${view}`) btn.classList.add('active');
+                });
+                this.filterAndRender();
+            },
+
+            async loadUsers() {
+                const snap = await getDocs(query(collection(db, "users"), limit(500)));
+                allUsersCache = [];
+                let admins = 0, ambassadors = 0, students = 0, banned = 0;
+                snap.forEach(d => {
+                    const u = { id: d.id, ...d.data() };
+                    allUsersCache.push(u);
+                    if (u.role === 'admin') admins++;
+                    else if (u.role === 'ambassador') ambassadors++;
+                    else if (u.role === 'banned') banned++;
+                    else students++;
+                });
+                document.getElementById('stat-total').innerText = snap.size;
+                document.getElementById('stat-admins').innerText = admins;
+                document.getElementById('stat-ambassadors').innerText = ambassadors;
+                document.getElementById('stat-students').innerText = students;
+                document.getElementById('stat-banned').innerText = banned;
+                this.filterAndRender();
+            },
+
+            filterAndRender() {
+                const search = document.getElementById('db-search').value.toLowerCase();
+                const filtered = search
+                    ? allUsersCache.filter(u => (u.name && u.name.toLowerCase().includes(search)) || (u.email && u.email.toLowerCase().includes(search)))
+                    : allUsersCache;
+
+                const roleFilter = currentView !== 'users' ? {
+                    admins: 'admin', ambassadors: 'ambassador', banned: 'banned'
+                }[currentView] : null;
+
+                const users = roleFilter ? filtered.filter(u => u.role === roleFilter) : filtered;
+
+                if (currentView === 'users') this.renderTable('list-all-users', users, ['name', 'email', 'phone', 'role']);
+                else if (currentView === 'admins') this.renderTable('list-admins', users, ['name', 'email', 'role']);
+                else if (currentView === 'ambassadors') this.renderTable('list-ambassadors', users, ['name', 'email', 'phone']);
+                else if (currentView === 'banned') this.renderTable('list-banned', users, ['name', 'email']);
+            },
+
+            renderTable(tbodyId, users, cols) {
+                const tbody = document.getElementById(tbodyId);
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                if (users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">No records found.</td></tr>`;
+                    return;
+                }
+                users.forEach(u => {
+                    const roleColor = u.role === 'admin' ? 'text-purple-300 bg-purple-900/40 border-purple-700/40' :
+                        u.role === 'banned' ? 'text-red-300 bg-red-900/40 border-red-700/40' :
+                        u.role === 'ambassador' ? 'text-orange-300 bg-orange-900/40 border-orange-700/40' :
+                        'text-gray-300 bg-gray-700/40 border-gray-600/40';
+                    const isCEO = u.email === CEO_EMAIL;
+
+                    let cells = '';
+                    if (cols.includes('name')) cells += `<td class="px-4 py-3 font-bold text-gray-200 text-sm">${u.name || '—'}</td>`;
+                    if (cols.includes('email')) cells += `<td class="px-4 py-3 text-xs text-gray-400">${u.email || '—'}</td>`;
+                    if (cols.includes('phone')) cells += `<td class="px-4 py-3 text-xs text-gray-400 hidden md:table-cell">${u.phone || '—'}</td>`;
+                    if (cols.includes('role')) cells += `<td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${roleColor}">${u.role || 'student'}</span></td>`;
+
+                    let actions = '';
+                    if (!isCEO) {
+                        if (u.role !== 'admin') actions += `<button onclick="app.changeRole('${u.id}','admin','${u.name}')" class="text-purple-400 hover:text-purple-300 text-[10px] font-bold mr-2">PROMOTE</button>`;
+                        if (u.role === 'admin') actions += `<button onclick="app.changeRole('${u.id}','student','${u.name}')" class="text-yellow-400 hover:text-yellow-300 text-[10px] font-bold mr-2">DEMOTE</button>`;
+                        if (u.role !== 'banned') actions += `<button onclick="app.changeRole('${u.id}','banned','${u.name}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">BAN</button>`;
+                        if (u.role === 'banned') actions += `<button onclick="app.changeRole('${u.id}','student','${u.name}')" class="text-green-400 hover:text-green-300 text-[10px] font-bold">UNBAN</button>`;
+                    } else {
+                        actions = '<span class="text-[10px] text-yellow-400 font-bold">CEO 👑</span>';
+                    }
+
+                    tbody.innerHTML += `<tr class="hover:bg-gray-800/40 transition">${cells}<td class="px-4 py-3 text-right whitespace-nowrap">${actions}</td></tr>`;
+                });
+            },
+
+            async changeRole(uid, newRole, name) {
+                const action = newRole === 'banned' ? 'ban' : newRole === 'admin' ? 'promote' : 'demote/unban';
+                if (!confirm(`${action.toUpperCase()} ${name}?`)) return;
+                await updateDoc(doc(db, "users", uid), { role: newRole });
+                await this.logAction(`USER_ROLE_CHANGED`, `${name} role changed to ${newRole}`);
+                await this.loadUsers();
+            },
+
+            async banByEmail() {
+                const email = document.getElementById('ban-email-input').value.trim();
+                if (!email) return;
+                if (email === CEO_EMAIL) { alert("Cannot ban the CEO."); return; }
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                if (snap.empty) return alert("User not found in database.");
+                snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "banned" }); });
+                await this.logAction('USER_BANNED', `Banned user by email: ${email}`);
+                alert("User banned 🔨");
+                document.getElementById('ban-email-input').value = '';
+                await this.loadUsers();
+            },
+
+            exportUsers() {
+                if (allUsersCache.length === 0) { alert("No data loaded."); return; }
+                const rows = [["Name", "Email", "Phone", "Role"]];
+                allUsersCache.forEach(u => rows.push([u.name || '', u.email || '', u.phone || '', u.role || 'student']));
+                const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `az-users-${Date.now()}.csv`; a.click();
+                this.logAction('DATA_EXPORT', 'User list exported as CSV');
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+
+</html>
