@@ -267,15 +267,65 @@
                         <div id="courses-grid" class="grid md:grid-cols-2 gap-6">
                             <div class="text-center text-gray-500 py-8 col-span-2">Loading courses...</div>
                         </div>
+                    </div>
 
-                        <div class="mt-8 p-6 bg-blue-900/20 border border-blue-500/30 rounded-xl">
-                            <h3 class="text-lg font-bold text-white mb-2">
-                                <i class="fas fa-download"></i> Resource Library
-                            </h3>
-                            <p class="text-sm text-gray-400 mb-4">Download ambassador guides, templates, and promotional materials</p>
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
-                                Browse Resources
-                            </button>
+                    <!-- Resource Library -->
+                    <div class="glass-panel rounded-2xl p-8">
+                        <h3 class="text-xl font-bold text-white mb-2">
+                            <i class="fas fa-download text-blue-400"></i> Resource Library
+                        </h3>
+                        <p class="text-sm text-gray-400 mb-6">Download ambassador guides, templates, and promotional materials as PDF</p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3">
+                                <div class="bg-blue-500/20 p-2 rounded-lg flex-shrink-0"><i class="fas fa-file-pdf text-blue-400 text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-white font-bold text-sm">Marketing & Outreach Guide</p>
+                                    <p class="text-gray-400 text-xs mt-0.5 mb-3">Campus promotion strategies and templates</p>
+                                    <button onclick="portal.downloadResource('marketing')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                        <i class="fas fa-download"></i> Download PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-orange-900/20 border border-orange-500/30 rounded-xl p-4 flex items-start gap-3">
+                                <div class="bg-orange-500/20 p-2 rounded-lg flex-shrink-0"><i class="fas fa-file-pdf text-orange-400 text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-white font-bold text-sm">Leadership Development Guide</p>
+                                    <p class="text-gray-400 text-xs mt-0.5 mb-3">Leadership principles and peer mentoring</p>
+                                    <button onclick="portal.downloadResource('leadership')" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                        <i class="fas fa-download"></i> Download PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-green-900/20 border border-green-500/30 rounded-xl p-4 flex items-start gap-3">
+                                <div class="bg-green-500/20 p-2 rounded-lg flex-shrink-0"><i class="fas fa-file-pdf text-green-400 text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-white font-bold text-sm">Communication Skills Guide</p>
+                                    <p class="text-gray-400 text-xs mt-0.5 mb-3">Verbal, written and digital communication</p>
+                                    <button onclick="portal.downloadResource('communication')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                        <i class="fas fa-download"></i> Download PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4 flex items-start gap-3">
+                                <div class="bg-purple-500/20 p-2 rounded-lg flex-shrink-0"><i class="fas fa-file-pdf text-purple-400 text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-white font-bold text-sm">Event Planning Guide</p>
+                                    <p class="text-gray-400 text-xs mt-0.5 mb-3">Campus events from concept to follow-up</p>
+                                    <button onclick="portal.downloadResource('events')" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                        <i class="fas fa-download"></i> Download PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3 md:col-span-2">
+                                <div class="bg-yellow-500/20 p-2 rounded-lg flex-shrink-0"><i class="fas fa-book text-yellow-400 text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-white font-bold text-sm">Complete Ambassador Handbook</p>
+                                    <p class="text-gray-400 text-xs mt-0.5 mb-3">Everything you need to know as an AZ Learner Ambassador — all 4 courses combined</p>
+                                    <button onclick="portal.downloadResource('handbook')" class="bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                        <i class="fas fa-download"></i> Download Complete Handbook (PDF)
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -329,7 +379,7 @@
                             <!-- Hardcoded monthly challenges -->
                             <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-lg font-bold text-white"><i class="fas fa-fire text-orange-400"></i> February 2026 Challenge</h3>
+                                    <h3 id="portal-challenge-title" class="text-lg font-bold text-white"><i class="fas fa-fire text-orange-400"></i> Monthly Challenge</h3>
                                     <span class="bg-green-900/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">Active</span>
                                 </div>
                                 <div class="space-y-3">
@@ -407,6 +457,7 @@
                     <div>
                         <h2 id="course-modal-title" class="text-xl font-bold text-white"></h2>
                         <p id="course-modal-desc" class="text-gray-400 text-sm mt-1"></p>
+                        <p id="course-modal-progress" class="text-xs text-green-400 font-bold mt-1"></p>
                     </div>
                 </div>
                 <button onclick="portal.closeCourseModal()" class="text-gray-400 hover:text-white text-xl ml-4 flex-shrink-0">
@@ -416,6 +467,10 @@
             <div class="p-6">
                 <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Course Modules</h3>
                 <div id="course-modal-modules" class="space-y-3"></div>
+                <div id="course-modal-complete-banner" class="hidden mt-6 p-4 bg-green-900/20 border border-green-500/30 rounded-xl text-center">
+                    <p class="text-green-400 font-bold text-lg">🎉 Course Complete!</p>
+                    <p class="text-gray-300 text-sm mt-1">You've completed all modules. Great work, Ambassador!</p>
+                </div>
             </div>
         </div>
     </div>
@@ -681,42 +736,65 @@
                 // Store courses for openCourse modal
                 window._portalCourses = courses;
 
-                coursesGrid.innerHTML = '';
+                this._renderCourseCards(courses);
                 document.getElementById('stat-courses').innerText = courses.length;
+            },
+
+            _completionKey(courseId, moduleOrder) {
+                const uid = currentUser?.uid || 'anon';
+                return `az_mod_${uid}_${courseId}_${moduleOrder}`;
+            },
+
+            _isModuleDone(courseId, moduleOrder) {
+                return localStorage.getItem(this._completionKey(courseId, moduleOrder)) === '1';
+            },
+
+            _markModuleDone(courseId, moduleOrder) {
+                localStorage.setItem(this._completionKey(courseId, moduleOrder), '1');
+            },
+
+            _courseProgress(course) {
+                const done = (course.modules || []).filter(m => this._isModuleDone(course.id, m.order)).length;
+                return { done, total: (course.modules || []).length };
+            },
+
+            _renderCourseCards(courses) {
+                const coursesGrid = document.getElementById('courses-grid');
+                coursesGrid.innerHTML = '';
+                const COLOR_CLASSES = {
+                    blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-500/30',   iconBg: 'bg-blue-500/20',   icon: 'text-blue-400',   badge: 'text-blue-400'   },
+                    orange: { bg: 'bg-orange-900/20', border: 'border-orange-500/30', iconBg: 'bg-orange-500/20', icon: 'text-orange-400', badge: 'text-orange-400' },
+                    green:  { bg: 'bg-green-900/20',  border: 'border-green-500/30',  iconBg: 'bg-green-500/20',  icon: 'text-green-400',  badge: 'text-green-400'  },
+                    purple: { bg: 'bg-purple-900/20', border: 'border-purple-500/30', iconBg: 'bg-purple-500/20', icon: 'text-purple-400', badge: 'text-purple-400' },
+                };
 
                 courses.forEach(c => {
                     const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
+                    const { done, total } = this._courseProgress(c);
+                    const allDone = done === total && total > 0;
 
                     const card = document.createElement('div');
-                    card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
+                    card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer relative`;
                     card.addEventListener('click', () => portal.openCourse(c.id));
-
-                    const inner = document.createElement('div');
-                    inner.className = 'flex items-start gap-4';
-
-                    const iconWrap = document.createElement('div');
-                    iconWrap.className = `${cls.iconBg} p-3 rounded-lg`;
-                    const icon = document.createElement('i');
-                    icon.className = `fas fa-${c.icon} ${cls.icon} text-2xl`;
-                    iconWrap.appendChild(icon);
-
-                    const textWrap = document.createElement('div');
-
-                    const title = document.createElement('h3');
-                    title.className = 'text-lg font-bold text-white mb-1';
-                    title.textContent = c.title;
-
-                    const desc = document.createElement('p');
-                    desc.className = 'text-sm text-gray-400 mb-3';
-                    desc.textContent = c.description;
-
-                    const badge = document.createElement('span');
-                    badge.className = `text-xs ${cls.badge} font-bold`;
-                    badge.textContent = `${c.modules?.length ?? 0} modules`;
-
-                    textWrap.append(title, desc, badge);
-                    inner.append(iconWrap, textWrap);
-                    card.appendChild(inner);
+                    card.innerHTML = `
+                        ${allDone ? '<div class="absolute top-3 right-3"><span class="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Completed</span></div>' : ''}
+                        <div class="flex items-start gap-4">
+                            <div class="${cls.iconBg} p-3 rounded-lg flex-shrink-0">
+                                <i class="fas fa-${c.icon} ${cls.icon} text-2xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-bold text-white mb-1">${c.title}</h3>
+                                <p class="text-sm text-gray-400 mb-2">${c.description}</p>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="text-xs ${cls.badge} font-bold">${total} modules</span>
+                                    <span class="text-xs text-gray-500">Self-paced</span>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-1.5 w-full">
+                                    <div class="bg-green-500 h-1.5 rounded-full transition-all" style="width:${total ? Math.round((done/total)*100) : 0}%"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">${done}/${total} modules completed</p>
+                            </div>
+                        </div>`;
                     coursesGrid.appendChild(card);
                 });
             },
@@ -739,23 +817,51 @@
                 document.getElementById('course-modal-icon').className = `fas fa-${course.icon} ${cls.icon} text-2xl`;
                 document.getElementById('course-modal-icon-wrap').className = `${cls.iconBg} p-3 rounded-lg`;
 
+                this._renderCourseModalModules(course);
+                document.getElementById('course-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            },
+
+            _renderCourseModalModules(course) {
+                const { done, total } = this._courseProgress(course);
+                const progressEl = document.getElementById('course-modal-progress');
+                if (progressEl) progressEl.textContent = `${done}/${total} modules completed`;
+                const bannerEl = document.getElementById('course-modal-complete-banner');
+                if (bannerEl) bannerEl.classList.toggle('hidden', done < total);
+
                 const modulesEl = document.getElementById('course-modal-modules');
                 modulesEl.innerHTML = '';
                 (course.modules || []).forEach(mod => {
+                    const completed = this._isModuleDone(course.id, mod.order);
                     const el = document.createElement('div');
                     el.className = 'bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden';
 
                     const header = document.createElement('button');
                     header.className = 'w-full flex items-center gap-3 p-4 text-left hover:bg-gray-700/50 transition';
                     header.innerHTML = `
-                        <span class="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${mod.order}</span>
-                        <span class="text-white font-bold flex-1">${mod.title}</span>
+                        <span class="w-7 h-7 rounded-full ${completed ? 'bg-green-600' : 'bg-gray-700'} flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                            ${completed ? '<i class="fas fa-check"></i>' : mod.order}
+                        </span>
+                        <span class="text-white font-bold flex-1 ${completed ? 'line-through opacity-60' : ''}">${mod.title}</span>
+                        ${completed ? '<span class="text-green-400 text-xs font-bold mr-2">Done</span>' : ''}
                         <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform module-chevron"></i>
                     `;
 
                     const body = document.createElement('div');
                     body.className = 'px-4 pb-4 hidden text-gray-300 text-sm leading-relaxed';
                     body.textContent = mod.content || '';
+
+                    if (!completed) {
+                        const markBtn = document.createElement('button');
+                        markBtn.className = 'mt-4 w-full py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm transition flex items-center justify-center gap-2';
+                        markBtn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Completed';
+                        markBtn.addEventListener('click', () => {
+                            this._markModuleDone(course.id, mod.order);
+                            this._renderCourseModalModules(course);
+                            this._renderCourseCards(window._portalCourses || []);
+                        });
+                        body.appendChild(markBtn);
+                    }
 
                     header.addEventListener('click', () => {
                         const isOpen = !body.classList.contains('hidden');
@@ -766,15 +872,6 @@
                     el.append(header, body);
                     modulesEl.appendChild(el);
                 });
-
-                document.getElementById('course-modal').classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            },
-
-            closeCourseModal(event) {
-                if (event && event.target !== document.getElementById('course-modal')) return;
-                document.getElementById('course-modal').classList.add('hidden');
-                document.body.style.overflow = '';
             },
 
             async loadLeaderboard() {
@@ -810,7 +907,28 @@
             },
 
             loadChallenges() {
-                // Challenges are hardcoded in the HTML — update progress bar on load
+                // Monthly reset: restore state from localStorage with current month key
+                const now = new Date();
+                const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                const monthLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
+                const monthKey = `az_portal_challenges_${now.getFullYear()}_${now.getMonth() + 1}`;
+
+                // Update challenge title
+                const titleEl = document.getElementById('portal-challenge-title');
+                if (titleEl) titleEl.innerHTML = `<i class="fas fa-fire text-orange-400"></i> ${monthLabel} Challenge`;
+
+                const state = JSON.parse(localStorage.getItem(monthKey) || '{}');
+
+                const rows = document.querySelectorAll('#challenges-list .challenge-check');
+                rows.forEach((check, idx) => {
+                    if (state[`task_${idx}`]) {
+                        check.classList.add('bg-green-500', 'border-green-500');
+                        check.classList.remove('border-gray-500');
+                        check.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+                        const title = check.closest('[onclick]')?.querySelector('p.text-white');
+                        if (title) { title.classList.add('line-through', 'opacity-50'); }
+                    }
+                });
                 this._updateChallengeProgress();
             },
 
@@ -824,6 +942,16 @@
                 const title = row.querySelector('p.text-white');
                 title.classList.toggle('line-through', !isDone);
                 title.classList.toggle('opacity-50', !isDone);
+
+                // Persist with monthly key
+                const now = new Date();
+                const monthKey = `az_portal_challenges_${now.getFullYear()}_${now.getMonth() + 1}`;
+                const state = JSON.parse(localStorage.getItem(monthKey) || '{}');
+                const rows = Array.from(document.querySelectorAll('#challenges-list .challenge-check'));
+                const idx = rows.indexOf(check);
+                state[`task_${idx}`] = !isDone;
+                localStorage.setItem(monthKey, JSON.stringify(state));
+
                 this._updateChallengeProgress();
             },
 
@@ -838,6 +966,106 @@
                 if (bar) bar.style.width = pct + '%';
                 if (text) text.textContent = `${done}/${total} tasks`;
                 if (bonus) bonus.classList.toggle('hidden', done < total);
+            },
+
+            closeCourseModal(event) {
+                if (event && event.target !== document.getElementById('course-modal')) return;
+                document.getElementById('course-modal').classList.add('hidden');
+                document.body.style.overflow = '';
+            },
+
+            downloadResource(type) {
+                const resources = {
+                    marketing: {
+                        title: 'AZ Learner Ambassador - Marketing & Outreach Guide',
+                        sections: [
+                            { heading: 'Module 1: Understanding Your Audience', body: 'Identify student personas on your campus — what courses they take, what challenges they face, and what motivates them to seek learning tools. Map out key student hotspots: libraries, study halls, faculty notice boards, and online groups.\n\nKey actions:\n- Survey at least 10 students about their study habits\n- List the top 3 pain points you discover\n- Create a simple "student persona" profile card\n- Identify 5 high-traffic spots on your campus for outreach' },
+                            { heading: 'Module 2: Social Media Strategy', body: 'Create a content calendar for Instagram, TikTok, and WhatsApp. Use short-form video to showcase AZ Learner features. Post at least 3 times per week during exam season. Always include a clear call-to-action and your personal referral link.\n\nContent ideas:\n- "Study tip of the day" using AZ Learner content\n- Behind-the-scenes of your study group\n- Testimonials from students you have helped\n- Countdown to exam season with revision resources' },
+                            { heading: 'Module 3: Campus Tabling & Flyers', body: 'Set up a table near high-traffic areas. Prepare a short 60-second pitch about AZ Learner. Use printed QR codes that link to the sign-up page with your referral code embedded. Collect emails for follow-up.\n\nTabling checklist:\n- Request permission from your students union 1 week in advance\n- Print at least 50 flyers with your referral QR code\n- Prepare a 3-question quiz to engage passersby\n- Bring a device to demonstrate the AZ Learner platform live' },
+                            { heading: 'Module 4: Measuring Your Impact', body: 'Track referral sign-ups through your unique referral code on the portal. Record attendance at your events. Set a personal monthly target of 10 new students. Report your numbers in the monthly ambassador digest.\n\nMetrics to track:\n- Total referral sign-ups this month\n- Social media reach and engagement rate\n- Number of students who attended your events\n- Feedback scores from your study sessions' }
+                        ]
+                    },
+                    leadership: {
+                        title: 'AZ Learner Ambassador - Leadership Development Guide',
+                        sections: [
+                            { heading: 'Module 1: Leadership Styles & Principles', body: 'Explore the four core leadership styles: directive, coaching, supporting, and delegating. Understand when to use each style. Great ambassadors adapt their approach to each situation.' },
+                            { heading: 'Module 2: Running Effective Study Groups', body: 'Host study circles around specific AZ Learner courses. Set a clear agenda 24 hours in advance. Keep sessions to 60-90 minutes. Assign roles: timekeeper, note-taker, question-master.' },
+                            { heading: 'Module 3: Peer Mentoring Techniques', body: 'Mentoring is about listening first. Use the GROW model: Goal, Reality, Options, Way Forward. Check in with your mentees weekly via WhatsApp. Celebrate small wins.' },
+                            { heading: 'Module 4: Conflict Resolution', body: 'Use the DESC framework: Describe the behaviour, Express how it affects you, Specify what you need, and Commit to a shared outcome. Address issues early.' }
+                        ]
+                    },
+                    communication: {
+                        title: 'AZ Learner Ambassador - Communication Skills Guide',
+                        sections: [
+                            { heading: 'Module 1: Foundations of Effective Communication', body: 'Communication is 7% words, 38% tone, and 55% body language. Practice open body language, make eye contact, and speak at a measured pace.' },
+                            { heading: 'Module 2: Public Speaking Fundamentals', body: 'Use the 3-T method: Tell them what you will tell them, Tell them, Tell them what you told them. Every ambassador should deliver a compelling 2-minute pitch from memory.' },
+                            { heading: 'Module 3: Digital & Written Communication', body: 'Write clear WhatsApp and email messages: one topic per message, a clear ask, and a deadline. Use bullet points for long updates. Use the AZ Learner tone — friendly, encouraging, and professional.' },
+                            { heading: 'Module 4: Active Listening', body: 'Paraphrase what you heard, ask open-ended questions, avoid interrupting, and summarise at the end. Apply this in study circles and one-on-one mentoring sessions.' }
+                        ]
+                    },
+                    events: {
+                        title: 'AZ Learner Ambassador - Event Planning Guide',
+                        sections: [
+                            { heading: 'Module 1: Event Planning Basics', body: 'Every successful event has five phases: Concept, Planning, Promotion, Execution, and Review. Start planning at least two weeks in advance. Define clear outcomes.' },
+                            { heading: 'Module 2: Promoting Your Event', body: 'Use the 3-7-1 rule: post about your event 3 weeks, 7 days, and 1 day before. Use visual flyers with AZ Learner branding. Create a WhatsApp event group.' },
+                            { heading: 'Module 3: Running Virtual Study Sessions', body: 'Host study sessions on Google Meet or Zoom. Share the agenda at the start. Use breakout rooms for small group discussion. Record sessions (with consent) and share the link.' },
+                            { heading: 'Module 4: Post-Event Follow-Up', body: 'Send a thank-you message within 24 hours. Collect feedback using a short Google Form (3-5 questions). Log attendance in the portal for achievement points.' }
+                        ]
+                    },
+                    handbook: {
+                        title: 'AZ Learner Ambassador - Complete Handbook',
+                        sections: [
+                            { heading: 'Welcome to the Ambassador Program', body: 'The AZ Learner Ambassador Program is designed for passionate students who want to make a difference in their campus communities. As an ambassador, you represent AZ Learner, help fellow students succeed, and gain valuable leadership experience.' },
+                            { heading: 'Part 1: Marketing & Outreach', body: 'Learn how to identify your campus audience, build a social media strategy, run campus tabling events, and measure your recruitment impact.' },
+                            { heading: 'Part 2: Leadership Development', body: 'Master the four leadership styles, run effective study groups, mentor your peers using the GROW model, and resolve conflicts with the DESC framework.' },
+                            { heading: 'Part 3: Communication Skills', body: 'Build strong verbal, public speaking, digital, and active listening skills to represent AZ Learner confidently on campus.' },
+                            { heading: 'Part 4: Event Planning', body: 'Plan, promote, execute, and follow up on campus events and virtual study sessions that bring students together around AZ Learner.' },
+                            { heading: 'Ambassador Code of Conduct', body: '1. Represent AZ Learner positively at all times.\n2. Be honest, inclusive, and respectful to all students.\n3. Complete monthly challenges and report your activity.\n4. Attend all scheduled ambassador programs.\n5. Escalate any welfare concerns to the core team immediately.' }
+                        ]
+                    }
+                };
+
+                const resource = resources[type];
+                if (!resource) return;
+
+                // Validate type to prevent path traversal
+                const safeTypes = ['marketing', 'leadership', 'communication', 'events', 'handbook'];
+                if (!safeTypes.includes(type)) return;
+
+                // Open a printable window so the user can Save as PDF via browser print dialog
+                const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const sectionsHtml = resource.sections.map(s => `
+                    <div class="section">
+                        <h2>${escHtml(s.heading)}</h2>
+                        <div class="body">${escHtml(s.body).replace(/\n/g,'<br>')}</div>
+                    </div>`).join('');
+
+                const printWin = window.open('', '_blank', 'width=800,height=900');
+                printWin.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>${escHtml(resource.title)}</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 40px; color: #222; font-size: 12pt; }
+  header { background: #1a1a2e; color: #ffab40; padding: 20px; margin-bottom: 30px; border-radius: 8px; }
+  header h1 { margin: 0 0 6px 0; font-size: 16pt; }
+  header p { margin: 0; color: #aaa; font-size: 9pt; }
+  .section { margin-bottom: 24px; page-break-inside: avoid; }
+  .section h2 { font-size: 13pt; color: #1a56db; border-bottom: 2px solid #1a56db; padding-bottom: 4px; margin-bottom: 10px; }
+  .section .body { line-height: 1.7; color: #333; }
+  footer { margin-top: 40px; font-size: 8pt; color: #999; border-top: 1px solid #ddd; padding-top: 8px; }
+  @media print { body { margin: 20px; } }
+</style>
+</head><body>
+<header>
+  <h1>AZ Learner Ambassador Program</h1>
+  <p>${escHtml(resource.title)} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()} &nbsp;|&nbsp; Confidential</p>
+</header>
+${sectionsHtml}
+<footer>AZ Learner Ambassador Program &nbsp;|&nbsp; Confidential — For Ambassadors Only</footer>
+<script>window.onload = function(){ window.print(); }<\/script>
+</body></html>`);
+                printWin.document.close();
             },
 
             switchTab(tab) {
