@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Pitch Deck – The all-in-one student companion for Ghanaian university students. Print, Chat, Grind, Shine.">
+    <title>AZ Learner | Pitch Deck</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        :root {
+            --cursor-size: 20px;
+            --cursor-hover-size: 60px;
+            --brand-blue: #3b82f6;
+            --brand-orange: #FFAB40;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            overflow-x: hidden;
+            cursor: none;
+            scroll-behavior: smooth;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html { overflow-x: hidden; }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -2;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ambient Glow */
+        .glow-orb {
+            position: fixed;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+            transition: left 0.2s ease-out, top 0.2s ease-out;
+        }
+
+        /* Custom Cursor */
+        .custom-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--cursor-size);
+            height: var(--cursor-size);
+            border: 2px solid rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor.hovered {
+            width: var(--cursor-hover-size);
+            height: var(--cursor-hover-size);
+            background: rgba(255,255,255,0.9);
+            border-color: transparent;
+            mix-blend-mode: normal;
+            opacity: 0.8;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 1rem;
+            transition: background 0.3s, border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+
+        .glass-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        }
+
+        /* Text gradient */
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-gradient-orange {
+            background: linear-gradient(to right, #FFAB40, #ff6b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Slide sections */
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 5rem 1.5rem 3rem;
+            position: relative;
+        }
+
+        .slide-number {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.2);
+            font-weight: 600;
+            letter-spacing: 0.1em;
+        }
+
+        /* Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(59,130,246,0.4), transparent);
+            margin: 0;
+        }
+
+        /* Progress bar (top sticky) */
+        #progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(to right, #3b82f6, #FFAB40);
+            z-index: 100;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Nav dots */
+        #nav-dots {
+            position: fixed;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 90;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .nav-dot.active {
+            background: #3b82f6;
+            transform: scale(1.4);
+        }
+
+        /* Stat card */
+        .stat-badge {
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 9999px;
+            padding: 0.35rem 1rem;
+            font-size: 0.8rem;
+            color: #93c5fd;
+            display: inline-block;
+        }
+
+        /* Feature icon circle */
+        .icon-circle {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Mobile: hide cursor + glow, show bottom nav dots instead */
+        @media (max-width: 768px), (hover: none) {
+            .custom-cursor, .glow-orb { display: none !important; }
+            body { cursor: auto !important; }
+            #nav-dots {
+                flex-direction: row;
+                right: auto;
+                bottom: 0.75rem;
+                top: auto;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(15,23,42,0.85);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 9999px;
+                padding: 0.5rem 0.75rem;
+                gap: 0.6rem;
+            }
+            .nav-dot {
+                width: 10px;
+                height: 10px;
+            }
+        }
+
+        /* Entrance animations */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Pulse badge */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+            50%       { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+        }
+
+        .pulse-badge { animation: pulse-glow 2s infinite; }
+
+        /* Timeline */
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #3b82f6, #FFAB40);
+            transform: translateX(-50%);
+        }
+
+        /* Back to top */
+        #back-to-top {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 80;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        #back-to-top.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        button:focus-visible, a:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Ambient background -->
+<div class="bg-animated" aria-hidden="true"></div>
+<div class="glow-orb" id="glowOrb" aria-hidden="true"></div>
+<div class="custom-cursor" id="customCursor" aria-hidden="true"></div>
+
+<!-- Progress bar -->
+<div id="progress-bar" role="progressbar" aria-label="Reading progress"></div>
+
+<!-- Navigation dots -->
+<nav id="nav-dots" aria-label="Slide navigation">
+    <button class="nav-dot active" data-slide="0" title="Cover"></button>
+    <button class="nav-dot" data-slide="1" title="Problem"></button>
+    <button class="nav-dot" data-slide="2" title="Solution"></button>
+    <button class="nav-dot" data-slide="3" title="Product"></button>
+    <button class="nav-dot" data-slide="4" title="Market"></button>
+    <button class="nav-dot" data-slide="5" title="Business Model"></button>
+    <button class="nav-dot" data-slide="6" title="Traction"></button>
+    <button class="nav-dot" data-slide="7" title="Team"></button>
+    <button class="nav-dot" data-slide="8" title="Ask"></button>
+</nav>
+
+<!-- Back-to-top -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="glass-panel rounded-full px-4 py-2 text-sm font-semibold text-white/70 hover:text-white transition-colors" aria-label="Back to top">
+    ↑ Back to Top
+</button>
+
+<!-- ===== SLIDE 1 — COVER ===== -->
+<section class="slide text-center" id="slide-0" data-slide="0">
+    <span class="slide-number">01 / 09</span>
+    <div class="max-w-4xl mx-auto w-full fade-up">
+        <div class="mb-6 flex justify-center">
+            <img src="brand.png" alt="AZ Learner logo" class="h-16 md:h-20 object-contain drop-shadow-lg" onerror="this.style.display='none'">
+        </div>
+        <div class="inline-block stat-badge mb-6 pulse-badge">Pitch Deck — 2025</div>
+        <h1 class="text-5xl md:text-7xl font-extrabold leading-tight mb-4">
+            <span class="text-gradient">AZ Learner</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-white/60 font-light mb-2">The Squad Companion</p>
+        <p class="text-2xl md:text-3xl font-semibold text-[#FFAB40] mb-10">Print. Chat. Grind. Shine.</p>
+        <p class="text-base md:text-lg text-white/50 max-w-xl mx-auto leading-relaxed">
+            The all-in-one digital utility platform built for Ghanaian university students —
+            combining campus services, academic tools, and community in a single app.
+        </p>
+        <div class="mt-10 flex flex-wrap justify-center gap-4">
+            <a href="index.html" class="glass-card px-6 py-3 text-sm font-semibold text-blue-300 border border-blue-500/30 hover:border-blue-400 rounded-full transition-all">
+                Visit Website
+            </a>
+            <a href="app.html" class="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-500 rounded-full hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20">
+                Get the App
+            </a>
+        </div>
+        <div class="mt-14 text-white/20 text-sm animate-bounce">↓ scroll</div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 2 — PROBLEM ===== -->
+<section class="slide" id="slide-1" data-slide="1">
+    <span class="slide-number">02 / 09</span>
+    <div class="max-w-5xl mx-auto w-full">
+        <div class="fade-up mb-10 text-center">
+            <span class="stat-badge mb-4">The Problem</span>
+            <h2 class="text-4xl md:text-5xl font-extrabold mt-3">
+                Campus life is <span class="text-gradient-orange">fragmented</span>
+            </h2>
+            <p class="text-white/50 mt-3 max-w-xl mx-auto">
+                University students juggle a dozen different tools, apps, and manual processes every day — and none of them talk to each other.
+            </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 fade-up">
+            <div class="glass-card p-6">
+                <div class="icon-circle bg-red-500/15 mb-4">
+                    <span class="material-symbols-outlined text-red-400">print_disabled</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Printing is a nightmare</h3>
+                <p class="text-white/50 text-sm leading-relaxed">
+                    Students walk across campus searching for a working printer, lose documents, or miss deadlines waiting in long queues.
+                </p>
+            </div>
+            <div class="glass-card p-6">
+                <div class="icon-circle bg-yellow-500/15 mb-4">
+                    <span class="material-symbols-outlined text-yellow-400">group_off</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">No academic community hub</h3>
+                <p class="text-white/50 text-sm leading-relaxed">
+                    Course groups are scattered across WhatsApp, Telegram, and Facebook. Sharing past questions and notes has no structured home.
+                </p>
+            </div>
+            <div class="glass-card p-6">
+                <div class="icon-circle bg-purple-500/15 mb-4">
+                    <span class="material-symbols-outlined text-purple-400">calculate</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Academic tracking is manual</h3>
+                <p class="text-white/50 text-sm leading-relaxed">
+                    Students calculate GPAs on paper, miss exam dates, and lack a single source of truth for their academic schedule and progress.
+                </p>
+            </div>
+            <div class="glass-card p-6">
+                <div class="icon-circle bg-orange-500/15 mb-4">
+                    <span class="material-symbols-outlined text-orange-400">wrong_location</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Campus navigation is hard</h3>
+                <p class="text-white/50 text-sm leading-relaxed">
+                    New students and freshers waste precious time finding lecture halls, offices, and facilities on large university campuses.
+                </p>
+            </div>
+            <div class="glass-card p-6">
+                <div class="icon-circle bg-blue-500/15 mb-4">
+                    <span class="material-symbols-outlined text-blue-400">folder_off</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Past questions are lost</h3>
+                <p class="text-white/50 text-sm leading-relaxed">
+                    Valuable exam resources are buried in individual chats and personal drives, inaccessible to most students who need them.
+                </p>
+            </div>
+            <div class="glass-card p-6">
+                <div class="icon-circle bg-green-500/15 mb-4">
+                    <span class="material-symbols-outlined text-green-400">sentiment_dissatisfied</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">No campus-specific app</h3>
+                <p class="text-white/50 text-sm leading-relaxed">
+                    Global tools like Google or generic apps don't serve the unique, localised needs of Ghanaian university campuses.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 3 — SOLUTION ===== -->
+<section class="slide text-center" id="slide-2" data-slide="2">
+    <span class="slide-number">03 / 09</span>
+    <div class="max-w-4xl mx-auto w-full fade-up">
+        <span class="stat-badge mb-4">The Solution</span>
+        <h2 class="text-4xl md:text-5xl font-extrabold mt-3 mb-4">
+            One app. Every student's <span class="text-gradient">digital exhale.</span>
+        </h2>
+        <p class="text-white/50 max-w-xl mx-auto mb-12 leading-relaxed">
+            AZ Learner is the all-in-one student companion that replaces the chaos with a single, beautifully designed platform — built from campus, for campus.
+        </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-blue-400 text-3xl mb-2 block">print</span>
+                <p class="font-semibold text-sm">Print &amp; Deliver</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-green-400 text-3xl mb-2 block">forum</span>
+                <p class="font-semibold text-sm">Course Circles</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-yellow-400 text-3xl mb-2 block">calculate</span>
+                <p class="font-semibold text-sm">GPA Calculator</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-purple-400 text-3xl mb-2 block">navigation</span>
+                <p class="font-semibold text-sm">Campus Nav</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-orange-400 text-3xl mb-2 block">folder_open</span>
+                <p class="font-semibold text-sm">The Vault</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-red-400 text-3xl mb-2 block">timer</span>
+                <p class="font-semibold text-sm">Exam Countdown</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-cyan-400 text-3xl mb-2 block">calendar_month</span>
+                <p class="font-semibold text-sm">Timetable</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <span class="material-symbols-outlined text-pink-400 text-3xl mb-2 block">sports_esports</span>
+                <p class="font-semibold text-sm">The Arena</p>
+            </div>
+        </div>
+        <div class="glass-panel rounded-2xl p-6 max-w-2xl mx-auto border border-blue-500/20">
+            <p class="text-white/70 text-base leading-relaxed italic">
+                "AZ Learner is the digital exhale every student deserves — a single platform that handles the grind so students can focus on shining."
+            </p>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 4 — PRODUCT ===== -->
+<section class="slide" id="slide-3" data-slide="3">
+    <span class="slide-number">04 / 09</span>
+    <div class="max-w-5xl mx-auto w-full">
+        <div class="fade-up mb-10 text-center">
+            <span class="stat-badge mb-4">Product Deep Dive</span>
+            <h2 class="text-4xl md:text-5xl font-extrabold mt-3">
+                Built for <span class="text-gradient">every student moment</span>
+            </h2>
+        </div>
+        <div class="space-y-4 fade-up">
+            <!-- Feature 1 -->
+            <div class="glass-card p-5 flex gap-5 items-start">
+                <div class="icon-circle bg-blue-500/20 shrink-0">
+                    <span class="material-symbols-outlined text-blue-400">print</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 class="font-bold text-base">Print &amp; Deliver</h3>
+                        <span class="text-xs bg-[#FFAB40]/20 text-[#FFAB40] rounded-full px-2 py-0.5">Revenue Driver</span>
+                    </div>
+                    <p class="text-white/50 text-sm leading-relaxed">Submit documents from your phone. Campus printing agents pick them up, print, and deliver directly to you — no queues, no stress.</p>
+                </div>
+            </div>
+            <!-- Feature 2 -->
+            <div class="glass-card p-5 flex gap-5 items-start">
+                <div class="icon-circle bg-green-500/20 shrink-0">
+                    <span class="material-symbols-outlined text-green-400">forum</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">Course Circles</h3>
+                    <p class="text-white/50 text-sm leading-relaxed">Auto-organised chat groups by course and academic year. Share notes, discuss lectures, and connect with coursemates — all in one structured space.</p>
+                </div>
+            </div>
+            <!-- Feature 3 -->
+            <div class="glass-card p-5 flex gap-5 items-start">
+                <div class="icon-circle bg-yellow-500/20 shrink-0">
+                    <span class="material-symbols-outlined text-yellow-400">calculate</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">GPA Calculator &amp; Timetable</h3>
+                    <p class="text-white/50 text-sm leading-relaxed">Real-time GPA tracking across semesters. Personal course timetable management that syncs with exam countdowns for a full academic picture.</p>
+                </div>
+            </div>
+            <!-- Feature 4 -->
+            <div class="glass-card p-5 flex gap-5 items-start">
+                <div class="icon-circle bg-purple-500/20 shrink-0">
+                    <span class="material-symbols-outlined text-purple-400">navigation</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">UCC Tactical Nav</h3>
+                    <p class="text-white/50 text-sm leading-relaxed">GPS-powered campus navigation for University of Cape Coast. Find lecture halls, the Sam Jonah Library, shuttle stations, and facilities in seconds.</p>
+                </div>
+            </div>
+            <!-- Feature 5 -->
+            <div class="glass-card p-5 flex gap-5 items-start">
+                <div class="icon-circle bg-orange-500/20 shrink-0">
+                    <span class="material-symbols-outlined text-orange-400">folder_open</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">The Vault</h3>
+                    <p class="text-white/50 text-sm leading-relaxed">A centralised, searchable repository of past questions and shared academic resources — contributed by the community, organised by course.</p>
+                </div>
+            </div>
+            <!-- Feature 6 -->
+            <div class="glass-card p-5 flex gap-5 items-start">
+                <div class="icon-circle bg-pink-500/20 shrink-0">
+                    <span class="material-symbols-outlined text-pink-400">sports_esports</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base mb-1">The Arena</h3>
+                    <p class="text-white/50 text-sm leading-relaxed">Gamified study competitions with XP points, rank badges, and leaderboards. Turns grinding into a competitive, rewarding experience.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 5 — MARKET ===== -->
+<section class="slide text-center" id="slide-4" data-slide="4">
+    <span class="slide-number">05 / 09</span>
+    <div class="max-w-5xl mx-auto w-full fade-up">
+        <span class="stat-badge mb-4">Market Opportunity</span>
+        <h2 class="text-4xl md:text-5xl font-extrabold mt-3 mb-4">
+            A massive, <span class="text-gradient">underserved market</span>
+        </h2>
+        <p class="text-white/50 max-w-xl mx-auto mb-12 leading-relaxed">
+            Ghana has over 200,000 university students — with millions more across West Africa — all lacking a purpose-built digital campus companion.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="glass-card p-8 text-center">
+                <p class="text-5xl font-extrabold text-gradient mb-2">200K+</p>
+                <p class="text-white/50 text-sm">University students<br>in Ghana</p>
+            </div>
+            <div class="glass-card p-8 text-center">
+                <p class="text-5xl font-extrabold text-gradient-orange mb-2">~40K</p>
+                <p class="text-white/50 text-sm">Students at UCC<br>(initial focus)</p>
+            </div>
+            <div class="glass-card p-8 text-center">
+                <p class="text-5xl font-extrabold text-gradient mb-2">5M+</p>
+                <p class="text-white/50 text-sm">University students<br>across West Africa</p>
+            </div>
+        </div>
+        <div class="glass-card p-6 max-w-3xl mx-auto text-left">
+            <h3 class="font-bold text-base mb-4 text-white/80">Why now?</h3>
+            <ul class="space-y-3 text-sm text-white/60">
+                <li class="flex gap-3 items-start">
+                    <span class="text-blue-400 mt-0.5">→</span>
+                    <span>Smartphone penetration among Ghanaian students is at an all-time high — most students own Android devices.</span>
+                </li>
+                <li class="flex gap-3 items-start">
+                    <span class="text-blue-400 mt-0.5">→</span>
+                    <span>No dominant campus super-app exists for African universities — the market is wide open.</span>
+                </li>
+                <li class="flex gap-3 items-start">
+                    <span class="text-blue-400 mt-0.5">→</span>
+                    <span>Post-pandemic, students are more comfortable with digital-first academic workflows and campus services.</span>
+                </li>
+                <li class="flex gap-3 items-start">
+                    <span class="text-blue-400 mt-0.5">→</span>
+                    <span>Campus printing is a high-frequency, recurring need — a proven monetisation anchor before expansion to other campuses.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 6 — BUSINESS MODEL ===== -->
+<section class="slide" id="slide-5" data-slide="5">
+    <span class="slide-number">06 / 09</span>
+    <div class="max-w-5xl mx-auto w-full">
+        <div class="fade-up mb-10 text-center">
+            <span class="stat-badge mb-4">Business Model</span>
+            <h2 class="text-4xl md:text-5xl font-extrabold mt-3">
+                Free to use. <span class="text-gradient-orange">Paid when it matters.</span>
+            </h2>
+            <p class="text-white/50 mt-3 max-w-xl mx-auto">
+                A freemium model drives mass adoption while transactional revenue from high-value services generates sustainable income from day one.
+            </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-up">
+            <!-- Free tier -->
+            <div class="glass-card p-7 border border-white/10">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="icon-circle bg-blue-500/20">
+                        <span class="material-symbols-outlined text-blue-400">lock_open</span>
+                    </div>
+                    <div>
+                        <p class="font-bold text-base">Core Features — Free</p>
+                        <p class="text-white/40 text-xs">For every student, always</p>
+                    </div>
+                </div>
+                <ul class="space-y-2.5 text-sm text-white/60">
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> GPA Calculator</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> Exam Countdown</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> Timetable</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> Course Circles (chat)</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> Campus Navigation</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> The Vault (past questions)</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> The Arena (gamification)</li>
+                    <li class="flex gap-2 items-center"><span class="text-green-400">✓</span> Campus Events</li>
+                </ul>
+            </div>
+            <!-- Revenue tier -->
+            <div class="glass-card p-7 border border-[#FFAB40]/25" style="background:rgba(255,171,64,0.05)">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="icon-circle bg-[#FFAB40]/20">
+                        <span class="material-symbols-outlined text-[#FFAB40]">payments</span>
+                    </div>
+                    <div>
+                        <p class="font-bold text-base">Revenue Streams</p>
+                        <p class="text-white/40 text-xs">Transactional + growth</p>
+                    </div>
+                </div>
+                <ul class="space-y-4 text-sm">
+                    <li>
+                        <p class="font-semibold text-[#FFAB40] mb-1">🖨️ Print &amp; Deliver (per job fee)</p>
+                        <p class="text-white/50 text-xs">Students pay a delivery + service fee per print job. High frequency, recurring revenue from day one.</p>
+                    </li>
+                    <li>
+                        <p class="font-semibold text-blue-300 mb-1">🎓 Ambassador Program</p>
+                        <p class="text-white/50 text-xs">Campus ambassadors drive organic growth and local adoption across new institutions at near-zero cost.</p>
+                    </li>
+                    <li>
+                        <p class="font-semibold text-green-300 mb-1">📈 Premium &amp; Institutional (roadmap)</p>
+                        <p class="text-white/50 text-xs">Future B2B partnerships with universities, premium student subscriptions, and in-app advertising.</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <!-- Unit Economics highlight -->
+        <div class="glass-panel rounded-2xl p-5 mt-6 border border-blue-500/10 fade-up">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                    <p class="text-2xl font-extrabold text-gradient">GHS 2–5</p>
+                    <p class="text-white/40 text-xs mt-1">Avg. print job fee</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-extrabold text-gradient">Daily</p>
+                    <p class="text-white/40 text-xs mt-1">Student print frequency</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-extrabold text-gradient">~0</p>
+                    <p class="text-white/40 text-xs mt-1">CAC via ambassador network</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-extrabold text-gradient">4+ yrs</p>
+                    <p class="text-white/40 text-xs mt-1">Avg. student LTV window</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 7 — TRACTION ===== -->
+<section class="slide text-center" id="slide-6" data-slide="6">
+    <span class="slide-number">07 / 09</span>
+    <div class="max-w-5xl mx-auto w-full fade-up">
+        <span class="stat-badge mb-4">Traction &amp; Milestones</span>
+        <h2 class="text-4xl md:text-5xl font-extrabold mt-3 mb-4">
+            Built, shipped, <span class="text-gradient">and growing.</span>
+        </h2>
+        <p class="text-white/50 max-w-xl mx-auto mb-12 leading-relaxed">
+            AZ Learner is live — not just an idea. The app is on Android, the website is live, and students are already using it.
+        </p>
+        <!-- Timeline -->
+        <div class="relative max-w-2xl mx-auto">
+            <div class="timeline-line hidden md:block"></div>
+            <div class="space-y-6">
+                <div class="glass-card p-5 text-left md:ml-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-circle bg-blue-500/20 shrink-0">
+                            <span class="material-symbols-outlined text-blue-400 text-base">rocket_launch</span>
+                        </div>
+                        <div>
+                            <p class="font-bold">MVP Launched</p>
+                            <p class="text-white/50 text-sm mt-1">First version of AZ Learner shipped with core GPA, timetable, and countdown features. Validated demand on campus.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 text-left md:ml-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-circle bg-green-500/20 shrink-0">
+                            <span class="material-symbols-outlined text-green-400 text-base">android</span>
+                        </div>
+                        <div>
+                            <p class="font-bold">Android App v2.0 Live</p>
+                            <p class="text-white/50 text-sm mt-1">Upgraded app with Print &amp; Deliver, Course Circles, The Vault, The Arena, and UCC campus navigation shipped to students.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 text-left md:ml-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-circle bg-yellow-500/20 shrink-0">
+                            <span class="material-symbols-outlined text-yellow-400 text-base">language</span>
+                        </div>
+                        <div>
+                            <p class="font-bold">Web Platform Live</p>
+                            <p class="text-white/50 text-sm mt-1">azlearner.me launched — a full web companion to the Android app, accessible from any device on campus.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 text-left md:ml-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-circle bg-purple-500/20 shrink-0">
+                            <span class="material-symbols-outlined text-purple-400 text-base">campaign</span>
+                        </div>
+                        <div>
+                            <p class="font-bold">Ambassador Programme Launched</p>
+                            <p class="text-white/50 text-sm mt-1">AZ Learner Campus Ambassadors deployed across UCC — driving organic, peer-to-peer growth at zero acquisition cost.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 text-left md:ml-8 border border-[#FFAB40]/30" style="background:rgba(255,171,64,0.05)">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-circle bg-[#FFAB40]/20 shrink-0">
+                            <span class="material-symbols-outlined text-[#FFAB40] text-base">trending_up</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-[#FFAB40]">Next: Multi-campus Expansion</p>
+                            <p class="text-white/50 text-sm mt-1">Rolling out to KNUST, University of Ghana, and other major campuses across Ghana — with ambassador-led adoption strategy.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 8 — TEAM ===== -->
+<section class="slide text-center" id="slide-7" data-slide="7">
+    <span class="slide-number">08 / 09</span>
+    <div class="max-w-4xl mx-auto w-full fade-up">
+        <span class="stat-badge mb-4">The Team</span>
+        <h2 class="text-4xl md:text-5xl font-extrabold mt-3 mb-4">
+            Built by a <span class="text-gradient">student, for students.</span>
+        </h2>
+        <p class="text-white/50 max-w-xl mx-auto mb-12 leading-relaxed">
+            AZ Learner is founded by someone who lives the problem every day — a Ghanaian university student who decided to build the solution instead of waiting for it.
+        </p>
+        <div class="flex flex-col md:flex-row gap-6 justify-center items-stretch">
+            <div class="glass-card p-7 flex-1 max-w-xs mx-auto md:mx-0">
+                <div class="relative w-20 h-20 mx-auto mb-4">
+                    <img src="profilepic.jpg" alt="Francis Pwavwe" id="founder-img" class="w-20 h-20 rounded-full object-cover border-2 border-blue-500/40" onerror="this.style.display='none'; document.getElementById('founder-fallback').style.display='flex'">
+                    <div id="founder-fallback" class="w-20 h-20 rounded-full border-2 border-blue-500/40 bg-blue-900/40 items-center justify-center hidden" aria-label="Francis Pwavwe initials">
+                        <span class="text-2xl font-bold text-blue-300">FP</span>
+                    </div>
+                </div>
+                <p class="font-bold text-lg">Francis Pwavwe</p>
+                <p class="text-blue-400 text-sm mt-1">Founder &amp; Lead Developer</p>
+                <p class="text-white/50 text-sm mt-3 leading-relaxed">
+                    University student, full-stack developer, and product designer. Built AZ Learner end-to-end — web platform, Android app, backend, and brand — while studying.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                    <span class="stat-badge text-xs">Android Dev</span>
+                    <span class="stat-badge text-xs">Web Dev</span>
+                    <span class="stat-badge text-xs">Product Design</span>
+                </div>
+            </div>
+            <div class="glass-card p-7 flex-1 max-w-xs mx-auto md:mx-0 flex flex-col justify-center">
+                <div class="icon-circle bg-[#FFAB40]/20 mx-auto mb-4">
+                    <span class="material-symbols-outlined text-[#FFAB40] text-2xl">groups</span>
+                </div>
+                <p class="font-bold text-lg">Campus Ambassadors</p>
+                <p class="text-[#FFAB40] text-sm mt-1">Growth &amp; Community Team</p>
+                <p class="text-white/50 text-sm mt-3 leading-relaxed">
+                    A growing network of student ambassadors deployed across UCC. They drive adoption, gather feedback, and represent AZ Learner at the grassroots level.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                    <span class="stat-badge text-xs">Peer Marketing</span>
+                    <span class="stat-badge text-xs">On-campus Growth</span>
+                </div>
+            </div>
+            <div class="glass-card p-7 flex-1 max-w-xs mx-auto md:mx-0 flex flex-col justify-center" style="background:rgba(59,130,246,0.05); border-color:rgba(59,130,246,0.2);">
+                <div class="icon-circle bg-blue-500/20 mx-auto mb-4">
+                    <span class="material-symbols-outlined text-blue-400 text-2xl">handshake</span>
+                </div>
+                <p class="font-bold text-lg">We're Hiring</p>
+                <p class="text-blue-400 text-sm mt-1">Join the Squad</p>
+                <p class="text-white/50 text-sm mt-3 leading-relaxed">
+                    Looking for co-builders: designers, marketers, backend engineers, and campus reps who want to shape the future of student life in Ghana.
+                </p>
+                <a href="ambassadorsignup.html" class="mt-5 inline-block px-5 py-2.5 bg-blue-600/80 hover:bg-blue-500 text-white text-sm font-semibold rounded-full transition-all">
+                    Join as Ambassador
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="section-divider"></div>
+
+<!-- ===== SLIDE 9 — ASK / CTA ===== -->
+<section class="slide text-center" id="slide-8" data-slide="8">
+    <span class="slide-number">09 / 09</span>
+    <div class="max-w-4xl mx-auto w-full fade-up">
+        <span class="stat-badge mb-4">The Ask</span>
+        <h2 class="text-4xl md:text-5xl font-extrabold mt-3 mb-4">
+            Help us <span class="text-gradient-orange">scale the squad.</span>
+        </h2>
+        <p class="text-white/50 max-w-xl mx-auto mb-12 leading-relaxed">
+            We're looking for partners, investors, and collaborators who believe every student in Africa deserves world-class digital tools for their campus journey.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+            <div class="glass-card p-6 border border-blue-500/20">
+                <span class="material-symbols-outlined text-blue-400 text-3xl mb-3 block">monetization_on</span>
+                <h3 class="font-bold text-base mb-2">Investment</h3>
+                <p class="text-white/50 text-sm leading-relaxed">Seed funding to scale the engineering team, expand to new campuses, and build out premium features — reaching 50K+ active students within 12 months.</p>
+            </div>
+            <div class="glass-card p-6 border border-[#FFAB40]/20">
+                <span class="material-symbols-outlined text-[#FFAB40] text-3xl mb-3 block">hub</span>
+                <h3 class="font-bold text-base mb-2">Strategic Partners</h3>
+                <p class="text-white/50 text-sm leading-relaxed">Universities, student unions, campus businesses, and printing services ready to integrate with AZ Learner and co-create the ultimate campus ecosystem.</p>
+            </div>
+            <div class="glass-card p-6 border border-green-500/20">
+                <span class="material-symbols-outlined text-green-400 text-3xl mb-3 block">rocket_launch</span>
+                <h3 class="font-bold text-base mb-2">Accelerators &amp; Grants</h3>
+                <p class="text-white/50 text-sm leading-relaxed">EdTech accelerators, startup grants, and incubation programmes focused on African student welfare and education technology innovation.</p>
+            </div>
+        </div>
+        <!-- CTA Buttons -->
+        <div class="glass-panel rounded-2xl p-8 border border-white/10">
+            <p class="text-2xl font-bold mb-2">Ready to back AZ Learner?</p>
+            <p class="text-white/50 mb-7 text-sm">Let's build the future of student life in Ghana — and beyond.</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="index.html" class="px-7 py-3 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full font-semibold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/25 text-sm">
+                    Visit AZ Learner
+                </a>
+                <a href="app.html" class="px-7 py-3 glass-card border border-[#FFAB40]/40 text-[#FFAB40] rounded-full font-semibold hover:border-[#FFAB40] text-sm transition-all">
+                    Download the App
+                </a>
+                <a href="ambassadorsignup.html" class="px-7 py-3 glass-card border border-green-500/30 text-green-400 rounded-full font-semibold hover:border-green-400 text-sm transition-all">
+                    Become an Ambassador
+                </a>
+            </div>
+        </div>
+        <!-- Footer -->
+        <p class="mt-12 text-white/20 text-xs">
+            © 2025 Francis Pwavwe Production · AZ Learner ·
+            <a href="privacy-policy.html" class="hover:text-white/40 transition-colors">Privacy Policy</a> ·
+            <a href="terms-of-service.html" class="hover:text-white/40 transition-colors">Terms of Service</a>
+        </p>
+    </div>
+</section>
+
+<script>
+    // Custom cursor
+    const cursor = document.getElementById('customCursor');
+    const glow = document.getElementById('glowOrb');
+    const isMobile = window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(hover: none)').matches;
+
+    if (!isMobile) {
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top  = e.clientY + 'px';
+            glow.style.left   = e.clientX + 'px';
+            glow.style.top    = e.clientY + 'px';
+        });
+
+        document.querySelectorAll('a, button, .glass-card').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+    }
+
+    // Progress bar
+    const progressBar = document.getElementById('progress-bar');
+    window.addEventListener('scroll', () => {
+        const scrolled = window.scrollY;
+        const total = document.documentElement.scrollHeight - window.innerHeight;
+        progressBar.style.width = (scrolled / total * 100) + '%';
+    }, { passive: true });
+
+    // Navigation dots — highlight current slide
+    const slides = document.querySelectorAll('section[data-slide]');
+    const dots   = document.querySelectorAll('.nav-dot');
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const idx = entry.target.dataset.slide;
+                dots.forEach(d => d.classList.remove('active'));
+                const activeDot = document.querySelector(`.nav-dot[data-slide="${idx}"]`);
+                if (activeDot) activeDot.classList.add('active');
+            }
+        });
+    }, { threshold: 0.4 });
+
+    slides.forEach(s => observer.observe(s));
+
+    // Nav dot clicks
+    dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+            const target = document.getElementById('slide-' + dot.dataset.slide);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+
+    // Fade-up on scroll
+    const fadeEls = document.querySelectorAll('.fade-up');
+    const fadeObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                fadeObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+
+    fadeEls.forEach(el => fadeObserver.observe(el));
+
+    // Back to top button
+    const backToTop = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+        backToTop.classList.toggle('show', window.scrollY > window.innerHeight);
+    }, { passive: true });
+</script>
+</body>
+</html>
