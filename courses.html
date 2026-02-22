@@ -201,61 +201,122 @@
             if (!course) return;
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-            const margin = 50, pageW = doc.internal.pageSize.getWidth(), lineW = pageW - margin * 2;
+            const margin = 50;
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const lineW = pageW - margin * 2;
+            const contentBottom = pageH - 55;
+            let pageNum = 1;
 
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(22);
-            doc.setTextColor(255, 171, 64);
-            doc.text('AZ Ambassador Programme', margin, margin);
-            doc.setFontSize(16);
-            doc.setTextColor(255, 255, 255);
-            doc.text(course.title, margin, margin + 30);
-
-            doc.setFontSize(10);
-            doc.setTextColor(180, 180, 180);
-            doc.text(`Generated: ${new Date().toLocaleDateString()} | ${course.modules.length} Modules`, margin, margin + 50);
-
-            let y = margin + 80;
-
-            course.modules.forEach((mod, idx) => {
-                if (y > 740) { doc.addPage(); y = margin; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(13);
-                doc.setTextColor(100, 180, 255);
-                doc.text(`Module ${mod.order}: ${mod.title}`, margin, y);
-                y += 18;
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                doc.setTextColor(220, 220, 220);
-                const lines = doc.splitTextToSize(mod.content, lineW);
-                lines.forEach(line => {
-                    if (y > 760) { doc.addPage(); y = margin; }
-                    doc.text(line, margin, y);
-                    y += 13;
-                });
-
-                if (mod.resources && mod.resources.length) {
-                    y += 5;
+            function drawPageBase(isFirst) {
+                // White background
+                doc.setFillColor(255, 255, 255);
+                doc.rect(0, 0, pageW, pageH, 'F');
+                // Orange header band
+                const hh = isFirst ? 96 : 38;
+                doc.setFillColor(220, 88, 0);
+                doc.rect(0, 0, pageW, hh, 'F');
+                doc.setFillColor(255, 140, 40);
+                doc.rect(pageW - 70, 0, 70, hh, 'F');
+                if (isFirst) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.setTextColor(255, 220, 160);
+                    doc.text('AZ LEARNER AMBASSADOR PROGRAMME', margin, 20);
+                    doc.setFontSize(15);
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(course.title, margin, 42);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(255, 225, 190);
+                    doc.text(`${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}  •  ${course.modules.length} Modules  •  Self-Paced`, margin, 59);
+                    doc.setFontSize(7.5);
+                    const descLines = doc.splitTextToSize(course.description, lineW - 75);
+                    doc.text(descLines, margin, 73);
+                } else {
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
-                    doc.setTextColor(255, 171, 64);
-                    const resText = 'Resources: ' + mod.resources.join(' | ');
-                    const resLines = doc.splitTextToSize(resText, lineW);
-                    resLines.forEach(rl => {
-                        if (y > 760) { doc.addPage(); y = margin; }
-                        doc.text(rl, margin, y);
-                        y += 12;
-                    });
-                    y -= 12;
+                    doc.setTextColor(255, 220, 160);
+                    doc.text('AZ LEARNER AMBASSADOR PROGRAMME', margin, 15);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(course.title, margin, 27);
                 }
-                y += 20;
-            });
+                // Footer rule
+                doc.setDrawColor(210, 215, 220);
+                doc.setLineWidth(0.5);
+                doc.line(margin, pageH - 42, pageW - margin, pageH - 42);
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(7.5);
+                doc.setTextColor(150, 150, 150);
+                doc.text('AZ Learner Ambassador Programme — Confidential Training Material', margin, pageH - 28);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.5);
+                doc.setTextColor(180, 100, 20);
+                doc.text(`Page ${pageNum}`, pageW - margin, pageH - 28, { align: 'right' });
+            }
 
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(8);
-            doc.setTextColor(120, 120, 120);
-            doc.text('AZ Learner Ambassador Programme — Confidential', margin, doc.internal.pageSize.getHeight() - 30);
+            drawPageBase(true);
+            let y = 116;
+
+            course.modules.forEach(mod => {
+                if (y > contentBottom - 44) { doc.addPage(); pageNum++; drawPageBase(false); y = 54; }
+
+                // Module header box
+                doc.setFillColor(248, 250, 253);
+                doc.setDrawColor(190, 205, 230);
+                doc.setLineWidth(0.5);
+                doc.roundedRect(margin, y - 12, lineW, 28, 2, 2, 'FD');
+                doc.setFillColor(220, 88, 0);
+                doc.rect(margin, y - 12, 4, 28, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.5);
+                doc.setTextColor(200, 100, 10);
+                doc.text(`MODULE ${mod.order}`, margin + 11, y - 2);
+                doc.setFontSize(11);
+                doc.setTextColor(18, 40, 80);
+                doc.text(mod.title, margin + 11, y + 11);
+                y += 30;
+
+                // Module content — black text
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9.5);
+                doc.setTextColor(20, 20, 20);
+                const lines = doc.splitTextToSize(mod.content, lineW);
+                lines.forEach(line => {
+                    if (y > contentBottom - 10) { doc.addPage(); pageNum++; drawPageBase(false); y = 54; }
+                    doc.text(line, margin, y);
+                    y += 13.5;
+                });
+
+                // Resources box
+                if (mod.resources && mod.resources.length) {
+                    y += 5;
+                    const resBoxH = 18 + mod.resources.length * 13;
+                    if (y + resBoxH > contentBottom) { doc.addPage(); pageNum++; drawPageBase(false); y = 54; }
+                    doc.setFillColor(255, 248, 235);
+                    doc.setDrawColor(240, 160, 60);
+                    doc.setLineWidth(0.5);
+                    doc.roundedRect(margin, y - 7, lineW, resBoxH, 2, 2, 'FD');
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(170, 80, 0);
+                    doc.text('MODULE RESOURCES', margin + 10, y + 5);
+                    y += 16;
+                    mod.resources.forEach(r => {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8.5);
+                        doc.setTextColor(35, 35, 35);
+                        doc.setFillColor(220, 88, 0);
+                        doc.circle(margin + 15, y - 2.5, 2, 'F');
+                        doc.text(r, margin + 22, y);
+                        y += 13;
+                    });
+                    y += 4;
+                }
+                y += 18;
+            });
 
             doc.save(`AZ_${course.title.replace(/[^a-z0-9]/gi, '_')}.pdf`);
         }
@@ -386,68 +447,166 @@
         function downloadResourcePDF(resourceTitle, courseTitle, moduleTitle) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-            const margin = 50, pageW = doc.internal.pageSize.getWidth();
+            const margin = 50;
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const lineW = pageW - margin * 2;
+            const contentBottom = pageH - 55;
+            let pageNum = 1;
 
+            function drawFooter() {
+                doc.setDrawColor(210, 215, 220);
+                doc.setLineWidth(0.5);
+                doc.line(margin, pageH - 42, pageW - margin, pageH - 42);
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(7.5);
+                doc.setTextColor(150, 150, 150);
+                doc.text('AZ Learner Ambassador Programme — Confidential Training Material', margin, pageH - 28);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.5);
+                doc.setTextColor(180, 100, 20);
+                doc.text(`Page ${pageNum}`, pageW - margin, pageH - 28, { align: 'right' });
+            }
+
+            function newPage() {
+                doc.addPage();
+                pageNum++;
+                doc.setFillColor(255, 255, 255);
+                doc.rect(0, 0, pageW, pageH, 'F');
+                drawFooter();
+                return 40;
+            }
+
+            function sectionTitle(label, y) {
+                doc.setFillColor(248, 250, 253);
+                doc.setDrawColor(190, 205, 230);
+                doc.setLineWidth(0.5);
+                doc.roundedRect(margin, y - 11, lineW, 22, 2, 2, 'FD');
+                doc.setFillColor(220, 88, 0);
+                doc.rect(margin, y - 11, 4, 22, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(18, 40, 80);
+                doc.text(label.toUpperCase(), margin + 11, y + 3);
+                return y + 26;
+            }
+
+            function bodyText(text, y) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9.5);
+                doc.setTextColor(20, 20, 20);
+                const lines = doc.splitTextToSize(text, lineW);
+                lines.forEach(line => {
+                    if (y > contentBottom - 10) { y = newPage(); }
+                    doc.text(line, margin, y);
+                    y += 14;
+                });
+                return y;
+            }
+
+            function bulletList(items, y) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9.5);
+                doc.setTextColor(20, 20, 20);
+                items.forEach(item => {
+                    if (y > contentBottom - 10) { y = newPage(); }
+                    doc.setFillColor(220, 88, 0);
+                    doc.circle(margin + 5, y - 3, 2, 'F');
+                    const wrapped = doc.splitTextToSize(item, lineW - 18);
+                    wrapped.forEach((wl, wi) => {
+                        if (y > contentBottom - 10) { y = newPage(); }
+                        doc.text(wl, margin + 14, y);
+                        y += 14;
+                    });
+                });
+                return y;
+            }
+
+            // ── White background ──
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, 0, pageW, pageH, 'F');
+
+            // ── Orange header band ──
+            doc.setFillColor(220, 88, 0);
+            doc.rect(0, 0, pageW, 104, 'F');
+            doc.setFillColor(255, 140, 40);
+            doc.rect(pageW - 70, 0, 70, 104, 'F');
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(20);
-            doc.setTextColor(255, 171, 64);
-            doc.text('AZ Ambassador Programme', margin, 60);
-            doc.setFontSize(15);
+            doc.setFontSize(8.5);
+            doc.setTextColor(255, 215, 150);
+            doc.text('AZ LEARNER AMBASSADOR PROGRAMME', margin, 18);
+            doc.setFontSize(16);
             doc.setTextColor(255, 255, 255);
-            doc.text(resourceTitle, margin, 88);
-            doc.setFontSize(9);
-            doc.setTextColor(160, 160, 160);
-            doc.text(`${courseTitle} | ${moduleTitle}`, margin, 108);
-            doc.text(`Downloaded: ${new Date().toLocaleDateString()}`, margin, 122);
-
-            doc.setDrawColor(255, 171, 64);
-            doc.setLineWidth(1);
-            doc.line(margin, 132, pageW - margin, 132);
-
+            const titleLines = doc.splitTextToSize(resourceTitle, lineW - 80);
+            doc.text(titleLines, margin, 38);
+            const titleBottom = 38 + titleLines.length * 20;
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(220, 220, 220);
+            doc.setFontSize(8.5);
+            doc.setTextColor(255, 215, 170);
+            doc.text(`${courseTitle}  •  ${moduleTitle}`, margin, titleBottom + 4);
+            doc.text(`Downloaded: ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}`, margin, titleBottom + 17);
 
-            const placeholderText = [
-                `This document is part of the AZ Learner Ambassador Training Programme.`,
-                ``,
-                `Resource: ${resourceTitle}`,
-                `Course: ${courseTitle}`,
-                `Module: ${moduleTitle}`,
-                ``,
-                `This guide was downloaded from the AZ Ambassador Portal. Use it as a reference`,
-                `alongside your training modules to strengthen your skills and knowledge.`,
-                ``,
-                `For the most up-to-date version of this resource, always download fresh from`,
-                `the Resource Library in your Ambassador Portal at ambassador.html.`,
-                ``,
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-                ``,
-                `KEY TAKEAWAYS FROM THIS MODULE:`,
-                ``,
-                `• Review all module content carefully before applying concepts.`,
-                `• Use the exercises and templates provided to practise skills.`,
-                `• Share insights with your study group or fellow ambassadors.`,
-                `• Log your progress on the Ambassador Portal.`,
-                ``,
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-                ``,
-                `CONTACT & SUPPORT:`,
-                `Portal: ambassador.html`,
-                `Programme questions: Reach out to your campus coordinator.`,
-            ];
+            drawFooter();
+            let y = 124;
 
-            let y = 155;
-            placeholderText.forEach(line => {
-                if (y > 760) { doc.addPage(); y = 50; }
-                doc.text(line, margin, y);
-                y += 15;
-            });
+            // ── Find module data for richer content ──
+            let moduleData = null;
+            for (const c of COURSES) {
+                if (c.title === courseTitle) {
+                    for (const m of c.modules) {
+                        if (m.title === moduleTitle) { moduleData = m; break; }
+                    }
+                }
+            }
 
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(8);
-            doc.setTextColor(100, 100, 100);
-            doc.text('AZ Learner Ambassador Programme — Confidential', margin, doc.internal.pageSize.getHeight() - 30);
+            // ── About ──
+            y = sectionTitle('About This Resource', y);
+            y += 4;
+            y = bodyText(`This resource is part of the AZ Learner Ambassador Training Programme. It accompanies the "${moduleTitle}" module in the "${courseTitle}" course and is designed to support your learning with practical tools and reference material.`, y);
+            y += 6;
+            y = bodyText(`Use this document alongside your training to strengthen your understanding and apply the concepts covered in the module. For the latest version, always download fresh from the Resource Library in your Ambassador Portal.`, y);
+            y += 14;
+
+            // ── Module overview (first substantive paragraph) ──
+            if (moduleData && moduleData.content) {
+                if (y > contentBottom - 60) { y = newPage(); }
+                y = sectionTitle('Module Overview', y);
+                y += 4;
+                const firstPara = moduleData.content.split('\n\n')[0];
+                y = bodyText(firstPara, y);
+                y += 14;
+            }
+
+            // ── Key takeaways ──
+            if (y > contentBottom - 80) { y = newPage(); }
+            y = sectionTitle('Key Takeaways', y);
+            y += 4;
+            y = bulletList([
+                'Review all module content carefully before applying concepts in your ambassador work.',
+                'Use the exercises and templates provided to practise and refine your skills.',
+                'Share insights with your study group or fellow ambassadors to multiply your impact.',
+                'Log your progress and completed modules on the Ambassador Portal to earn achievement points.',
+                'Reach out to your campus coordinator if you have questions or need additional support.',
+            ], y);
+            y += 14;
+
+            // ── How to use ──
+            if (y > contentBottom - 80) { y = newPage(); }
+            y = sectionTitle('How to Use This Resource', y);
+            y += 4;
+            y = bodyText('Step 1: Read through this resource in full before your next ambassador activity.', y);
+            y = bodyText('Step 2: Complete any exercises or templates and save your completed versions for future reference.', y);
+            y = bodyText('Step 3: Apply the techniques in your ambassador work — at campus events, in study groups, or in your outreach content.', y);
+            y = bodyText('Step 4: Reflect on what worked and note any improvements in your Ambassador Journal on the portal.', y);
+            y += 14;
+
+            // ── Support ──
+            if (y > contentBottom - 60) { y = newPage(); }
+            y = sectionTitle('Support & Contact', y);
+            y += 4;
+            y = bodyText('Ambassador Portal: Visit ambassador.html for your dashboard, progress tracker, and the full resource library.', y);
+            y = bodyText('Programme questions: Reach out to your campus coordinator or post in the ambassador community group.', y);
+            y = bodyText('Technical support: Use the contact form on the AZ Learner website.', y);
 
             doc.save(`${resourceTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`);
         }
