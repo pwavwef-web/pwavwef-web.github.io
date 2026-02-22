@@ -901,26 +901,20 @@
     addEducation();
 </script>
 
-<!-- CEO Quick Access (visible only to pwavwef@gmail.com via Firebase auth context) -->
-<div id="ceo-footer-bar" style="display:none" class="fixed bottom-0 left-0 right-0 z-40 bg-yellow-900/80 backdrop-blur border-t border-yellow-600/40 px-4 py-2 flex items-center gap-3 text-xs">
-    <i class="fa-solid fa-crown text-yellow-400"></i>
-    <span class="text-yellow-200 font-bold">CEO Mode Active</span>
-    <a href="ceo.html" class="ml-auto bg-yellow-600 hover:bg-yellow-500 text-black font-black px-3 py-1 rounded transition">CEO Hub 🏛️</a>
-    <a href="database.html" class="bg-blue-700 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded transition">Database 🗄️</a>
-    <a href="admin.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded transition">Admin</a>
-</div>
-<script type="module">
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    const _cfg = { apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain: "az-learner.firebaseapp.com", projectId: "az-learner", storageBucket: "az-learner.firebasestorage.app", messagingSenderId: "12958795950", appId: "1:12958795950:web:326411293864571040453f" };
-    const _app = getApps().length ? getApps()[0] : initializeApp(_cfg);
-    const _auth = getAuth(_app);
-    onAuthStateChanged(_auth, (user) => {
-        if (user && user.email === "pwavwef@gmail.com") {
-            document.getElementById('ceo-footer-bar').style.display = 'flex';
-        }
-    });
-</script>
+<footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-16 pb-8">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+        <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
+        <p class="text-gray-500 mb-6">UCC • Cape Coast • The World</p>
+        <div class="flex justify-center gap-6 text-sm text-gray-400 mb-6">
+            <a href="faq.html" class="hover:text-white transition">FAQ</a>
+            <a href="privacy-policy.html" class="hover:text-white transition">Privacy Policy</a>
+            <a href="terms-of-service.html" class="hover:text-white transition">Terms of Service</a>
+        </div>
+        <div class="text-sm text-gray-600">
+            &copy; 2026 Francis Pwavwe Production. Powered by Sunlight & Ambition.
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>

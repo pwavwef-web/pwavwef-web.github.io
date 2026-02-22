@@ -447,7 +447,7 @@
                         signOut(auth); return;
                     }
                     const userData = userDoc.data();
-                    const allowed = user.email === OWNER_EMAIL || userData.role === 'finance_lead' || userData.role === 'admin';
+                    const allowed = user.email === OWNER_EMAIL || userData.role === 'finance_lead';
                     if (!allowed) {
                         alert("SECURITY ALERT: You do not have Finance clearance.");
                         signOut(auth); return;
