@@ -168,6 +168,8 @@
                     <button onclick="app.switchWorkspaceTab('vault')" id="ws-tab-vault" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Vault 📂</button>
                     <button onclick="app.switchWorkspaceTab('logs')" id="ws-tab-logs" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">System Logs 📜</button>
                     <button onclick="app.switchWorkspaceTab('ambassadors')" id="ws-tab-ambassadors" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Ambassadors 🎓</button>
+                    <button onclick="app.switchWorkspaceTab('amb-challenges')" id="ws-tab-amb-challenges" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Challenges 🏆</button>
+                    <button onclick="app.switchWorkspaceTab('amb-resources')" id="ws-tab-amb-resources" class="ws-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Resources 📚</button>
                 </div>
 
                 <div id="ws-view-logs" class="ws-view hidden flex-1 flex flex-col min-h-0">
@@ -394,6 +396,109 @@
                         <h3 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-list"></i> Scheduled Programs</h3>
                         <div id="scheduled-programs-list" class="space-y-3">
                             <div class="text-center text-gray-500 py-8 text-sm">No programs scheduled yet</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ambassador Challenges Management Tab (Admin Only) -->
+                <div id="ws-view-amb-challenges" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
+                    <div class="bg-gradient-to-br from-yellow-900/40 to-gray-800 p-6 rounded-xl border border-yellow-500/20">
+                        <h2 class="text-xl font-bold text-yellow-300 mb-1">Monthly Challenge Manager</h2>
+                        <p class="text-xs text-yellow-200/50 mb-4">Manage the monthly ambassador challenges. Challenges auto-reset on the 1st of each month.</p>
+                    </div>
+
+                    <!-- Current Month Challenges -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-300"><i class="fa-solid fa-fire text-orange-400"></i> Active Challenge Tasks</h3>
+                            <span id="admin-current-month-label" class="text-xs text-gray-400 font-mono">Loading...</span>
+                        </div>
+                        <div id="admin-challenges-list" class="space-y-2 mb-4">
+                            <div class="text-center text-gray-500 py-4 text-sm">Loading challenges...</div>
+                        </div>
+                        <div class="border-t border-gray-700 pt-4">
+                            <h4 class="text-sm font-bold text-gray-400 mb-3">Add New Challenge Task</h4>
+                            <div class="flex gap-2">
+                                <input id="new-challenge-text" type="text" placeholder="New challenge task description..." 
+                                    class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-yellow-500">
+                                <input id="new-challenge-points" type="number" placeholder="Points" 
+                                    class="w-24 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-yellow-500">
+                                <button onclick="app.addAmbassadorChallenge()" 
+                                    class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold px-4 py-2 rounded-lg transition text-sm">
+                                    <i class="fa-solid fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Challenge Statistics -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-chart-bar text-blue-400"></i> Challenge Statistics</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-yellow-400" id="stat-total-challenges">0</div>
+                                <div class="text-xs text-gray-500 uppercase">Total Tasks</div>
+                            </div>
+                            <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-green-400" id="stat-active-month">—</div>
+                                <div class="text-xs text-gray-500 uppercase">Active Month</div>
+                            </div>
+                            <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 text-center">
+                                <div class="text-2xl font-bold text-orange-400">1st</div>
+                                <div class="text-xs text-gray-500 uppercase">Reset Day</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                            <p class="text-xs text-blue-300"><i class="fa-solid fa-info-circle mr-1"></i> Challenges automatically reset for all ambassadors on the 1st day of each month. Past progress is preserved in ambassador localStorage for history.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ambassador Resources Management Tab (Admin Only) -->
+                <div id="ws-view-amb-resources" class="ws-view hidden space-y-4 flex-1 overflow-y-auto">
+                    <div class="bg-gradient-to-br from-blue-900/40 to-gray-800 p-6 rounded-xl border border-blue-500/20">
+                        <h2 class="text-xl font-bold text-blue-300 mb-1">Resource Library Manager</h2>
+                        <p class="text-xs text-blue-200/50 mb-4">Manage downloadable resources for ambassadors. Ambassadors can download these as PDF from their portal.</p>
+                    </div>
+
+                    <!-- Upload New Resource -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-cloud-arrow-up text-blue-400"></i> Upload New Resource</h3>
+                        <div class="space-y-3">
+                            <input id="resource-title" type="text" placeholder="Resource Title" 
+                                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-500">
+                            <textarea id="resource-description" placeholder="Short description" rows="2"
+                                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-500"></textarea>
+                            <div class="grid grid-cols-2 gap-3">
+                                <select id="resource-category" class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-500">
+                                    <option value="guide">Guide</option>
+                                    <option value="template">Template</option>
+                                    <option value="checklist">Checklist</option>
+                                    <option value="toolkit">Toolkit</option>
+                                </select>
+                                <div class="flex items-center gap-2">
+                                    <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 flex-1 justify-center">
+                                        <i class="fa-solid fa-file-import"></i> Upload PDF
+                                        <input type="file" id="resource-file" accept=".pdf" class="hidden" onchange="document.getElementById('resource-file-name').textContent = this.files[0]?.name || 'No file'">
+                                    </label>
+                                </div>
+                            </div>
+                            <p id="resource-file-name" class="text-xs text-gray-500">No file selected</p>
+                            <button onclick="app.uploadAmbassadorResource()" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+                                <i class="fa-solid fa-upload"></i> Upload Resource
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Resources List -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-300"><i class="fa-solid fa-folder-open text-blue-400"></i> Published Resources</h3>
+                            <span id="resources-count" class="bg-blue-900 px-2 py-1 rounded text-xs font-bold">0</span>
+                        </div>
+                        <div id="admin-resources-list" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8 text-sm">Loading resources...</div>
                         </div>
                     </div>
                 </div>
@@ -1315,6 +1420,73 @@
                         });
                     }
                 });
+
+                // Ambassador Challenges Listener
+                const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                const nowDate = new Date();
+                const curMonth = `${MONTHS[nowDate.getMonth()]} ${nowDate.getFullYear()}`;
+                const monthLabel = document.getElementById('admin-current-month-label');
+                const statMonth = document.getElementById('stat-active-month');
+                if (monthLabel) monthLabel.textContent = curMonth;
+                if (statMonth) statMonth.textContent = MONTHS[nowDate.getMonth()].substring(0, 3);
+
+                onSnapshot(query(collection(db, "ambassador_challenges"), orderBy("createdAt", "desc")), (snap) => {
+                    const list = document.getElementById('admin-challenges-list');
+                    const totalEl = document.getElementById('stat-total-challenges');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    if (totalEl) totalEl.textContent = snap.size;
+                    if (snap.empty) {
+                        list.innerHTML = '<div class="text-center text-gray-500 py-4 text-sm">No custom challenges set. Default challenges are used.</div>';
+                        return;
+                    }
+                    snap.forEach(d => {
+                        const ch = d.data();
+                        list.innerHTML += `
+                            <div class="flex items-center justify-between p-3 bg-gray-900/50 border border-gray-700 rounded-lg">
+                                <div class="flex-1">
+                                    <p class="text-white text-sm font-bold">${ch.text}</p>
+                                    <p class="text-gray-400 text-xs">+${ch.points || 0} points</p>
+                                </div>
+                                <button onclick="app.deleteAmbassadorChallenge('${d.id}')" class="text-red-500 hover:text-red-400 ml-3 text-sm">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>`;
+                    });
+                });
+
+                // Ambassador Resources Listener
+                onSnapshot(query(collection(db, "ambassador_resources"), orderBy("createdAt", "desc")), (snap) => {
+                    const list = document.getElementById('admin-resources-list');
+                    const countEl = document.getElementById('resources-count');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    if (countEl) countEl.textContent = snap.size;
+                    if (snap.empty) {
+                        list.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm">No custom resources uploaded yet. Default resources are shown to ambassadors.</div>';
+                        return;
+                    }
+                    snap.forEach(d => {
+                        const res = d.data();
+                        const uploadDate = res.createdAt ? new Date(res.createdAt.toDate()).toLocaleDateString() : 'Recently';
+                        list.innerHTML += `
+                            <div class="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <i class="fa-solid fa-file-pdf text-red-400 text-xl flex-shrink-0"></i>
+                                    <div class="min-w-0">
+                                        <p class="text-white text-sm font-bold truncate">${res.title}</p>
+                                        <p class="text-gray-400 text-xs">${res.description || ''} • ${res.category || 'guide'} • Uploaded ${uploadDate}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 flex-shrink-0 ml-3">
+                                    ${res.url ? `<a href="${res.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs border border-blue-500/30 px-2 py-1 rounded"><i class="fa-solid fa-download"></i></a>` : ''}
+                                    <button onclick="app.deleteAmbassadorResource('${d.id}', '${res.storagePath || ''}')" class="text-red-500 hover:text-red-400 text-xs border border-red-500/30 px-2 py-1 rounded">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                });
             },
 
             // --- RE-ENGINEERED SALES VIEW LOGIC ---
@@ -1637,6 +1809,72 @@
                     console.error('Error scheduling program:', error);
                     alert('Error scheduling program. Please try again.');
                 }
+            },
+
+            async addAmbassadorChallenge() {
+                const text = document.getElementById('new-challenge-text').value.trim();
+                const points = parseInt(document.getElementById('new-challenge-points').value) || 0;
+                if (!text) { alert('Please enter a challenge description'); return; }
+                try {
+                    await addDoc(collection(db, 'ambassador_challenges'), {
+                        text, points, createdBy: currentUser.name, createdAt: serverTimestamp()
+                    });
+                    await this.logAction('CHALLENGE_ADDED', `Added challenge: ${text} (+${points} pts)`);
+                    document.getElementById('new-challenge-text').value = '';
+                    document.getElementById('new-challenge-points').value = '';
+                } catch (e) {
+                    alert('Error adding challenge: ' + e.message);
+                }
+            },
+
+            async deleteAmbassadorChallenge(id) {
+                if (!confirm('Remove this challenge task?')) return;
+                await deleteDoc(doc(db, 'ambassador_challenges', id));
+                await this.logAction('CHALLENGE_REMOVED', `Removed challenge task id: ${id}`);
+            },
+
+            async uploadAmbassadorResource() {
+                const title = document.getElementById('resource-title').value.trim();
+                const description = document.getElementById('resource-description').value.trim();
+                const category = document.getElementById('resource-category').value;
+                const fileInput = document.getElementById('resource-file');
+
+                if (!title) { alert('Please enter a resource title'); return; }
+
+                try {
+                    let url = '';
+                    let storagePath = '';
+                    if (fileInput.files[0]) {
+                        const file = fileInput.files[0];
+                        const storageRef = ref(storage, `ambassador_resources/${Date.now()}_${file.name}`);
+                        await uploadBytes(storageRef, file);
+                        url = await getDownloadURL(storageRef);
+                        storagePath = storageRef.fullPath;
+                    }
+
+                    await addDoc(collection(db, 'ambassador_resources'), {
+                        title, description, category, url, storagePath,
+                        uploadedBy: currentUser.name, createdAt: serverTimestamp()
+                    });
+                    await this.logAction('RESOURCE_UPLOADED', `Uploaded resource: ${title}`);
+
+                    document.getElementById('resource-title').value = '';
+                    document.getElementById('resource-description').value = '';
+                    document.getElementById('resource-file').value = '';
+                    document.getElementById('resource-file-name').textContent = 'No file selected';
+                    alert('✅ Resource published successfully!');
+                } catch (e) {
+                    alert('Error uploading resource: ' + e.message);
+                }
+            },
+
+            async deleteAmbassadorResource(id, storagePath) {
+                if (!confirm('Delete this resource?')) return;
+                if (storagePath) {
+                    try { await deleteObject(ref(storage, storagePath)); } catch (e) { /* ignore */ }
+                }
+                await deleteDoc(doc(db, 'ambassador_resources', id));
+                await this.logAction('RESOURCE_DELETED', `Deleted resource id: ${id}`);
             }
         };
 
