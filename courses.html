@@ -22,6 +22,7 @@
             }
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
@@ -45,6 +46,14 @@
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen">
+
+    <!-- Auth Check Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[200] bg-gray-900 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-4xl mb-4 animate-pulse">🔐</div>
+            <p class="text-gray-400 text-sm">Verifying access...</p>
+        </div>
+    </div>
 
     <!-- Header -->
     <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
@@ -71,6 +80,7 @@
             <span><i class="fas fa-book text-orangeAccent mr-1"></i> 4 Courses</span>
             <span><i class="fas fa-list text-blue-400 mr-1"></i> 16 Modules</span>
             <span><i class="fas fa-clock text-green-400 mr-1"></i> Self-paced</span>
+            <span><i class="fas fa-file-pdf text-red-400 mr-1"></i> PDF Downloads</span>
         </div>
     </div>
 
@@ -120,10 +130,10 @@
                 description: 'Promote AZ Learner on campus effectively and grow your student community.',
                 color: 'blue', icon: 'bullhorn',
                 modules: [
-                    { order: 1, title: 'Understanding Your Audience', content: 'Identify student personas on your campus — what courses they take, what challenges they face, and what motivates them to seek learning tools. Map out key student hotspots: libraries, study halls, faculty notice boards, and online groups.' },
-                    { order: 2, title: 'Social Media Strategy', content: 'Create a content calendar for Instagram, TikTok, and WhatsApp. Use short-form video to showcase AZ Learner features. Post at least 3 times per week during exam season. Always include a clear call-to-action and your personal referral link.' },
-                    { order: 3, title: 'Campus Tabling & Flyers', content: 'Set up a table near high-traffic areas. Prepare a short 60-second pitch about AZ Learner. Use printed QR codes that link to the sign-up page with your referral code embedded. Collect emails for follow-up.' },
-                    { order: 4, title: 'Measuring Your Impact', content: 'Track referral sign-ups through your unique referral code on the portal. Record attendance at your events. Set a personal monthly target of 10 new students. Report your numbers in the monthly ambassador digest.' }
+                    { order: 1, title: 'Understanding Your Audience', content: 'Identify student personas on your campus — what courses they take, what challenges they face, and what motivates them to seek learning tools. Map out key student hotspots: libraries, study halls, faculty notice boards, and online groups.\n\nStart by creating two or three student personas. A persona is a fictional representation of a typical student you want to reach. Example: "Study Sam" — a 2nd year Engineering student who struggles with time management and is looking for organised study resources. Give each persona a name, year, major, and three key pain points.\n\nOnce you know your audience, tailor your messaging. Engineering students respond to productivity and exam-prep messaging. Arts students respond to creativity and community angles. A single message does not fit all.\n\nResources: Download the Audience Mapping Worksheet (PDF) from the Resource Library to plan your outreach.', resources: ['Audience Mapping Worksheet', 'Student Persona Template'] },
+                    { order: 2, title: 'Social Media Strategy', content: 'Create a content calendar for Instagram, TikTok, and WhatsApp. Use short-form video to showcase AZ Learner features. Post at least 3 times per week during exam season. Always include a clear call-to-action and your personal referral link.\n\nFor Instagram, focus on visuals: infographics, behind-the-scenes study sessions, and student testimonials. Use the brand colours (orange and blue) consistently. Post Stories daily during key recruitment periods.\n\nFor TikTok, create 15–30 second videos showing how students use AZ Learner to prepare for exams. Use trending sounds to boost reach. Include your referral link in your bio.\n\nFor WhatsApp, create a broadcast list of classmates and friends. Send personalised messages — avoid copying and pasting the same text to everyone. A personal message converts 3x better.\n\nContent pillars to post about: Study tips, AZ Learner feature highlights, ambassador lifestyle, student success stories, and exam countdown reminders.\n\nResources: Download the Social Media Content Calendar (PDF) from the Resource Library.', resources: ['Social Media Content Calendar', 'Instagram Post Templates'] },
+                    { order: 3, title: 'Campus Tabling & Flyers', content: 'Set up a table near high-traffic areas. Prepare a short 60-second pitch about AZ Learner. Use printed QR codes that link to the sign-up page with your referral code embedded. Collect emails for follow-up.\n\nChoose your location wisely. The best spots are near the library entrance, the student union café, the registrar\'s office, and outside popular lecture halls in the first three weeks of semester.\n\nYour 60-second pitch structure: (1) Hook — "Are you spending more time studying but getting lower grades?" (2) Introduce — "AZ Learner organises your study schedule automatically and connects you with top students in your faculty." (3) Social proof — "Over 500 students at [university] are already using it." (4) Call to action — "Scan this QR code to sign up free today — I\'ll set it up with you right now."\n\nAlways have a phone or tablet ready to demonstrate the app live. Seeing is believing.\n\nResources: Download the Campus Tabling Kit (PDF) and the printable QR Code Flyer template.', resources: ['Campus Tabling Kit', 'QR Code Flyer Template'] },
+                    { order: 4, title: 'Measuring Your Impact', content: 'Track referral sign-ups through your unique referral code on the portal. Record attendance at your events. Set a personal monthly target of 10 new students. Report your numbers in the monthly ambassador digest.\n\nKey metrics to track weekly:\n- Referral sign-ups (from your referral link)\n- Social media reach and engagement (likes, shares, profile visits)\n- Event attendance numbers\n- WhatsApp message response rates\n\nAt the end of each month, complete the Monthly Impact Report on the portal. Include: total sign-ups, events hosted, social posts published, and three things you learned.\n\nAmbassadors who consistently hit their targets are eligible for the Top Recruiter badge and promotion to Senior Ambassador status.\n\nResources: Download the Monthly Impact Report Template (PDF) from the Resource Library.', resources: ['Monthly Impact Report Template', 'KPI Tracking Sheet'] }
                 ]
             },
             {
@@ -132,10 +142,10 @@
                 description: 'Build essential leadership skills to manage study groups and mentor your peers.',
                 color: 'orange', icon: 'users',
                 modules: [
-                    { order: 1, title: 'Leadership Styles & Principles', content: 'Explore the four core leadership styles: directive, coaching, supporting, and delegating. Understand when to use each style. Great ambassadors adapt their approach to each situation — firm deadlines may need directive leadership, while mentoring calls for a coaching style.' },
-                    { order: 2, title: 'Running Effective Study Groups', content: 'Host study circles around specific AZ Learner courses. Set a clear agenda 24 hours in advance. Keep sessions to 60–90 minutes. Assign roles: timekeeper, note-taker, question-master. End every session with a brief quiz or reflection exercise.' },
-                    { order: 3, title: 'Peer Mentoring Techniques', content: 'Mentoring is about listening first. Use the GROW model: Goal, Reality, Options, Way Forward. Check in with your mentees weekly via WhatsApp. Celebrate small wins. Escalate any welfare concerns to the AZ Learner core team.' },
-                    { order: 4, title: 'Conflict Resolution', content: 'Conflicts arise in every team. Use the DESC framework: Describe the behaviour, Express how it affects you, Specify what you need, and Commit to a shared outcome. Address issues early — unresolved tension undermines group performance.' }
+                    { order: 1, title: 'Leadership Styles & Principles', content: 'Explore the four core leadership styles: directive, coaching, supporting, and delegating. Understand when to use each style. Great ambassadors adapt their approach to each situation — firm deadlines may need directive leadership, while mentoring calls for a coaching style.\n\nDirective leadership works best when: tasks are new, stakes are high, or someone is struggling and needs clear guidance. It is not about being bossy — it is about being clear and decisive when clarity is most needed.\n\nCoaching leadership works best when: you see potential in someone that they have not yet recognised in themselves. Ask questions like "What do you think you should do?" rather than telling them what to do.\n\nSupporting leadership works best when: a peer has the skills but lacks confidence. Your job is to encourage, check in, and celebrate their progress.\n\nDelegating leadership works best when: you are working with capable, motivated team members who need space to take ownership.\n\nAs an ambassador, you will cycle through all four styles in a single week. The skill is knowing which to use when.\n\nResources: Download the Leadership Self-Assessment (PDF) from the Resource Library.', resources: ['Leadership Self-Assessment', 'GROW Model Worksheet'] },
+                    { order: 2, title: 'Running Effective Study Groups', content: 'Host study circles around specific AZ Learner courses. Set a clear agenda 24 hours in advance. Keep sessions to 60–90 minutes. Assign roles: timekeeper, note-taker, question-master. End every session with a brief quiz or reflection exercise.\n\nBefore the session: Share the agenda on WhatsApp the evening before. Include: topic, learning objectives, any pre-reading, and what materials to bring.\n\nDuring the session: Start with a 5-minute review of last session\'s key points. Use the Pomodoro technique — 25 minutes focus, 5 minutes break. Encourage questions and discussion rather than silent individual study.\n\nAfter the session: Send a summary of what was covered within 2 hours. Share any resources discussed. Announce the next session date.\n\nTroubleshooting: If attendance drops, have a one-on-one conversation with absent members to understand barriers. If the group loses energy, introduce a competitive quiz element using AZ Learner\'s quiz feature.\n\nResources: Download the Study Group Facilitation Guide (PDF) from the Resource Library.', resources: ['Study Group Facilitation Guide', 'Session Agenda Template'] },
+                    { order: 3, title: 'Peer Mentoring Techniques', content: 'Mentoring is about listening first. Use the GROW model: Goal, Reality, Options, Way Forward. Check in with your mentees weekly via WhatsApp. Celebrate small wins. Escalate any welfare concerns to the AZ Learner core team.\n\nThe GROW model in practice:\nGoal: "What do you want to achieve by the end of this semester?" — help them articulate a specific, measurable goal.\nReality: "Where are you now? What\'s working? What\'s not?" — be honest and kind.\nOptions: "What could you do? What else could you try?" — generate at least three options together.\nWay Forward: "What will you do? By when? How will I know?" — end every meeting with a clear commitment.\n\nMentoring red flags to watch for: sudden withdrawal, declining grades, missing sessions without explanation. If you notice any of these, reach out with empathy: "I noticed you\'ve been quiet recently. I just wanted to check in — is everything okay?"\n\nRemember: you are not a counsellor. For serious welfare concerns (mental health crises, safeguarding issues), escalate immediately to the AZ Learner core team.\n\nResources: Download the Peer Mentoring Handbook (PDF) from the Resource Library.', resources: ['Peer Mentoring Handbook', 'GROW Model Worksheet'] },
+                    { order: 4, title: 'Conflict Resolution', content: 'Conflicts arise in every team. Use the DESC framework: Describe the behaviour, Express how it affects you, Specify what you need, and Commit to a shared outcome. Address issues early — unresolved tension undermines group performance.\n\nThe DESC framework in practice:\nDescribe: "When you arrive 20 minutes late to our sessions..." (behaviour, not character)\nExpress: "...I feel disrespected and it disrupts the group\'s flow."\nSpecify: "I need you to either arrive on time or let us know in advance if you will be late."\nCommit: "Can we agree on that? Is there anything that makes it hard for you to arrive on time?"\n\nMost conflicts in ambassador teams come from: unclear expectations, communication failures, perceived unfairness in task distribution, and personality clashes. Most can be resolved with one honest conversation.\n\nKnow when to escalate: If a conflict becomes personal, persistent, or involves harassment, escalate to the core team immediately.\n\nResources: Download the Conflict Resolution Scripts (PDF) from the Resource Library.', resources: ['Conflict Resolution Scripts', 'Team Charter Template'] }
                 ]
             },
             {
@@ -144,10 +154,10 @@
                 description: 'Engage students and the core team clearly through confident verbal and written communication.',
                 color: 'green', icon: 'comments',
                 modules: [
-                    { order: 1, title: 'Foundations of Effective Communication', content: 'Communication is 7% words, 38% tone, and 55% body language. As an ambassador, your presence matters as much as your message. Practice open body language, make eye contact, and speak at a measured pace. Tailor vocabulary to your audience — avoid jargon with new students.' },
-                    { order: 2, title: 'Public Speaking Fundamentals', content: "Prepare with the 3-T method: Tell them what you'll tell them, Tell them, Tell them what you told them. Manage nerves through deep breathing and power posing before presentations. Record yourself to identify filler words. Every ambassador should be able to deliver a compelling 2-minute pitch about AZ Learner from memory." },
-                    { order: 3, title: 'Digital & Written Communication', content: 'Write clear WhatsApp and email messages: one topic per message, a clear ask, and a deadline. Use bullet points for long updates. Proofread before sending official communications. Use the AZ Learner tone — friendly, encouraging, and professional.' },
-                    { order: 4, title: 'Active Listening', content: 'Active listening means fully concentrating on the speaker rather than preparing your response. Techniques: paraphrase what you heard, ask open-ended questions ("Can you tell me more?"), avoid interrupting, and summarise at the end. Apply this in study circles and one-on-one mentoring sessions.' }
+                    { order: 1, title: 'Foundations of Effective Communication', content: 'Communication is 7% words, 38% tone, and 55% body language. As an ambassador, your presence matters as much as your message. Practice open body language, make eye contact, and speak at a measured pace. Tailor vocabulary to your audience — avoid jargon with new students.\n\nThe three channels of communication — verbal, vocal, and visual — must be aligned for your message to land. If your words say "I\'m excited about this" but your voice is flat and your arms are crossed, students will trust the body language over the words every time.\n\nKey habits to develop:\n- Pause before responding. A two-second pause shows confidence and gives you time to think.\n- Mirror the other person\'s energy level to build rapport — if they are relaxed, relax. If they are enthusiastic, match it.\n- Use the person\'s name in conversation — it signals attention and respect.\n- Acknowledge before answering. When a student asks a question, say "Good question — what I\'ve found is..." before giving your answer.\n\nResources: Download the Communication Foundations Guide (PDF) from the Resource Library.', resources: ['Communication Foundations Guide', 'Active Listening Checklist'] },
+                    { order: 2, title: 'Public Speaking Fundamentals', content: 'Prepare with the 3-T method: Tell them what you\'ll tell them, Tell them, Tell them what you told them. Manage nerves through deep breathing and power posing before presentations. Record yourself to identify filler words. Every ambassador should be able to deliver a compelling 2-minute pitch about AZ Learner from memory.\n\nThe 2-minute AZ Learner pitch structure:\n1. Hook (15 seconds): A relatable problem — "Most students spend hours studying but still struggle on exams. Sound familiar?"\n2. Introduction (20 seconds): "AZ Learner is a study platform built specifically for university students in Ghana — it gives you structured courses, study groups, and practice exams all in one place."\n3. Social proof (20 seconds): "Hundreds of students are already using it and reporting better grades and less stress around exams."\n4. Demo (40 seconds): Show one feature on your phone — the course library or a practice quiz.\n5. Call to action (25 seconds): "Sign up for free at azlearner.com — it takes 30 seconds, and if you use my referral code [CODE], you get bonus features unlocked."\n\nPractice this pitch until you can deliver it confidently without notes. Film yourself. Watch it back. Identify filler words (\"um\", \"like\", \"you know\") and eliminate them.\n\nResources: Download the Public Speaking Workbook (PDF) from the Resource Library.', resources: ['Public Speaking Workbook', '2-Minute Pitch Script Template'] },
+                    { order: 3, title: 'Digital & Written Communication', content: 'Write clear WhatsApp and email messages: one topic per message, a clear ask, and a deadline. Use bullet points for long updates. Proofread before sending official communications. Use the AZ Learner tone — friendly, encouraging, and professional.\n\nThe AZ Learner tone of voice: Friendly but not casual. Encouraging but not patronising. Professional but not cold. Think of it as talking to a smart friend who also happens to be organised and driven.\n\nWhatsApp message formula:\n- Start with the person\'s name\n- State the purpose in one sentence\n- Give context if needed (maximum two sentences)\n- End with one clear action or question\n\nEmail formula:\n- Subject line: specific and action-oriented ("AZ Learner Study Session — Tuesday 5pm, Room 204")\n- Opening: one sentence greeting and context\n- Body: bullet points for multiple items, prose for a single message\n- Close: one clear next step with a deadline\n- Sign-off: "Best, [Name] | AZ Learner Ambassador | [University]"\n\nResources: Download the Written Communication Templates Pack (PDF) from the Resource Library.', resources: ['Written Communication Templates', 'Email Writing Guide'] },
+                    { order: 4, title: 'Active Listening', content: 'Active listening means fully concentrating on the speaker rather than preparing your response. Techniques: paraphrase what you heard, ask open-ended questions ("Can you tell me more?"), avoid interrupting, and summarise at the end. Apply this in study circles and one-on-one mentoring sessions.\n\nThe five levels of listening:\n1. Ignoring — not listening at all\n2. Pretending — appearing to listen but distracted\n3. Selective — hearing only what you want to hear\n4. Attentive — paying full attention to the words\n5. Empathic — listening to understand the emotion and meaning behind the words\n\nAim for level 5 in every meaningful conversation. The shift from level 4 to level 5 is asking yourself: "What is this person really trying to tell me?" rather than just processing the literal words.\n\nPractical exercise: In your next study group, spend the first five minutes asking each person what they found most challenging from last week\'s content. Listen without interrupting. Summarise back: "So it sounds like the main challenge for you was..." and only then move to solving.\n\nResources: Download the Active Listening Practice Cards (PDF) from the Resource Library.', resources: ['Active Listening Practice Cards', 'Empathic Listening Guide'] }
                 ]
             },
             {
@@ -156,19 +166,109 @@
                 description: 'Organise impactful study sessions and campus events that bring students together.',
                 color: 'purple', icon: 'chart-line',
                 modules: [
-                    { order: 1, title: 'Event Planning Basics', content: 'Every successful event has five phases: Concept, Planning, Promotion, Execution, and Review. Start planning at least two weeks in advance. Define clear outcomes — what should attendees know or be able to do after your event? Choose a venue (physical or virtual) based on your expected audience size.' },
-                    { order: 2, title: 'Promoting Your Event', content: 'Use the 3-7-1 rule: post about your event 3 weeks, 7 days, and 1 day before. Use visual flyers with the AZ Learner branding (download from the Resource Library). Create a WhatsApp event group. Send personalised invites to key students. Target course reps and student union officers for wider reach.' },
-                    { order: 3, title: 'Running Virtual Study Sessions', content: 'Host study sessions on Google Meet or Zoom. Share the agenda in the meeting chat at the start. Use breakout rooms for small group discussion. Record sessions (with consent) and share the link via AZ Learner. Collect attendance by asking participants to react or sign in on a shared Google Sheet.' },
-                    { order: 4, title: 'Post-Event Follow-Up', content: 'Send a thank-you message within 24 hours. Share a brief summary and any resources discussed. Collect feedback using a short Google Form (3–5 questions). Log attendance in the portal for achievement points. Write a short event report and submit it to the core team for the monthly digest.' }
+                    { order: 1, title: 'Event Planning Basics', content: 'Every successful event has five phases: Concept, Planning, Promotion, Execution, and Review. Start planning at least two weeks in advance. Define clear outcomes — what should attendees know or be able to do after your event? Choose a venue (physical or virtual) based on your expected audience size.\n\nPhase 1 — Concept: What is the event for? What problem does it solve for students? Who is it for? What will success look like?\n\nPhase 2 — Planning: Book the venue. Assign roles (host, timekeeper, registrar, tech support). Create the run-of-show (minute-by-minute agenda). Prepare materials (slides, handouts, sign-in sheet).\n\nPhase 3 — Promotion: Use the 3-7-1 rule (3 weeks, 7 days, 1 day before). More on this in Module 2.\n\nPhase 4 — Execution: Arrive 30 minutes early. Test all tech. Greet attendees by name. Stick to the agenda. Capture photos (with consent) for social media.\n\nPhase 5 — Review: Send follow-up within 24 hours. Collect feedback. Log attendance on the portal. Write a brief event report.\n\nResources: Download the Event Planning Checklist (PDF) from the Resource Library.', resources: ['Event Planning Checklist', 'Run-of-Show Template'] },
+                    { order: 2, title: 'Promoting Your Event', content: 'Use the 3-7-1 rule: post about your event 3 weeks, 7 days, and 1 day before. Use visual flyers with the AZ Learner branding (download from the Resource Library). Create a WhatsApp event group. Send personalised invites to key students. Target course reps and student union officers for wider reach.\n\nWeek 3 post: Announce the event. Include: what, when, where, and why it matters. Use a branded flyer. Create a WhatsApp group and add the first 10–15 most likely attendees personally.\n\nWeek 1 post: Build anticipation. Share a teaser about what attendees will learn. Add social proof — "Last session, 40 students attended and 3 said it was the most useful 90 minutes of their semester."\n\nDay-before post: Final reminder. Include the exact time, location, and what to bring. Post in all channels simultaneously.\n\nPersonal invites: Send a voice note or personal WhatsApp message to at least 10 students you want to attend. Personal invitations convert at 3x the rate of group posts.\n\nResources: Download the Event Promotion Calendar (PDF) and Branded Flyer Templates from the Resource Library.', resources: ['Event Promotion Calendar', 'Branded Flyer Templates'] },
+                    { order: 3, title: 'Running Virtual Study Sessions', content: 'Host study sessions on Google Meet or Zoom. Share the agenda in the meeting chat at the start. Use breakout rooms for small group discussion. Record sessions (with consent) and share the link via AZ Learner. Collect attendance by asking participants to react or sign in on a shared Google Sheet.\n\nPre-session checklist:\n□ Send calendar invite with meeting link 3 days before\n□ Prepare slides (maximum 15 slides for a 90-minute session)\n□ Test screen sharing and audio the day before\n□ Prepare a shared Google Doc for collaborative note-taking\n□ Create a Google Form for the post-session feedback survey\n\nDuring the session:\n- Start exactly on time. Respect the punctual attendees.\n- Begin with a 2-minute energiser — a quick question or poll\n- Use breakout rooms of 4–5 for any discussion activity longer than 10 minutes\n- Check in with the chat regularly for questions\n- Leave 10 minutes at the end for open Q&A\n\nPost-session:\n- Send the recording link within 24 hours\n- Share the notes doc\n- Send the feedback form (keep it to 3 questions)\n\nResources: Download the Virtual Session Facilitation Guide (PDF) from the Resource Library.', resources: ['Virtual Session Facilitation Guide', 'Breakout Room Activity Pack'] },
+                    { order: 4, title: 'Post-Event Follow-Up', content: 'Send a thank-you message within 24 hours. Share a brief summary and any resources discussed. Collect feedback using a short Google Form (3–5 questions). Log attendance in the portal for achievement points. Write a short event report and submit it to the core team for the monthly digest.\n\nThe 24-hour follow-up message template:\n"Hi everyone! 🙌 Thank you for joining today\'s session — it was amazing to see so many of you engaged and asking great questions. Here\'s a quick summary of what we covered: [3 bullet points]. Resources from the session: [links]. Quick feedback form (takes 2 minutes): [link]. See you at the next session on [date]! — [Name]"\n\nThe event report (for core team submission) should include:\n1. Event name, date, location\n2. Number of attendees\n3. Key activities and outcomes\n4. Feedback summary (top 3 themes)\n5. What worked well\n6. What you would do differently\n7. Recommended follow-up actions\n\nSubmit via the portal within 3 days of the event. Events with submitted reports count double towards your monthly achievement points.\n\nResources: Download the Event Report Template (PDF) from the Resource Library.', resources: ['Event Report Template', 'Post-Event Follow-Up Message Templates'] }
                 ]
             }
         ];
 
+        // --- Completion Tracking ---
+        function getCompletionKey(courseId, moduleOrder) {
+            return `course_complete_${courseId}_${moduleOrder}`;
+        }
+
+        function isModuleComplete(courseId, moduleOrder) {
+            return localStorage.getItem(getCompletionKey(courseId, moduleOrder)) === 'true';
+        }
+
+        function markModuleComplete(courseId, moduleOrder) {
+            localStorage.setItem(getCompletionKey(courseId, moduleOrder), 'true');
+        }
+
+        function getCourseProgress(courseId) {
+            const course = COURSES.find(c => c.id === courseId);
+            if (!course) return { done: 0, total: 0 };
+            const total = course.modules.length;
+            const done = course.modules.filter(m => isModuleComplete(courseId, m.order)).length;
+            return { done, total };
+        }
+
+        // --- PDF Download ---
+        function downloadCoursePDF(courseId) {
+            const course = COURSES.find(c => c.id === courseId);
+            if (!course) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const margin = 50, pageW = doc.internal.pageSize.getWidth(), lineW = pageW - margin * 2;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.setTextColor(255, 171, 64);
+            doc.text('AZ Ambassador Programme', margin, margin);
+            doc.setFontSize(16);
+            doc.setTextColor(255, 255, 255);
+            doc.text(course.title, margin, margin + 30);
+
+            doc.setFontSize(10);
+            doc.setTextColor(180, 180, 180);
+            doc.text(`Generated: ${new Date().toLocaleDateString()} | ${course.modules.length} Modules`, margin, margin + 50);
+
+            let y = margin + 80;
+
+            course.modules.forEach((mod, idx) => {
+                if (y > 740) { doc.addPage(); y = margin; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                doc.setTextColor(100, 180, 255);
+                doc.text(`Module ${mod.order}: ${mod.title}`, margin, y);
+                y += 18;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(220, 220, 220);
+                const lines = doc.splitTextToSize(mod.content, lineW);
+                lines.forEach(line => {
+                    if (y > 760) { doc.addPage(); y = margin; }
+                    doc.text(line, margin, y);
+                    y += 13;
+                });
+
+                if (mod.resources && mod.resources.length) {
+                    y += 5;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(255, 171, 64);
+                    const resText = 'Resources: ' + mod.resources.join(' | ');
+                    const resLines = doc.splitTextToSize(resText, lineW);
+                    resLines.forEach(rl => {
+                        if (y > 760) { doc.addPage(); y = margin; }
+                        doc.text(rl, margin, y);
+                        y += 12;
+                    });
+                    y -= 12;
+                }
+                y += 20;
+            });
+
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text('AZ Learner Ambassador Programme — Confidential', margin, doc.internal.pageSize.getHeight() - 30);
+
+            doc.save(`AZ_${course.title.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+        }
+
+        // --- Render Courses ---
         function renderCourses() {
             const grid = document.getElementById('courses-grid');
             grid.innerHTML = '';
             COURSES.forEach(c => {
                 const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
+                const prog = getCourseProgress(c.id);
+                const allDone = prog.done === prog.total;
+
                 const card = document.createElement('div');
                 card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
                 card.addEventListener('click', () => openCourse(c.id));
@@ -178,12 +278,19 @@
                             <i class="fas fa-${c.icon} ${cls.icon} text-2xl"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-white mb-1">${c.title}</h3>
+                            <div class="flex justify-between items-start gap-2">
+                                <h3 class="text-lg font-bold text-white mb-1">${c.title}</h3>
+                                ${allDone ? '<span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full flex-shrink-0">✓ Complete</span>' : ''}
+                            </div>
                             <p class="text-sm text-gray-400 mb-3">${c.description}</p>
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-3 mb-2">
                                 <span class="text-xs ${cls.badge} font-bold">${c.modules.length} modules</span>
                                 <span class="text-xs text-gray-500">Self-paced</span>
                             </div>
+                            <div class="bg-gray-700/50 rounded-full h-1.5">
+                                <div class="bg-gradient-to-r from-orange-500 to-yellow-400 h-1.5 rounded-full transition-all" style="width:${prog.total ? Math.round((prog.done/prog.total)*100) : 0}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${prog.done}/${prog.total} modules completed</p>
                         </div>
                     </div>`;
                 grid.appendChild(card);
@@ -202,21 +309,57 @@
 
             const modulesEl = document.getElementById('modal-modules');
             modulesEl.innerHTML = '';
+
+            // PDF download button for entire course
+            const dlRow = document.createElement('div');
+            dlRow.className = 'flex justify-end mb-3';
+            dlRow.innerHTML = `<button onclick="downloadCoursePDF('${course.id}')" class="text-xs bg-blue-800/40 hover:bg-blue-700/60 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> Download PDF</button>`;
+            modulesEl.appendChild(dlRow);
+
             course.modules.forEach(mod => {
+                const isComplete = isModuleComplete(course.id, mod.order);
                 const el = document.createElement('div');
-                el.className = 'bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden';
+                el.id = `module-el-${course.id}-${mod.order}`;
+                el.className = `bg-gray-800/60 border ${isComplete ? 'border-green-500/40' : 'border-gray-700'} rounded-xl overflow-hidden`;
 
                 const header = document.createElement('button');
                 header.className = 'w-full flex items-center gap-3 p-4 text-left hover:bg-gray-700/50 transition';
                 header.innerHTML = `
-                    <span class="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${mod.order}</span>
+                    <span class="w-7 h-7 rounded-full ${isComplete ? 'bg-green-500' : 'bg-gray-700'} flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                        ${isComplete ? '<i class="fas fa-check text-xs"></i>' : mod.order}
+                    </span>
                     <span class="text-white font-bold flex-1">${mod.title}</span>
+                    ${isComplete ? '<span class="text-xs text-green-400 font-bold mr-2">Completed</span>' : ''}
                     <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform chevron"></i>
                 `;
 
                 const body = document.createElement('div');
                 body.className = 'px-4 pb-4 hidden text-gray-300 text-sm leading-relaxed';
-                body.textContent = mod.content;
+
+                // Content with newlines rendered
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'whitespace-pre-line mb-4';
+                contentDiv.textContent = mod.content || '';
+                body.appendChild(contentDiv);
+
+                // Resources
+                if (mod.resources && mod.resources.length) {
+                    const resDiv = document.createElement('div');
+                    resDiv.className = 'mt-3 pt-3 border-t border-gray-700';
+                    resDiv.innerHTML = `<p class="text-xs font-bold text-gray-400 uppercase mb-2"><i class="fas fa-paperclip mr-1"></i> Module Resources</p>
+                    <div class="flex flex-wrap gap-2">${mod.resources.map(r => `<button onclick="downloadResourcePDF('${r}', '${course.title}', '${mod.title}')" class="text-xs bg-gray-700 hover:bg-gray-600 text-orange-300 border border-orange-500/20 px-3 py-1.5 rounded-lg transition flex items-center gap-1"><i class="fas fa-file-pdf text-xs"></i> ${r}</button>`).join('')}</div>`;
+                    body.appendChild(resDiv);
+                }
+
+                // Mark Complete button
+                const completeBtn = document.createElement('div');
+                completeBtn.className = 'mt-4';
+                if (isComplete) {
+                    completeBtn.innerHTML = `<div class="flex items-center gap-2 text-green-400 text-sm font-bold"><i class="fas fa-check-circle"></i> Module Completed!</div>`;
+                } else {
+                    completeBtn.innerHTML = `<button onclick="markComplete('${course.id}', ${mod.order})" class="w-full bg-green-700/50 hover:bg-green-700 text-green-300 border border-green-500/30 py-2 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> Mark as Completed</button>`;
+                }
+                body.appendChild(completeBtn);
 
                 header.addEventListener('click', () => {
                     const isOpen = !body.classList.contains('hidden');
@@ -232,6 +375,83 @@
             document.body.style.overflow = 'hidden';
         }
 
+        function markComplete(courseId, moduleOrder) {
+            markModuleComplete(courseId, moduleOrder);
+            // Refresh modal content and course grid
+            closeCourseModal();
+            renderCourses();
+            openCourse(courseId);
+        }
+
+        function downloadResourcePDF(resourceTitle, courseTitle, moduleTitle) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const margin = 50, pageW = doc.internal.pageSize.getWidth();
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.setTextColor(255, 171, 64);
+            doc.text('AZ Ambassador Programme', margin, 60);
+            doc.setFontSize(15);
+            doc.setTextColor(255, 255, 255);
+            doc.text(resourceTitle, margin, 88);
+            doc.setFontSize(9);
+            doc.setTextColor(160, 160, 160);
+            doc.text(`${courseTitle} | ${moduleTitle}`, margin, 108);
+            doc.text(`Downloaded: ${new Date().toLocaleDateString()}`, margin, 122);
+
+            doc.setDrawColor(255, 171, 64);
+            doc.setLineWidth(1);
+            doc.line(margin, 132, pageW - margin, 132);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(220, 220, 220);
+
+            const placeholderText = [
+                `This document is part of the AZ Learner Ambassador Training Programme.`,
+                ``,
+                `Resource: ${resourceTitle}`,
+                `Course: ${courseTitle}`,
+                `Module: ${moduleTitle}`,
+                ``,
+                `This guide was downloaded from the AZ Ambassador Portal. Use it as a reference`,
+                `alongside your training modules to strengthen your skills and knowledge.`,
+                ``,
+                `For the most up-to-date version of this resource, always download fresh from`,
+                `the Resource Library in your Ambassador Portal at ambassador.html.`,
+                ``,
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+                ``,
+                `KEY TAKEAWAYS FROM THIS MODULE:`,
+                ``,
+                `• Review all module content carefully before applying concepts.`,
+                `• Use the exercises and templates provided to practise skills.`,
+                `• Share insights with your study group or fellow ambassadors.`,
+                `• Log your progress on the Ambassador Portal.`,
+                ``,
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+                ``,
+                `CONTACT & SUPPORT:`,
+                `Portal: ambassador.html`,
+                `Programme questions: Reach out to your campus coordinator.`,
+            ];
+
+            let y = 155;
+            placeholderText.forEach(line => {
+                if (y > 760) { doc.addPage(); y = 50; }
+                doc.text(line, margin, y);
+                y += 15;
+            });
+
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text('AZ Learner Ambassador Programme — Confidential', margin, doc.internal.pageSize.getHeight() - 30);
+
+            doc.save(`${resourceTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+        }
+
         function closeCourseModal(event) {
             if (event && event.target !== document.getElementById('course-modal')) return;
             document.getElementById('course-modal').classList.add('hidden');
@@ -239,6 +459,47 @@
         }
 
         renderCourses();
+    </script>
+
+    <!-- Firebase Auth Guard -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const fbApp = initializeApp(firebaseConfig);
+        const db = getFirestore(fbApp);
+        const auth = getAuth(fbApp);
+
+        onAuthStateChanged(auth, async (user) => {
+            const overlay = document.getElementById('auth-overlay');
+            if (!user) {
+                window.location.href = 'ambassador.html';
+                return;
+            }
+            // Check if admin
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists() && userDoc.data().role === 'admin') {
+                overlay.classList.add('hidden');
+                return;
+            }
+            // Check if approved ambassador
+            const ambSnap = await getDocs(query(collection(db, 'ambassadors'), where('email', '==', user.email)));
+            if (!ambSnap.empty) {
+                overlay.classList.add('hidden');
+            } else {
+                window.location.href = 'ambassador.html';
+            }
+        });
     </script>
 </body>
 </html>

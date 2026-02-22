@@ -44,13 +44,21 @@
 </head>
 <body class="font-sans antialiased min-h-screen">
 
+    <!-- Auth Check Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[200] bg-gray-900 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-4xl mb-4 animate-pulse">🔐</div>
+            <p class="text-gray-400 text-sm">Verifying access...</p>
+        </div>
+    </div>
+
     <!-- Header -->
     <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <div>
             <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
                 MONTHLY CHALLENGES
             </h1>
-            <p class="text-xs text-gray-400">Complete all tasks to earn a bonus badge and extra points</p>
+            <p class="text-xs text-gray-400" id="challenge-subtitle">Complete all tasks to earn a bonus badge and extra points</p>
         </div>
         <a href="ambassador.html"
             class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
@@ -65,9 +73,9 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-white">
-                        <i class="fas fa-fire text-orange-400 mr-2"></i>February 2026
+                        <i class="fas fa-fire text-orange-400 mr-2"></i><span id="challenge-month-title">Loading...</span>
                     </h2>
-                    <p class="text-gray-400 text-sm mt-1">Complete all 5 tasks before February 28 to earn the <span class="text-yellow-400 font-bold">February Champion</span> badge</p>
+                    <p class="text-gray-400 text-sm mt-1" id="challenge-deadline-text">Complete all 5 tasks before month end to earn the <span id="challenge-badge-name" class="text-yellow-400 font-bold">Monthly Champion</span> badge</p>
                 </div>
                 <span class="bg-green-900/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">Active</span>
             </div>
@@ -133,7 +141,7 @@
             <!-- Bonus revealed on completion -->
             <div id="bonus-banner" class="hidden mt-5 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl text-center">
                 <p class="text-yellow-300 font-bold text-lg">🎉 Challenge Complete!</p>
-                <p class="text-gray-300 text-sm mt-1">You've earned the <span class="text-white font-bold">February Champion</span> badge and <span class="text-yellow-400 font-bold">+200 bonus points</span>! Head to your portal profile to see your badge.</p>
+                <p class="text-gray-300 text-sm mt-1" id="bonus-text">You've earned the <span id="bonus-badge-name" class="text-white font-bold">Monthly Champion</span> badge and <span class="text-yellow-400 font-bold">+200 bonus points</span>! Head to your portal profile to see your badge.</p>
             </div>
         </div>
 
@@ -142,10 +150,10 @@
             <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-medal text-yellow-400 mr-2"></i>Badges</h2>
             <p class="text-gray-400 text-sm mb-4">Badges are awarded for completing monthly challenges and special achievements.</p>
             <div class="grid sm:grid-cols-3 gap-4">
-                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50" id="badge-monthly">
                     <div class="text-4xl mb-2">🏆</div>
-                    <p class="text-gray-400 text-xs font-bold">February Champion</p>
-                    <p class="text-gray-500 text-xs mt-1">Complete Feb 2026 challenge</p>
+                    <p class="text-gray-400 text-xs font-bold" id="badge-monthly-name">Monthly Champion</p>
+                    <p class="text-gray-500 text-xs mt-1" id="badge-monthly-desc">Complete the monthly challenge</p>
                 </div>
                 <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
                     <div class="text-4xl mb-2">🚀</div>
@@ -178,20 +186,58 @@
         <!-- Past Challenges -->
         <div class="glass-panel rounded-2xl p-6">
             <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-history text-gray-400 mr-2"></i>Past Challenges</h2>
-            <div class="space-y-3">
-                <div class="flex items-center justify-between p-4 bg-gray-800/50 border border-gray-700 rounded-xl">
-                    <div>
-                        <p class="text-white font-bold text-sm">January 2026</p>
-                        <p class="text-gray-400 text-xs">Kickstart Challenge — 5 tasks</p>
-                    </div>
-                    <span class="bg-gray-700 text-gray-400 text-xs font-bold px-3 py-1 rounded-full">Ended</span>
-                </div>
+            <div class="space-y-3" id="past-challenges-list">
+                <!-- Rendered by JS -->
             </div>
         </div>
 
     </div>
 
     <script>
+        // --- Dynamic month setup ---
+        const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const now = new Date();
+        const currentMonth = MONTHS[now.getMonth()];
+        const currentYear = now.getFullYear();
+        const monthBadgeName = `${currentMonth} Champion`;
+
+        document.getElementById('challenge-month-title').textContent = `${currentMonth} ${currentYear}`;
+        document.getElementById('challenge-badge-name').textContent = monthBadgeName;
+        document.getElementById('bonus-badge-name').textContent = monthBadgeName;
+        document.getElementById('badge-monthly-name').textContent = monthBadgeName;
+        document.getElementById('badge-monthly-desc').textContent = `Complete ${currentMonth} ${currentYear} challenge`;
+
+        // Deadline text
+        const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
+        document.getElementById('challenge-deadline-text').innerHTML = `Complete all 5 tasks before ${currentMonth} ${lastDay} to earn the <span class="text-yellow-400 font-bold">${monthBadgeName}</span> badge`;
+
+        // --- Monthly reset logic ---
+        const STATE_KEY = `challenge_state_${currentYear}_${now.getMonth() + 1}`;
+
+        function saveChallengeState() {
+            const checks = document.querySelectorAll('.task-check');
+            const state = [...checks].map(c => c.classList.contains('bg-green-500'));
+            localStorage.setItem(STATE_KEY, JSON.stringify(state));
+        }
+
+        function restoreChallengeState() {
+            const stored = localStorage.getItem(STATE_KEY);
+            if (!stored) return; // New month — no state to restore
+            const state = JSON.parse(stored);
+            const rows = document.querySelectorAll('.task-row');
+            rows.forEach((row, i) => {
+                if (state[i]) {
+                    const check = row.querySelector('.task-check');
+                    const title = row.querySelector('.task-title');
+                    check.classList.add('bg-green-500', 'border-green-500');
+                    check.classList.remove('border-gray-500');
+                    check.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+                    title.classList.add('line-through-custom');
+                }
+            });
+            updateProgress();
+        }
+
         function toggleTask(row) {
             const check = row.querySelector('.task-check');
             const title = row.querySelector('.task-title');
@@ -202,6 +248,7 @@
             check.innerHTML = isDone ? '' : '<i class="fas fa-check text-white text-xs"></i>';
             title.classList.toggle('line-through-custom', !isDone);
             updateProgress();
+            saveChallengeState();
         }
 
         function updateProgress() {
@@ -213,6 +260,71 @@
             document.getElementById('progress-text').textContent = `${done} / ${total} tasks`;
             document.getElementById('bonus-banner').classList.toggle('hidden', done < total);
         }
+
+        // --- Past challenges (dynamic) ---
+        function renderPastChallenges() {
+            const list = document.getElementById('past-challenges-list');
+            list.innerHTML = '';
+            const monthIdx = now.getMonth();
+            if (monthIdx === 0) {
+                // January - no past challenges this year
+                list.innerHTML = '<div class="text-center text-gray-500 py-4 text-sm">No past challenges yet this year.</div>';
+                return;
+            }
+            for (let m = monthIdx - 1; m >= 0; m--) {
+                const key = `challenge_state_${currentYear}_${m + 1}`;
+                const stored = localStorage.getItem(key);
+                let status = 'No Data';
+                let statusClass = 'bg-gray-700 text-gray-400';
+                if (stored) {
+                    const s = JSON.parse(stored);
+                    const completed = s.filter(Boolean).length;
+                    status = completed === 5 ? 'Completed ✓' : `${completed}/5 tasks`;
+                    statusClass = completed === 5 ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-400';
+                }
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-4 bg-gray-800/50 border border-gray-700 rounded-xl">
+                        <div>
+                            <p class="text-white font-bold text-sm">${MONTHS[m]} ${currentYear}</p>
+                            <p class="text-gray-400 text-xs">Monthly Ambassador Challenge — 5 tasks</p>
+                        </div>
+                        <span class="${statusClass} text-xs font-bold px-3 py-1 rounded-full">${stored ? status : 'Ended'}</span>
+                    </div>`;
+            }
+        }
+
+        restoreChallengeState();
+        renderPastChallenges();
+    </script>
+
+    <!-- Firebase Auth Guard -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const fbApp = initializeApp(firebaseConfig);
+        const db = getFirestore(fbApp);
+        const auth = getAuth(fbApp);
+
+        onAuthStateChanged(auth, async (user) => {
+            const overlay = document.getElementById('auth-overlay');
+            if (!user) { window.location.href = 'ambassador.html'; return; }
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists() && userDoc.data().role === 'admin') { overlay.classList.add('hidden'); return; }
+            const ambSnap = await getDocs(query(collection(db, 'ambassadors'), where('email', '==', user.email)));
+            if (!ambSnap.empty) { overlay.classList.add('hidden'); }
+            else { window.location.href = 'ambassador.html'; }
+        });
     </script>
 </body>
 </html>
