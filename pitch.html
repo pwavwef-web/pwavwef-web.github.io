@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Pitch Deck – The all-in-one student companion for Ghanaian university students. Investor overview.">
+    <title>AZ Learner | Pitch Deck</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        :root {
+            --brand-blue: #3b82f6;
+            --brand-orange: #FFAB40;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html { overflow-x: hidden; }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -2;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glass */
+        .glass-panel {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 1.25rem;
+            transition: transform 0.25s, background 0.25s, border-color 0.25s;
+        }
+
+        .glass-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-4px);
+        }
+
+        /* Gradient text */
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-gradient-orange {
+            background: linear-gradient(to right, #FFAB40, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Slide sections */
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 1.5rem 4rem;
+        }
+
+        /* Slide counter badge */
+        .slide-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.35);
+            color: #93c5fd;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.12), transparent);
+            margin: 0;
+        }
+
+        /* Stat highlight */
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        /* Nav dot indicator */
+        .nav-dots {
+            position: fixed;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            z-index: 40;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: background 0.25s, transform 0.25s;
+        }
+
+        .nav-dot.active {
+            background: #3b82f6;
+            transform: scale(1.4);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(to right, #3b82f6, #FFAB40);
+            z-index: 60;
+            transition: width 0.1s;
+        }
+
+        /* Scroll indicator */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(8px); }
+        }
+        .bounce { animation: bounce 1.5s ease-in-out infinite; }
+
+        /* Feature icon */
+        .feature-icon {
+            width: 3rem; height: 3rem;
+            border-radius: 0.75rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Timeline */
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.6rem;
+            top: 0.3rem;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+
+        /* Responsive hide nav-dots on mobile */
+        @media (max-width: 640px) {
+            .nav-dots { display: none; }
+            .slide { padding: 5rem 1rem 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Animated Background -->
+    <div class="bg-animated"></div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-4 sm:px-6 py-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl sm:text-2xl font-extrabold tracking-tighter">
+                <span class="bg-white text-blue-900 px-2 py-1 rounded mr-1">AZ</span> LEARNER
+            </a>
+            <div class="flex items-center gap-4">
+                <span class="hidden sm:inline text-xs font-semibold tracking-widest text-gray-400 uppercase">Investor Pitch Deck</span>
+                <a href="index.html" class="text-sm font-medium text-gray-300 hover:text-white transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Side Nav Dots -->
+    <div class="nav-dots" id="navDots"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 1 · COVER -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-1" data-label="Cover">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="slide-badge">Confidential · 2026</div>
+            <div class="mb-6">
+                <span class="inline-block bg-white text-blue-900 text-4xl sm:text-5xl font-extrabold px-4 py-2 rounded-xl mr-2">AZ</span>
+            </div>
+            <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tighter text-gradient leading-none mb-4">LEARNER</h1>
+            <p class="text-xl sm:text-2xl font-semibold text-orange-300 mb-6">The Squad Companion</p>
+            <p class="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+                The all-in-one student utility platform built for Ghanaian university students —
+                <span class="text-white font-semibold">Print, Chat, Grind, Shine.</span>
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 mb-14">
+                <a href="https://azlearner.me" target="_blank"
+                   class="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-sm transition">
+                    Visit Site
+                </a>
+                <a href="app.html"
+                   class="px-6 py-3 glass-card rounded-full font-bold text-sm hover:!transform-none transition border border-white/20 text-gray-200 hover:text-white">
+                    Download App
+                </a>
+            </div>
+            <!-- Scroll hint -->
+            <div class="text-gray-500 text-xs flex flex-col items-center gap-2 bounce">
+                <span>Scroll to explore</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 2 · THE PROBLEM -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-2" data-label="Problem">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">The Problem</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    Campus Life is Fragmented
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Ghanaian university students juggle dozens of disconnected tools and pain points every single day.
+                </p>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="glass-card p-6">
+                    <div class="text-3xl mb-3">🖨️</div>
+                    <h3 class="font-bold text-lg mb-2 text-white">Printing Chaos</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Students queue for hours at printing shops, miss deadlines, and lose documents to corrupt flash drives.</p>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="font-bold text-lg mb-2 text-white">GPA Uncertainty</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">No easy way to track grades and forecast GPA — leading to academic anxiety and poor course planning.</p>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="text-3xl mb-3">🗂️</div>
+                    <h3 class="font-bold text-lg mb-2 text-white">Scattered Resources</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Past questions, lecture notes, and study materials are scattered across WhatsApp groups with no structure.</p>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="text-3xl mb-3">🗺️</div>
+                    <h3 class="font-bold text-lg mb-2 text-white">Lost on Campus</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">New students and visitors struggle to navigate large campuses like UCC without a reliable digital map.</p>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="text-3xl mb-3">📅</div>
+                    <h3 class="font-bold text-lg mb-2 text-white">Missed Deadlines</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Exam dates, assignment deadlines, and campus events come and go — students have no central tracker.</p>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="text-3xl mb-3">💬</div>
+                    <h3 class="font-bold text-lg mb-2 text-white">No Academic Community</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Students lack a dedicated academic social layer — course-specific circles, peer support, and class connection.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 3 · THE SOLUTION -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-3" data-label="Solution">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">The Solution</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    One App. Every Student Need.
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    AZ Learner is a unified student super-app — the digital exhale every campus grinder deserves.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="space-y-5">
+                    <div class="flex items-start gap-4 glass-card p-5">
+                        <div class="feature-icon bg-blue-600/20 text-blue-300">🖨️</div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">Print &amp; Deliver</h3>
+                            <p class="text-gray-400 text-sm">Upload documents in-app, pay online, get printouts delivered to your campus spot — no queues.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 glass-card p-5">
+                        <div class="feature-icon bg-orange-600/20 text-orange-300">📊</div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">GPA Calculator</h3>
+                            <p class="text-gray-400 text-sm">Instantly calculate semester &amp; cumulative GPA, track trends, and plan your academic path.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 glass-card p-5">
+                        <div class="feature-icon bg-purple-600/20 text-purple-300">💬</div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">Course Circles</h3>
+                            <p class="text-gray-400 text-sm">Join course-specific chat communities, share notes, ask questions, and collaborate with classmates.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-5">
+                    <div class="flex items-start gap-4 glass-card p-5">
+                        <div class="feature-icon bg-green-600/20 text-green-300">📚</div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">The Vault</h3>
+                            <p class="text-gray-400 text-sm">Centralised academic resource library — past questions, lecture notes, study guides, all in one place.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 glass-card p-5">
+                        <div class="feature-icon bg-yellow-600/20 text-yellow-300">🗺️</div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">Campus Map</h3>
+                            <p class="text-gray-400 text-sm">Interactive campus navigation so students and visitors always know where they are and where to go.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 glass-card p-5">
+                        <div class="feature-icon bg-red-600/20 text-red-300">⚔️</div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">The Arena</h3>
+                            <p class="text-gray-400 text-sm">Competitive study games, leaderboards, and challenges to make learning addictive and social.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 4 · MARKET OPPORTUNITY -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-4" data-label="Market">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">Market Opportunity</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    A Massive, Underserved Market
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Ghana's tertiary education sector is growing fast — and it is almost entirely underserved by digital student tools.
+                </p>
+            </div>
+            <div class="grid sm:grid-cols-3 gap-6 mb-10">
+                <div class="glass-card p-8 text-center">
+                    <div class="stat-value text-gradient mb-2">500K+</div>
+                    <p class="text-gray-400 text-sm font-semibold">Tertiary Students in Ghana</p>
+                    <p class="text-gray-600 text-xs mt-1">Across 200+ accredited institutions</p>
+                </div>
+                <div class="glass-card p-8 text-center">
+                    <div class="stat-value text-gradient-orange mb-2">40K+</div>
+                    <p class="text-gray-400 text-sm font-semibold">UCC Students Alone</p>
+                    <p class="text-gray-600 text-xs mt-1">Our initial target campus</p>
+                </div>
+                <div class="glass-card p-8 text-center">
+                    <div class="stat-value text-gradient mb-2">85%</div>
+                    <p class="text-gray-400 text-sm font-semibold">Smartphone Penetration</p>
+                    <p class="text-gray-600 text-xs mt-1">Among Ghanaian university students</p>
+                </div>
+            </div>
+            <div class="glass-card p-7 max-w-3xl mx-auto">
+                <h3 class="font-bold text-white text-lg mb-4">Why Now?</h3>
+                <ul class="space-y-3 text-gray-400 text-sm">
+                    <li class="flex items-start gap-3">
+                        <span class="text-blue-400 mt-0.5">✦</span>
+                        <span>Mobile internet access and affordable data have reached critical mass in urban Ghana.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-blue-400 mt-0.5">✦</span>
+                        <span>No dominant student super-app exists for Ghanaian or West African universities — the space is wide open.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-blue-400 mt-0.5">✦</span>
+                        <span>Mobile money (MoMo) and Paystack adoption among students has made in-app payments seamless.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-blue-400 mt-0.5">✦</span>
+                        <span>Ghana's tertiary enrollment grew over 15% in the last five years — the addressable market is expanding.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 5 · PRODUCT -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-5" data-label="Product">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">The Product</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    Web App &amp; Android, Seamlessly
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    AZ Learner ships as a full-featured web app and a native Android app — meeting students wherever they are.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 mb-10">
+                <div class="glass-card p-7">
+                    <div class="text-3xl mb-3">🌐</div>
+                    <h3 class="text-xl font-bold text-white mb-3">Web App</h3>
+                    <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+                        Accessible at <span class="text-blue-400">app.azlearner.me</span> on any device. No install required — students get full functionality right in the browser with a responsive, mobile-first design.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 border border-blue-500/30">HTML / CSS</span>
+                        <span class="text-xs px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 border border-blue-500/30">Tailwind CSS</span>
+                        <span class="text-xs px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 border border-blue-500/30">JavaScript</span>
+                        <span class="text-xs px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 border border-blue-500/30">GitHub Pages</span>
+                    </div>
+                </div>
+                <div class="glass-card p-7">
+                    <div class="text-3xl mb-3">📱</div>
+                    <h3 class="text-xl font-bold text-white mb-3">Android App</h3>
+                    <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+                        Available on the <span class="text-green-400">Google Play Store</span> and as a direct APK download. Push notifications, offline support, and a native feel — bringing campus utilities to students' pockets.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs px-3 py-1 rounded-full bg-green-600/20 text-green-300 border border-green-500/30">Android Native</span>
+                        <span class="text-xs px-3 py-1 rounded-full bg-green-600/20 text-green-300 border border-green-500/30">Google Play Store</span>
+                        <span class="text-xs px-3 py-1 rounded-full bg-green-600/20 text-green-300 border border-green-500/30">Direct APK</span>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card p-7">
+                <h3 class="font-bold text-white text-lg mb-5">Platform Highlights</h3>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                        <div class="text-2xl font-extrabold text-blue-400 mb-1">2</div>
+                        <p class="text-xs text-gray-400">Platforms<br/>(Web + Android)</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                        <div class="text-2xl font-extrabold text-orange-400 mb-1">8+</div>
+                        <p class="text-xs text-gray-400">Core Features<br/>Shipped</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                        <div class="text-2xl font-extrabold text-green-400 mb-1">Free</div>
+                        <p class="text-xs text-gray-400">to Get Started<br/>for Students</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                        <div class="text-2xl font-extrabold text-purple-400 mb-1">iOS</div>
+                        <p class="text-xs text-gray-400">Version<br/>Planned</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 6 · BUSINESS MODEL -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-6" data-label="Business Model">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">Business Model</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    How We Make Money
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Multiple revenue streams built around the student lifecycle — from the first lecture to graduation.
+                </p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-6 mb-8">
+                <div class="glass-card p-7 border-blue-500/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600/30 flex items-center justify-center text-xl">🖨️</div>
+                        <div>
+                            <h3 class="font-bold text-white">Print Service Fees</h3>
+                            <span class="text-xs text-blue-400 font-semibold">PRIMARY · ACTIVE NOW</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">Students pay per print job. AZ Learner earns a service margin on each document submitted — low friction, high volume transactions powered by Paystack.</p>
+                </div>
+                <div class="glass-card p-7 border-orange-500/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-orange-600/30 flex items-center justify-center text-xl">⭐</div>
+                        <div>
+                            <h3 class="font-bold text-white">Premium Subscriptions</h3>
+                            <span class="text-xs text-orange-400 font-semibold">SECONDARY · IN ROADMAP</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">Optional upgrade plans offering enhanced printing credits, VIP leaderboard status, cloud storage for The Vault, and priority support.</p>
+                </div>
+                <div class="glass-card p-7 border-purple-500/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-purple-600/30 flex items-center justify-center text-xl">🎪</div>
+                        <div>
+                            <h3 class="font-bold text-white">Campus Events &amp; Ticketing</h3>
+                            <span class="text-xs text-purple-400 font-semibold">GROWING STREAM</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">Event organizers list campus events on AZ Learner. Ticket sales flow through the platform, earning a booking fee per transaction.</p>
+                </div>
+                <div class="glass-card p-7 border-green-500/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-green-600/30 flex items-center justify-center text-xl">📣</div>
+                        <div>
+                            <h3 class="font-bold text-white">Campus Partnerships &amp; Ads</h3>
+                            <span class="text-xs text-green-400 font-semibold">FUTURE STREAM</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">Sponsored placements, brand partnerships, and campus business listings targeting the highly engaged student audience.</p>
+                </div>
+            </div>
+            <div class="glass-card p-6 max-w-2xl mx-auto text-center">
+                <p class="text-gray-300 text-sm">
+                    Payments powered by <span class="text-blue-400 font-semibold">Paystack</span> and <span class="text-green-400 font-semibold">Mobile Money</span> — the payment methods students in Ghana already use and trust.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 7 · TRACTION -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-7" data-label="Traction">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">Traction &amp; Milestones</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    Already in Motion
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    AZ Learner is live, growing, and building real utility on campus — not just a concept.
+                </p>
+            </div>
+            <div class="grid sm:grid-cols-3 gap-6 mb-10">
+                <div class="glass-card p-7 text-center">
+                    <div class="stat-value text-gradient mb-2">Live</div>
+                    <p class="text-gray-400 text-sm font-semibold">Web App &amp; Android</p>
+                    <p class="text-gray-600 text-xs mt-1">Both platforms running</p>
+                </div>
+                <div class="glass-card p-7 text-center">
+                    <div class="stat-value text-gradient-orange mb-2">UCC</div>
+                    <p class="text-gray-400 text-sm font-semibold">Primary Campus</p>
+                    <p class="text-gray-600 text-xs mt-1">University of Cape Coast</p>
+                </div>
+                <div class="glass-card p-7 text-center">
+                    <div class="stat-value text-gradient mb-2">Growing</div>
+                    <p class="text-gray-400 text-sm font-semibold">Ambassador Network</p>
+                    <p class="text-gray-600 text-xs mt-1">Student reps on campus</p>
+                </div>
+            </div>
+            <div class="glass-card p-8 mb-8">
+                <h3 class="font-bold text-white text-lg mb-6">Milestone Timeline</h3>
+                <div class="relative pl-8 border-l border-blue-500/30 space-y-7">
+                    <div class="relative timeline-item">
+                        <h4 class="font-bold text-white text-sm">Website &amp; Web App Launched</h4>
+                        <p class="text-gray-500 text-xs mt-1">azlearner.me goes live. Core features including GPA Calculator, Event Board, and resource sharing deployed.</p>
+                    </div>
+                    <div class="relative timeline-item">
+                        <h4 class="font-bold text-white text-sm">Print Service Activated</h4>
+                        <p class="text-gray-500 text-xs mt-1">Paystack-powered print submission live. Students can upload documents and pay online for campus pickup.</p>
+                    </div>
+                    <div class="relative timeline-item">
+                        <h4 class="font-bold text-white text-sm">Android App Released</h4>
+                        <p class="text-gray-500 text-xs mt-1">Native Android app published to Google Play Store. Direct APK download also available for instant access.</p>
+                    </div>
+                    <div class="relative timeline-item">
+                        <h4 class="font-bold text-white text-sm">Ambassador Program Launched</h4>
+                        <p class="text-gray-500 text-xs mt-1">Student ambassadors recruited at UCC to drive organic growth, community building, and campus onboarding.</p>
+                    </div>
+                    <div class="relative timeline-item" style="--dot-color: #FFAB40">
+                        <h4 class="font-bold text-orange-300 text-sm">🔜 Expansion to More Campuses</h4>
+                        <p class="text-gray-500 text-xs mt-1">Next phase: KNUST, University of Ghana, and other major Ghanaian institutions. iOS app development begins.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 8 · GO-TO-MARKET -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-8" data-label="Go-To-Market">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">Go-To-Market Strategy</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    Campus-First, Then Country-Wide
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    A focused campus-by-campus rollout strategy — win one campus deeply, replicate across Ghana.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6 mb-10">
+                <div class="glass-card p-7">
+                    <div class="text-3xl mb-4">🎯</div>
+                    <h3 class="font-bold text-white text-lg mb-3">Phase 1 · UCC Domination</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Achieve deep penetration at the University of Cape Coast. Build a loyal core user base, gather testimonials, and optimise the product for real student workflows.</p>
+                </div>
+                <div class="glass-card p-7">
+                    <div class="text-3xl mb-4">🚀</div>
+                    <h3 class="font-bold text-white text-lg mb-3">Phase 2 · Major Campuses</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Expand to KNUST, University of Ghana (Legon), GIMPA, and Ashesi. Localise features, onboard campus ambassadors, and replicate the UCC playbook.</p>
+                </div>
+                <div class="glass-card p-7">
+                    <div class="text-3xl mb-4">🌍</div>
+                    <h3 class="font-bold text-white text-lg mb-3">Phase 3 · West Africa</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Scale to Nigeria, Senegal, and Côte d'Ivoire. Localise payments (Flutterwave), languages, and campus data for each new market.</p>
+                </div>
+            </div>
+            <div class="glass-card p-7">
+                <h3 class="font-bold text-white text-lg mb-5">Growth Channels</h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3">
+                        <span class="text-blue-400 text-xl mt-0.5">👥</span>
+                        <div>
+                            <h4 class="font-semibold text-white text-sm">Ambassador Program</h4>
+                            <p class="text-gray-500 text-xs mt-0.5">Student reps drive word-of-mouth on campus — zero paid acquisition cost at scale.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-orange-400 text-xl mt-0.5">📱</span>
+                        <div>
+                            <h4 class="font-semibold text-white text-sm">Social Media &amp; Content</h4>
+                            <p class="text-gray-500 text-xs mt-0.5">TikTok, YouTube, and X (Twitter) content aimed at Ghanaian students. Relatable, campus-native messaging.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-400 text-xl mt-0.5">🏫</span>
+                        <div>
+                            <h4 class="font-semibold text-white text-sm">University Partnerships</h4>
+                            <p class="text-gray-500 text-xs mt-0.5">Work with student unions, departments, and campus businesses for mutual promotion and data integration.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-400 text-xl mt-0.5">🔄</span>
+                        <div>
+                            <h4 class="font-semibold text-white text-sm">Referral Loops</h4>
+                            <p class="text-gray-500 text-xs mt-0.5">Invite-a-friend mechanics, printing credits for referrals, and leaderboard rewards that fuel viral growth.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 9 · TEAM -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-9" data-label="Team">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">The Team</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    Built by Students, for Students
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    A young, deeply motivated team who live the problem every day — and are determined to solve it.
+                </p>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                <div class="glass-card p-7 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-800 flex items-center justify-center text-2xl font-extrabold mx-auto mb-4">FP</div>
+                    <h3 class="font-bold text-white text-lg">Francis Pwavwe</h3>
+                    <p class="text-blue-400 text-sm font-semibold mb-3">Founder &amp; Lead Developer</p>
+                    <p class="text-gray-500 text-xs leading-relaxed">Full-stack developer, product designer, and visionary behind AZ Learner. Builds and ships the entire web &amp; Android product.</p>
+                </div>
+                <div class="glass-card p-7 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-orange-800 flex items-center justify-center text-2xl font-extrabold mx-auto mb-4">AM</div>
+                    <h3 class="font-bold text-white text-lg">Ambassador Network</h3>
+                    <p class="text-orange-400 text-sm font-semibold mb-3">Campus Growth Team</p>
+                    <p class="text-gray-500 text-xs leading-relaxed">Growing team of student ambassadors representing AZ Learner across campuses — organizing events, onboarding users, and providing ground-level feedback.</p>
+                </div>
+                <div class="glass-card p-7 text-center sm:col-span-2 lg:col-span-1">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-800 flex items-center justify-center text-2xl font-extrabold mx-auto mb-4">+</div>
+                    <h3 class="font-bold text-white text-lg">We're Hiring</h3>
+                    <p class="text-green-400 text-sm font-semibold mb-3">Join the Mission</p>
+                    <p class="text-gray-500 text-xs leading-relaxed">Looking for a co-founder, growth strategist, and backend engineer to accelerate AZ Learner's expansion across Ghana and beyond.</p>
+                </div>
+            </div>
+            <div class="glass-card p-6 max-w-2xl mx-auto">
+                <p class="text-gray-400 text-sm text-center leading-relaxed">
+                    <span class="text-white font-semibold">Francis Pwavwe Production</span> is the creative studio behind AZ Learner —
+                    a lean, execution-focused team shipping real products used by real students.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 10 · THE ASK -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-10" data-label="The Ask">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-12">
+                <div class="slide-badge">The Ask</div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                    Join the Mission
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    We are raising a pre-seed round to accelerate product development, campus expansion, and team growth.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 mb-10">
+                <div class="glass-card p-8 border border-blue-500/30">
+                    <h3 class="text-2xl font-extrabold text-gradient mb-2">Pre-Seed Round</h3>
+                    <p class="text-gray-500 text-sm mb-6">Use of funds breakdown</p>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-300">Product &amp; Engineering</span>
+                                <span class="text-blue-400 font-bold">40%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-white/10">
+                                <div class="h-2 rounded-full bg-blue-500" style="width:40%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-300">Campus Expansion &amp; Marketing</span>
+                                <span class="text-orange-400 font-bold">30%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-white/10">
+                                <div class="h-2 rounded-full bg-orange-400" style="width:30%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-300">Team &amp; Operations</span>
+                                <span class="text-purple-400 font-bold">20%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-white/10">
+                                <div class="h-2 rounded-full bg-purple-400" style="width:20%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-300">Infrastructure &amp; Legal</span>
+                                <span class="text-green-400 font-bold">10%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-white/10">
+                                <div class="h-2 rounded-full bg-green-400" style="width:10%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-5">
+                    <div class="glass-card p-6">
+                        <h3 class="font-bold text-white mb-3">What We're Building Next</h3>
+                        <ul class="space-y-2 text-gray-400 text-sm">
+                            <li class="flex items-center gap-2"><span class="text-blue-400">→</span> iOS App launch</li>
+                            <li class="flex items-center gap-2"><span class="text-blue-400">→</span> KNUST &amp; UG Legon campus rollout</li>
+                            <li class="flex items-center gap-2"><span class="text-blue-400">→</span> Premium subscription tier</li>
+                            <li class="flex items-center gap-2"><span class="text-blue-400">→</span> Campus business integrations</li>
+                            <li class="flex items-center gap-2"><span class="text-blue-400">→</span> West African market entry</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6">
+                        <h3 class="font-bold text-white mb-3">What We're Looking For</h3>
+                        <ul class="space-y-2 text-gray-400 text-sm">
+                            <li class="flex items-center gap-2"><span class="text-orange-400">✦</span> Strategic investors with Africa/EdTech networks</li>
+                            <li class="flex items-center gap-2"><span class="text-orange-400">✦</span> Mentorship in product scaling and fundraising</li>
+                            <li class="flex items-center gap-2"><span class="text-orange-400">✦</span> University and corporate partnership introductions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- SLIDE 11 · CONTACT / CTA -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section class="slide" id="slide-11" data-label="Contact">
+        <div class="max-w-3xl mx-auto w-full text-center">
+            <div class="slide-badge">Let's Talk</div>
+            <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-gradient mb-4">
+                Ready to Back the Movement?
+            </h2>
+            <p class="text-gray-400 text-lg max-w-xl mx-auto mb-10">
+                Reach out to the AZ Learner team. We'd love to share more details, answer your questions, and explore how we can build the future of African student life together.
+            </p>
+            <div class="grid sm:grid-cols-3 gap-5 mb-10">
+                <a href="mailto:info@azlearner.me"
+                   class="glass-card p-6 flex flex-col items-center gap-3 hover:border-blue-500/50 transition no-underline">
+                    <span class="text-3xl">📧</span>
+                    <span class="font-semibold text-white text-sm">Email</span>
+                    <span class="text-blue-400 text-xs">info@azlearner.me</span>
+                </a>
+                <a href="https://wa.me/233557535673" target="_blank"
+                   class="glass-card p-6 flex flex-col items-center gap-3 hover:border-green-500/50 transition no-underline">
+                    <span class="text-3xl">💬</span>
+                    <span class="font-semibold text-white text-sm">WhatsApp</span>
+                    <span class="text-green-400 text-xs">+233 55 753 5673</span>
+                </a>
+                <a href="https://x.com/azlearner" target="_blank"
+                   class="glass-card p-6 flex flex-col items-center gap-3 hover:border-white/30 transition no-underline">
+                    <span class="text-3xl">🐦</span>
+                    <span class="font-semibold text-white text-sm">X (Twitter)</span>
+                    <span class="text-gray-400 text-xs">@azlearner</span>
+                </a>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4 mb-12">
+                <a href="https://azlearner.me" target="_blank"
+                   class="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 rounded-full font-bold transition">
+                    Visit azlearner.me
+                </a>
+                <a href="app.html"
+                   class="px-8 py-3.5 glass-card rounded-full font-bold hover:!transform-none border border-white/20 text-gray-200 hover:text-white transition">
+                    Download the App
+                </a>
+            </div>
+            <p class="text-gray-600 text-xs">
+                © 2026 Francis Pwavwe Production · AZ Learner · UCC, Cape Coast, Ghana<br>
+                <span class="text-gray-700">This document is confidential and intended for authorised recipients only.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-10 pb-8">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <div class="text-xl font-black tracking-tight mb-2">AZ LEARNER</div>
+            <p class="text-gray-500 text-sm mb-4">UCC · Cape Coast · The World</p>
+            <div class="flex justify-center gap-6 text-sm text-gray-500 mb-4">
+                <a href="index.html" class="hover:text-white transition">Home</a>
+                <a href="app.html" class="hover:text-white transition">Download App</a>
+                <a href="faq.html" class="hover:text-white transition">FAQ</a>
+                <a href="privacy-policy.html" class="hover:text-white transition">Privacy Policy</a>
+            </div>
+            <div class="text-xs text-gray-600">&copy; 2026 Francis Pwavwe Production. Powered by Sunlight &amp; Ambition.</div>
+        </div>
+    </footer>
+
+    <script>
+        // ── Slides & Navigation Dots ──────────────────────────────
+        const slides = Array.from(document.querySelectorAll('.slide'));
+        const dotsContainer = document.getElementById('navDots');
+
+        slides.forEach((slide, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'nav-dot';
+            dot.title = slide.dataset.label || `Slide ${i + 1}`;
+            dot.addEventListener('click', () => slide.scrollIntoView({ behavior: 'smooth' }));
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = Array.from(dotsContainer.querySelectorAll('.nav-dot'));
+
+        // ── Progress Bar & Active Dot ─────────────────────────────
+        const progressBar = document.getElementById('progressBar');
+
+        function onScroll() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            progressBar.style.width = progress + '%';
+
+            // Determine active slide
+            let activeIndex = 0;
+            slides.forEach((slide, i) => {
+                const rect = slide.getBoundingClientRect();
+                if (rect.top <= window.innerHeight / 2) activeIndex = i;
+            });
+
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === activeIndex);
+            });
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll(); // run once on load
+    </script>
+</body>
+</html>
