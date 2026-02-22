@@ -1028,7 +1028,6 @@
                 const resource = resources[type];
                 if (!resource) return;
 
-                // Generate PDF using jsPDF
                 // Validate type to prevent path traversal
                 const safeTypes = ['marketing', 'leadership', 'communication', 'events', 'handbook'];
                 if (!safeTypes.includes(type)) return;
