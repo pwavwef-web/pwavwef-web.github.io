@@ -240,8 +240,14 @@
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
                     doc.setTextColor(255, 171, 64);
-                    doc.text('Resources: ' + mod.resources.join(' | '), margin, y);
-                    y += 5;
+                    const resText = 'Resources: ' + mod.resources.join(' | ');
+                    const resLines = doc.splitTextToSize(resText, lineW);
+                    resLines.forEach(rl => {
+                        if (y > 760) { doc.addPage(); y = margin; }
+                        doc.text(rl, margin, y);
+                        y += 12;
+                    });
+                    y -= 12;
                 }
                 y += 20;
             });

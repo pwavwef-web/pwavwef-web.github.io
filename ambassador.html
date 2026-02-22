@@ -865,7 +865,7 @@
                 let y = 155;
                 lines.forEach(line => {
                     if (y > 760) { doc.addPage(); y = 50; }
-                    if (line.startsWith('#') || line === line.toUpperCase() && line.trim().length > 3) {
+                    if (line.trim().length > 3 && line === line.toUpperCase()) {
                         doc.setFont('helvetica', 'bold');
                         doc.setTextColor(255, 171, 64);
                         doc.text(line, margin, y);

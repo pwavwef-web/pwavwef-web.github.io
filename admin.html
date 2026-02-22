@@ -1871,7 +1871,10 @@
             async deleteAmbassadorResource(id, storagePath) {
                 if (!confirm('Delete this resource?')) return;
                 if (storagePath) {
-                    try { await deleteObject(ref(storage, storagePath)); } catch (e) { /* ignore */ }
+                    try { await deleteObject(ref(storage, storagePath)); } catch (e) {
+                        // Storage file may already be deleted or path may be invalid; proceed with Firestore deletion
+                        console.warn('Storage delete warning:', e.message);
+                    }
                 }
                 await deleteDoc(doc(db, 'ambassador_resources', id));
                 await this.logAction('RESOURCE_DELETED', `Deleted resource id: ${id}`);
