@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner - Ambassador Challenges</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .line-through-custom { text-decoration: line-through; opacity: 0.5; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Header -->
+    <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
+                MONTHLY CHALLENGES
+            </h1>
+            <p class="text-xs text-gray-400">Complete all tasks to earn a bonus badge and extra points</p>
+        </div>
+        <a href="ambassador.html"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Portal
+        </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-4 py-10 space-y-8">
+
+        <!-- Current Challenge -->
+        <div class="glass-panel rounded-2xl p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">
+                        <i class="fas fa-fire text-orange-400 mr-2"></i>February 2026
+                    </h2>
+                    <p class="text-gray-400 text-sm mt-1">Complete all 5 tasks before February 28 to earn the <span class="text-yellow-400 font-bold">February Champion</span> badge</p>
+                </div>
+                <span class="bg-green-900/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">Active</span>
+            </div>
+
+            <div class="space-y-3" id="tasks">
+                <div class="task-row flex items-start gap-3 p-4 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:bg-gray-700/50 transition" onclick="toggleTask(this)">
+                    <div class="task-check w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center flex-shrink-0 mt-0.5"></div>
+                    <div>
+                        <p class="task-title text-white font-bold text-sm">Recruit 2 new students using your referral link</p>
+                        <p class="text-gray-400 text-xs mt-1">Share your unique referral link on WhatsApp or social media. Each sign-up earns you +75 points.</p>
+                    </div>
+                    <span class="text-xs text-orange-400 font-bold ml-auto flex-shrink-0">+75 pts each</span>
+                </div>
+
+                <div class="task-row flex items-start gap-3 p-4 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:bg-gray-700/50 transition" onclick="toggleTask(this)">
+                    <div class="task-check w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center flex-shrink-0 mt-0.5"></div>
+                    <div>
+                        <p class="task-title text-white font-bold text-sm">Complete the Marketing &amp; Outreach course</p>
+                        <p class="text-gray-400 text-xs mt-1">Finish all 4 modules of the Marketing &amp; Outreach course in the portal or on the Courses page.</p>
+                    </div>
+                    <span class="text-xs text-green-400 font-bold ml-auto flex-shrink-0">+100 pts</span>
+                </div>
+
+                <div class="task-row flex items-start gap-3 p-4 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:bg-gray-700/50 transition" onclick="toggleTask(this)">
+                    <div class="task-check w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center flex-shrink-0 mt-0.5"></div>
+                    <div>
+                        <p class="task-title text-white font-bold text-sm">Attend one ambassador program or event</p>
+                        <p class="text-gray-400 text-xs mt-1">Join any scheduled ambassador program. Check the Programs tab in your portal for upcoming events.</p>
+                    </div>
+                    <span class="text-xs text-blue-400 font-bold ml-auto flex-shrink-0">+50 pts</span>
+                </div>
+
+                <div class="task-row flex items-start gap-3 p-4 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:bg-gray-700/50 transition" onclick="toggleTask(this)">
+                    <div class="task-check w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center flex-shrink-0 mt-0.5"></div>
+                    <div>
+                        <p class="task-title text-white font-bold text-sm">Share AZ Learner on social media and tag us</p>
+                        <p class="text-gray-400 text-xs mt-1">Post about AZ Learner on Instagram, TikTok, or WhatsApp and tag @azlearner (or share with your ambassador group).</p>
+                    </div>
+                    <span class="text-xs text-purple-400 font-bold ml-auto flex-shrink-0">+25 pts</span>
+                </div>
+
+                <div class="task-row flex items-start gap-3 p-4 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:bg-gray-700/50 transition" onclick="toggleTask(this)">
+                    <div class="task-check w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center flex-shrink-0 mt-0.5"></div>
+                    <div>
+                        <p class="task-title text-white font-bold text-sm">Nominate a peer for the Spotlight badge</p>
+                        <p class="text-gray-400 text-xs mt-1">Recognise a fellow ambassador who's done great work. Submit a nomination via the <a href="leaderboard.html" class="text-blue-400 underline">Leaderboard page</a>.</p>
+                    </div>
+                    <span class="text-xs text-pink-400 font-bold ml-auto flex-shrink-0">+25 pts</span>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="mt-6 pt-4 border-t border-gray-700">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-400 font-bold">Your progress</span>
+                    <span id="progress-text" class="text-sm text-white font-bold">0 / 5 tasks</span>
+                </div>
+                <div class="bg-gray-700 rounded-full h-3">
+                    <div id="progress-bar" class="bg-gradient-to-r from-orange-500 to-yellow-400 h-3 rounded-full transition-all duration-500" style="width:0%"></div>
+                </div>
+            </div>
+
+            <!-- Bonus revealed on completion -->
+            <div id="bonus-banner" class="hidden mt-5 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl text-center">
+                <p class="text-yellow-300 font-bold text-lg">🎉 Challenge Complete!</p>
+                <p class="text-gray-300 text-sm mt-1">You've earned the <span class="text-white font-bold">February Champion</span> badge and <span class="text-yellow-400 font-bold">+200 bonus points</span>! Head to your portal profile to see your badge.</p>
+            </div>
+        </div>
+
+        <!-- Badges Earned -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-medal text-yellow-400 mr-2"></i>Badges</h2>
+            <p class="text-gray-400 text-sm mb-4">Badges are awarded for completing monthly challenges and special achievements.</p>
+            <div class="grid sm:grid-cols-3 gap-4">
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                    <div class="text-4xl mb-2">🏆</div>
+                    <p class="text-gray-400 text-xs font-bold">February Champion</p>
+                    <p class="text-gray-500 text-xs mt-1">Complete Feb 2026 challenge</p>
+                </div>
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                    <div class="text-4xl mb-2">🚀</div>
+                    <p class="text-gray-400 text-xs font-bold">Top Recruiter</p>
+                    <p class="text-gray-500 text-xs mt-1">Recruit 10+ students in a month</p>
+                </div>
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                    <div class="text-4xl mb-2">📚</div>
+                    <p class="text-gray-400 text-xs font-bold">Course Master</p>
+                    <p class="text-gray-500 text-xs mt-1">Complete all 4 training courses</p>
+                </div>
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                    <div class="text-4xl mb-2">🌟</div>
+                    <p class="text-gray-400 text-xs font-bold">Spotlight Ambassador</p>
+                    <p class="text-gray-500 text-xs mt-1">Nominated by 3+ peers</p>
+                </div>
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                    <div class="text-4xl mb-2">📅</div>
+                    <p class="text-gray-400 text-xs font-bold">Event Host</p>
+                    <p class="text-gray-500 text-xs mt-1">Host 3+ campus study sessions</p>
+                </div>
+                <div class="bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-4 text-center opacity-50">
+                    <div class="text-4xl mb-2">💎</div>
+                    <p class="text-gray-400 text-xs font-bold">Diamond Ambassador</p>
+                    <p class="text-gray-500 text-xs mt-1">500+ achievement points</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Past Challenges -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-history text-gray-400 mr-2"></i>Past Challenges</h2>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-4 bg-gray-800/50 border border-gray-700 rounded-xl">
+                    <div>
+                        <p class="text-white font-bold text-sm">January 2026</p>
+                        <p class="text-gray-400 text-xs">Kickstart Challenge — 5 tasks</p>
+                    </div>
+                    <span class="bg-gray-700 text-gray-400 text-xs font-bold px-3 py-1 rounded-full">Ended</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleTask(row) {
+            const check = row.querySelector('.task-check');
+            const title = row.querySelector('.task-title');
+            const isDone = check.classList.contains('bg-green-500');
+            check.classList.toggle('bg-green-500', !isDone);
+            check.classList.toggle('border-green-500', !isDone);
+            check.classList.toggle('border-gray-500', isDone);
+            check.innerHTML = isDone ? '' : '<i class="fas fa-check text-white text-xs"></i>';
+            title.classList.toggle('line-through-custom', !isDone);
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const checks = document.querySelectorAll('.task-check');
+            const done = [...checks].filter(c => c.classList.contains('bg-green-500')).length;
+            const total = checks.length;
+            const pct = total ? Math.round((done / total) * 100) : 0;
+            document.getElementById('progress-bar').style.width = pct + '%';
+            document.getElementById('progress-text').textContent = `${done} / ${total} tasks`;
+            document.getElementById('bonus-banner').classList.toggle('hidden', done < total);
+        }
+    </script>
+</body>
+</html>

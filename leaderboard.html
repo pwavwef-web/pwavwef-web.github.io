@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner - Ambassador Leaderboard</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Header -->
+    <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
+                AZ AMBASSADOR LEADERBOARD
+            </h1>
+            <p class="text-xs text-gray-400">Top ambassadors ranked by achievement points</p>
+        </div>
+        <a href="ambassador.html"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Portal
+        </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-4 py-10 space-y-8">
+
+        <!-- How to Earn Points -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-star text-orangeAccent mr-2"></i>How to Earn Points</h2>
+            <div class="grid sm:grid-cols-2 gap-4 text-sm">
+                <div class="flex items-center gap-3 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                    <i class="fas fa-calendar text-blue-400 text-xl"></i>
+                    <div><p class="text-white font-bold">Attend a Program</p><p class="text-gray-400">+50 points</p></div>
+                </div>
+                <div class="flex items-center gap-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+                    <i class="fas fa-book text-green-400 text-xl"></i>
+                    <div><p class="text-white font-bold">Complete a Course</p><p class="text-gray-400">+100 points</p></div>
+                </div>
+                <div class="flex items-center gap-3 bg-orange-900/20 border border-orange-500/30 rounded-lg p-3">
+                    <i class="fas fa-user-plus text-orange-400 text-xl"></i>
+                    <div><p class="text-white font-bold">Recruit a Student</p><p class="text-gray-400">+75 points per referral</p></div>
+                </div>
+                <div class="flex items-center gap-3 bg-purple-900/20 border border-purple-500/30 rounded-lg p-3">
+                    <i class="fas fa-tasks text-purple-400 text-xl"></i>
+                    <div><p class="text-white font-bold">Complete a Challenge</p><p class="text-gray-400">+200 bonus points</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="glass-panel rounded-2xl p-8">
+            <h2 class="text-2xl font-bold text-white mb-2">
+                <i class="fas fa-trophy text-yellow-400 mr-2"></i>This Month's Rankings
+            </h2>
+            <p class="text-gray-400 text-sm mb-6">Rankings update in real-time as ambassadors complete courses, attend programs, and recruit students.</p>
+            <div id="leaderboard-list" class="space-y-3">
+                <div class="text-center text-gray-500 py-8">Loading leaderboard data...</div>
+            </div>
+        </div>
+
+        <!-- Peer Recognition -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-white mb-2"><i class="fas fa-heart text-pink-400 mr-2"></i>Peer Recognition</h2>
+            <p class="text-gray-400 text-sm mb-4">
+                Know an ambassador who went above and beyond? Nominate them for the Spotlight badge!
+            </p>
+            <div class="space-y-3">
+                <input type="text" id="nominee-name" placeholder="Ambassador's name"
+                    class="w-full p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors text-sm">
+                <textarea id="nominee-reason" placeholder="Why do they deserve recognition? (1–2 sentences)" rows="2"
+                    class="w-full p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors text-sm resize-none"></textarea>
+                <button onclick="submitNomination()"
+                    class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform text-sm">
+                    Submit Nomination <i class="fas fa-paper-plane ml-2"></i>
+                </button>
+                <p id="nomination-msg" class="text-green-400 text-xs text-center h-4"></p>
+            </div>
+        </div>
+
+        <!-- Social Sharing -->
+        <div class="glass-panel rounded-2xl p-6 text-center">
+            <h2 class="text-lg font-bold text-white mb-2"><i class="fas fa-share-alt text-blue-400 mr-2"></i>Share Your Rank</h2>
+            <p class="text-gray-400 text-sm mb-4">Show your campus community how you're leading the charge for AZ Learner!</p>
+            <div class="flex justify-center gap-3 flex-wrap">
+                <button onclick="shareRank('whatsapp')"
+                    class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-5 rounded-lg transition text-sm">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <button onclick="shareRank('twitter')"
+                    class="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg transition text-sm">
+                    <i class="fab fa-twitter"></i> Twitter / X
+                </button>
+                <button onclick="shareRank('copy')"
+                    class="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-5 rounded-lg transition text-sm">
+                    <i class="fas fa-link"></i> Copy Link
+                </button>
+            </div>
+            <p id="share-msg" class="text-green-400 text-xs mt-3 h-4"></p>
+        </div>
+
+    </div>
+
+    <!-- Firebase Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            try {
+                const snap = await getDocs(
+                    query(collection(db, 'ambassadors'), orderBy('achievementPoints', 'desc'))
+                );
+                if (snap.empty) throw new Error('empty');
+                list.innerHTML = '';
+                let rank = 1;
+                snap.forEach(d => {
+                    const a = d.data();
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                    const name = a.name || a.fullName || 'Ambassador';
+                    const points = a.achievementPoints ?? 0;
+                    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    const highlight = rank <= 3 ? 'border-yellow-500/30 bg-yellow-900/10' : 'border-gray-700/50 bg-gray-800/50';
+                    list.innerHTML += `
+                        <div class="flex items-center gap-4 p-4 border ${highlight} rounded-xl">
+                            <span class="text-2xl w-10 text-center">${medal}</span>
+                            <div class="w-10 h-10 bg-gradient-to-br from-orangeAccent to-orange-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">${initials}</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white font-bold text-sm truncate">${name}</p>
+                                <p class="text-gray-400 text-xs truncate">${a.university || 'Ambassador'}</p>
+                            </div>
+                            <span class="text-orangeAccent font-bold whitespace-nowrap">${points} pts</span>
+                        </div>`;
+                    rank++;
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="text-center text-gray-500 py-8">No leaderboard data yet — ambassadors who complete courses and attend programs will appear here!</div>';
+            }
+        }
+
+        loadLeaderboard();
+    </script>
+
+    <script>
+        function submitNomination() {
+            const name = document.getElementById('nominee-name').value.trim();
+            const reason = document.getElementById('nominee-reason').value.trim();
+            const msg = document.getElementById('nomination-msg');
+            if (!name || !reason) {
+                msg.textContent = 'Please fill in both fields.';
+                msg.classList.remove('text-green-400');
+                msg.classList.add('text-red-400');
+                return;
+            }
+            // In a full implementation this would write to Firestore
+            msg.textContent = `Thank you! Your nomination for ${name} has been submitted. 🎉`;
+            msg.classList.remove('text-red-400');
+            msg.classList.add('text-green-400');
+            document.getElementById('nominee-name').value = '';
+            document.getElementById('nominee-reason').value = '';
+        }
+
+        function shareRank(platform) {
+            const text = encodeURIComponent("I'm climbing the AZ Learner Ambassador Leaderboard! 🚀 Join the community and start learning today.");
+            const url = encodeURIComponent(window.location.href);
+            const msg = document.getElementById('share-msg');
+            if (platform === 'whatsapp') {
+                window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+            } else if (platform === 'twitter') {
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+            } else {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    msg.textContent = 'Link copied to clipboard!';
+                    setTimeout(() => { msg.textContent = ''; }, 3000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

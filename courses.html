@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner - Ambassador Courses</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Header -->
+    <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">
+                AZ AMBASSADOR COURSES
+            </h1>
+            <p class="text-xs text-gray-400">Training &amp; Resource Library</p>
+        </div>
+        <a href="ambassador.html"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Portal
+        </a>
+    </div>
+
+    <!-- Hero -->
+    <div class="max-w-4xl mx-auto px-4 pt-10 pb-6 text-center">
+        <div class="text-5xl mb-4">🎓</div>
+        <h2 class="text-3xl font-black text-white mb-3">Ambassador Training Courses</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">
+            Develop the skills to represent AZ Learner on your campus. Complete all four courses to become a Certified AZ Ambassador.
+        </p>
+        <div class="flex justify-center gap-6 mt-6 text-sm text-gray-400">
+            <span><i class="fas fa-book text-orangeAccent mr-1"></i> 4 Courses</span>
+            <span><i class="fas fa-list text-blue-400 mr-1"></i> 16 Modules</span>
+            <span><i class="fas fa-clock text-green-400 mr-1"></i> Self-paced</span>
+        </div>
+    </div>
+
+    <!-- Courses Grid -->
+    <div class="max-w-4xl mx-auto px-4 pb-16">
+        <div class="grid md:grid-cols-2 gap-6" id="courses-grid">
+            <!-- Course cards rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Course Detail Modal -->
+    <div id="course-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden" onclick="closeCourseModal(event)">
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-start sticky top-0 bg-gray-900 z-10">
+                <div class="flex items-center gap-4">
+                    <div id="modal-icon-wrap" class="p-3 rounded-lg">
+                        <i id="modal-icon" class="fas text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 id="modal-title" class="text-xl font-bold text-white"></h2>
+                        <p id="modal-desc" class="text-gray-400 text-sm mt-1"></p>
+                    </div>
+                </div>
+                <button onclick="closeCourseModal()" class="text-gray-400 hover:text-white text-xl ml-4 flex-shrink-0">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Course Modules</h3>
+                <div id="modal-modules" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const COLOR_CLASSES = {
+            blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-500/30',   iconBg: 'bg-blue-500/20',   icon: 'text-blue-400',   badge: 'text-blue-400'   },
+            orange: { bg: 'bg-orange-900/20', border: 'border-orange-500/30', iconBg: 'bg-orange-500/20', icon: 'text-orange-400', badge: 'text-orange-400' },
+            green:  { bg: 'bg-green-900/20',  border: 'border-green-500/30',  iconBg: 'bg-green-500/20',  icon: 'text-green-400',  badge: 'text-green-400'  },
+            purple: { bg: 'bg-purple-900/20', border: 'border-purple-500/30', iconBg: 'bg-purple-500/20', icon: 'text-purple-400', badge: 'text-purple-400' },
+        };
+
+        const COURSES = [
+            {
+                id: 'marketing-outreach',
+                title: 'Marketing & Outreach',
+                description: 'Promote AZ Learner on campus effectively and grow your student community.',
+                color: 'blue', icon: 'bullhorn',
+                modules: [
+                    { order: 1, title: 'Understanding Your Audience', content: 'Identify student personas on your campus — what courses they take, what challenges they face, and what motivates them to seek learning tools. Map out key student hotspots: libraries, study halls, faculty notice boards, and online groups.' },
+                    { order: 2, title: 'Social Media Strategy', content: 'Create a content calendar for Instagram, TikTok, and WhatsApp. Use short-form video to showcase AZ Learner features. Post at least 3 times per week during exam season. Always include a clear call-to-action and your personal referral link.' },
+                    { order: 3, title: 'Campus Tabling & Flyers', content: 'Set up a table near high-traffic areas. Prepare a short 60-second pitch about AZ Learner. Use printed QR codes that link to the sign-up page with your referral code embedded. Collect emails for follow-up.' },
+                    { order: 4, title: 'Measuring Your Impact', content: 'Track referral sign-ups through your unique referral code on the portal. Record attendance at your events. Set a personal monthly target of 10 new students. Report your numbers in the monthly ambassador digest.' }
+                ]
+            },
+            {
+                id: 'leadership-development',
+                title: 'Leadership Development',
+                description: 'Build essential leadership skills to manage study groups and mentor your peers.',
+                color: 'orange', icon: 'users',
+                modules: [
+                    { order: 1, title: 'Leadership Styles & Principles', content: 'Explore the four core leadership styles: directive, coaching, supporting, and delegating. Understand when to use each style. Great ambassadors adapt their approach to each situation — firm deadlines may need directive leadership, while mentoring calls for a coaching style.' },
+                    { order: 2, title: 'Running Effective Study Groups', content: 'Host study circles around specific AZ Learner courses. Set a clear agenda 24 hours in advance. Keep sessions to 60–90 minutes. Assign roles: timekeeper, note-taker, question-master. End every session with a brief quiz or reflection exercise.' },
+                    { order: 3, title: 'Peer Mentoring Techniques', content: 'Mentoring is about listening first. Use the GROW model: Goal, Reality, Options, Way Forward. Check in with your mentees weekly via WhatsApp. Celebrate small wins. Escalate any welfare concerns to the AZ Learner core team.' },
+                    { order: 4, title: 'Conflict Resolution', content: 'Conflicts arise in every team. Use the DESC framework: Describe the behaviour, Express how it affects you, Specify what you need, and Commit to a shared outcome. Address issues early — unresolved tension undermines group performance.' }
+                ]
+            },
+            {
+                id: 'communication-skills',
+                title: 'Communication Skills',
+                description: 'Engage students and the core team clearly through confident verbal and written communication.',
+                color: 'green', icon: 'comments',
+                modules: [
+                    { order: 1, title: 'Foundations of Effective Communication', content: 'Communication is 7% words, 38% tone, and 55% body language. As an ambassador, your presence matters as much as your message. Practice open body language, make eye contact, and speak at a measured pace. Tailor vocabulary to your audience — avoid jargon with new students.' },
+                    { order: 2, title: 'Public Speaking Fundamentals', content: "Prepare with the 3-T method: Tell them what you'll tell them, Tell them, Tell them what you told them. Manage nerves through deep breathing and power posing before presentations. Record yourself to identify filler words. Every ambassador should be able to deliver a compelling 2-minute pitch about AZ Learner from memory." },
+                    { order: 3, title: 'Digital & Written Communication', content: 'Write clear WhatsApp and email messages: one topic per message, a clear ask, and a deadline. Use bullet points for long updates. Proofread before sending official communications. Use the AZ Learner tone — friendly, encouraging, and professional.' },
+                    { order: 4, title: 'Active Listening', content: 'Active listening means fully concentrating on the speaker rather than preparing your response. Techniques: paraphrase what you heard, ask open-ended questions ("Can you tell me more?"), avoid interrupting, and summarise at the end. Apply this in study circles and one-on-one mentoring sessions.' }
+                ]
+            },
+            {
+                id: 'event-planning',
+                title: 'Event Planning',
+                description: 'Organise impactful study sessions and campus events that bring students together.',
+                color: 'purple', icon: 'chart-line',
+                modules: [
+                    { order: 1, title: 'Event Planning Basics', content: 'Every successful event has five phases: Concept, Planning, Promotion, Execution, and Review. Start planning at least two weeks in advance. Define clear outcomes — what should attendees know or be able to do after your event? Choose a venue (physical or virtual) based on your expected audience size.' },
+                    { order: 2, title: 'Promoting Your Event', content: 'Use the 3-7-1 rule: post about your event 3 weeks, 7 days, and 1 day before. Use visual flyers with the AZ Learner branding (download from the Resource Library). Create a WhatsApp event group. Send personalised invites to key students. Target course reps and student union officers for wider reach.' },
+                    { order: 3, title: 'Running Virtual Study Sessions', content: 'Host study sessions on Google Meet or Zoom. Share the agenda in the meeting chat at the start. Use breakout rooms for small group discussion. Record sessions (with consent) and share the link via AZ Learner. Collect attendance by asking participants to react or sign in on a shared Google Sheet.' },
+                    { order: 4, title: 'Post-Event Follow-Up', content: 'Send a thank-you message within 24 hours. Share a brief summary and any resources discussed. Collect feedback using a short Google Form (3–5 questions). Log attendance in the portal for achievement points. Write a short event report and submit it to the core team for the monthly digest.' }
+                ]
+            }
+        ];
+
+        function renderCourses() {
+            const grid = document.getElementById('courses-grid');
+            grid.innerHTML = '';
+            COURSES.forEach(c => {
+                const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
+                const card = document.createElement('div');
+                card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
+                card.addEventListener('click', () => openCourse(c.id));
+                card.innerHTML = `
+                    <div class="flex items-start gap-4">
+                        <div class="${cls.iconBg} p-3 rounded-lg flex-shrink-0">
+                            <i class="fas fa-${c.icon} ${cls.icon} text-2xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-white mb-1">${c.title}</h3>
+                            <p class="text-sm text-gray-400 mb-3">${c.description}</p>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs ${cls.badge} font-bold">${c.modules.length} modules</span>
+                                <span class="text-xs text-gray-500">Self-paced</span>
+                            </div>
+                        </div>
+                    </div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function openCourse(courseId) {
+            const course = COURSES.find(c => c.id === courseId);
+            if (!course) return;
+            const cls = COLOR_CLASSES[course.color] ?? COLOR_CLASSES.blue;
+
+            document.getElementById('modal-title').textContent = course.title;
+            document.getElementById('modal-desc').textContent = course.description;
+            document.getElementById('modal-icon').className = `fas fa-${course.icon} ${cls.icon} text-2xl`;
+            document.getElementById('modal-icon-wrap').className = `${cls.iconBg} p-3 rounded-lg`;
+
+            const modulesEl = document.getElementById('modal-modules');
+            modulesEl.innerHTML = '';
+            course.modules.forEach(mod => {
+                const el = document.createElement('div');
+                el.className = 'bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden';
+
+                const header = document.createElement('button');
+                header.className = 'w-full flex items-center gap-3 p-4 text-left hover:bg-gray-700/50 transition';
+                header.innerHTML = `
+                    <span class="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${mod.order}</span>
+                    <span class="text-white font-bold flex-1">${mod.title}</span>
+                    <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform chevron"></i>
+                `;
+
+                const body = document.createElement('div');
+                body.className = 'px-4 pb-4 hidden text-gray-300 text-sm leading-relaxed';
+                body.textContent = mod.content;
+
+                header.addEventListener('click', () => {
+                    const isOpen = !body.classList.contains('hidden');
+                    body.classList.toggle('hidden', isOpen);
+                    header.querySelector('.chevron').style.transform = isOpen ? '' : 'rotate(180deg)';
+                });
+
+                el.append(header, body);
+                modulesEl.appendChild(el);
+            });
+
+            document.getElementById('course-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCourseModal(event) {
+            if (event && event.target !== document.getElementById('course-modal')) return;
+            document.getElementById('course-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        renderCourses();
+    </script>
+</body>
+</html>
