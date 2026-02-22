@@ -44,6 +44,30 @@
 </head>
 <body class="font-sans antialiased min-h-screen">
 
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm glass-panel p-8 rounded-2xl shadow-2xl text-center">
+            <div class="text-5xl mb-4">⚡</div>
+            <h1 class="text-2xl font-black text-orangeAccent mb-2">Monthly Challenges</h1>
+            <p class="text-sm text-gray-400 mb-6">Access restricted to Ambassadors &amp; Admins</p>
+            <input type="email" id="login-email" placeholder="Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl mb-4">
+                Sign In 🚀
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <a href="index.html" class="text-gray-400 hover:text-white text-sm"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (shown after auth) -->
+    <div id="main-content" class="hidden">
+
     <!-- Header -->
     <div class="glass-panel border-b border-gray-700/50 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <div>
@@ -52,10 +76,16 @@
             </h1>
             <p class="text-xs text-gray-400">Complete all tasks to earn a bonus badge and extra points</p>
         </div>
-        <a href="ambassador.html"
-            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
-            <i class="fa-solid fa-arrow-left"></i> Portal
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="ambassador.html"
+                class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Portal
+            </a>
+            <button onclick="authManager.logout()"
+                class="bg-gray-700 hover:bg-red-900/80 text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
     </div>
 
     <div class="max-w-3xl mx-auto px-4 py-10 space-y-8">
@@ -189,10 +219,123 @@
             </div>
         </div>
 
-    </div>
+    </div><!-- end max-w-3xl -->
 
-    <script>
-        function toggleTask(row) {
+    </div><!-- end main-content -->
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const fbApp = initializeApp(firebaseConfig);
+        const db = getFirestore(fbApp);
+        const auth = getAuth(fbApp);
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                if (!email || !pass) { msg.innerText = 'Please enter email and password'; return; }
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (e) {
+                    msg.innerText = 'Invalid credentials';
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    showContent();
+                    return;
+                }
+                const q = query(collection(db, 'ambassadors'), where('email', '==', user.email));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    showContent();
+                } else {
+                    alert('Access Denied: You are not an approved ambassador.');
+                    signOut(auth);
+                }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('main-content').classList.add('hidden');
+            }
+        });
+
+        function showContent() {
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            initChallenges();
+        }
+
+        // ── Monthly reset logic ───────────────────────────────────────────
+        function getMonthKey() {
+            const now = new Date();
+            return `az_challenges_${now.getFullYear()}_${now.getMonth() + 1}`;
+        }
+
+        function loadState() {
+            return JSON.parse(localStorage.getItem(getMonthKey()) || '{}');
+        }
+
+        function saveState(state) {
+            localStorage.setItem(getMonthKey(), JSON.stringify(state));
+        }
+
+        function initChallenges() {
+            const now = new Date();
+            // Update month label in header
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const monthLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
+            const h2El = document.querySelector('#tasks')?.closest('.glass-panel')?.querySelector('h2');
+            if (h2El) h2El.innerHTML = `<i class="fas fa-fire text-orange-400 mr-2"></i>${monthLabel}`;
+
+            // Update deadline text
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const deadlineEl = document.querySelector('.glass-panel .text-gray-400.text-sm');
+            if (deadlineEl) {
+                deadlineEl.innerHTML = `Complete all 5 tasks before ${months[now.getMonth()]} ${lastDay} to earn the <span class="text-yellow-400 font-bold">${months[now.getMonth()]} Champion</span> badge`;
+            }
+
+            // Update bonus banner month text
+            const bonusBanner = document.getElementById('bonus-banner');
+            if (bonusBanner) {
+                const lastP = bonusBanner.querySelector('p:last-child');
+                if (lastP) lastP.innerHTML = `You've earned the <span class="text-white font-bold">${months[now.getMonth()]} Champion</span> badge and <span class="text-yellow-400 font-bold">+200 bonus points</span>! Head to your portal profile to see your badge.`;
+            }
+
+            // Restore task states from localStorage
+            const state = loadState();
+            const rows = document.querySelectorAll('.task-row');
+            rows.forEach((row, idx) => {
+                if (state[`task_${idx}`]) {
+                    const check = row.querySelector('.task-check');
+                    const title = row.querySelector('.task-title');
+                    check.classList.add('bg-green-500', 'border-green-500');
+                    check.classList.remove('border-gray-500');
+                    check.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+                    title.classList.add('line-through-custom');
+                }
+            });
+            updateProgress();
+        }
+
+        window.toggleTask = function(row) {
             const check = row.querySelector('.task-check');
             const title = row.querySelector('.task-title');
             const isDone = check.classList.contains('bg-green-500');
@@ -201,6 +344,14 @@
             check.classList.toggle('border-gray-500', isDone);
             check.innerHTML = isDone ? '' : '<i class="fas fa-check text-white text-xs"></i>';
             title.classList.toggle('line-through-custom', !isDone);
+
+            // Persist state with monthly key
+            const rows = Array.from(document.querySelectorAll('.task-row'));
+            const idx = rows.indexOf(row);
+            const state = loadState();
+            state[`task_${idx}`] = !isDone;
+            saveState(state);
+
             updateProgress();
         }
 

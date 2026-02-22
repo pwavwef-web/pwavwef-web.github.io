@@ -117,6 +117,9 @@
             <button onclick="app.switchView('users')" id="nav-users"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
                     class="fa-solid fa-users mr-2"></i>DB</button>
+            <button onclick="app.switchView('ambassador')" id="nav-ambassador"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-orange-500/30 text-orange-400"><i
+                    class="fa-solid fa-graduation-cap mr-2"></i>Ambassador</button>
             <button onclick="app.switchView('godmode')" id="nav-godmode"
                 class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition border border-purple-400 animate-pulse"><i
                     class="fa-solid fa-bolt mr-2"></i>God Mode</button>
@@ -502,6 +505,170 @@
                 </div>
             </div>
 
+            <!-- Ambassador Program Tab (Admin Only) -->
+            <div id="view-ambassador" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <!-- Sub-tab navigation -->
+                <div class="flex gap-2 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700 overflow-x-auto max-w-full">
+                    <button onclick="app.switchAmbassadorTab('applications')" id="amb-tab-applications" class="amb-tab px-4 py-1.5 rounded text-xs font-bold transition bg-orange-600 text-white whitespace-nowrap">Applications</button>
+                    <button onclick="app.switchAmbassadorTab('ambassadors')" id="amb-tab-ambassadors" class="amb-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Ambassadors</button>
+                    <button onclick="app.switchAmbassadorTab('programs')" id="amb-tab-programs" class="amb-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Programs</button>
+                    <button onclick="app.switchAmbassadorTab('challenges')" id="amb-tab-challenges" class="amb-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Challenges</button>
+                    <button onclick="app.switchAmbassadorTab('resources')" id="amb-tab-resources" class="amb-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Resources</button>
+                    <button onclick="app.switchAmbassadorTab('analytics')" id="amb-tab-analytics" class="amb-tab px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Analytics</button>
+                </div>
+
+                <!-- Applications Sub-tab -->
+                <div id="amb-view-applications" class="amb-view space-y-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-300"><i class="fa-solid fa-inbox text-orange-400 mr-2"></i>Pending Applications</h3>
+                            <span id="amb-pending-count" class="bg-orange-900 px-2 py-1 rounded text-xs font-bold text-orange-300">0</span>
+                        </div>
+                        <div id="amb-applications-list" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8 text-sm">Loading applications...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Ambassadors Sub-tab -->
+                <div id="amb-view-ambassadors" class="amb-view hidden space-y-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-300"><i class="fa-solid fa-users text-green-400 mr-2"></i>Active Ambassadors</h3>
+                            <span id="amb-approved-count" class="bg-green-900 px-2 py-1 rounded text-xs font-bold text-green-300">0</span>
+                        </div>
+                        <div id="amb-approved-list" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8 text-sm">Loading ambassadors...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Programs Sub-tab -->
+                <div id="amb-view-programs" class="amb-view hidden space-y-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-calendar-plus text-blue-400 mr-2"></i>Schedule New Program</h3>
+                        <div class="space-y-3">
+                            <input id="amb-program-title" type="text" placeholder="Program Title"
+                                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-orange-500">
+                            <textarea id="amb-program-description" placeholder="Program Description" rows="3"
+                                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-orange-500 resize-none"></textarea>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input id="amb-program-date" type="datetime-local"
+                                    class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-orange-500">
+                                <input id="amb-program-link" type="text" placeholder="Meeting Link (optional)"
+                                    class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-orange-500">
+                            </div>
+                            <button onclick="app.scheduleAmbProgram()"
+                                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition">
+                                <i class="fa-solid fa-calendar-check mr-2"></i>Schedule Program
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-list text-gray-400 mr-2"></i>Scheduled Programs</h3>
+                        <div id="amb-programs-list" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8 text-sm">No programs scheduled yet</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Challenges Sub-tab -->
+                <div id="amb-view-challenges" class="amb-view hidden space-y-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-300"><i class="fa-solid fa-fire text-orange-400 mr-2"></i>Monthly Challenge Management</h3>
+                            <button onclick="app.resetChallenges()" class="bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-2 rounded-lg transition">
+                                <i class="fa-solid fa-rotate-right mr-1"></i>Force Reset
+                            </button>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Challenges automatically reset on the 1st of each month. Use Force Reset to reset immediately.</p>
+                        <div class="bg-gray-900/50 border border-gray-700 rounded-lg p-4 mb-4">
+                            <p class="text-xs text-gray-500 uppercase font-bold mb-2">Current Month</p>
+                            <p id="amb-current-month" class="text-white font-bold text-lg"></p>
+                            <p class="text-xs text-gray-400 mt-1">Next auto-reset: <span id="amb-next-reset" class="text-orange-400 font-bold"></span></p>
+                        </div>
+                        <div class="space-y-3">
+                            <p class="text-sm font-bold text-gray-400 uppercase">Active Challenge Tasks</p>
+                            <div class="space-y-2 text-sm text-gray-300">
+                                <div class="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <i class="fas fa-circle text-orange-400 text-xs"></i>
+                                    Recruit 2 new students using your referral link (+75 pts each)
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <i class="fas fa-circle text-green-400 text-xs"></i>
+                                    Complete the Marketing &amp; Outreach course (+100 pts)
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <i class="fas fa-circle text-blue-400 text-xs"></i>
+                                    Attend one ambassador program or event (+50 pts)
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <i class="fas fa-circle text-purple-400 text-xs"></i>
+                                    Share AZ Learner on social media and tag us (+25 pts)
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <i class="fas fa-circle text-pink-400 text-xs"></i>
+                                    Nominate a peer for the Spotlight badge (+25 pts)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resources Sub-tab -->
+                <div id="amb-view-resources" class="amb-view hidden space-y-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-300 mb-2"><i class="fa-solid fa-cloud-arrow-up text-blue-400 mr-2"></i>Ambassador Resource Library</h3>
+                        <p class="text-gray-400 text-sm mb-4">Upload PDF resources for ambassadors to download from their portal</p>
+                        <div class="flex gap-2 items-center mb-6">
+                            <label class="cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-import"></i> Upload Resource PDF
+                                <input type="file" id="resource-upload" class="hidden" accept=".pdf,.doc,.docx,.txt" onchange="app.uploadAmbassadorResource(this)">
+                            </label>
+                            <span id="resource-status" class="text-xs text-gray-500 animate-pulse"></span>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
+                                <div class="col-span-2">Filename</div>
+                                <div>Uploaded by</div>
+                                <div class="text-right">Action</div>
+                            </div>
+                            <div id="amb-resources-list" class="space-y-2 pt-2">
+                                <div class="text-center text-gray-500 py-4 text-sm">No resources uploaded yet</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Sub-tab -->
+                <div id="amb-view-analytics" class="amb-view hidden space-y-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                            <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Ambassadors</p>
+                            <p class="text-3xl font-black text-white" id="amb-stat-total">0</p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                            <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Pending Applications</p>
+                            <p class="text-3xl font-black text-orange-400" id="amb-stat-pending">0</p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                            <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Programs Scheduled</p>
+                            <p class="text-3xl font-black text-blue-400" id="amb-stat-programs">0</p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                            <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Resources Available</p>
+                            <p class="text-3xl font-black text-green-400" id="amb-stat-resources">5</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4"><i class="fa-solid fa-trophy text-yellow-400 mr-2"></i>Ambassador Leaderboard</h3>
+                        <div id="amb-leaderboard-list" class="space-y-2">
+                            <div class="text-center text-gray-500 py-4 text-sm">Loading leaderboard...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-godmode" class="admin-view hidden space-y-8 overflow-y-auto p-4 md:p-6 h-full">
                 <div
                     class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg shadow-yellow-900/20">
@@ -733,6 +900,14 @@
 
                 if (view === 'tickets') this.fetchSalesOverview();
                 if (view === 'workspace') this.switchWorkspaceTab('personal');
+                if (view === 'ambassador') {
+                    this._ambassadorListenersStarted = this._ambassadorListenersStarted || false;
+                    if (!this._ambassadorListenersStarted) {
+                        this.startAmbassadorListeners();
+                        this._ambassadorListenersStarted = true;
+                    }
+                    this.switchAmbassadorTab('applications');
+                }
             },
 
             // WORKSPACE LOGIC
@@ -1637,7 +1812,254 @@
                     console.error('Error scheduling program:', error);
                     alert('Error scheduling program. Please try again.');
                 }
-            }
+            },
+
+            // Ambassador Program Tab Methods
+            switchAmbassadorTab(tab) {
+                document.querySelectorAll('.amb-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`amb-view-${tab}`).classList.remove('hidden');
+                document.querySelectorAll('.amb-tab').forEach(btn => {
+                    btn.classList.remove('bg-orange-600', 'text-white');
+                    btn.classList.add('text-gray-400');
+                });
+                const activeBtn = document.getElementById(`amb-tab-${tab}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('text-gray-400');
+                    activeBtn.classList.add('bg-orange-600', 'text-white');
+                }
+                if (tab === 'analytics') this.loadAmbassadorAnalytics();
+                if (tab === 'challenges') this.initChallengesPanel();
+            },
+
+            initChallengesPanel() {
+                const now = new Date();
+                const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                const el = document.getElementById('amb-current-month');
+                if (el) el.textContent = `${months[now.getMonth()]} ${now.getFullYear()}`;
+                const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                const resetEl = document.getElementById('amb-next-reset');
+                if (resetEl) resetEl.textContent = nextReset.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            },
+
+            async resetChallenges() {
+                if (!confirm('Force reset all ambassador challenge progress for the current month? This clears all ambassadors\' localStorage progress.')) return;
+                await this.logAction('CHALLENGES_RESET', `Monthly challenges force-reset by ${currentUser.name}`);
+                alert('✅ Challenges will reset for all ambassadors on their next visit. Note: localStorage data is per-user-device.');
+            },
+
+            async scheduleAmbProgram() {
+                const title = document.getElementById('amb-program-title').value;
+                const description = document.getElementById('amb-program-description').value;
+                const date = document.getElementById('amb-program-date').value;
+                const link = document.getElementById('amb-program-link').value;
+                if (!title || !description || !date) { alert('Please fill in all required fields'); return; }
+                try {
+                    await addDoc(collection(db, 'ambassador_programs'), {
+                        title, description, date, link: link || 'TBD',
+                        createdBy: currentUser.name, createdAt: serverTimestamp()
+                    });
+                    await this.logAction('PROGRAM_SCHEDULED', `Scheduled: ${title}`);
+                    document.getElementById('amb-program-title').value = '';
+                    document.getElementById('amb-program-description').value = '';
+                    document.getElementById('amb-program-date').value = '';
+                    document.getElementById('amb-program-link').value = '';
+                    alert('✅ Program scheduled!');
+                } catch (e) { alert('Error scheduling program.'); }
+            },
+
+            async uploadAmbassadorResource(input) {
+                const file = input.files[0];
+                if (!file) return;
+                const statusEl = document.getElementById('resource-status');
+                statusEl.innerText = 'Uploading...';
+                try {
+                    const storageRef = ref(storage, `ambassador_resources/${Date.now()}_${file.name}`);
+                    await uploadBytes(storageRef, file);
+                    const url = await getDownloadURL(storageRef);
+                    await addDoc(collection(db, 'ambassador_resources'), {
+                        name: file.name, url, uploader: currentUser.name,
+                        size: file.size, timestamp: serverTimestamp(), path: storageRef.fullPath
+                    });
+                    await this.logAction('RESOURCE_UPLOADED', `Uploaded ambassador resource: ${file.name}`);
+                    statusEl.innerText = '';
+                    input.value = '';
+                } catch (e) {
+                    statusEl.innerText = 'Upload failed.';
+                    console.error(e);
+                }
+            },
+
+            async deleteAmbassadorResource(id, path) {
+                if (!confirm('Delete this resource?')) return;
+                const storageRef = ref(storage, path);
+                try { await deleteObject(storageRef); } catch (e) { console.log('Storage delete, cleaning DB'); }
+                await deleteDoc(doc(db, 'ambassador_resources', id));
+            },
+
+            async loadAmbassadorAnalytics() {
+                try {
+                    const [ambSnap, appSnap, progSnap, resSnap] = await Promise.all([
+                        getDocs(query(collection(db, 'ambassadors'), orderBy('achievementPoints', 'desc'))),
+                        getDocs(query(collection(db, 'ambassador_applications'), where('status', '==', 'pending'))),
+                        getDocs(collection(db, 'ambassador_programs')),
+                        getDocs(collection(db, 'ambassador_resources'))
+                    ]);
+
+                    const totalEl = document.getElementById('amb-stat-total');
+                    const pendEl = document.getElementById('amb-stat-pending');
+                    const progEl = document.getElementById('amb-stat-programs');
+                    const resEl = document.getElementById('amb-stat-resources');
+                    if (totalEl) totalEl.textContent = ambSnap.size;
+                    if (pendEl) pendEl.textContent = appSnap.size;
+                    if (progEl) progEl.textContent = progSnap.size;
+                    if (resEl) resEl.textContent = resSnap.size + 5; // +5 built-in resources
+
+                    const leaderboardEl = document.getElementById('amb-leaderboard-list');
+                    if (leaderboardEl) {
+                        leaderboardEl.innerHTML = '';
+                        let rank = 1;
+                        ambSnap.forEach(d => {
+                            const a = d.data();
+                            const name = a.fullName || a.name || 'Ambassador';
+                            const pts = a.achievementPoints || 0;
+                            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                            leaderboardEl.innerHTML += `
+                                <div class="flex items-center justify-between p-3 bg-gray-900/50 border border-gray-700 rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl w-8 text-center">${medal}</span>
+                                        <div>
+                                            <p class="text-white font-bold text-sm">${name}</p>
+                                            <p class="text-gray-400 text-xs">${a.university || 'Ambassador'}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-orange-400 font-bold text-sm">${pts} pts</span>
+                                </div>`;
+                            rank++;
+                        });
+                        if (ambSnap.empty) leaderboardEl.innerHTML = '<div class="text-center text-gray-500 py-4 text-sm">No ambassador data yet</div>';
+                    }
+                } catch (e) { console.error('Analytics load error:', e); }
+            },
+
+            startAmbassadorListeners() {
+                // Applications listener for Ambassador tab
+                onSnapshot(query(collection(db, 'ambassador_applications'), orderBy('submittedAt', 'desc')), (snap) => {
+                    const list = document.getElementById('amb-applications-list');
+                    const countEl = document.getElementById('amb-pending-count');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    let pending = 0;
+                    snap.forEach(d => {
+                        const a = d.data();
+                        if (a.status !== 'pending') return;
+                        pending++;
+                        const dateStr = a.submittedAt ? new Date(a.submittedAt.toDate()).toLocaleDateString() : 'Just now';
+                        list.innerHTML += `
+                            <div class="bg-gray-900/50 border border-gray-700 rounded-lg p-4">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-white">${a.fullName}</h4>
+                                        <p class="text-xs text-gray-400">${a.university} • ${a.major}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Applied: ${dateStr}</p>
+                                    </div>
+                                    <span class="bg-yellow-900/30 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold">Pending</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                                    <div><span class="text-gray-500">Email:</span> <span class="text-white">${a.email}</span></div>
+                                    <div><span class="text-gray-500">Year:</span> <span class="text-white">${a.year}</span></div>
+                                </div>
+                                <p class="text-sm text-gray-300 italic mb-3">"${a.motivation}"</p>
+                                <div class="flex gap-2">
+                                    <button onclick="window.app.approveAmbassador('${d.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                                        <i class="fa-solid fa-check mr-1"></i>Approve
+                                    </button>
+                                    <button onclick="window.app.rejectAmbassador('${d.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                                        <i class="fa-solid fa-times mr-1"></i>Reject
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                    if (countEl) countEl.textContent = pending;
+                    if (pending === 0) list.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm">No pending applications</div>';
+                });
+
+                // Active ambassadors listener for Ambassador tab
+                onSnapshot(query(collection(db, 'ambassadors'), orderBy('approvedAt', 'desc')), (snap) => {
+                    const list = document.getElementById('amb-approved-list');
+                    const countEl = document.getElementById('amb-approved-count');
+                    if (!list) return;
+                    if (countEl) countEl.textContent = snap.size;
+                    list.innerHTML = '';
+                    if (snap.empty) { list.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm">No ambassadors yet</div>'; return; }
+                    snap.forEach(d => {
+                        const a = d.data();
+                        const dateStr = a.approvedAt ? new Date(a.approvedAt.toDate()).toLocaleDateString() : 'Recently';
+                        list.innerHTML += `
+                            <div class="bg-green-900/10 border border-green-500/20 rounded-lg p-4 flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-white">${a.fullName}</h4>
+                                    <p class="text-xs text-gray-400">${a.university} • ${a.major}</p>
+                                    <p class="text-xs text-green-400 mt-1">Approved: ${dateStr} by ${a.approvedBy}</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">${a.email}</p>
+                                </div>
+                                <span class="bg-green-900 text-green-300 px-3 py-1 rounded-full text-xs font-bold">${a.achievementPoints || 0} pts</span>
+                            </div>`;
+                    });
+                });
+
+                // Programs listener for Ambassador tab
+                onSnapshot(query(collection(db, 'ambassador_programs'), orderBy('createdAt', 'desc')), (snap) => {
+                    const list = document.getElementById('amb-programs-list');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    if (snap.empty) { list.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm">No programs scheduled yet</div>'; return; }
+                    snap.forEach(d => {
+                        const p = d.data();
+                        const dateStr = new Date(p.date).toLocaleString();
+                        list.innerHTML += `
+                            <div class="bg-blue-900/10 border border-blue-500/20 rounded-lg p-4 flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-white">${p.title}</h4>
+                                    <p class="text-sm text-gray-300 mt-1">${p.description}</p>
+                                    <p class="text-xs text-gray-400 mt-2"><i class="fa-solid fa-calendar mr-1"></i>${dateStr}</p>
+                                    ${p.link !== 'TBD' ? `<a href="${p.link}" target="_blank" class="text-xs text-blue-400 hover:underline mt-1 block"><i class="fa-solid fa-link mr-1"></i>${p.link}</a>` : ''}
+                                </div>
+                                <button onclick="app.deleteAmbProgram('${d.id}')" class="text-red-400 hover:text-red-300 text-xs ml-4 flex-shrink-0">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>`;
+                    });
+                });
+
+                // Resources listener for Ambassador tab
+                onSnapshot(query(collection(db, 'ambassador_resources'), orderBy('timestamp', 'desc')), (snap) => {
+                    const list = document.getElementById('amb-resources-list');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    if (snap.empty) { list.innerHTML = '<div class="text-center text-gray-500 py-4 text-sm">No resources uploaded yet</div>'; return; }
+                    snap.forEach(d => {
+                        const f = d.data();
+                        list.innerHTML += `
+                            <div class="grid grid-cols-4 items-center bg-gray-900/50 p-3 rounded border border-gray-700/50 hover:bg-gray-800 transition">
+                                <div class="col-span-2 flex items-center gap-2 overflow-hidden">
+                                    <i class="fa-solid fa-file-pdf text-red-400"></i>
+                                    <a href="${f.url}" target="_blank" class="text-sm text-white truncate hover:underline">${f.name}</a>
+                                </div>
+                                <div class="text-xs text-gray-500">${f.uploader}</div>
+                                <div class="text-right">
+                                    <button onclick="app.deleteAmbassadorResource('${d.id}', '${f.path}')" class="text-red-500 hover:text-red-400">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                });
+            },
+
+            async deleteAmbProgram(id) {
+                if (!confirm('Delete this program?')) return;
+                await deleteDoc(doc(db, 'ambassador_programs', id));
+            },
         };
 
         window.addEventListener('DOMContentLoaded', () => app.init());
