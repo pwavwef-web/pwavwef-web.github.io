@@ -202,7 +202,7 @@ Follow these steps once the Francis Pwavwe Productions site is built and ready t
 - [ ] Add all new `.html` files to the repository root (e.g., `fp-index.html`, `fp-podcast.html`, etc.)
 - [ ] Add any new image/media assets (logos, thumbnails) to the repository root or a `/fp-assets/` subfolder
 - [ ] Add the new page(s) to the **Pages** table in `README.md`
-- [ ] Add a navigation link from `francis.html` hero / footer pointing to `fp-index.html` (or the production domain)
+- [x] Add a navigation link from `francis.html` hero / footer pointing to `fp-index.html` (or the production domain)
 - [ ] Add a reciprocal link from the productions site back to `francis.html` and `azlearner.me`
 - [ ] Update `CNAME` if the productions site uses a custom subdomain (e.g., `productions.francispwavwe.com`)
 - [ ] Verify all Firestore collection names match those documented above
@@ -225,5 +225,5 @@ Follow these steps once the Francis Pwavwe Productions site is built and ready t
 - [ ] Add newsletter subscribe widget (writes to `subscribers` collection)
 - [ ] Integrate full site into this repository (see [Integration Checklist](#integration-checklist))
 - [ ] Set up custom subdomain or dedicated domain for the productions site
-- [ ] Add productions site link to `francis.html` portfolio
+- [x] Add productions site link to `francis.html` portfolio
 - [ ] Launch announcement — publish a Blue Mind Radio episode and blog post about the new site
