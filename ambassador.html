@@ -256,59 +256,8 @@
                         </h2>
                         <p class="text-gray-400 text-sm mb-6">Access exclusive ambassador training materials</p>
                         
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <!-- Course Cards -->
-                            <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6 hover:border-blue-500/50 transition cursor-pointer">
-                                <div class="flex items-start gap-4">
-                                    <div class="bg-blue-500/20 p-3 rounded-lg">
-                                        <i class="fas fa-bullhorn text-blue-400 text-2xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-white mb-1">Marketing & Outreach</h3>
-                                        <p class="text-sm text-gray-400 mb-3">Learn how to effectively promote AZ Learner on campus</p>
-                                        <span class="text-xs text-blue-400 font-bold">Coming Soon</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-orange-900/20 border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition cursor-pointer">
-                                <div class="flex items-start gap-4">
-                                    <div class="bg-orange-500/20 p-3 rounded-lg">
-                                        <i class="fas fa-users text-orange-400 text-2xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-white mb-1">Leadership Development</h3>
-                                        <p class="text-sm text-gray-400 mb-3">Build leadership skills and manage student groups</p>
-                                        <span class="text-xs text-orange-400 font-bold">Coming Soon</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-green-900/20 border border-green-500/30 rounded-xl p-6 hover:border-green-500/50 transition cursor-pointer">
-                                <div class="flex items-start gap-4">
-                                    <div class="bg-green-500/20 p-3 rounded-lg">
-                                        <i class="fas fa-comments text-green-400 text-2xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-white mb-1">Communication Skills</h3>
-                                        <p class="text-sm text-gray-400 mb-3">Master effective communication with students and team</p>
-                                        <span class="text-xs text-green-400 font-bold">Coming Soon</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-purple-900/20 border border-purple-500/30 rounded-xl p-6 hover:border-purple-500/50 transition cursor-pointer">
-                                <div class="flex items-start gap-4">
-                                    <div class="bg-purple-500/20 p-3 rounded-lg">
-                                        <i class="fas fa-chart-line text-purple-400 text-2xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-white mb-1">Event Planning</h3>
-                                        <p class="text-sm text-gray-400 mb-3">Organize successful campus events and study sessions</p>
-                                        <span class="text-xs text-purple-400 font-bold">Coming Soon</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="courses-grid" class="grid md:grid-cols-2 gap-6">
+                            <div class="text-center text-gray-500 py-8 col-span-2">Loading courses...</div>
                         </div>
 
                         <div class="mt-8 p-6 bg-blue-900/20 border border-blue-500/30 rounded-xl">
@@ -433,6 +382,7 @@
                 
                 this.loadProfile(userData);
                 this.loadPrograms();
+                this.loadCourses();
                 this.switchTab('profile');
             },
 
@@ -503,6 +453,70 @@
                         }
                     }
                 );
+            },
+
+            async loadCourses() {
+                const COLOR_CLASSES = {
+                    blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-500/30',   iconBg: 'bg-blue-500/20',   icon: 'text-blue-400',   badge: 'text-blue-400'   },
+                    orange: { bg: 'bg-orange-900/20', border: 'border-orange-500/30', iconBg: 'bg-orange-500/20', icon: 'text-orange-400', badge: 'text-orange-400' },
+                    green:  { bg: 'bg-green-900/20',  border: 'border-green-500/30',  iconBg: 'bg-green-500/20',  icon: 'text-green-400',  badge: 'text-green-400'  },
+                    purple: { bg: 'bg-purple-900/20', border: 'border-purple-500/30', iconBg: 'bg-purple-500/20', icon: 'text-purple-400', badge: 'text-purple-400' },
+                };
+
+                const coursesGrid = document.getElementById('courses-grid');
+                const snap = await getDocs(
+                    query(collection(db, 'courses'), where('isPublished', '==', true))
+                );
+                coursesGrid.innerHTML = '';
+
+                if (snap.empty) {
+                    document.getElementById('stat-courses').innerText = 0;
+                    coursesGrid.innerHTML = '<div class="text-center text-gray-500 py-8 col-span-2">No courses available yet</div>';
+                    return;
+                }
+
+                snap.forEach(docSnap => {
+                    const c = docSnap.data();
+                    const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
+
+                    const card = document.createElement('div');
+                    card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
+                    card.addEventListener('click', () => portal.openCourse(docSnap.id));
+
+                    const inner = document.createElement('div');
+                    inner.className = 'flex items-start gap-4';
+
+                    const iconWrap = document.createElement('div');
+                    iconWrap.className = `${cls.iconBg} p-3 rounded-lg`;
+                    const icon = document.createElement('i');
+                    icon.className = `fas fa-${c.icon} ${cls.icon} text-2xl`;
+                    iconWrap.appendChild(icon);
+
+                    const textWrap = document.createElement('div');
+
+                    const title = document.createElement('h3');
+                    title.className = 'text-lg font-bold text-white mb-1';
+                    title.textContent = c.title;
+
+                    const desc = document.createElement('p');
+                    desc.className = 'text-sm text-gray-400 mb-3';
+                    desc.textContent = c.description;
+
+                    const badge = document.createElement('span');
+                    badge.className = `text-xs ${cls.badge} font-bold`;
+                    badge.textContent = `${c.modules?.length ?? 0} modules`;
+
+                    textWrap.append(title, desc, badge);
+                    inner.append(iconWrap, textWrap);
+                    card.appendChild(inner);
+                    coursesGrid.appendChild(card);
+                });
+                document.getElementById('stat-courses').innerText = snap.size;
+            },
+
+            openCourse(courseId) {
+                // Course detail view — to be implemented
+                console.log('Opening course:', courseId);
             },
 
             switchTab(tab) {
