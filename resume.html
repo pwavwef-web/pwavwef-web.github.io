@@ -69,6 +69,28 @@
         .remove-btn { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
         #toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; transform: translateY(-80px); opacity: 0; transition: all 0.3s; }
         #toast.show { transform: translateY(0); opacity: 1; }
+        /* === Profile photo in CV === */
+        .cv-preview { position: relative; }
+        .cv-photo-circle { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        /* === Side ribbons === */
+        .cv-ribbon { position: absolute; top: 0; bottom: 0; width: 7px; }
+        .cv-ribbon-left  { left: 0; }
+        .cv-ribbon-right { right: 0; }
+        .cv-t1 .cv-ribbon { background: linear-gradient(to bottom, #1e3a5f, #3b82f6, #1e3a5f); }
+        .cv-t3 .cv-ribbon { background: linear-gradient(to bottom, #b8860b, #f5d060, #b8860b); }
+        .cv-t4 .cv-ribbon { background: linear-gradient(to bottom, #ea580c, #f97316, #ea580c); }
+        /* === CV Footer per template === */
+        .cv-footer { font-size: 8pt; text-align: center; margin-top: 20px; }
+        .cv-t1 .cv-footer { border-top: 2px solid #1e3a5f; padding-top: 8px; color: #1e3a5f; font-weight: bold; }
+        .cv-t2 .cv-footer { border-top: 2px solid #16a34a; padding-top: 8px; color: #16a34a; }
+        .cv-t3 .cv-footer { border-top: 1px solid #ccc; padding-top: 8px; color: #999; letter-spacing: 3px; text-transform: uppercase; font-size: 7.5pt; }
+        .cv-t4 .cv-footer { background: linear-gradient(135deg, #ea580c, #f97316); color: white; font-weight: bold; margin: 20px -20mm -20mm -20mm; padding: 10px 20mm; text-align: center; }
+        .cv-t5 .cv-footer { border-top: 1px solid #ddd6fe; padding-top: 8px; color: #7c3aed; font-weight: 600; }
+        /* === Photo upload preview widget === */
+        #photo-thumb-wrap { background: rgba(255,255,255,0.08); }
+        @media (max-width: 768px) {
+            .cv-t4 .cv-footer { margin: 20px -12mm -12mm -12mm; padding: 10px 12mm; }
+        }
     </style>
 </head>
 <body>
@@ -169,6 +191,23 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-400 mb-1">Professional Summary *</label>
                 <textarea id="cv-summary" rows="4" placeholder="A brief 2-3 sentence overview of your professional background, key skills, and career goals..."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">Profile Photo <span class="text-gray-500 font-normal">(optional – appears circular on your CV)</span></label>
+                <div class="flex items-center gap-4">
+                    <div id="photo-thumb-wrap" class="w-16 h-16 rounded-full overflow-hidden border-2 border-dashed border-white/20 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-gray-500 text-3xl" id="photo-placeholder-icon">person</span>
+                        <img id="photo-thumb" src="" alt="" class="w-full h-full object-cover hidden">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="btn-secondary text-sm cursor-pointer inline-flex items-center gap-1" style="padding:8px 16px;">
+                            <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">upload</span>
+                            Upload Photo
+                            <input type="file" id="cv-photo-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
+                        </label>
+                        <button type="button" id="remove-photo-btn" class="remove-btn text-xs" onclick="removePhoto()" style="display:none;">Remove Photo</button>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="flex justify-end mt-6">
@@ -419,6 +458,8 @@
     // ---- State ----
     let currentStep = 0;
     let selectedTemplate = 0;
+    let cvPhotoDataUrl = null;
+    const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
     const totalSteps = 6;
 
     // ---- Step Navigation ----
@@ -571,6 +612,35 @@
         if (el) el.remove();
     };
 
+    // ---- Photo Upload ----
+    window.handlePhotoUpload = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.size > MAX_PHOTO_BYTES) { showToast('Photo must be under 3 MB', 'error'); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            cvPhotoDataUrl = e.target.result;
+            const thumb = document.getElementById('photo-thumb');
+            const icon = document.getElementById('photo-placeholder-icon');
+            thumb.src = cvPhotoDataUrl;
+            thumb.classList.remove('hidden');
+            icon.style.display = 'none';
+            document.getElementById('remove-photo-btn').style.display = '';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.removePhoto = function() {
+        cvPhotoDataUrl = null;
+        document.getElementById('cv-photo-input').value = '';
+        const thumb = document.getElementById('photo-thumb');
+        const icon = document.getElementById('photo-placeholder-icon');
+        thumb.src = '';
+        thumb.classList.add('hidden');
+        icon.style.display = '';
+        document.getElementById('remove-photo-btn').style.display = 'none';
+    };
+
     // ---- Template Selection ----
     window.selectTemplate = function(n) {
         selectedTemplate = n;
@@ -673,29 +743,58 @@
         const certHtml = d.certs ? `<div class="cv-section-title">Certifications & Achievements</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : '';
         const interestHtml = d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-body-text">${escHtml(d.interests)}</div>` : '';
 
+        const footerContact = escHtml(d.email) + (d.website ? ' &nbsp;•&nbsp; ' + escHtml(d.website) : '');
+
+        function photoTag(borderStyle) {
+            if (!cvPhotoDataUrl) return '';
+            return `<img src="${cvPhotoDataUrl}" class="cv-photo-circle" style="${borderStyle}" alt="Profile Photo">`;
+        }
+
         const templates = {
             1: `<div class="cv-preview cv-t1">
-                    <div class="cv-header"><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
+                    <div class="cv-ribbon cv-ribbon-left"></div>
+                    <div class="cv-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
+                        ${photoTag('border:3px solid rgba(255,255,255,0.9);box-shadow:0 2px 12px rgba(0,0,0,0.3);')}
+                    </div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
                     ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;•&nbsp; ${footerContact}</div>
                 </div>`,
             2: `<div class="cv-preview cv-t2">
-                    <div class="cv-header"><div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="font-size:9pt;color:#555;margin-top:4px;">${contactStr}</p></div></div>
+                    <div class="cv-header">
+                        ${photoTag('border:3px solid #16a34a;')}
+                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="font-size:9pt;color:#555;margin-top:4px;">${contactStr}</p></div>
+                    </div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
                     ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;•&nbsp; ${footerContact}</div>
                 </div>`,
             3: `<div class="cv-preview cv-t3">
-                    <div class="cv-header"><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
+                    <div class="cv-ribbon cv-ribbon-left"></div>
+                    <div class="cv-header" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                        ${photoTag('border:3px solid #d4af37;box-shadow:0 2px 12px rgba(0,0,0,0.5);')}
+                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
+                    </div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
                     ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;•&nbsp; ${footerContact}</div>
                 </div>`,
             4: `<div class="cv-preview cv-t4">
-                    <div class="cv-header"><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
+                    <div class="cv-ribbon cv-ribbon-right"></div>
+                    <div class="cv-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
+                        ${photoTag('border:3px solid rgba(255,255,255,0.9);box-shadow:0 2px 12px rgba(0,0,0,0.3);')}
+                    </div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
                     ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;•&nbsp; ${footerContact}</div>
                 </div>`,
             5: `<div class="cv-preview cv-t5">
-                    <div class="cv-header"><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="font-size:9pt;color:#6b7280;margin-top:4px;">${contactStr}</p></div>
+                    <div class="cv-header" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                        ${photoTag('border:3px solid #7c3aed;')}
+                        <div style="text-align:center;"><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="font-size:9pt;color:#6b7280;margin-top:4px;">${contactStr}</p></div>
+                    </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
                         <div>
                             <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
@@ -703,6 +802,7 @@
                         </div>
                         <div>${skillsHtml}${langHtml}${certHtml}${interestHtml}</div>
                     </div>
+                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;•&nbsp; ${footerContact}</div>
                 </div>`
         };
 
