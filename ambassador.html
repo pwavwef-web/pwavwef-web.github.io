@@ -112,6 +112,14 @@
                 class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
                 <i class="fa-solid fa-book"></i> Courses
             </button>
+            <button onclick="portal.switchTab('leaderboard')" id="tab-leaderboard"
+                class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
+                <i class="fa-solid fa-trophy"></i> Leaderboard
+            </button>
+            <button onclick="portal.switchTab('challenges')" id="tab-challenges"
+                class="portal-tab px-4 py-2 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">
+                <i class="fa-solid fa-star"></i> Challenges
+            </button>
         </div>
 
         <!-- Tab Content -->
@@ -273,6 +281,142 @@
                 </div>
             </div>
 
+            <!-- Leaderboard Tab -->
+            <div id="view-leaderboard" class="portal-view hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-2xl p-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">
+                            <i class="fas fa-trophy text-yellow-400"></i> Ambassador Leaderboard
+                        </h2>
+                        <p class="text-gray-400 text-sm mb-6">Top ambassadors ranked by achievement points this month</p>
+                        <div id="leaderboard-list" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8">Loading leaderboard...</div>
+                        </div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-4"><i class="fas fa-star text-orangeAccent"></i> How to Earn Points</h3>
+                        <div class="grid md:grid-cols-2 gap-4 text-sm">
+                            <div class="flex items-center gap-3 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                                <i class="fas fa-calendar text-blue-400 text-xl"></i>
+                                <div><p class="text-white font-bold">Attend a Program</p><p class="text-gray-400">+50 points</p></div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+                                <i class="fas fa-book text-green-400 text-xl"></i>
+                                <div><p class="text-white font-bold">Complete a Course</p><p class="text-gray-400">+100 points</p></div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-orange-900/20 border border-orange-500/30 rounded-lg p-3">
+                                <i class="fas fa-user-plus text-orange-400 text-xl"></i>
+                                <div><p class="text-white font-bold">Recruit a Student</p><p class="text-gray-400">+75 points per referral</p></div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-purple-900/20 border border-purple-500/30 rounded-lg p-3">
+                                <i class="fas fa-tasks text-purple-400 text-xl"></i>
+                                <div><p class="text-white font-bold">Complete a Challenge</p><p class="text-gray-400">+200 points bonus</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Challenges Tab -->
+            <div id="view-challenges" class="portal-view hidden">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass-panel rounded-2xl p-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">
+                            <i class="fas fa-star text-yellow-400"></i> Monthly Challenges
+                        </h2>
+                        <p class="text-gray-400 text-sm mb-6">Complete all tasks this month to earn a bonus badge and 200 extra points!</p>
+                        <div id="challenges-list" class="space-y-4">
+                            <!-- Hardcoded monthly challenges -->
+                            <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-bold text-white"><i class="fas fa-fire text-orange-400"></i> February 2026 Challenge</h3>
+                                    <span class="bg-green-900/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">Active</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-700/50 transition" onclick="portal.toggleChallenge(this)">
+                                        <div class="w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center challenge-check flex-shrink-0"></div>
+                                        <div>
+                                            <p class="text-white text-sm font-bold">Recruit 2 new students using your referral link</p>
+                                            <p class="text-gray-400 text-xs">+75 points each</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-700/50 transition" onclick="portal.toggleChallenge(this)">
+                                        <div class="w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center challenge-check flex-shrink-0"></div>
+                                        <div>
+                                            <p class="text-white text-sm font-bold">Complete the Marketing &amp; Outreach course</p>
+                                            <p class="text-gray-400 text-xs">+100 points</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-700/50 transition" onclick="portal.toggleChallenge(this)">
+                                        <div class="w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center challenge-check flex-shrink-0"></div>
+                                        <div>
+                                            <p class="text-white text-sm font-bold">Attend one ambassador program or event</p>
+                                            <p class="text-gray-400 text-xs">+50 points</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-700/50 transition" onclick="portal.toggleChallenge(this)">
+                                        <div class="w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center challenge-check flex-shrink-0"></div>
+                                        <div>
+                                            <p class="text-white text-sm font-bold">Share AZ Learner on social media and tag us</p>
+                                            <p class="text-gray-400 text-xs">+25 points</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-700/50 transition" onclick="portal.toggleChallenge(this)">
+                                        <div class="w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center challenge-check flex-shrink-0"></div>
+                                        <div>
+                                            <p class="text-white text-sm font-bold">Nominate a peer for the Spotlight badge</p>
+                                            <p class="text-gray-400 text-xs">+25 points</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-gray-700 flex items-center gap-3">
+                                    <div class="flex-1 bg-gray-700 rounded-full h-2">
+                                        <div id="challenge-progress-bar" class="bg-gradient-to-r from-orange-500 to-yellow-400 h-2 rounded-full transition-all" style="width: 0%"></div>
+                                    </div>
+                                    <span id="challenge-progress-text" class="text-xs text-gray-400 font-bold">0/5 tasks</span>
+                                </div>
+                                <div id="challenge-bonus" class="hidden mt-3 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg text-center">
+                                    <p class="text-yellow-400 font-bold">🎉 Challenge Complete! You earned the <span class="text-white">February Champion</span> badge and +200 bonus points!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-2"><i class="fas fa-medal text-yellow-400"></i> Your Badges</h3>
+                        <p class="text-gray-400 text-sm mb-4">Badges you've earned through challenges and achievements</p>
+                        <div class="flex flex-wrap gap-3" id="badges-display">
+                            <div class="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-full px-4 py-2 text-sm text-gray-400">
+                                <i class="fas fa-lock text-xs"></i> Complete a challenge to earn your first badge
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Course Detail Modal -->
+    <div id="course-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden" onclick="portal.closeCourseModal(event)">
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div id="course-modal-header" class="p-6 border-b border-gray-700 flex justify-between items-start sticky top-0 bg-gray-900 z-10">
+                <div class="flex items-center gap-4">
+                    <div id="course-modal-icon-wrap" class="p-3 rounded-lg">
+                        <i id="course-modal-icon" class="fas text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 id="course-modal-title" class="text-xl font-bold text-white"></h2>
+                        <p id="course-modal-desc" class="text-gray-400 text-sm mt-1"></p>
+                    </div>
+                </div>
+                <button onclick="portal.closeCourseModal()" class="text-gray-400 hover:text-white text-xl ml-4 flex-shrink-0">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Course Modules</h3>
+                <div id="course-modal-modules" class="space-y-3"></div>
+            </div>
         </div>
     </div>
 
@@ -383,6 +527,8 @@
                 this.loadProfile(userData);
                 this.loadPrograms();
                 this.loadCourses();
+                this.loadLeaderboard();
+                this.loadChallenges();
                 this.switchTab('profile');
             },
 
@@ -463,25 +609,87 @@
                     purple: { bg: 'bg-purple-900/20', border: 'border-purple-500/30', iconBg: 'bg-purple-500/20', icon: 'text-purple-400', badge: 'text-purple-400' },
                 };
 
-                const coursesGrid = document.getElementById('courses-grid');
-                const snap = await getDocs(
-                    query(collection(db, 'courses'), where('isPublished', '==', true))
-                );
-                coursesGrid.innerHTML = '';
+                const HARDCODED_COURSES = [
+                    {
+                        id: 'marketing-outreach',
+                        title: 'Marketing & Outreach',
+                        description: 'Promote AZ Learner on campus effectively and grow your student community.',
+                        color: 'blue', icon: 'bullhorn',
+                        modules: [
+                            { order: 1, title: 'Understanding Your Audience', type: 'text', content: 'Identify student personas on your campus — what courses they take, what challenges they face, and what motivates them to seek learning tools. Map out key student hotspots: libraries, study halls, faculty notice boards, and online groups.' },
+                            { order: 2, title: 'Social Media Strategy', type: 'text', content: 'Create a content calendar for Instagram, TikTok, and WhatsApp. Use short-form video to showcase AZ Learner features. Post at least 3 times per week during exam season. Always include a clear call-to-action and your personal referral link.' },
+                            { order: 3, title: 'Campus Tabling & Flyers', type: 'text', content: 'Set up a table near high-traffic areas. Prepare a short 60-second pitch about AZ Learner. Use printed QR codes that link to the sign-up page with your referral code embedded. Collect emails for follow-up.' },
+                            { order: 4, title: 'Measuring Your Impact', type: 'text', content: 'Track referral sign-ups through your unique referral code on the portal. Record attendance at your events. Set a personal monthly target of 10 new students. Report your numbers in the monthly ambassador digest.' }
+                        ]
+                    },
+                    {
+                        id: 'leadership-development',
+                        title: 'Leadership Development',
+                        description: 'Build essential leadership skills to manage study groups and mentor your peers.',
+                        color: 'orange', icon: 'users',
+                        modules: [
+                            { order: 1, title: 'Leadership Styles & Principles', type: 'text', content: 'Explore the four core leadership styles: directive, coaching, supporting, and delegating. Understand when to use each style. Great ambassadors adapt their approach to each situation — firm deadlines may need directive leadership, while mentoring calls for a coaching style.' },
+                            { order: 2, title: 'Running Effective Study Groups', type: 'text', content: 'Host study circles around specific AZ Learner courses. Set a clear agenda 24 hours in advance. Keep sessions to 60–90 minutes. Assign roles: timekeeper, note-taker, question-master. End every session with a brief quiz or reflection exercise.' },
+                            { order: 3, title: 'Peer Mentoring Techniques', type: 'text', content: 'Mentoring is about listening first. Use the GROW model: Goal, Reality, Options, Way Forward. Check in with your mentees weekly via WhatsApp. Celebrate small wins. Escalate any welfare concerns to the AZ Learner core team.' },
+                            { order: 4, title: 'Conflict Resolution', type: 'text', content: 'Conflicts arise in every team. Use the DESC framework: Describe the behaviour, Express how it affects you, Specify what you need, and Commit to a shared outcome. Address issues early — unresolved tension undermines group performance.' }
+                        ]
+                    },
+                    {
+                        id: 'communication-skills',
+                        title: 'Communication Skills',
+                        description: 'Engage students and the core team clearly through confident verbal and written communication.',
+                        color: 'green', icon: 'comments',
+                        modules: [
+                            { order: 1, title: 'Foundations of Effective Communication', type: 'text', content: 'Communication is 7% words, 38% tone, and 55% body language. As an ambassador, your presence matters as much as your message. Practice open body language, make eye contact, and speak at a measured pace. Tailor vocabulary to your audience — avoid jargon with new students.' },
+                            { order: 2, title: 'Public Speaking Fundamentals', type: 'text', content: 'Prepare with the 3-T method: Tell them what you\'ll tell them, Tell them, Tell them what you told them. Manage nerves through deep breathing and power posing before presentations. Record yourself to identify filler words. Every ambassador should be able to deliver a compelling 2-minute pitch about AZ Learner from memory.' },
+                            { order: 3, title: 'Digital & Written Communication', type: 'text', content: 'Write clear WhatsApp and email messages: one topic per message, a clear ask, and a deadline. Use bullet points for long updates. Proofread before sending official communications. Use the AZ Learner tone — friendly, encouraging, and professional.' },
+                            { order: 4, title: 'Active Listening', type: 'text', content: 'Active listening means fully concentrating on the speaker rather than preparing your response. Techniques: paraphrase what you heard, ask open-ended questions ("Can you tell me more?"), avoid interrupting, and summarise at the end. Apply this in study circles and one-on-one mentoring sessions.' }
+                        ]
+                    },
+                    {
+                        id: 'event-planning',
+                        title: 'Event Planning',
+                        description: 'Organise impactful study sessions and campus events that bring students together.',
+                        color: 'purple', icon: 'chart-line',
+                        modules: [
+                            { order: 1, title: 'Event Planning Basics', type: 'text', content: 'Every successful event has five phases: Concept, Planning, Promotion, Execution, and Review. Start planning at least two weeks in advance. Define clear outcomes — what should attendees know or be able to do after your event? Choose a venue (physical or virtual) based on your expected audience size.' },
+                            { order: 2, title: 'Promoting Your Event', type: 'text', content: 'Use the 3-7-1 rule: post about your event 3 weeks, 7 days, and 1 day before. Use visual flyers with the AZ Learner branding (download from the Resource Library). Create a WhatsApp event group. Send personalised invites to key students. Target course reps and student union officers for wider reach.' },
+                            { order: 3, title: 'Running Virtual Study Sessions', type: 'text', content: 'Host study sessions on Google Meet or Zoom. Share the agenda in the meeting chat at the start. Use breakout rooms for small group discussion. Record sessions (with consent) and share the link via AZ Learner. Collect attendance by asking participants to react or sign in on a shared Google Sheet.' },
+                            { order: 4, title: 'Post-Event Follow-Up', type: 'text', content: 'Send a thank-you message within 24 hours. Share a brief summary and any resources discussed. Collect feedback using a short Google Form (3–5 questions). Log attendance in the portal for achievement points. Write a short event report and submit it to the core team for the monthly digest.' }
+                        ]
+                    }
+                ];
 
-                if (snap.empty) {
-                    document.getElementById('stat-courses').innerText = 0;
-                    coursesGrid.innerHTML = '<div class="text-center text-gray-500 py-8 col-span-2">No courses available yet</div>';
-                    return;
+                const coursesGrid = document.getElementById('courses-grid');
+                let courses = [];
+
+                try {
+                    const snap = await getDocs(
+                        query(collection(db, 'courses'), where('isPublished', '==', true))
+                    );
+                    if (!snap.empty) {
+                        snap.forEach(docSnap => courses.push({ id: docSnap.id, ...docSnap.data() }));
+                    }
+                } catch (e) {
+                    // Firestore unavailable — use hardcoded courses
                 }
 
-                snap.forEach(docSnap => {
-                    const c = docSnap.data();
+                if (courses.length === 0) {
+                    courses = HARDCODED_COURSES;
+                }
+
+                // Store courses for openCourse modal
+                window._portalCourses = courses;
+
+                coursesGrid.innerHTML = '';
+                document.getElementById('stat-courses').innerText = courses.length;
+
+                courses.forEach(c => {
                     const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
 
                     const card = document.createElement('div');
                     card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
-                    card.addEventListener('click', () => portal.openCourse(docSnap.id));
+                    card.addEventListener('click', () => portal.openCourse(c.id));
 
                     const inner = document.createElement('div');
                     inner.className = 'flex items-start gap-4';
@@ -511,12 +719,125 @@
                     card.appendChild(inner);
                     coursesGrid.appendChild(card);
                 });
-                document.getElementById('stat-courses').innerText = snap.size;
             },
 
             openCourse(courseId) {
-                // Course detail view — to be implemented
-                console.log('Opening course:', courseId);
+                const courses = window._portalCourses || [];
+                const course = courses.find(c => c.id === courseId);
+                if (!course) return;
+
+                const COLOR_CLASSES = {
+                    blue:   { iconBg: 'bg-blue-500/20', icon: 'text-blue-400' },
+                    orange: { iconBg: 'bg-orange-500/20', icon: 'text-orange-400' },
+                    green:  { iconBg: 'bg-green-500/20', icon: 'text-green-400' },
+                    purple: { iconBg: 'bg-purple-500/20', icon: 'text-purple-400' },
+                };
+                const cls = COLOR_CLASSES[course.color] ?? COLOR_CLASSES.blue;
+
+                document.getElementById('course-modal-title').textContent = course.title;
+                document.getElementById('course-modal-desc').textContent = course.description;
+                document.getElementById('course-modal-icon').className = `fas fa-${course.icon} ${cls.icon} text-2xl`;
+                document.getElementById('course-modal-icon-wrap').className = `${cls.iconBg} p-3 rounded-lg`;
+
+                const modulesEl = document.getElementById('course-modal-modules');
+                modulesEl.innerHTML = '';
+                (course.modules || []).forEach(mod => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden';
+
+                    const header = document.createElement('button');
+                    header.className = 'w-full flex items-center gap-3 p-4 text-left hover:bg-gray-700/50 transition';
+                    header.innerHTML = `
+                        <span class="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${mod.order}</span>
+                        <span class="text-white font-bold flex-1">${mod.title}</span>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform module-chevron"></i>
+                    `;
+
+                    const body = document.createElement('div');
+                    body.className = 'px-4 pb-4 hidden text-gray-300 text-sm leading-relaxed';
+                    body.textContent = mod.content || '';
+
+                    header.addEventListener('click', () => {
+                        const isOpen = !body.classList.contains('hidden');
+                        body.classList.toggle('hidden', isOpen);
+                        header.querySelector('.module-chevron').style.transform = isOpen ? '' : 'rotate(180deg)';
+                    });
+
+                    el.append(header, body);
+                    modulesEl.appendChild(el);
+                });
+
+                document.getElementById('course-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeCourseModal(event) {
+                if (event && event.target !== document.getElementById('course-modal')) return;
+                document.getElementById('course-modal').classList.add('hidden');
+                document.body.style.overflow = '';
+            },
+
+            async loadLeaderboard() {
+                const list = document.getElementById('leaderboard-list');
+                try {
+                    const snap = await getDocs(
+                        query(collection(db, 'ambassadors'), orderBy('achievementPoints', 'desc'))
+                    );
+                    if (snap.empty) throw new Error('empty');
+                    list.innerHTML = '';
+                    let rank = 1;
+                    snap.forEach(d => {
+                        const a = d.data();
+                        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                        const name = a.name || a.fullName || 'Ambassador';
+                        const points = a.achievementPoints ?? 0;
+                        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                        list.innerHTML += `
+                            <div class="flex items-center gap-4 p-4 bg-gray-800/50 border border-gray-700/50 rounded-xl">
+                                <span class="text-2xl w-10 text-center">${medal}</span>
+                                <div class="w-10 h-10 bg-gradient-to-br from-orangeAccent to-orange-600 rounded-full flex items-center justify-center text-sm font-bold">${initials}</div>
+                                <div class="flex-1">
+                                    <p class="text-white font-bold text-sm">${name}</p>
+                                    <p class="text-gray-400 text-xs">${a.university || 'Ambassador'}</p>
+                                </div>
+                                <span class="text-orangeAccent font-bold">${points} pts</span>
+                            </div>`;
+                        rank++;
+                    });
+                } catch (e) {
+                    list.innerHTML = '<div class="text-center text-gray-500 py-8">No leaderboard data yet — start completing courses and attending programs to earn points!</div>';
+                }
+            },
+
+            loadChallenges() {
+                // Challenges are hardcoded in the HTML — update progress bar on load
+                this._updateChallengeProgress();
+            },
+
+            toggleChallenge(row) {
+                const check = row.querySelector('.challenge-check');
+                const isDone = check.classList.contains('bg-green-500');
+                check.classList.toggle('bg-green-500', !isDone);
+                check.classList.toggle('border-green-500', !isDone);
+                check.classList.toggle('border-gray-500', isDone);
+                check.innerHTML = isDone ? '' : '<i class="fas fa-check text-white text-xs"></i>';
+                const title = row.querySelector('p.text-white');
+                title.classList.toggle('line-through', !isDone);
+                title.classList.toggle('opacity-50', !isDone);
+                this._updateChallengeProgress();
+            },
+
+            _updateChallengeProgress() {
+                const rows = document.querySelectorAll('#challenges-list .challenge-check');
+                const done = [...rows].filter(c => c.classList.contains('bg-green-500')).length;
+                const total = rows.length;
+                const pct = total ? Math.round((done / total) * 100) : 0;
+                const bar = document.getElementById('challenge-progress-bar');
+                const text = document.getElementById('challenge-progress-text');
+                const bonus = document.getElementById('challenge-bonus');
+                if (bar) bar.style.width = pct + '%';
+                if (text) text.textContent = `${done}/${total} tasks`;
+                if (bonus) bonus.classList.toggle('hidden', done < total);
             },
 
             switchTab(tab) {

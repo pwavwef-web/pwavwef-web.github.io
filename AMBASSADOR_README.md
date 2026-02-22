@@ -33,18 +33,23 @@ This document guides developers and program managers on:
 
 | File | Purpose |
 |------|---------|
-| `ambassador.html` | Protected portal — profile, programs, and courses tabs |
+| `ambassador.html` | Protected portal — profile, programs, courses, leaderboard, and challenges tabs |
 | `ambassadorsignup.html` | Public sign-up form for prospective ambassadors |
+| `courses.html` | Standalone courses overview — all 4 courses with hardcoded modules (no login required) |
+| `leaderboard.html` | Standalone leaderboard page with peer-recognition nomination form and social sharing |
+| `challenges.html` | Standalone monthly challenges page with task tracking, badges, and progress bar |
 
 ### Portal Architecture (`ambassador.html`)
 
-The portal is a single-page application built with **Tailwind CSS** and **Firebase**. It uses a tab-switching pattern with three views:
+The portal is a single-page application built with **Tailwind CSS** and **Firebase**. It uses a tab-switching pattern with five views:
 
 | Tab ID | View ID | Content |
 |--------|---------|---------|
 | `tab-profile` | `view-profile` | Ambassador profile card + stats |
 | `tab-programs` | `view-programs` | Upcoming / past ambassador programs |
-| `tab-courses` | `view-courses` | Training courses and resource library |
+| `tab-courses` | `view-courses` | Training courses with hardcoded module fallback |
+| `tab-leaderboard` | `view-leaderboard` | Live leaderboard ranked by `achievementPoints` |
+| `tab-challenges` | `view-challenges` | Monthly challenge tasks with progress tracking |
 
 #### Adding a New Tab
 
@@ -84,7 +89,16 @@ Submitted applications are written to the `ambassadors` Firestore collection wit
 
 ## Course Development
 
-The **Training & Resources** tab (`view-courses`) currently lists four course cards as *Coming Soon*. Use the steps below to develop and publish courses.
+The **Training & Resources** tab (`view-courses`) loads courses from the Firestore `courses` collection. When Firestore returns no published courses, it automatically falls back to four **hardcoded courses** with complete module content. The same four courses (with all modules) are available on the standalone `courses.html` page without authentication.
+
+### Hardcoded Courses
+
+| Course | Modules | Color | Icon |
+|--------|---------|-------|------|
+| Marketing & Outreach | Understanding Your Audience · Social Media Strategy · Campus Tabling & Flyers · Measuring Your Impact | blue | bullhorn |
+| Leadership Development | Leadership Styles & Principles · Running Effective Study Groups · Peer Mentoring Techniques · Conflict Resolution | orange | users |
+| Communication Skills | Foundations of Effective Communication · Public Speaking Fundamentals · Digital & Written Communication · Active Listening | green | comments |
+| Event Planning | Event Planning Basics · Promoting Your Event · Running Virtual Study Sessions · Post-Event Follow-Up | purple | chart-line |
 
 ### Course Card Structure
 
@@ -109,16 +123,9 @@ Each course card in the grid follows this HTML template:
 </div>
 ```
 
-Replace `{color}` with a Tailwind color name (`blue`, `orange`, `green`, `purple`, etc.) and update the other placeholders.
+### Opening a Course
 
-### Planned Core Courses
-
-| Course | Description | Icon | Color |
-|--------|-------------|------|-------|
-| Marketing & Outreach | Promote AZ Learner on campus effectively | `bullhorn` | blue |
-| Leadership Development | Manage study groups and mentor peers | `users` | orange |
-| Communication Skills | Engage students and the core team clearly | `comments` | green |
-| Event Planning | Organise study sessions and campus events | `chart-line` | purple |
+`portal.openCourse(courseId)` looks up the course from `window._portalCourses` (populated by `loadCourses()`) and renders an accordion modal with all modules. Each module header expands to reveal the full module text when clicked.
 
 ### Storing Course Content in Firestore
 
@@ -150,72 +157,7 @@ Create a `courses` collection with documents structured as follows:
 }
 ```
 
-### Loading Courses Dynamically
-
-Replace the static course cards with a dynamic loader by adding the following function to `window.portal` in `ambassador.html`.
-
-> **Note — imports:** `getDocs`, `query`, `collection`, and `where` must be imported from `firebase/firestore` at the top of the module script (they are already imported in the existing script block; verify before adding this function).
-
-> **Note — Tailwind CSS:** Tailwind's JIT compiler only includes classes it can detect as complete strings at build time. Because the portal loads Tailwind from a CDN at runtime (not a build step), dynamic class names via template literals work fine in this project. If you ever switch to a build-time Tailwind setup, use a pre-defined color-class mapping object instead of string interpolation.
-
-```javascript
-// Pre-defined safe color-class map (required if using build-time Tailwind)
-const COLOR_CLASSES = {
-    blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-500/30',   icon: 'text-blue-400',   badge: 'text-blue-400'   },
-    orange: { bg: 'bg-orange-900/20', border: 'border-orange-500/30', icon: 'text-orange-400', badge: 'text-orange-400' },
-    green:  { bg: 'bg-green-900/20',  border: 'border-green-500/30',  icon: 'text-green-400',  badge: 'text-green-400'  },
-    purple: { bg: 'bg-purple-900/20', border: 'border-purple-500/30', icon: 'text-purple-400', badge: 'text-purple-400' },
-};
-
-async loadCourses() {
-    const coursesGrid = document.getElementById('courses-grid');
-    const snap = await getDocs(
-        query(collection(db, 'courses'), where('isPublished', '==', true))
-    );
-    document.getElementById('stat-courses').innerText = snap.size;
-    coursesGrid.innerHTML = '';
-
-    snap.forEach(docSnap => {
-        const c = docSnap.data();
-        const cls = COLOR_CLASSES[c.color] ?? COLOR_CLASSES.blue;
-
-        // Build the card element safely (textContent for user data prevents XSS)
-        const card = document.createElement('div');
-        card.className = `${cls.bg} border ${cls.border} rounded-xl p-6 hover:opacity-90 transition cursor-pointer`;
-        card.addEventListener('click', () => portal.openCourse(docSnap.id));
-
-        const inner = document.createElement('div');
-        inner.className = 'flex items-start gap-4';
-
-        const iconWrap = document.createElement('div');
-        iconWrap.className = 'bg-opacity-20 p-3 rounded-lg';
-        const icon = document.createElement('i');
-        icon.className = `fas fa-${c.icon} ${cls.icon} text-2xl`;
-        iconWrap.appendChild(icon);
-
-        const textWrap = document.createElement('div');
-
-        const title = document.createElement('h3');
-        title.className = 'text-lg font-bold text-white mb-1';
-        title.textContent = c.title;           // textContent — safe from XSS
-
-        const desc = document.createElement('p');
-        desc.className = 'text-sm text-gray-400 mb-3';
-        desc.textContent = c.description;      // textContent — safe from XSS
-
-        const badge = document.createElement('span');
-        badge.className = `text-xs ${cls.badge} font-bold`;
-        badge.textContent = `${c.modules?.length ?? 0} modules`;
-
-        textWrap.append(title, desc, badge);
-        inner.append(iconWrap, textWrap);
-        card.appendChild(inner);
-        coursesGrid.appendChild(card);
-    });
-},
-```
-
-Add a `<div id="courses-grid" class="grid md:grid-cols-2 gap-6"></div>` in `view-courses` and call `this.loadCourses()` inside `showPortal()`.
+When at least one published course exists in Firestore, `loadCourses()` uses Firestore data and ignores the hardcoded fallback. This allows the content team to update courses without a code deployment.
 
 ### Tracking Course Progress
 
@@ -234,15 +176,22 @@ Display a progress bar on each course card and update `stat-courses` to show com
 
 ## Improving Platform Engagement
 
-### Ambassador Engagement
+### Ambassador Engagement — Implemented ✅
+
+| Strategy | Status | Implementation |
+|----------|--------|---------------|
+| **Points & Badges** | ✅ | `achievementPoints` field on ambassador document. Points awarded for programs, courses, referrals, and challenges. Badge system shown on `challenges.html`. |
+| **Leaderboard tab** | ✅ | `tab-leaderboard` / `view-leaderboard` in portal + standalone `leaderboard.html`. Queries ambassadors ordered by `achievementPoints` descending. |
+| **Monthly challenges** | ✅ | `tab-challenges` / `view-challenges` in portal + standalone `challenges.html`. February 2026 challenge with 5 tasks, progress bar, and bonus banner. |
+| **Peer recognition** | ✅ | Nomination form on `leaderboard.html` — ambassadors nominate peers for a Spotlight badge. |
+| **Social sharing** | ✅ | Share rank via WhatsApp, Twitter/X, or copy link on `leaderboard.html`. |
+
+### Ambassador Engagement — To Do
 
 | Strategy | Implementation |
 |----------|---------------|
-| **Points & Badges** | Track `achievementPoints` in the ambassador Firestore document. Award points for attending programs, completing courses, and recruiting new users. Display them on the profile stats card. |
-| **Leaderboard tab** | Add a `tab-leaderboard` / `view-leaderboard` that queries ambassadors ordered by `achievementPoints` descending. |
-| **Monthly challenges** | Store monthly missions in a `challenges` Firestore collection. Ambassadors mark tasks complete; completing all tasks in a month earns a bonus badge. |
 | **Progress notifications** | Use Firebase Cloud Messaging (FCM) or email to notify ambassadors of upcoming programs, new courses, and leaderboard changes. |
-| **Peer recognition** | Allow ambassadors to nominate peers for a "Spotlight" badge via a lightweight nomination form inside the portal. |
+| **Persist challenge progress** | Write task completion state to `ambassadors/{id}/challengeProgress/{challengeId}` in Firestore so progress survives page refresh. |
 
 ### Student Engagement
 
@@ -252,7 +201,6 @@ Display a progress bar on each course card and update `stat-courses` to show com
 | **Course Circles** | Ambassadors host virtual or in-person study circles around specific courses. They mark attendance; attendance data feeds their achievement points. |
 | **Campus events feed** | Ambassadors post mini campus events from the portal. Events appear in the student-facing `home.html` events section automatically via a shared `events` collection. |
 | **Feedback loops** | Add a short in-portal survey (1–3 questions) after each program to collect NPS scores. Surface aggregate results to admins in `admin.html`. |
-| **Social sharing** | Generate shareable ambassador profile cards (Canvas API or a styled static page) so ambassadors can post on Instagram / TikTok and drive sign-ups. |
 
 ### Content & Communication
 
@@ -291,6 +239,10 @@ ambassadors/
         completedModules: number[]
         startedAt: Timestamp
         completedAt: Timestamp | null
+    challengeProgress/       ← sub-collection
+      {challengeId}/
+        completedTasks: string[]
+        completedAt: Timestamp | null
 
 ambassador_programs/
   {docId}/
@@ -322,13 +274,17 @@ challenges/
 
 ## Roadmap
 
-- [ ] Publish first four training courses with at least two modules each
-- [ ] Implement dynamic course loading from Firestore
-- [ ] Add course-progress tracking per ambassador
-- [ ] Build achievement-points system and leaderboard tab
+- [x] Publish first four training courses with at least four modules each (hardcoded fallback in portal + `courses.html`)
+- [x] Implement dynamic course loading from Firestore with hardcoded fallback
+- [x] Build achievement-points system and leaderboard tab (`leaderboard.html` + portal tab)
+- [x] Launch monthly challenge missions (`challenges.html` + portal tab)
+- [x] Add peer recognition nomination form (`leaderboard.html`)
+- [x] Social sharing for ambassador rank (`leaderboard.html`)
+- [ ] Add course-progress tracking per ambassador (Firestore `courseProgress` sub-collection)
+- [ ] Persist challenge task state to Firestore
 - [ ] Launch referral-code tracking for student sign-ups
 - [ ] Add in-portal program feedback surveys
 - [ ] Enable ambassador-posted campus events visible on `home.html`
-- [ ] Set up monthly challenge missions
+- [ ] Set up Firebase Cloud Messaging for progress notifications
 - [ ] Generate shareable ambassador profile cards
 - [ ] Send fortnightly Ambassador Digest via email / WhatsApp broadcast
