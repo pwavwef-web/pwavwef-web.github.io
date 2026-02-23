@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Campus Stickers — Download, print and paste around campus to spread the word about AZ Learner.">
+    <title>AZ Learner | Campus Stickers</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .sticker-card {
+            break-inside: avoid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .sticker-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(68,138,255,0.25); }
+        @media print {
+            body { background: white !important; animation: none !important; }
+            .no-print { display: none !important; }
+            .sticker-card { border: 2px dashed #ccc; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Nav -->
+    <nav class="no-print sticky top-0 z-50 bg-slate-900/80 backdrop-blur border-b border-white/10 px-4 py-3 flex items-center justify-between">
+        <a href="marketing.html" class="flex items-center gap-2 text-white font-bold text-lg">
+            <i class="fas fa-arrow-left text-blue-400"></i>
+            <span>Marketing Hub</span>
+        </a>
+        <span class="text-white/50 text-sm">Campus Stickers</span>
+        <button onclick="window.print()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-print"></i> Print All
+        </button>
+    </nav>
+
+    <!-- Header -->
+    <header class="text-center px-6 py-12 no-print">
+        <div class="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+            <i class="fas fa-tag"></i> 15 Campus Stickers
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black mb-3">Stick. Spread. Shine. 🎉</h1>
+        <p class="text-white/60 text-lg max-w-xl mx-auto">Download and print these stickers, then paste them around campus to boost AZ Learner awareness. Click any sticker to download it as an image.</p>
+    </header>
+
+    <!-- Sticker Grid -->
+    <main class="max-w-5xl mx-auto px-4 pb-16">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" id="stickerGrid">
+
+            <!-- Sticker 1 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker1')" title="Click to download">
+                <div id="sticker1" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
+                    <div class="text-5xl mb-3">🎓</div>
+                    <div class="text-2xl font-black text-white leading-tight">AZ Learner</div>
+                    <div class="text-blue-200 font-semibold mt-1">The Squad Companion</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 2 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker2')" title="Click to download">
+                <div id="sticker2" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #7c3aed, #ec4899);">
+                    <div class="text-5xl mb-3">🖨️</div>
+                    <div class="text-xl font-black text-white leading-tight">Print &amp; Deliver</div>
+                    <div class="text-pink-200 font-medium mt-1 text-sm">Get your docs printed<br>right on campus</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 3 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker3')" title="Click to download">
+                <div id="sticker3" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #065f46, #10b981);">
+                    <div class="text-5xl mb-3">📊</div>
+                    <div class="text-xl font-black text-white leading-tight">GPA Calculator</div>
+                    <div class="text-green-200 font-medium mt-1 text-sm">Know your GPA.<br>Crush your goals.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 4 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker4')" title="Click to download">
+                <div id="sticker4" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #92400e, #f59e0b);">
+                    <div class="text-5xl mb-3">💬</div>
+                    <div class="text-xl font-black text-white leading-tight">Course Circles</div>
+                    <div class="text-yellow-100 font-medium mt-1 text-sm">Chat with classmates.<br>Ace every course.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 5 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker5')" title="Click to download">
+                <div id="sticker5" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #1e1b4b, #6366f1);">
+                    <div class="text-5xl mb-3">🏆</div>
+                    <div class="text-xl font-black text-white leading-tight">The Arena</div>
+                    <div class="text-indigo-200 font-medium mt-1 text-sm">Study. Compete.<br>Claim the crown.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 6 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker6')" title="Click to download">
+                <div id="sticker6" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #831843, #f43f5e);">
+                    <div class="text-5xl mb-3">📚</div>
+                    <div class="text-xl font-black text-white leading-tight">The Vault</div>
+                    <div class="text-rose-100 font-medium mt-1 text-sm">Past questions.<br>Notes. Resources.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 7 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker7')" title="Click to download">
+                <div id="sticker7" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #134e4a, #06b6d4);">
+                    <div class="text-5xl mb-3">📅</div>
+                    <div class="text-xl font-black text-white leading-tight">Campus Events</div>
+                    <div class="text-cyan-100 font-medium mt-1 text-sm">Never miss what's<br>happening around you.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 8 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker8')" title="Click to download">
+                <div id="sticker8" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #1c1917, #f97316);">
+                    <div class="text-5xl mb-3">🚀</div>
+                    <div class="text-xl font-black text-white leading-tight">Be an Ambassador</div>
+                    <div class="text-orange-100 font-medium mt-1 text-sm">Lead. Inspire.<br>Grow with AZ.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me/ambassador</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 9 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker9')" title="Click to download">
+                <div id="sticker9" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #0f172a, #38bdf8); border: 3px solid #38bdf8;">
+                    <div class="text-4xl font-black text-white mb-2">Print.</div>
+                    <div class="text-4xl font-black text-sky-300 mb-2">Chat.</div>
+                    <div class="text-4xl font-black text-white mb-2">Grind.</div>
+                    <div class="text-4xl font-black text-yellow-400">Shine. ✨</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 10 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker10')" title="Click to download">
+                <div id="sticker10" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: radial-gradient(circle, #4c1d95, #7c3aed, #a855f7);">
+                    <div class="text-5xl mb-3">⚡</div>
+                    <div class="text-xl font-black text-white">Digital Exhale</div>
+                    <div class="text-purple-200 font-medium mt-1 text-sm">Take a breath from<br>the academic grind.</div>
+                    <div class="text-3xl mt-2">🧘</div>
+                    <div class="mt-2 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 11 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker11')" title="Click to download">
+                <div id="sticker11" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #064e3b, #34d399);">
+                    <div class="text-5xl mb-2">🌍</div>
+                    <div class="text-xl font-black text-white leading-tight">For Every Student</div>
+                    <div class="text-emerald-100 font-medium mt-1 text-sm">UCC. Ghana.<br>And beyond.</div>
+                    <div class="flex gap-1 mt-3 text-2xl">🇬🇭✨📖</div>
+                    <div class="mt-2 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 12 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker12')" title="Click to download">
+                <div id="sticker12" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #1e3a5f, #2563eb, #60a5fa);">
+                    <div class="text-4xl font-black text-white mb-1">AZ</div>
+                    <div class="text-5xl mb-1">🔥</div>
+                    <div class="text-white font-bold text-sm">Academic Weapon</div>
+                    <div class="text-blue-200 text-xs mt-1">Tools for the serious student.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 13 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker13')" title="Click to download">
+                <div id="sticker13" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #450a0a, #dc2626, #fca5a5);">
+                    <div class="text-5xl mb-2">❓</div>
+                    <div class="text-xl font-black text-white">Past Questions?</div>
+                    <div class="text-red-100 font-medium mt-1 text-sm">We got them.<br>Study smarter, not harder.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 14 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker14')" title="Click to download">
+                <div id="sticker14" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #312e81, #f59e0b);">
+                    <div class="text-5xl mb-2">📱</div>
+                    <div class="text-xl font-black text-white">Download the App</div>
+                    <div class="text-yellow-100 font-medium mt-1 text-sm">Android app available now.<br>Free to download!</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me/app</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+            <!-- Sticker 15 -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker15')" title="Click to download">
+                <div id="sticker15" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9, #7dd3fc);">
+                    <div class="text-3xl font-black text-white mb-1">Join the</div>
+                    <div class="text-4xl font-black text-yellow-300 mb-1">AZ Squad 🎯</div>
+                    <div class="text-sky-100 font-medium text-sm">Your campus life,<br>upgraded.</div>
+                    <div class="flex gap-1 mt-2 text-xl">🖨️📊💬🏆📚</div>
+                    <div class="mt-2 bg-white/20 rounded-full px-4 py-1 text-white text-xs font-bold">azlearner.me</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-1">
+                    <i class="fas fa-download"></i> Download
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Instructions -->
+        <div class="no-print mt-12 bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+            <h2 class="text-xl font-bold mb-2">How to use these stickers</h2>
+            <p class="text-white/60 text-sm max-w-lg mx-auto">Click any sticker to download it as an image, or use <strong class="text-white">Print All</strong> to print the full sheet. Cut along the rounded borders, apply a glue stick or double-sided tape, and paste them on notice boards, lecture-hall doors, and common areas around campus.</p>
+        </div>
+    </main>
+
+    <!-- html2canvas for download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        async function downloadSticker(id) {
+            const el = document.getElementById(id);
+            const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null });
+            const link = document.createElement('a');
+            link.download = id + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
