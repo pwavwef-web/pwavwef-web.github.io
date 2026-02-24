@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The AZ Podcast – Manage Episodes</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40', success: '#00E676' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="text-4xl mb-3">🔐</div>
+            <h1 class="text-xl font-black text-orangeAccent mb-5">Admin Access Required</h1>
+            <input type="email" id="login-email" placeholder="Admin Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter') doLogin()"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="doLogin()" class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Login
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="block mt-4 text-xs text-gray-500 hover:text-gray-300 transition">← Back to Admin Dashboard</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="font-black text-transparent bg-clip-text bg-gradient-to-r from-blueAccent to-cyan-300 text-lg">Manage Episodes</h1>
+                    <p class="text-xs text-gray-500">Edit, publish, unpublish or delete episodes</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="upload.html" class="bg-orangeAccent text-black px-3 py-2 rounded-lg text-xs font-bold transition hover:bg-orange-300 flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i><span class="hidden md:inline">Upload New</span>
+                </a>
+                <button onclick="doLogout()" class="bg-gray-700 hover:bg-red-900/60 text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-6 py-8">
+            <!-- Filter Bar -->
+            <div class="flex gap-3 flex-wrap mb-6">
+                <div class="relative flex-1 min-w-[200px]">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                    <input id="search-input" type="text" placeholder="Search episodes..." oninput="filterEpisodes()"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                </div>
+                <select id="filter-status" onchange="filterEpisodes()" class="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 outline-none focus:border-blueAccent transition">
+                    <option value="all">All Status</option>
+                    <option value="demo">Demo</option>
+                    <option value="live">Live</option>
+                </select>
+                <select id="filter-topic" onchange="filterEpisodes()" class="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 outline-none focus:border-blueAccent transition">
+                    <option value="all">All Topics</option>
+                    <option value="tech">Tech</option>
+                    <option value="student life">Student Life</option>
+                    <option value="hustle">Hustle</option>
+                    <option value="mental health">Mental Health</option>
+                    <option value="relationships">Relationships</option>
+                </select>
+            </div>
+
+            <!-- Episodes Table -->
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3 text-left w-8">#</th>
+                            <th class="px-5 py-3 text-left">Episode</th>
+                            <th class="px-5 py-3 text-left hidden md:table-cell">Topic</th>
+                            <th class="px-5 py-3 text-right hidden md:table-cell">Plays</th>
+                            <th class="px-5 py-3 text-center">Status</th>
+                            <th class="px-5 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="episodes-table" class="divide-y divide-gray-700 text-gray-300"></tbody>
+                </table>
+            </div>
+
+            <!-- Notice -->
+            <div class="mt-6 bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-4 flex gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-yellow-400 mt-0.5"></i>
+                <div class="text-sm">
+                    <p class="font-bold text-yellow-400 mb-1">Demo Episodes Active</p>
+                    <p class="text-yellow-300/70">The 6 demo episodes are placeholders. When you upload real episodes via the <a href="upload.html" class="underline hover:text-yellow-200">Upload tool</a>, they will replace these and appear in the listener pages automatically.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-black text-lg text-blueAccent"><i class="fa-solid fa-pen-to-square mr-2"></i>Edit Episode</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <input type="hidden" id="edit-ep-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Title</label>
+                    <input id="edit-title" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Description</label>
+                    <textarea id="edit-desc" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Topic</label>
+                        <select id="edit-topic" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-gray-300 outline-none focus:border-blueAccent transition">
+                            <option value="student life">Student Life</option>
+                            <option value="tech">Tech</option>
+                            <option value="hustle">Hustle</option>
+                            <option value="mental health">Mental Health</option>
+                            <option value="relationships">Relationships</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Host</label>
+                        <input id="edit-host" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveEdit()" class="flex-1 bg-blueAccent text-white font-bold py-2.5 rounded-xl hover:bg-blue-400 transition">Save Changes</button>
+                <button onclick="closeModal()" class="flex-1 bg-gray-700 text-white font-bold py-2.5 rounded-xl hover:bg-gray-600 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const MOCK_EPISODES = [
+            { id:'ep001', number:1, title:"Welcome to The AZ Podcast 🎙️", description:"We kick things off! Francis and the crew introduce the show, share what to expect, and talk about why they started this podcast.", duration:"28:14", date:"2024-01-15", topic:"student life", plays:412, isMock:true, host:"Francis Pwavwe" },
+            { id:'ep002', number:2, title:"Tech for Students: Apps You NEED", description:"From GPA calculators to AI tools, we break down the best tech for Ghanaian students.", duration:"34:07", date:"2024-01-22", topic:"tech", plays:287, isMock:true, host:"Francis Pwavwe" },
+            { id:'ep003', number:3, title:"The Hustle Is Real: Side Income at Campus", description:"How are students making money on campus? We share real stories, real strategies.", duration:"41:33", date:"2024-01-29", topic:"hustle", plays:534, isMock:true, host:"Francis Pwavwe" },
+            { id:'ep004', number:4, title:"Mental Health at University – The Honest Talk", description:"Nobody talks about this enough. We get real about academic pressure, loneliness, burnout.", duration:"38:50", date:"2024-02-05", topic:"mental health", plays:691, isMock:true, host:"Francis Pwavwe" },
+            { id:'ep005', number:5, title:"Relationships in University: Love, Drama & Growth", description:"Campus relationships — are they worth it? We talk love, situationships, heartbreak.", duration:"45:22", date:"2024-02-12", topic:"relationships", plays:823, isMock:true, host:"Francis Pwavwe" },
+            { id:'ep006', number:6, title:"Building a Personal Brand as a Student", description:"LinkedIn, Twitter/X, Instagram — how students can build a digital presence.", duration:"31:45", date:"2024-02-19", topic:"hustle", plays:345, isMock:true, host:"Francis Pwavwe" }
+        ];
+
+        let allEpisodes = [...MOCK_EPISODES];
+        let firestoreEpisodes = [];
+        let editingId = null;
+
+        window.doLogin = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const msg = document.getElementById('login-msg');
+            if (!email || !pass) { msg.textContent = 'Please enter email and password.'; return; }
+            try { await signInWithEmailAndPassword(auth, email, pass); }
+            catch (err) { msg.textContent = 'Auth failed: ' + err.message; }
+        };
+
+        window.doLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    await loadFirestoreEpisodes();
+                    renderTable(allEpisodes);
+                } else {
+                    alert('Access denied. Admins only.');
+                    signOut(auth);
+                }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        async function loadFirestoreEpisodes() {
+            try {
+                const q = query(collection(db, "podcast_episodes"), orderBy("number", "asc"));
+                const snap = await getDocs(q);
+                firestoreEpisodes = snap.docs.map(d => ({ ...d.data(), firestoreId: d.id, isMock: false }));
+                allEpisodes = [...firestoreEpisodes, ...MOCK_EPISODES];
+            } catch (_) {}
+        }
+
+        function renderTable(eps) {
+            const tbody = document.getElementById('episodes-table');
+            if (eps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-500">No episodes found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = eps.map(ep => `
+                <tr class="hover:bg-gray-700/30 transition">
+                    <td class="px-5 py-3 text-gray-500 text-xs font-bold">${ep.number || '—'}</td>
+                    <td class="px-5 py-3">
+                        <p class="font-semibold text-white text-sm">${ep.title}</p>
+                        <p class="text-xs text-gray-500">${ep.host || ''} · ${ep.duration || ''}</p>
+                    </td>
+                    <td class="px-5 py-3 hidden md:table-cell text-gray-400 text-xs capitalize">${ep.topic}</td>
+                    <td class="px-5 py-3 text-right hidden md:table-cell text-gray-300 font-bold">${(ep.plays || 0).toLocaleString()}</td>
+                    <td class="px-5 py-3 text-center">
+                        ${ep.isMock
+                            ? '<span class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-2 py-0.5 font-bold">DEMO</span>'
+                            : '<span class="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 rounded-full px-2 py-0.5 font-bold">LIVE</span>'}
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="openEdit('${ep.id || ep.firestoreId}')" class="text-blueAccent hover:text-blue-300 text-xs font-bold transition p-1.5 hover:bg-blue-500/10 rounded-lg" title="Edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            ${!ep.isMock ? `
+                            <button onclick="togglePublish('${ep.firestoreId}', ${ep.published !== false})" class="text-${ep.published !== false ? 'yellow' : 'green'}-400 hover:text-${ep.published !== false ? 'yellow' : 'green'}-300 text-xs font-bold transition p-1.5 hover:bg-white/5 rounded-lg" title="${ep.published !== false ? 'Unpublish' : 'Publish'}">
+                                <i class="fa-solid fa-${ep.published !== false ? 'eye-slash' : 'eye'}"></i>
+                            </button>
+                            <button onclick="deleteEpisode('${ep.firestoreId}')" class="text-red-400 hover:text-red-300 text-xs font-bold transition p-1.5 hover:bg-red-500/10 rounded-lg" title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.filterEpisodes = () => {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+            const topic = document.getElementById('filter-topic').value;
+            const filtered = allEpisodes.filter(ep => {
+                const matchSearch = !search || ep.title.toLowerCase().includes(search) || (ep.description || '').toLowerCase().includes(search);
+                const matchStatus = status === 'all' || (status === 'demo' && ep.isMock) || (status === 'live' && !ep.isMock);
+                const matchTopic = topic === 'all' || ep.topic === topic;
+                return matchSearch && matchStatus && matchTopic;
+            });
+            renderTable(filtered);
+        };
+
+        window.openEdit = (id) => {
+            const ep = allEpisodes.find(e => (e.id || e.firestoreId) === id);
+            if (!ep) return;
+            editingId = id;
+            document.getElementById('edit-ep-id').value = id;
+            document.getElementById('edit-title').value = ep.title;
+            document.getElementById('edit-desc').value = ep.description || '';
+            document.getElementById('edit-topic').value = ep.topic;
+            document.getElementById('edit-host').value = ep.host || '';
+            document.getElementById('edit-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('edit-modal').classList.add('hidden');
+
+        window.saveEdit = async () => {
+            const ep = allEpisodes.find(e => (e.id || e.firestoreId) === editingId);
+            if (!ep) return;
+            const updatedData = {
+                title: document.getElementById('edit-title').value.trim(),
+                description: document.getElementById('edit-desc').value.trim(),
+                topic: document.getElementById('edit-topic').value,
+                host: document.getElementById('edit-host').value.trim()
+            };
+            if (!ep.isMock && ep.firestoreId) {
+                try {
+                    await updateDoc(doc(db, "podcast_episodes", ep.firestoreId), updatedData);
+                    Object.assign(ep, updatedData);
+                    renderTable(allEpisodes);
+                    showToast('Episode updated!');
+                } catch (err) { showToast('Update failed: ' + err.message); return; }
+            } else {
+                Object.assign(ep, updatedData);
+                renderTable(allEpisodes);
+                showToast('Demo episode updated (local only).');
+            }
+            closeModal();
+        };
+
+        window.togglePublish = async (firestoreId, isPublished) => {
+            try {
+                await updateDoc(doc(db, "podcast_episodes", firestoreId), { published: !isPublished });
+                const ep = allEpisodes.find(e => e.firestoreId === firestoreId);
+                if (ep) ep.published = !isPublished;
+                renderTable(allEpisodes);
+                showToast(isPublished ? 'Episode unpublished.' : 'Episode published!');
+            } catch (err) { showToast('Error: ' + err.message); }
+        };
+
+        window.deleteEpisode = async (firestoreId) => {
+            if (!confirm('Delete this episode? This cannot be undone.')) return;
+            try {
+                await deleteDoc(doc(db, "podcast_episodes", firestoreId));
+                allEpisodes = allEpisodes.filter(e => e.firestoreId !== firestoreId);
+                renderTable(allEpisodes);
+                showToast('Episode deleted.');
+            } catch (err) { showToast('Error: ' + err.message); }
+        };
+
+        let toastTimer;
+        window.showToast = (msg) => {
+            clearTimeout(toastTimer);
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.className = 'fixed top-20 right-4 z-[300] bg-gray-700 border border-white/10 text-white text-sm px-4 py-2 rounded-xl shadow-xl transition-opacity';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
+        };
+    </script>
+</body>
+</html>

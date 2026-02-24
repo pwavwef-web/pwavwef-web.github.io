@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AZ Podcast – Now Playing</title>
+    <link rel="icon" type="image/png" href="../../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: '#FFAB40', brandBlue: '#448AFF' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: linear-gradient(-45deg, #020617, #0f172a, #1a0a2e, #0f172a); background-size: 400% 400%; animation: gradBG 18s ease infinite; color: white; min-height: 100vh; }
+        @keyframes gradBG { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .album-art { background: linear-gradient(135deg, #1e3a8a, #7c3aed, #FFAB40); border-radius: 20px; box-shadow: 0 30px 80px rgba(255,171,64,0.2); transition: transform 0.3s; }
+        .album-art.playing { animation: pulse-art 3s ease-in-out infinite; }
+        @keyframes pulse-art { 0%,100% { transform: scale(1); box-shadow: 0 30px 80px rgba(255,171,64,0.2); } 50% { transform: scale(1.02); box-shadow: 0 40px 100px rgba(255,171,64,0.35); } }
+        .progress-bar { -webkit-appearance: none; appearance: none; height: 5px; border-radius: 10px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; width: 100%; }
+        .progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #FFAB40; cursor: pointer; box-shadow: 0 0 8px rgba(255,171,64,0.5); }
+        .vol-bar { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 10px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; width: 80px; }
+        .vol-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; }
+        .wave-bar { display: inline-block; width: 3px; border-radius: 2px; background: #FFAB40; animation: wave 1.2s ease-in-out infinite; }
+        @keyframes wave { 0%,100% { height: 6px; } 50% { height: 20px; } }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <!-- Navbar -->
+    <nav class="glass border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-orange-600 flex items-center justify-center text-sm font-black">AZ</div>
+                <span class="font-black text-lg tracking-tight">The AZ Podcast</span>
+            </a>
+            <div class="flex items-center gap-1 md:gap-4 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="hover:text-white transition px-3 py-1.5 hidden md:block">Episodes</a>
+                <a href="now-playing.html" class="text-brand px-3 py-1.5 rounded-lg bg-brand/10 hidden md:block">Now Playing</a>
+                <a href="queue.html" class="hover:text-white transition px-3 py-1.5 hidden md:block">Queue</a>
+                <a href="index.html" class="md:hidden p-2 hover:text-white"><i class="fa-solid fa-list text-lg"></i></a>
+                <a href="queue.html" class="md:hidden p-2 hover:text-white"><i class="fa-solid fa-rectangle-list text-lg"></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-6 py-10 flex flex-col lg:flex-row gap-10">
+
+        <!-- Player Section -->
+        <div class="flex-1 flex flex-col items-center">
+            <!-- Album Art -->
+            <div id="album-art" class="album-art w-64 h-64 md:w-72 md:h-72 flex items-center justify-center mb-8 relative">
+                <div class="text-center">
+                    <div class="text-6xl mb-2" id="ep-emoji">🎙️</div>
+                    <div class="text-white/50 text-xs font-bold uppercase tracking-widest">The AZ Podcast</div>
+                </div>
+                <!-- Playing indicator -->
+                <div id="playing-bars" class="hidden absolute bottom-4 right-4 flex gap-1 items-end">
+                    <span class="wave-bar" style="animation-delay:0s"></span>
+                    <span class="wave-bar" style="animation-delay:0.15s"></span>
+                    <span class="wave-bar" style="animation-delay:0.3s"></span>
+                    <span class="wave-bar" style="animation-delay:0.45s"></span>
+                </div>
+            </div>
+
+            <!-- Episode Info -->
+            <div class="text-center mb-6 w-full max-w-md">
+                <div id="demo-badge" class="hidden inline-flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-xs font-bold rounded-full px-3 py-1 mb-3">
+                    <i class="fa-solid fa-flask"></i> Demo Episode – Real audio coming soon!
+                </div>
+                <h1 id="ep-title" class="text-2xl font-black text-white mb-2">Select an Episode</h1>
+                <p id="ep-meta" class="text-gray-400 text-sm">Browse episodes to start listening</p>
+            </div>
+
+            <!-- Progress -->
+            <div class="w-full max-w-md mb-2">
+                <input type="range" id="progress-bar" class="progress-bar" value="0" min="0" max="100" step="0.1" oninput="seekTo(this.value)">
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span id="time-current">0:00</span>
+                    <span id="time-total">0:00</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-6 mb-6">
+                <button onclick="skipEpisode(-1)" title="Previous episode" class="text-gray-400 hover:text-white transition w-10 h-10 flex items-center justify-center">
+                    <i class="fa-solid fa-backward-step text-xl"></i>
+                </button>
+                <button onclick="skip(-15)" class="text-gray-400 hover:text-white transition text-sm font-bold w-10 h-10 flex items-center justify-center flex-col">
+                    <i class="fa-solid fa-rotate-left text-base"></i>
+                    <span class="text-[9px] mt-0.5">15</span>
+                </button>
+                <button onclick="togglePlay()" id="play-btn"
+                    class="w-16 h-16 rounded-full bg-brand text-black flex items-center justify-center shadow-lg hover:bg-orange-300 active:scale-95 transition text-xl font-bold">
+                    <i class="fa-solid fa-play" id="play-icon"></i>
+                </button>
+                <button onclick="skip(30)" class="text-gray-400 hover:text-white transition text-sm font-bold w-10 h-10 flex items-center justify-center flex-col">
+                    <i class="fa-solid fa-rotate-right text-base"></i>
+                    <span class="text-[9px] mt-0.5">30</span>
+                </button>
+                <button onclick="skipEpisode(1)" title="Next episode" class="text-gray-400 hover:text-white transition w-10 h-10 flex items-center justify-center">
+                    <i class="fa-solid fa-forward-step text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Volume & Speed -->
+            <div class="flex items-center gap-6 text-gray-400 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-volume-low text-xs"></i>
+                    <input type="range" id="vol-bar" class="vol-bar" value="100" min="0" max="100" oninput="setVolume(this.value)">
+                    <i class="fa-solid fa-volume-high text-xs"></i>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs">Speed:</span>
+                    <select id="speed-select" onchange="setSpeed(this.value)"
+                        class="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-300 outline-none">
+                        <option value="0.5">0.5×</option>
+                        <option value="0.75">0.75×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.25">1.25×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Up Next / Episode Details sidebar -->
+        <div class="w-full lg:w-80 space-y-5">
+            <!-- Current Episode Description -->
+            <div class="glass rounded-2xl p-5">
+                <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-circle-info text-brand"></i> About This Episode</h3>
+                <p id="ep-description" class="text-gray-400 text-sm leading-relaxed">Pick an episode from the list to see its description here.</p>
+                <div id="ep-details" class="hidden mt-4 space-y-2 text-xs text-gray-500 border-t border-white/5 pt-4">
+                    <div><i class="fa-regular fa-calendar mr-2 text-brandBlue"></i><span id="ep-date"></span></div>
+                    <div><i class="fa-solid fa-microphone mr-2 text-brand"></i><span id="ep-host"></span></div>
+                    <div><i class="fa-solid fa-tag mr-2 text-purple-400"></i><span id="ep-topic" class="capitalize"></span></div>
+                </div>
+            </div>
+
+            <!-- Up Next Queue -->
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-300 flex items-center gap-2"><i class="fa-solid fa-list-ul text-brandBlue"></i> Up Next</h3>
+                    <a href="queue.html" class="text-xs text-gray-500 hover:text-brand transition">Manage <i class="fa-solid fa-arrow-right ml-1"></i></a>
+                </div>
+                <div id="up-next-list" class="space-y-2"></div>
+            </div>
+
+            <!-- All Episodes quick list -->
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-300 flex items-center gap-2"><i class="fa-solid fa-podcast text-brand"></i> All Episodes</h3>
+                </div>
+                <div id="all-episodes-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-el" preload="metadata"></audio>
+
+    <script>
+        const MOCK_EPISODES = [
+            { id:'ep001', number:1, title:"Welcome to The AZ Podcast 🎙️", description:"We kick things off! Francis and the crew introduce the show, share what to expect, and talk about why they started this podcast. From student struggles to big dreams — we're here for it all.", duration:"28:14", durationSec:1694, date:"2024-01-15", topic:"student life", audioUrl:null, isMock:true, plays:412, host:"Francis Pwavwe" },
+            { id:'ep002', number:2, title:"Tech for Students: Apps You NEED", description:"From GPA calculators to AI tools, we break down the best tech for Ghanaian students. Plus — the story behind building AZ Learner and what's coming next.", duration:"34:07", durationSec:2047, date:"2024-01-22", topic:"tech", audioUrl:null, isMock:true, plays:287, host:"Francis Pwavwe" },
+            { id:'ep003', number:3, title:"The Hustle Is Real: Side Income at Campus", description:"How are students making money on campus? We share real stories, real strategies, and discuss whether the hustle is worth it alongside your studies.", duration:"41:33", durationSec:2493, date:"2024-01-29", topic:"hustle", audioUrl:null, isMock:true, plays:534, host:"Francis Pwavwe" },
+            { id:'ep004', number:4, title:"Mental Health at University – The Honest Talk", description:"Nobody talks about this enough. We get real about academic pressure, loneliness, burnout, and what students can actually do to protect their mental wellbeing.", duration:"38:50", durationSec:2330, date:"2024-02-05", topic:"mental health", audioUrl:null, isMock:true, plays:691, host:"Francis Pwavwe" },
+            { id:'ep005', number:5, title:"Relationships in University: Love, Drama & Growth", description:"Campus relationships — are they worth it? We talk love, situationships, heartbreak, and how relationships (good and bad) shape who you become.", duration:"45:22", durationSec:2722, date:"2024-02-12", topic:"relationships", audioUrl:null, isMock:true, plays:823, host:"Francis Pwavwe" },
+            { id:'ep006', number:6, title:"Building a Personal Brand as a Student", description:"LinkedIn, Twitter/X, Instagram — how students can build a digital presence that opens doors. We share what worked and what flopped.", duration:"31:45", durationSec:1905, date:"2024-02-19", topic:"hustle", audioUrl:null, isMock:true, plays:345, host:"Francis Pwavwe" }
+        ];
+
+        const audio = document.getElementById('audio-el');
+        let currentId = localStorage.getItem('az_podcast_current') || MOCK_EPISODES[0].id;
+        let queue = JSON.parse(localStorage.getItem('az_podcast_queue') || '[]');
+        let isPlaying = false;
+
+        function topicEmoji(t) {
+            const e = { tech:'💻', 'student life':'🎓', hustle:'💪', 'mental health':'🧠', relationships:'❤️' };
+            return e[t] || '🎙️';
+        }
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+        }
+        function formatTime(s) {
+            const m = Math.floor(s/60), sec = Math.floor(s%60);
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+
+        function loadEpisode(id) {
+            const ep = MOCK_EPISODES.find(e => e.id === id);
+            if (!ep) return;
+            currentId = id;
+            localStorage.setItem('az_podcast_current', id);
+
+            document.getElementById('ep-emoji').textContent = topicEmoji(ep.topic);
+            document.getElementById('ep-title').textContent = ep.title;
+            document.getElementById('ep-meta').textContent = `Episode ${ep.number} · ${ep.duration} · ${ep.plays.toLocaleString()} plays`;
+            document.getElementById('ep-description').textContent = ep.description;
+            document.getElementById('ep-date').textContent = formatDate(ep.date);
+            document.getElementById('ep-host').textContent = `Hosted by ${ep.host}`;
+            document.getElementById('ep-topic').textContent = ep.topic;
+            document.getElementById('ep-details').classList.remove('hidden');
+            document.getElementById('time-total').textContent = ep.duration;
+            document.getElementById('demo-badge').classList.toggle('hidden', !ep.isMock);
+
+            if (ep.audioUrl) {
+                audio.src = ep.audioUrl;
+                audio.load();
+            } else {
+                audio.removeAttribute('src');
+            }
+            isPlaying = false;
+            document.getElementById('play-icon').className = 'fa-solid fa-play';
+            document.getElementById('album-art').classList.remove('playing');
+            document.getElementById('playing-bars').classList.add('hidden');
+            document.getElementById('progress-bar').value = 0;
+            renderUpNext();
+            renderAllEpisodes();
+        }
+
+        function togglePlay() {
+            const ep = MOCK_EPISODES.find(e => e.id === currentId);
+            if (!ep) return;
+            if (!ep.audioUrl) {
+                showToast('🎧 Demo episode – real audio coming soon!');
+                // Simulate playback UI for demo
+                isPlaying = !isPlaying;
+                updatePlayUI();
+                if (isPlaying) simulateProgress();
+                return;
+            }
+            if (isPlaying) { audio.pause(); isPlaying = false; }
+            else { audio.play().catch(() => {}); isPlaying = true; }
+            updatePlayUI();
+        }
+
+        let simTimer = null;
+        let simProgress = 0;
+        function simulateProgress() {
+            clearInterval(simTimer);
+            const ep = MOCK_EPISODES.find(e => e.id === currentId);
+            if (!ep || !isPlaying) return;
+            simTimer = setInterval(() => {
+                if (!isPlaying) { clearInterval(simTimer); return; }
+                simProgress += 1;
+                if (simProgress > ep.durationSec) { simProgress = 0; }
+                const pct = (simProgress / ep.durationSec) * 100;
+                document.getElementById('progress-bar').value = pct;
+                document.getElementById('time-current').textContent = formatTime(simProgress);
+            }, 1000);
+        }
+
+        function updatePlayUI() {
+            document.getElementById('play-icon').className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+            document.getElementById('album-art').classList.toggle('playing', isPlaying);
+            document.getElementById('playing-bars').classList.toggle('hidden', !isPlaying);
+        }
+
+        function skip(sec) {
+            if (audio.src) { audio.currentTime = Math.max(0, audio.currentTime + sec); }
+            else { simProgress = Math.max(0, simProgress + sec); }
+        }
+
+        function skipEpisode(dir) {
+            const idx = MOCK_EPISODES.findIndex(e => e.id === currentId);
+            const next = MOCK_EPISODES[idx + dir];
+            if (next) { clearInterval(simTimer); simProgress = 0; loadEpisode(next.id); }
+        }
+
+        function seekTo(val) {
+            const ep = MOCK_EPISODES.find(e => e.id === currentId);
+            if (!ep) return;
+            if (audio.duration) { audio.currentTime = (val / 100) * audio.duration; }
+            else { simProgress = Math.floor((val / 100) * ep.durationSec); }
+        }
+
+        function setVolume(v) { audio.volume = v / 100; }
+        function setSpeed(v) { audio.playbackRate = parseFloat(v); }
+
+        audio.addEventListener('timeupdate', () => {
+            if (!audio.duration) return;
+            const pct = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('progress-bar').value = pct;
+            document.getElementById('time-current').textContent = formatTime(audio.currentTime);
+        });
+        audio.addEventListener('play', () => { isPlaying = true; updatePlayUI(); });
+        audio.addEventListener('pause', () => { isPlaying = false; updatePlayUI(); });
+        audio.addEventListener('ended', () => { skipEpisode(1); });
+
+        function renderUpNext() {
+            const el = document.getElementById('up-next-list');
+            const queueEps = queue.map(id => MOCK_EPISODES.find(e => e.id === id)).filter(Boolean).slice(0, 4);
+            if (queueEps.length === 0) {
+                el.innerHTML = '<p class="text-xs text-gray-600 text-center py-4">Your queue is empty. <a href="index.html" class="text-brand hover:underline">Browse episodes</a></p>';
+                return;
+            }
+            el.innerHTML = queueEps.map((ep, i) => `
+                <div class="flex items-center gap-3 py-2 border-b border-white/5 cursor-pointer hover:bg-white/3 rounded-lg px-1 transition" onclick="loadEpisode('${ep.id}')">
+                    <span class="text-xs text-gray-600 w-4">${i+1}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-300 truncate">${ep.title}</p>
+                        <p class="text-[10px] text-gray-500">${ep.duration}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAllEpisodes() {
+            const el = document.getElementById('all-episodes-list');
+            el.innerHTML = MOCK_EPISODES.map(ep => `
+                <div class="flex items-center gap-3 py-2 cursor-pointer hover:bg-white/3 rounded-lg px-2 transition ${ep.id === currentId ? 'bg-brand/10 border border-brand/20' : ''}" onclick="loadEpisode('${ep.id}')">
+                    <span class="text-brand text-xs font-bold w-6">${ep.number}</span>
+                    <p class="text-xs font-semibold text-gray-300 truncate flex-1">${ep.title}</p>
+                    <span class="text-[10px] text-gray-500">${ep.duration}</span>
+                </div>
+            `).join('');
+        }
+
+        let toastTimer;
+        function showToast(msg) {
+            clearTimeout(toastTimer);
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.className = 'fixed top-20 right-4 z-[200] bg-gray-800 border border-white/10 text-white text-sm px-4 py-2 rounded-xl shadow-xl transition-opacity';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
+        }
+
+        // Init
+        loadEpisode(currentId);
+    </script>
+</body>
+</html>

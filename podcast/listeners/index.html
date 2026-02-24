@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AZ Podcast – Episodes</title>
+    <link rel="icon" type="image/png" href="../../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: '#FFAB40', brandBlue: '#448AFF' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: linear-gradient(-45deg, #020617, #0f172a, #1a0a2e, #0f172a); background-size: 400% 400%; animation: gradBG 18s ease infinite; color: white; }
+        @keyframes gradBG { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .episode-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+        .episode-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .wave-bar { display: inline-block; width: 3px; border-radius: 2px; background: #FFAB40; animation: wave 1.2s ease-in-out infinite; }
+        @keyframes wave { 0%,100% { height: 6px; } 50% { height: 18px; } }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="glass border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-orange-600 flex items-center justify-center text-sm font-black">AZ</div>
+                <span class="font-black text-lg tracking-tight">The AZ Podcast</span>
+            </a>
+            <div class="flex items-center gap-1 md:gap-4 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="text-brand px-3 py-1.5 rounded-lg bg-brand/10 hidden md:block">Episodes</a>
+                <a href="now-playing.html" class="hover:text-white transition px-3 py-1.5 hidden md:block">Now Playing</a>
+                <a href="queue.html" class="hover:text-white transition px-3 py-1.5 hidden md:block">Queue</a>
+                <!-- Mobile icons -->
+                <a href="now-playing.html" class="md:hidden p-2 hover:text-white"><i class="fa-solid fa-play-circle text-lg"></i></a>
+                <a href="queue.html" class="md:hidden p-2 hover:text-white"><i class="fa-solid fa-list text-lg"></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="max-w-6xl mx-auto px-6 py-12 text-center">
+        <div class="inline-flex items-center gap-2 bg-brand/10 border border-brand/30 rounded-full px-4 py-1.5 text-brand text-xs font-bold uppercase tracking-widest mb-6">
+            <span class="wave-bar" style="animation-delay:0s"></span>
+            <span class="wave-bar" style="animation-delay:0.15s"></span>
+            <span class="wave-bar" style="animation-delay:0.3s"></span>
+            Now Broadcasting
+        </div>
+        <h1 class="text-4xl md:text-6xl font-black mb-4">The <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand to-orange-300">AZ Podcast</span></h1>
+        <p class="text-gray-400 max-w-xl mx-auto text-lg">Real talk, real stories. Student life, tech, hustle and everything in between.</p>
+        <div class="flex justify-center gap-6 mt-8 text-sm text-gray-500">
+            <span><i class="fas fa-microphone text-brand mr-1"></i> <span id="total-episodes">0</span> Episodes</span>
+            <span><i class="fas fa-headphones text-brandBlue mr-1"></i> Weekly Drops</span>
+            <span><i class="fas fa-clock text-purple-400 mr-1"></i> ~30 min avg</span>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="max-w-6xl mx-auto px-6 pb-6">
+        <div class="flex gap-3 flex-wrap items-center">
+            <div class="relative flex-1 min-w-[200px]">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                <input id="search-input" type="text" placeholder="Search episodes..." oninput="filterEpisodes()"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-brand/50 transition">
+            </div>
+            <select id="filter-select" onchange="filterEpisodes()"
+                class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 outline-none focus:border-brand/50 transition">
+                <option value="all">All Topics</option>
+                <option value="tech">Tech</option>
+                <option value="student life">Student Life</option>
+                <option value="hustle">Hustle</option>
+                <option value="mental health">Mental Health</option>
+                <option value="relationships">Relationships</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Episodes Grid -->
+    <div class="max-w-6xl mx-auto px-6 pb-20">
+        <div id="episodes-grid" class="space-y-4"></div>
+        <div id="no-results" class="hidden text-center py-16 text-gray-500">
+            <i class="fa-solid fa-search text-4xl mb-4 opacity-30"></i>
+            <p>No episodes match your search.</p>
+        </div>
+    </div>
+
+    <!-- Mini Player -->
+    <div id="mini-player" class="hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/10 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-brand/30 to-purple-500/30 flex items-center justify-center shrink-0 text-brand">
+                <i class="fa-solid fa-headphones"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p id="player-title" class="text-sm font-bold truncate"></p>
+                <p id="player-ep" class="text-xs text-gray-400 truncate"></p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="playerSkip(-15)" class="text-gray-400 hover:text-white transition text-sm"><i class="fa-solid fa-backward-step"></i></button>
+                <button onclick="playerToggle()" id="player-btn" class="w-10 h-10 rounded-full bg-brand text-black flex items-center justify-center font-bold hover:bg-orange-300 transition">
+                    <i class="fa-solid fa-play text-sm" id="player-icon"></i>
+                </button>
+                <button onclick="playerSkip(15)" class="text-gray-400 hover:text-white transition text-sm"><i class="fa-solid fa-forward-step"></i></button>
+                <a href="now-playing.html" class="text-gray-400 hover:text-white transition text-sm hidden md:block">
+                    <i class="fa-solid fa-expand"></i>
+                </a>
+            </div>
+            <div class="hidden md:flex items-center gap-2 w-40">
+                <span id="player-cur" class="text-xs text-gray-500 w-8 text-right">0:00</span>
+                <div class="flex-1 h-1 bg-white/10 rounded-full relative cursor-pointer" onclick="playerSeek(event, this)">
+                    <div id="player-bar" class="h-full bg-brand rounded-full" style="width:0%"></div>
+                </div>
+                <span id="player-dur" class="text-xs text-gray-500 w-8">0:00</span>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-player" preload="metadata"></audio>
+
+    <script>
+        // Mock episodes – replace with real uploads when ready
+        const MOCK_EPISODES = [
+            {
+                id: 'ep001',
+                number: 1,
+                title: "Welcome to The AZ Podcast 🎙️",
+                description: "We kick things off! Francis and the crew introduce the show, share what to expect, and talk about why they started this podcast. From student struggles to big dreams — we're here for it all.",
+                duration: "28:14",
+                durationSec: 1694,
+                date: "2024-01-15",
+                topic: "student life",
+                cover: null,
+                audioUrl: null,
+                isMock: true,
+                plays: 412,
+                host: "Francis Pwavwe"
+            },
+            {
+                id: 'ep002',
+                number: 2,
+                title: "Tech for Students: Apps You NEED",
+                description: "From GPA calculators to AI tools, we break down the best tech for Ghanaian students. Plus — the story behind building AZ Learner and what's coming next.",
+                duration: "34:07",
+                durationSec: 2047,
+                date: "2024-01-22",
+                topic: "tech",
+                cover: null,
+                audioUrl: null,
+                isMock: true,
+                plays: 287,
+                host: "Francis Pwavwe"
+            },
+            {
+                id: 'ep003',
+                number: 3,
+                title: "The Hustle Is Real: Side Income at Campus",
+                description: "How are students making money on campus? We share real stories, real strategies, and discuss whether the hustle is worth it alongside your studies.",
+                duration: "41:33",
+                durationSec: 2493,
+                date: "2024-01-29",
+                topic: "hustle",
+                cover: null,
+                audioUrl: null,
+                isMock: true,
+                plays: 534,
+                host: "Francis Pwavwe"
+            },
+            {
+                id: 'ep004',
+                number: 4,
+                title: "Mental Health at University – The Honest Talk",
+                description: "Nobody talks about this enough. We get real about academic pressure, loneliness, burnout, and what students can actually do to protect their mental wellbeing.",
+                duration: "38:50",
+                durationSec: 2330,
+                date: "2024-02-05",
+                topic: "mental health",
+                cover: null,
+                audioUrl: null,
+                isMock: true,
+                plays: 691,
+                host: "Francis Pwavwe"
+            },
+            {
+                id: 'ep005',
+                number: 5,
+                title: "Relationships in University: Love, Drama & Growth",
+                description: "Campus relationships — are they worth it? We talk love, situationships, heartbreak, and how relationships (good and bad) shape who you become.",
+                duration: "45:22",
+                durationSec: 2722,
+                date: "2024-02-12",
+                topic: "relationships",
+                cover: null,
+                audioUrl: null,
+                isMock: true,
+                plays: 823,
+                host: "Francis Pwavwe"
+            },
+            {
+                id: 'ep006',
+                number: 6,
+                title: "Building a Personal Brand as a Student",
+                description: "LinkedIn, Twitter/X, Instagram — how students can build a digital presence that opens doors. We share what worked and what flopped.",
+                duration: "31:45",
+                durationSec: 1905,
+                date: "2024-02-19",
+                topic: "hustle",
+                cover: null,
+                audioUrl: null,
+                isMock: true,
+                plays: 345,
+                host: "Francis Pwavwe"
+            }
+        ];
+
+        let currentEpisodes = [...MOCK_EPISODES];
+        let queue = JSON.parse(localStorage.getItem('az_podcast_queue') || '[]');
+        let currentEpId = localStorage.getItem('az_podcast_current') || null;
+        let isPlaying = false;
+        const audio = document.getElementById('audio-player');
+
+        function init() {
+            document.getElementById('total-episodes').textContent = MOCK_EPISODES.length;
+            renderEpisodes(MOCK_EPISODES);
+            if (currentEpId) {
+                const ep = MOCK_EPISODES.find(e => e.id === currentEpId);
+                if (ep) showMiniPlayer(ep);
+            }
+        }
+
+        function renderEpisodes(eps) {
+            const grid = document.getElementById('episodes-grid');
+            const noRes = document.getElementById('no-results');
+            if (eps.length === 0) {
+                grid.innerHTML = '';
+                noRes.classList.remove('hidden');
+                return;
+            }
+            noRes.classList.add('hidden');
+            grid.innerHTML = eps.map(ep => `
+                <div class="episode-card glass rounded-2xl p-5 flex gap-5 items-start cursor-pointer group" onclick="playEpisode('${ep.id}')">
+                    <div class="w-16 h-16 rounded-xl shrink-0 flex items-center justify-center text-2xl font-black relative overflow-hidden"
+                        style="background: linear-gradient(135deg, ${topicColor(ep.topic)})">
+                        <span class="opacity-60">${topicEmoji(ep.topic)}</span>
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center">
+                            <i class="fa-solid fa-play text-white opacity-0 group-hover:opacity-100 transition text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-3 mb-1">
+                            <div>
+                                <span class="text-xs font-bold text-gray-500 uppercase">Ep. ${ep.number}</span>
+                                <h3 class="font-bold text-white leading-snug">${ep.title}</h3>
+                            </div>
+                            ${ep.isMock ? '<span class="shrink-0 text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-2 py-0.5 font-bold">DEMO</span>' : ''}
+                        </div>
+                        <p class="text-gray-400 text-sm line-clamp-2 mb-3">${ep.description}</p>
+                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                            <span><i class="fa-regular fa-clock mr-1"></i>${ep.duration}</span>
+                            <span><i class="fa-solid fa-headphones mr-1 text-brandBlue"></i>${ep.plays.toLocaleString()} plays</span>
+                            <span><i class="fa-regular fa-calendar mr-1"></i>${formatDate(ep.date)}</span>
+                            <span class="capitalize hidden md:inline"><i class="fa-solid fa-tag mr-1"></i>${ep.topic}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 shrink-0">
+                        <button onclick="addToQueue(event,'${ep.id}')" title="Add to Queue"
+                            class="w-8 h-8 rounded-lg bg-white/5 hover:bg-brandBlue/20 hover:text-brandBlue text-gray-400 flex items-center justify-center transition text-xs">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <a href="now-playing.html" onclick="setCurrentEp('${ep.id}')" title="Open Player"
+                            class="w-8 h-8 rounded-lg bg-white/5 hover:bg-brand/20 hover:text-brand text-gray-400 flex items-center justify-center transition text-xs">
+                            <i class="fa-solid fa-expand-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterEpisodes() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const topic = document.getElementById('filter-select').value;
+            const filtered = MOCK_EPISODES.filter(ep => {
+                const matchSearch = !query || ep.title.toLowerCase().includes(query) || ep.description.toLowerCase().includes(query);
+                const matchTopic = topic === 'all' || ep.topic === topic;
+                return matchSearch && matchTopic;
+            });
+            renderEpisodes(filtered);
+        }
+
+        function playEpisode(id) {
+            const ep = MOCK_EPISODES.find(e => e.id === id);
+            if (!ep) return;
+            localStorage.setItem('az_podcast_current', id);
+            currentEpId = id;
+            if (ep.audioUrl) {
+                audio.src = ep.audioUrl;
+                audio.play();
+                isPlaying = true;
+            }
+            showMiniPlayer(ep);
+        }
+
+        function setCurrentEp(id) {
+            localStorage.setItem('az_podcast_current', id);
+        }
+
+        function showMiniPlayer(ep) {
+            document.getElementById('player-title').textContent = ep.title;
+            document.getElementById('player-ep').textContent = `Episode ${ep.number} • ${ep.duration}`;
+            document.getElementById('mini-player').classList.remove('hidden');
+            document.getElementById('player-dur').textContent = ep.duration;
+        }
+
+        function playerToggle() {
+            if (!currentEpId) return;
+            const ep = MOCK_EPISODES.find(e => e.id === currentEpId);
+            if (!ep || !ep.audioUrl) {
+                showToast('Demo episode – audio coming soon! 🎧');
+                return;
+            }
+            if (isPlaying) { audio.pause(); isPlaying = false; }
+            else { audio.play(); isPlaying = true; }
+            document.getElementById('player-icon').className = isPlaying ? 'fa-solid fa-pause text-sm' : 'fa-solid fa-play text-sm';
+        }
+
+        function playerSkip(sec) {
+            if (audio.src) audio.currentTime = Math.max(0, audio.currentTime + sec);
+        }
+
+        function playerSeek(e, bar) {
+            if (!audio.duration) return;
+            const rect = bar.getBoundingClientRect();
+            const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            audio.currentTime = pct * audio.duration;
+        }
+
+        audio.addEventListener('timeupdate', () => {
+            if (!audio.duration) return;
+            const pct = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('player-bar').style.width = pct + '%';
+            document.getElementById('player-cur').textContent = formatTime(audio.currentTime);
+        });
+
+        function addToQueue(e, id) {
+            e.stopPropagation();
+            if (!queue.includes(id)) {
+                queue.push(id);
+                localStorage.setItem('az_podcast_queue', JSON.stringify(queue));
+                showToast('Added to queue!');
+            } else {
+                showToast('Already in queue');
+            }
+        }
+
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+        }
+        function formatTime(s) {
+            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+        function topicColor(t) {
+            const c = { tech:'#448AFF,#1e40af', 'student life':'#a855f7,#6d28d9', hustle:'#FFAB40,#d97706', 'mental health':'#10b981,#065f46', relationships:'#ec4899,#9d174d' };
+            return c[t] || '#FFAB40,#d97706';
+        }
+        function topicEmoji(t) {
+            const e = { tech:'💻', 'student life':'🎓', hustle:'💪', 'mental health':'🧠', relationships:'❤️' };
+            return e[t] || '🎙️';
+        }
+
+        let toastTimer;
+        function showToast(msg) {
+            clearTimeout(toastTimer);
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.className = 'fixed top-20 right-4 z-[200] bg-gray-800 border border-white/10 text-white text-sm px-4 py-2 rounded-xl shadow-xl transition-opacity';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
+        }
+
+        init();
+    </script>
+</body>
+</html>
