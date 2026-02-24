@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CV Admin – AZ Learner</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#3b82f6',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b',
+                        success: '#22c55e'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0f172a; color: white; font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; }
+        .badge-paid { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+        .badge-pending { background: rgba(251,191,36,0.15); color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- Auth Overlay -->
+<div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+    <div class="w-full max-w-sm bg-slate-800 p-8 rounded-2xl shadow-2xl text-center border border-slate-700">
+        <div class="w-14 h-14 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-file-lines text-blue-400 text-xl"></i>
+        </div>
+        <h1 class="text-2xl font-black text-white mb-1">CV Admin Panel</h1>
+        <p class="text-sm text-gray-400 mb-6">Admin access only</p>
+        <input type="email" id="login-email" placeholder="Admin Email"
+            class="w-full mb-3 p-3 rounded-lg bg-slate-700 outline-none text-white border border-slate-600 focus:border-blueAccent transition-colors text-sm">
+        <input type="password" id="login-pass" placeholder="Password"
+            class="w-full mb-5 p-3 rounded-lg bg-slate-700 outline-none text-white border border-slate-600 focus:border-blueAccent transition-colors text-sm">
+        <button onclick="doLogin()"
+            class="w-full py-3 bg-gradient-to-r from-blueAccent to-indigo-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3 text-sm">
+            <i class="fa-solid fa-lock mr-2"></i>Sign In
+        </button>
+        <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+    </div>
+</div>
+
+<!-- Main App -->
+<div id="app-content" class="hidden flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+            <a href="../admin.html" class="text-gray-400 hover:text-white transition text-sm mr-1">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div class="w-9 h-9 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <i class="fa-solid fa-file-lines text-blue-400"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-base text-white leading-tight">CV Admin</h1>
+                <p class="text-xs text-gray-500">Track CV orders & payments</p>
+            </div>
+        </div>
+        <button onclick="doLogout()"
+            class="bg-slate-700 hover:bg-red-900/60 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+            <i class="fa-solid fa-power-off mr-1"></i>Logout
+        </button>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="px-4 sm:px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+        <div class="stat-card">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Total CVs</p>
+            <p class="text-2xl font-black text-white" id="stat-total">—</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Paid</p>
+            <p class="text-2xl font-black text-green-400" id="stat-paid">—</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Revenue (GHS)</p>
+            <p class="text-2xl font-black text-orange-400" id="stat-revenue">—</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">This Week</p>
+            <p class="text-2xl font-black text-blue-400" id="stat-week">—</p>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="px-4 sm:px-6 pb-3 flex flex-wrap gap-2 items-center shrink-0">
+        <input type="text" id="search-input" placeholder="Search by name or email..." oninput="filterOrders()"
+            class="flex-1 min-w-[160px] max-w-xs px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm outline-none focus:border-blueAccent">
+        <select id="filter-status" onchange="filterOrders()"
+            class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm outline-none focus:border-blueAccent">
+            <option value="">All Statuses</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+        </select>
+        <button onclick="loadOrders()" class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 px-3 py-2 rounded-lg text-sm font-semibold transition">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i>Refresh
+        </button>
+        <button onclick="exportCSV()" class="bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300 px-3 py-2 rounded-lg text-sm font-semibold transition">
+            <i class="fa-solid fa-download mr-1"></i>Export CSV
+        </button>
+    </div>
+
+    <!-- Table -->
+    <div class="flex-1 overflow-auto px-4 sm:px-6 pb-8">
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-800/80 text-gray-400 text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Name</th>
+                        <th class="px-4 py-3 hidden sm:table-cell">Email</th>
+                        <th class="px-4 py-3 hidden md:table-cell">Template</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3 hidden sm:table-cell">Ref</th>
+                        <th class="px-4 py-3">Date</th>
+                        <th class="px-4 py-3 text-right">View</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-table" class="divide-y divide-slate-800 text-gray-300">
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading orders...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div id="order-modal" class="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 relative">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <h3 class="text-lg font-bold mb-4 text-white">CV Order Details</h3>
+        <div id="modal-body" class="space-y-3 text-sm"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+        authDomain: "az-learner.firebaseapp.com",
+        projectId: "az-learner",
+        storageBucket: "az-learner.firebasestorage.app",
+        messagingSenderId: "12958795950",
+        appId: "1:12958795950:web:326411293864571040453f"
+    };
+
+    const appInstance = initializeApp(firebaseConfig);
+    const db = getFirestore(appInstance);
+    const auth = getAuth(appInstance);
+
+    let allOrders = [];
+
+    window.doLogin = async function() {
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-pass').value;
+        const msg = document.getElementById('login-msg');
+        msg.textContent = '';
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (err) {
+            msg.textContent = 'Login failed: ' + err.message;
+        }
+    };
+
+    window.doLogout = async function() {
+        await signOut(auth);
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            document.getElementById('auth-overlay').classList.remove('hidden');
+            document.getElementById('app-content').classList.add('hidden');
+            return;
+        }
+        // Check admin role
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+            alert("Access denied. Admin only.");
+            await signOut(auth);
+            return;
+        }
+        document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        window.loadOrders();
+    });
+
+    window.loadOrders = async function() {
+        const tbody = document.getElementById('orders-table');
+        tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...</td></tr>`;
+        try {
+            const snap = await getDocs(query(collection(db, "cv_orders"), orderBy("createdAt", "desc")));
+            allOrders = [];
+            snap.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
+            updateStats();
+            renderTable(allOrders);
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-400">Error loading data: ${err.message}</td></tr>`;
+        }
+    };
+
+    function updateStats() {
+        const total = allOrders.length;
+        const paid = allOrders.filter(o => o.status === 'paid').length;
+        const revenue = paid * 5;
+        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const weekCount = allOrders.filter(o => {
+            const ts = o.createdAt?.seconds ? o.createdAt.seconds * 1000 : 0;
+            return ts > weekAgo;
+        }).length;
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-paid').textContent = paid;
+        document.getElementById('stat-revenue').textContent = revenue.toFixed(2);
+        document.getElementById('stat-week').textContent = weekCount;
+    }
+
+    function renderTable(orders) {
+        const tbody = document.getElementById('orders-table');
+        if (orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No CV orders found.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = orders.map(o => {
+            const name = ((o.firstName || '') + ' ' + (o.lastName || '')).trim() || '—';
+            const dateStr = o.createdAt?.seconds
+                ? new Date(o.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+                : '—';
+            const badge = o.status === 'paid'
+                ? '<span class="badge-paid text-xs px-2 py-0.5 rounded-full font-semibold">Paid</span>'
+                : '<span class="badge-pending text-xs px-2 py-0.5 rounded-full font-semibold">Pending</span>';
+            const tplNames = { 1:'Classic Blue', 2:'Modern Green', 3:'Elegant Dark', 4:'Creative Orange', 5:'Minimalist Purple' };
+            return `<tr>
+                <td class="px-4 py-3 font-medium text-white">${escHtml(name)}</td>
+                <td class="px-4 py-3 hidden sm:table-cell text-gray-400">${escHtml(o.email || '—')}</td>
+                <td class="px-4 py-3 hidden md:table-cell text-gray-400">${escHtml(tplNames[o.template] || 'T' + (o.template || '?'))}</td>
+                <td class="px-4 py-3">${badge}</td>
+                <td class="px-4 py-3 hidden sm:table-cell text-gray-500 font-mono text-xs">${escHtml((o.paymentRef || '').substring(0, 14))}${o.paymentRef && o.paymentRef.length > 14 ? '…' : ''}</td>
+                <td class="px-4 py-3 text-gray-400 text-xs">${dateStr}</td>
+                <td class="px-4 py-3 text-right">
+                    <button onclick='showOrder("${escHtml(o.id)}")' class="text-blue-400 hover:text-blue-300 transition text-xs font-semibold">
+                        <i class="fa-solid fa-eye mr-1"></i>View
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    window.filterOrders = function() {
+        const q = document.getElementById('search-input').value.toLowerCase();
+        const s = document.getElementById('filter-status').value;
+        const filtered = allOrders.filter(o => {
+            const name = ((o.firstName || '') + ' ' + (o.lastName || '') + ' ' + (o.email || '')).toLowerCase();
+            const matchQ = !q || name.includes(q);
+            const matchS = !s || o.status === s;
+            return matchQ && matchS;
+        });
+        renderTable(filtered);
+    };
+
+    window.showOrder = function(orderId) {
+        const o = allOrders.find(x => x.id === orderId);
+        if (!o) return;
+        const tplNames = { 1:'Classic Blue', 2:'Modern Green', 3:'Elegant Dark', 4:'Creative Orange', 5:'Minimalist Purple' };
+        const fields = [
+            ['Name', ((o.firstName || '') + ' ' + (o.lastName || '')).trim()],
+            ['Email', o.email],
+            ['Phone', o.phone],
+            ['Title', o.title],
+            ['Location', o.location],
+            ['Template', tplNames[o.template] || 'Template ' + o.template],
+            ['Status', o.status || '—'],
+            ['Payment Ref', o.paymentRef || '—'],
+            ['Skills', o.skills],
+            ['Languages', o.languages],
+            ['Date', o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toLocaleString() : '—']
+        ];
+        const eduHtml = (o.education || []).map(e => `<div class="text-gray-300">${escHtml(e.degree)} at ${escHtml(e.school)}${e.year ? ', ' + escHtml(e.year) : ''}</div>`).join('') || '—';
+        const expHtml = (o.experience || []).map(e => `<div class="text-gray-300">${escHtml(e.role)} at ${escHtml(e.company)}${e.duration ? ', ' + escHtml(e.duration) : ''}</div>`).join('') || '—';
+
+        document.getElementById('modal-body').innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+                ${fields.map(([k, v]) => `<div class="bg-slate-800 rounded-lg p-3"><p class="text-xs text-gray-500 mb-0.5">${k}</p><p class="text-white font-medium text-sm break-all">${escHtml(String(v || '—'))}</p></div>`).join('')}
+            </div>
+            <div class="bg-slate-800 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">Education</p>${eduHtml}</div>
+            <div class="bg-slate-800 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">Experience</p>${expHtml}</div>
+            ${o.summary ? `<div class="bg-slate-800 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">Summary</p><p class="text-gray-300 text-sm">${escHtml(o.summary)}</p></div>` : ''}
+            ${o.certs ? `<div class="bg-slate-800 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">Certifications</p><p class="text-gray-300 text-sm">${escHtml(o.certs)}</p></div>` : ''}
+        `;
+        document.getElementById('order-modal').classList.remove('hidden');
+    };
+
+    window.closeModal = function() {
+        document.getElementById('order-modal').classList.add('hidden');
+    };
+
+    window.exportCSV = function() {
+        if (allOrders.length === 0) { alert('No data to export.'); return; }
+        const headers = ['Name', 'Email', 'Phone', 'Title', 'Template', 'Status', 'PaymentRef', 'Date'];
+        const rows = allOrders.map(o => {
+            const tplNames = { 1:'Classic Blue', 2:'Modern Green', 3:'Elegant Dark', 4:'Creative Orange', 5:'Minimalist Purple' };
+            const date = o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toISOString() : '';
+            return [
+                ((o.firstName || '') + ' ' + (o.lastName || '')).trim(),
+                o.email || '', o.phone || '', o.title || '',
+                tplNames[o.template] || o.template || '',
+                o.status || '', o.paymentRef || '', date
+            ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',');
+        });
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'cv_orders_' + new Date().toISOString().slice(0,10) + '.csv';
+        a.click(); URL.revokeObjectURL(url);
+    };
+
+    function escHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('order-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // Enter key for login
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !document.getElementById('auth-overlay').classList.contains('hidden')) {
+            doLogin();
+        }
+    });
+</script>
+
+</body>
+</html>
