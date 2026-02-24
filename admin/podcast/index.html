@@ -222,11 +222,18 @@
         const epStatusColor = { idea:'text-gray-400 bg-gray-700/30', scripting:'text-yellow-400 bg-yellow-900/30', recording:'text-orange-400 bg-orange-900/30', editing:'text-blue-400 bg-blue-900/30', published:'text-green-400 bg-green-900/30' };
         const guestStatusColor = { prospective:'text-gray-400', contacted:'text-yellow-400', confirmed:'text-blue-400', recorded:'text-purple-400', published:'text-green-400' };
 
+        const VIEWS = ['dashboard','episodes','guests','scripts','schedule'];
         window.switchView = function(view) {
+            if(!VIEWS.includes(view)) view = 'dashboard';
             document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
             document.getElementById(`view-${view}`).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('active'); if(b.id===`nav-${view}`) b.classList.add('active'); });
+            if(window.location.hash.slice(1) !== view) window.location.hash = view;
         };
+        window.addEventListener('hashchange', ()=>{
+            const v = window.location.hash.slice(1);
+            switchView(VIEWS.includes(v) ? v : 'dashboard');
+        });
 
         window.authManager = {
             async login(){ const msg=document.getElementById('login-msg'); msg.innerText=''; try{ await signInWithEmailAndPassword(auth,document.getElementById('login-email').value.trim(),document.getElementById('login-pass').value); }catch(e){msg.innerText='Login failed: '+e.message;} },
@@ -385,7 +392,7 @@
                     document.getElementById('app-content').classList.remove('hidden');
                     document.getElementById('user-name-display').innerText=`Podcast Lead: ${data.name||user.email}`;
                     startListeners();
-                    switchView('dashboard');
+                    switchView(VIEWS.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'dashboard');
                 }catch(e){document.getElementById('login-msg').innerText='Error: '+e.message; signOut(auth);}
             } else {
                 document.getElementById('auth-overlay').classList.remove('hidden');

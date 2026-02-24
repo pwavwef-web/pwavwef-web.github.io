@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Admin Portal</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { orangeAccent: '#FFAB40' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="text-5xl mb-4">🔒</div>
+            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200 mb-2">Admin Portal</h1>
+            <p class="text-sm text-gray-400 mb-6">Restricted Access · Authorized Personnel Only</p>
+            <input type="email" id="login-email" placeholder="Admin Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-black font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Enter Admin Zone 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- Redirecting State -->
+    <div id="redirecting" class="hidden fixed inset-0 z-[90] bg-gray-900 flex flex-col items-center justify-center gap-4">
+        <div class="text-4xl animate-spin">⚙️</div>
+        <p class="text-white font-bold text-lg">Redirecting to your portal…</p>
+        <p id="redirect-msg" class="text-gray-400 text-sm"></p>
+    </div>
+
+    <!-- Access Denied State -->
+    <div id="access-denied" class="hidden fixed inset-0 z-[90] bg-gray-900 flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <div class="text-5xl">⛔</div>
+        <h2 class="text-2xl font-black text-red-400">Access Denied</h2>
+        <p class="text-gray-400 text-sm max-w-xs">Your account does not have admin clearance. Contact the CEO to request access.</p>
+        <button onclick="authManager.logout()"
+            class="mt-4 px-6 py-2.5 bg-gray-800 hover:bg-red-900/60 text-white rounded-xl font-bold text-sm transition">
+            <i class="fa-solid fa-power-off mr-1.5"></i>Sign Out
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        const OWNER_EMAIL = "pwavwef@gmail.com";
+
+        // Role → portal path mapping
+        const ROLE_PORTALS = {
+            finance_lead:       'finance/',
+            chief_ambassador:   'ambassadors/',
+            marketing_lead:     'marketing/',
+            developer:          'developer/',
+            podcast_lead:       'podcast/',
+            admin_assistant:    'assistant/'
+        };
+
+        window.authManager = {
+            async login() {
+                const msg = document.getElementById('login-msg');
+                msg.innerText = '';
+                try {
+                    await signInWithEmailAndPassword(auth,
+                        document.getElementById('login-email').value.trim(),
+                        document.getElementById('login-pass').value);
+                } catch (err) {
+                    msg.innerText = 'Login failed: ' + err.message;
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        // Allow pressing Enter to submit
+        document.getElementById('login-pass').addEventListener('keydown', e => {
+            if (e.key === 'Enter') authManager.login();
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('redirecting').classList.remove('hidden');
+
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (!userDoc.exists()) {
+                        showDenied();
+                        signOut(auth);
+                        return;
+                    }
+                    const userData = userDoc.data();
+                    const role = userData.role || '';
+
+                    // CEO gets their own portal
+                    if (user.email === OWNER_EMAIL) {
+                        document.getElementById('redirect-msg').innerText = 'CEO Portal loading…';
+                        window.location.href = 'ceo/';
+                        return;
+                    }
+
+                    // Role-based redirect
+                    if (ROLE_PORTALS[role]) {
+                        document.getElementById('redirect-msg').innerText = `${role} portal loading…`;
+                        window.location.href = ROLE_PORTALS[role];
+                        return;
+                    }
+
+                    // No matching role
+                    showDenied();
+                    signOut(auth);
+                } catch (err) {
+                    document.getElementById('login-msg').innerText = 'Error: ' + err.message;
+                    document.getElementById('auth-overlay').classList.remove('hidden');
+                    document.getElementById('redirecting').classList.add('hidden');
+                    signOut(auth);
+                }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('redirecting').classList.add('hidden');
+                document.getElementById('access-denied').classList.add('hidden');
+            }
+        });
+
+        function showDenied() {
+            document.getElementById('redirecting').classList.add('hidden');
+            document.getElementById('access-denied').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

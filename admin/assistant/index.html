@@ -194,11 +194,18 @@
 
         function escHtml(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+        const VIEWS = ['dashboard','tasks','meetings','announcements','docs'];
         window.switchView = function(view) {
+            if(!VIEWS.includes(view)) view = 'dashboard';
             document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
             document.getElementById(`view-${view}`).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('active'); if(b.id===`nav-${view}`) b.classList.add('active'); });
+            if(window.location.hash.slice(1) !== view) window.location.hash = view;
         };
+        window.addEventListener('hashchange', ()=>{
+            const v = window.location.hash.slice(1);
+            switchView(VIEWS.includes(v) ? v : 'dashboard');
+        });
 
         window.authManager = {
             async login(){ const msg=document.getElementById('login-msg'); msg.innerText=''; try{ await signInWithEmailAndPassword(auth,document.getElementById('login-email').value.trim(),document.getElementById('login-pass').value); }catch(e){msg.innerText='Login failed: '+e.message;} },
@@ -335,7 +342,7 @@
                     document.getElementById('app-content').classList.remove('hidden');
                     document.getElementById('user-name-display').innerText=`Assistant: ${data.name||user.email}`;
                     startListeners();
-                    switchView('dashboard');
+                    switchView(VIEWS.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'dashboard');
                 }catch(e){document.getElementById('login-msg').innerText='Error: '+e.message; signOut(auth);}
             } else {
                 document.getElementById('auth-overlay').classList.remove('hidden');

@@ -505,7 +505,9 @@
             }
         };
 
+        const VIEWS = ['overview','access','activity'];
         window.switchView = function(view) {
+            if(!VIEWS.includes(view)) view = 'overview';
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(`view-${view}`).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -514,7 +516,12 @@
             });
             if (view === 'access') loadAllRoleLists();
             if (view === 'activity') loadActivityLog();
+            if(window.location.hash.slice(1) !== view) window.location.hash = view;
         };
+        window.addEventListener('hashchange', ()=>{
+            const v = window.location.hash.slice(1);
+            switchView(VIEWS.includes(v) ? v : 'overview');
+        });
 
         async function loadActivityLog() {
             const tbody = document.getElementById('activity-log-body');
@@ -573,7 +580,7 @@
                     document.getElementById('app-content').classList.remove('hidden');
                     document.getElementById('ceo-name-display').innerText = `CEO · ${currentUser.name || user.email}`;
                     await logAction('CEO_PORTAL_ENTRY', 'CEO Admin Portal session started.');
-                    switchView('overview');
+                    switchView(VIEWS.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'overview');
                     loadRoleCounts();
                 } catch (err) {
                     document.getElementById('login-msg').innerText = 'Error: ' + err.message;

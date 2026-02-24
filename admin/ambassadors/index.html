@@ -212,7 +212,9 @@
 
         function escHtml(str) { return String(str??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+        const VIEWS = ['dashboard','roster','campaigns','tasks','reports'];
         window.switchView = function(view) {
+            if(!VIEWS.includes(view)) view = 'dashboard';
             document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
             document.getElementById(`view-${view}`).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(btn=>{
@@ -220,7 +222,12 @@
                 if(btn.id===`nav-${view}`) btn.classList.add('active');
             });
             if(view==='reports') renderReports();
+            if(window.location.hash.slice(1) !== view) window.location.hash = view;
         };
+        window.addEventListener('hashchange', ()=>{
+            const v = window.location.hash.slice(1);
+            switchView(VIEWS.includes(v) ? v : 'dashboard');
+        });
 
         window.authManager = {
             async login() {
@@ -413,7 +420,7 @@
                     document.getElementById('app-content').classList.remove('hidden');
                     document.getElementById('user-name-display').innerText = `Chief: ${userData.name||user.email}`;
                     startListeners();
-                    switchView('dashboard');
+                    switchView(VIEWS.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'dashboard');
                 } catch(err){ document.getElementById('login-msg').innerText='Error: '+err.message; signOut(auth); }
             } else {
                 document.getElementById('auth-overlay').classList.remove('hidden');
