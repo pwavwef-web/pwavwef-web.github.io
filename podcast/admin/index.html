@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The AZ Podcast – Admin</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40', darkBg: '#1a1a1a', darkCard: '#2d2d2d', success: '#00E676' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tool-card { transition: transform 0.15s, box-shadow 0.15s; }
+        .tool-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="text-4xl mb-3">🎙️</div>
+            <h1 class="text-2xl font-black text-orangeAccent mb-1 tracking-tighter">AZ Podcast Admin</h1>
+            <p class="text-xs text-gray-400 mb-6">Restricted Access • Admins Only</p>
+            <input type="email" id="login-email" placeholder="Admin Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                onkeydown="if(event.key==='Enter') doLogin()"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="doLogin()"
+                class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-4">
+                Access Admin Panel 🔐
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <a href="../listeners/index.html" class="text-xs text-gray-500 hover:text-gray-300 transition">
+                    <i class="fa-solid fa-headphones mr-1"></i> Go to Listener View
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-content" class="hidden min-h-screen flex flex-col">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0 shadow-md z-10 sticky top-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-orangeAccent to-orange-600 flex items-center justify-center font-black text-black text-sm">AZ</div>
+                <div>
+                    <h1 class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-orangeAccent to-yellow-200">AZ PODCAST ADMIN</h1>
+                    <p id="admin-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="../listeners/index.html" target="_blank"
+                    class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-eye"></i><span class="hidden md:inline">Listener View</span>
+                </a>
+                <button onclick="doLogout()"
+                    class="bg-gray-700 hover:bg-red-900/80 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-power-off"></i><span class="hidden md:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-orange-900/40 to-gray-800 border border-orange-500/20 rounded-2xl p-6 mb-8">
+                <h2 class="text-2xl font-black text-orangeAccent mb-1">Welcome to The AZ Podcast Admin 🎙️</h2>
+                <p class="text-gray-400 text-sm">Manage episodes, analytics, and settings — all from one place.</p>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Episodes</p>
+                    <p class="text-3xl font-black text-white" id="stat-episodes">6</p>
+                    <p class="text-[10px] text-yellow-400 mt-1">6 demo · 0 live</p>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Plays</p>
+                    <p class="text-3xl font-black text-blueAccent" id="stat-plays">3,092</p>
+                    <p class="text-[10px] text-gray-500 mt-1">across all episodes</p>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Duration</p>
+                    <p class="text-3xl font-black text-success" id="stat-duration">36:31</p>
+                    <p class="text-[10px] text-gray-500 mt-1">per episode</p>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Status</p>
+                    <p class="text-lg font-black text-yellow-400 mt-2">DEMO MODE</p>
+                    <p class="text-[10px] text-gray-500 mt-1">Real episodes pending</p>
+                </div>
+            </div>
+
+            <!-- Tools Grid -->
+            <h2 class="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-toolbox text-orangeAccent"></i> Admin Tools
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+
+                <a href="upload.html" class="tool-card bg-gray-800 border border-gray-700 hover:border-orangeAccent/50 rounded-2xl p-6 flex gap-4 items-start group">
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-2xl text-orangeAccent group-hover:scale-110 transition shrink-0">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-1">Upload Episode</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">Upload a new podcast episode with title, audio, cover art, and metadata.</p>
+                    </div>
+                </a>
+
+                <a href="manage.html" class="tool-card bg-gray-800 border border-gray-700 hover:border-blueAccent/50 rounded-2xl p-6 flex gap-4 items-start group">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-2xl text-blueAccent group-hover:scale-110 transition shrink-0">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-1">Manage Episodes</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">Edit, reorder, publish, unpublish, or delete existing podcast episodes.</p>
+                    </div>
+                </a>
+
+                <a href="analytics.html" class="tool-card bg-gray-800 border border-gray-700 hover:border-green-500/50 rounded-2xl p-6 flex gap-4 items-start group">
+                    <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center text-2xl text-success group-hover:scale-110 transition shrink-0">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-1">Analytics</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">View play counts, listener trends, popular episodes, and engagement stats.</p>
+                    </div>
+                </a>
+
+                <a href="settings.html" class="tool-card bg-gray-800 border border-gray-700 hover:border-purple-500/50 rounded-2xl p-6 flex gap-4 items-start group">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-2xl text-purple-400 group-hover:scale-110 transition shrink-0">
+                        <i class="fa-solid fa-gear"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-1">Podcast Settings</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">Configure podcast name, description, cover, RSS feed, and social links.</p>
+                    </div>
+                </a>
+
+                <div class="tool-card bg-gray-800 border border-gray-700 hover:border-yellow-500/50 rounded-2xl p-6 flex gap-4 items-start group cursor-pointer" onclick="showScheduler()">
+                    <div class="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center text-2xl text-yellow-400 group-hover:scale-110 transition shrink-0">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-1">Schedule Drop</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">Schedule an episode for automatic release on a future date and time.</p>
+                    </div>
+                </div>
+
+                <div class="tool-card bg-gray-800 border border-gray-700 hover:border-pink-500/50 rounded-2xl p-6 flex gap-4 items-start group cursor-pointer" onclick="showAnnouncement()">
+                    <div class="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center text-2xl text-pink-400 group-hover:scale-110 transition shrink-0">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-1">Broadcast</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">Send an announcement to all listeners about new episodes or news.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Episodes Quick View -->
+            <h2 class="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-podcast text-orangeAccent"></i> Recent Episodes
+            </h2>
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden mb-10">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3 text-left">Episode</th>
+                            <th class="px-5 py-3 text-left hidden md:table-cell">Topic</th>
+                            <th class="px-5 py-3 text-left hidden md:table-cell">Duration</th>
+                            <th class="px-5 py-3 text-right">Plays</th>
+                            <th class="px-5 py-3 text-center">Status</th>
+                            <th class="px-5 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="episodes-table" class="divide-y divide-gray-700 text-gray-300"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 class="font-black text-lg text-orangeAccent mb-4"><i class="fa-solid fa-calendar-plus mr-2"></i>Schedule Episode Drop</h3>
+            <div class="space-y-3 mb-6">
+                <input id="sched-title" type="text" placeholder="Episode title..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-orangeAccent transition">
+                <input id="sched-date" type="datetime-local" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-orangeAccent transition">
+                <textarea id="sched-note" rows="3" placeholder="Notes (optional)..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-orangeAccent transition resize-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="saveSchedule()" class="flex-1 bg-orangeAccent text-black font-bold py-2.5 rounded-xl hover:bg-orange-300 transition">Schedule</button>
+                <button onclick="closeModal('schedule-modal')" class="flex-1 bg-gray-700 text-white font-bold py-2.5 rounded-xl hover:bg-gray-600 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div id="announcement-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 class="font-black text-lg text-pink-400 mb-4"><i class="fa-solid fa-bullhorn mr-2"></i>Broadcast Announcement</h3>
+            <div class="space-y-3 mb-6">
+                <input id="ann-title" type="text" placeholder="Announcement title..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-pink-400 transition">
+                <textarea id="ann-body" rows="4" placeholder="Write your announcement..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-pink-400 transition resize-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="sendAnnouncement()" class="flex-1 bg-pink-500 text-white font-bold py-2.5 rounded-xl hover:bg-pink-400 transition">Send</button>
+                <button onclick="closeModal('announcement-modal')" class="flex-1 bg-gray-700 text-white font-bold py-2.5 rounded-xl hover:bg-gray-600 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const MOCK_EPISODES = [
+            { id:'ep001', number:1, title:"Welcome to The AZ Podcast 🎙️", topic:"student life", duration:"28:14", plays:412, isMock:true },
+            { id:'ep002', number:2, title:"Tech for Students: Apps You NEED", topic:"tech", duration:"34:07", plays:287, isMock:true },
+            { id:'ep003', number:3, title:"The Hustle Is Real: Side Income at Campus", topic:"hustle", duration:"41:33", plays:534, isMock:true },
+            { id:'ep004', number:4, title:"Mental Health at University – The Honest Talk", topic:"mental health", duration:"38:50", plays:691, isMock:true },
+            { id:'ep005', number:5, title:"Relationships in University: Love, Drama & Growth", topic:"relationships", duration:"45:22", plays:823, isMock:true },
+            { id:'ep006', number:6, title:"Building a Personal Brand as a Student", topic:"hustle", duration:"31:45", plays:345, isMock:true }
+        ];
+
+        window.doLogin = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const msg = document.getElementById('login-msg');
+            if (!email || !pass) { msg.textContent = 'Please enter email and password.'; return; }
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (err) {
+                msg.textContent = 'Auth failed: ' + err.message;
+            }
+        };
+
+        window.doLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('admin-display').textContent = `Officer: ${userDoc.data().name || user.email}`;
+                    renderEpisodesTable();
+                } else {
+                    alert('Access denied. Admins only.');
+                    signOut(auth);
+                }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        function renderEpisodesTable() {
+            const tbody = document.getElementById('episodes-table');
+            tbody.innerHTML = MOCK_EPISODES.map(ep => `
+                <tr class="hover:bg-gray-700/30 transition">
+                    <td class="px-5 py-3">
+                        <p class="font-semibold text-white text-sm">${ep.title}</p>
+                        <p class="text-xs text-gray-500">Episode ${ep.number}</p>
+                    </td>
+                    <td class="px-5 py-3 hidden md:table-cell capitalize text-gray-400 text-xs">${ep.topic}</td>
+                    <td class="px-5 py-3 hidden md:table-cell text-gray-400 text-xs">${ep.duration}</td>
+                    <td class="px-5 py-3 text-right text-gray-300 text-sm font-bold">${ep.plays.toLocaleString()}</td>
+                    <td class="px-5 py-3 text-center">
+                        <span class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-2 py-0.5 font-bold">DEMO</span>
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                        <a href="manage.html" class="text-blueAccent hover:text-blue-300 text-xs font-bold transition mr-3">Edit</a>
+                        <a href="upload.html" class="text-orangeAccent hover:text-orange-300 text-xs font-bold transition">Replace</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.showScheduler = () => document.getElementById('schedule-modal').classList.remove('hidden');
+        window.showAnnouncement = () => document.getElementById('announcement-modal').classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+        window.saveSchedule = () => {
+            const title = document.getElementById('sched-title').value.trim();
+            const date = document.getElementById('sched-date').value;
+            if (!title || !date) { alert('Please fill in episode title and date.'); return; }
+            const schedules = JSON.parse(localStorage.getItem('az_podcast_schedules') || '[]');
+            schedules.push({ title, date, note: document.getElementById('sched-note').value });
+            localStorage.setItem('az_podcast_schedules', JSON.stringify(schedules));
+            closeModal('schedule-modal');
+            showToast('Episode scheduled! 📅');
+        };
+
+        window.sendAnnouncement = () => {
+            const title = document.getElementById('ann-title').value.trim();
+            const body = document.getElementById('ann-body').value.trim();
+            if (!title || !body) { alert('Please fill in title and message.'); return; }
+            const announcements = JSON.parse(localStorage.getItem('az_podcast_announcements') || '[]');
+            announcements.unshift({ title, body, date: new Date().toISOString() });
+            localStorage.setItem('az_podcast_announcements', JSON.stringify(announcements));
+            closeModal('announcement-modal');
+            showToast('Announcement sent! 📢');
+        };
+
+        let toastTimer;
+        window.showToast = (msg) => {
+            clearTimeout(toastTimer);
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.className = 'fixed top-20 right-4 z-[300] bg-gray-700 border border-white/10 text-white text-sm px-4 py-2 rounded-xl shadow-xl transition-opacity';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
+        };
+    </script>
+</body>
+</html>

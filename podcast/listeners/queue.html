@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AZ Podcast – Queue</title>
+    <link rel="icon" type="image/png" href="../../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: '#FFAB40', brandBlue: '#448AFF' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: linear-gradient(-45deg, #020617, #0f172a, #1a0a2e, #0f172a); background-size: 400% 400%; animation: gradBG 18s ease infinite; color: white; min-height: 100vh; }
+        @keyframes gradBG { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .drag-over { border-color: rgba(255,171,64,0.5) !important; background: rgba(255,171,64,0.05) !important; }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <!-- Navbar -->
+    <nav class="glass border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-orange-600 flex items-center justify-center text-sm font-black">AZ</div>
+                <span class="font-black text-lg tracking-tight">The AZ Podcast</span>
+            </a>
+            <div class="flex items-center gap-1 md:gap-4 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="hover:text-white transition px-3 py-1.5 hidden md:block">Episodes</a>
+                <a href="now-playing.html" class="hover:text-white transition px-3 py-1.5 hidden md:block">Now Playing</a>
+                <a href="queue.html" class="text-brand px-3 py-1.5 rounded-lg bg-brand/10 hidden md:block">Queue</a>
+                <a href="index.html" class="md:hidden p-2 hover:text-white"><i class="fa-solid fa-list text-lg"></i></a>
+                <a href="now-playing.html" class="md:hidden p-2 hover:text-white"><i class="fa-solid fa-play-circle text-lg"></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-6 py-10">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-black mb-2">Your Queue <i class="fa-solid fa-list-ul text-brand ml-2"></i></h1>
+            <p class="text-gray-400 text-sm">Episodes line up here. Drag to reorder, remove what you don't need.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Queue List -->
+            <div class="flex-1">
+                <!-- Now Playing -->
+                <div class="mb-6">
+                    <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-music text-brand"></i> Now Playing
+                    </h2>
+                    <div id="now-playing-card" class="glass rounded-2xl p-4 border-l-4 border-brand"></div>
+                </div>
+
+                <!-- Queue -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-brandBlue"></i> Up Next (<span id="queue-count">0</span>)
+                        </h2>
+                        <button onclick="clearQueue()" id="clear-btn" class="hidden text-xs text-red-400 hover:text-red-300 transition">
+                            <i class="fa-solid fa-trash mr-1"></i> Clear all
+                        </button>
+                    </div>
+                    <div id="queue-list" class="space-y-3">
+                        <div id="empty-queue" class="hidden glass rounded-2xl p-10 text-center">
+                            <i class="fa-solid fa-inbox text-4xl text-gray-600 mb-4 block"></i>
+                            <p class="text-gray-400 font-semibold mb-2">Your queue is empty</p>
+                            <p class="text-gray-600 text-sm mb-4">Browse episodes and hit <i class="fa-solid fa-plus"></i> to add them here</p>
+                            <a href="index.html" class="inline-block bg-brand text-black font-bold text-sm px-6 py-2 rounded-xl hover:bg-orange-300 transition">
+                                Browse Episodes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar: History & Suggestions -->
+            <div class="w-full lg:w-72 space-y-6">
+                <!-- Playback History -->
+                <div class="glass rounded-2xl p-5">
+                    <h3 class="font-bold text-gray-300 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-purple-400"></i> Recently Played
+                    </h3>
+                    <div id="history-list" class="space-y-3">
+                        <p class="text-xs text-gray-600 text-center py-4">No history yet</p>
+                    </div>
+                </div>
+
+                <!-- Quick Add -->
+                <div class="glass rounded-2xl p-5">
+                    <h3 class="font-bold text-gray-300 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-plus text-brandBlue"></i> Quick Add
+                    </h3>
+                    <div id="quick-add-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MOCK_EPISODES = [
+            { id:'ep001', number:1, title:"Welcome to The AZ Podcast 🎙️", description:"We kick things off! Introductions and what to expect.", duration:"28:14", durationSec:1694, date:"2024-01-15", topic:"student life", isMock:true, plays:412, host:"Francis Pwavwe" },
+            { id:'ep002', number:2, title:"Tech for Students: Apps You NEED", description:"The best tech tools for Ghanaian students.", duration:"34:07", durationSec:2047, date:"2024-01-22", topic:"tech", isMock:true, plays:287, host:"Francis Pwavwe" },
+            { id:'ep003', number:3, title:"The Hustle Is Real: Side Income at Campus", description:"Real stories about making money on campus.", duration:"41:33", durationSec:2493, date:"2024-01-29", topic:"hustle", isMock:true, plays:534, host:"Francis Pwavwe" },
+            { id:'ep004', number:4, title:"Mental Health at University – The Honest Talk", description:"Addressing mental health challenges at university.", duration:"38:50", durationSec:2330, date:"2024-02-05", topic:"mental health", isMock:true, plays:691, host:"Francis Pwavwe" },
+            { id:'ep005', number:5, title:"Relationships in University: Love, Drama & Growth", description:"Campus relationships and personal growth.", duration:"45:22", durationSec:2722, date:"2024-02-12", topic:"relationships", isMock:true, plays:823, host:"Francis Pwavwe" },
+            { id:'ep006', number:6, title:"Building a Personal Brand as a Student", description:"Build your digital presence and open doors.", duration:"31:45", durationSec:1905, date:"2024-02-19", topic:"hustle", isMock:true, plays:345, host:"Francis Pwavwe" }
+        ];
+
+        let queue = JSON.parse(localStorage.getItem('az_podcast_queue') || '[]');
+        let currentId = localStorage.getItem('az_podcast_current') || MOCK_EPISODES[0].id;
+
+        function topicEmoji(t) {
+            const e = { tech:'💻', 'student life':'🎓', hustle:'💪', 'mental health':'🧠', relationships:'❤️' };
+            return e[t] || '🎙️';
+        }
+        function topicColor(t) {
+            const c = { tech:'#448AFF,#1e40af', 'student life':'#a855f7,#6d28d9', hustle:'#FFAB40,#d97706', 'mental health':'#10b981,#065f46', relationships:'#ec4899,#9d174d' };
+            return c[t] || '#FFAB40,#d97706';
+        }
+
+        function epCard(ep, idx, isQueue) {
+            return `
+            <div class="glass rounded-xl p-4 flex items-center gap-4 group ${isQueue ? 'cursor-grab' : ''}" 
+                 id="queue-item-${ep.id}" 
+                 ${isQueue ? `draggable="true" ondragstart="dragStart(event,'${ep.id}')" ondragover="dragOver(event)" ondrop="drop(event,'${ep.id}')" ondragleave="dragLeave(event)"` : ''}>
+                <div class="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center text-lg"
+                    style="background: linear-gradient(135deg, ${topicColor(ep.topic)})">
+                    ${topicEmoji(ep.topic)}
+                </div>
+                <div class="flex-1 min-w-0">
+                    ${isQueue ? `<span class="text-[10px] text-gray-600 font-bold">#${idx + 1}</span>` : ''}
+                    <p class="text-sm font-bold text-white truncate">${ep.title}</p>
+                    <p class="text-xs text-gray-500">${ep.duration} · Ep. ${ep.number}</p>
+                </div>
+                ${isQueue ? `
+                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                    <button onclick="playFromQueue('${ep.id}')" class="text-brand hover:text-orange-300 text-sm" title="Play now">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <button onclick="removeFromQueue('${ep.id}')" class="text-red-400 hover:text-red-300 text-sm" title="Remove">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <i class="fa-solid fa-grip-lines text-gray-600 cursor-grab text-xs"></i>
+                </div>` : ''}
+            </div>`;
+        }
+
+        function renderNowPlaying() {
+            const ep = MOCK_EPISODES.find(e => e.id === currentId);
+            const el = document.getElementById('now-playing-card');
+            if (!ep) { el.innerHTML = '<p class="text-gray-500 text-sm">Nothing playing yet. <a href="index.html" class="text-brand hover:underline">Browse episodes</a></p>'; return; }
+            el.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl" style="background: linear-gradient(135deg, ${topicColor(ep.topic)})">${topicEmoji(ep.topic)}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-white truncate">${ep.title}</p>
+                        <p class="text-xs text-gray-400">Episode ${ep.number} · ${ep.duration}</p>
+                        ${ep.isMock ? '<span class="text-[10px] text-yellow-400 bg-yellow-500/20 border border-yellow-500/30 rounded-full px-2 py-0.5 font-bold">DEMO</span>' : ''}
+                    </div>
+                    <a href="now-playing.html" class="bg-brand text-black w-10 h-10 rounded-full flex items-center justify-center hover:bg-orange-300 transition">
+                        <i class="fa-solid fa-play text-sm"></i>
+                    </a>
+                </div>`;
+        }
+
+        function renderQueue() {
+            const list = document.getElementById('queue-list');
+            const emptyEl = document.getElementById('empty-queue');
+            const countEl = document.getElementById('queue-count');
+            const clearBtn = document.getElementById('clear-btn');
+            const queueEps = queue.map(id => MOCK_EPISODES.find(e => e.id === id)).filter(Boolean);
+
+            countEl.textContent = queueEps.length;
+            clearBtn.classList.toggle('hidden', queueEps.length === 0);
+
+            if (queueEps.length === 0) {
+                list.innerHTML = '';
+                list.appendChild(emptyEl);
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+            list.innerHTML = queueEps.map((ep, i) => epCard(ep, i, true)).join('');
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('az_podcast_history') || '[]');
+            const el = document.getElementById('history-list');
+            const historyEps = history.slice(0, 5).map(id => MOCK_EPISODES.find(e => e.id === id)).filter(Boolean);
+            if (historyEps.length === 0) {
+                el.innerHTML = '<p class="text-xs text-gray-600 text-center py-4">No history yet</p>';
+                return;
+            }
+            el.innerHTML = historyEps.map(ep => `
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="setCurrentAndPlay('${ep.id}')">
+                    <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-sm" style="background: linear-gradient(135deg, ${topicColor(ep.topic)})">${topicEmoji(ep.topic)}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-300 truncate group-hover:text-white transition">${ep.title}</p>
+                        <p class="text-[10px] text-gray-600">${ep.duration}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderQuickAdd() {
+            const el = document.getElementById('quick-add-list');
+            const suggestions = MOCK_EPISODES.filter(ep => !queue.includes(ep.id) && ep.id !== currentId).slice(0, 4);
+            if (suggestions.length === 0) {
+                el.innerHTML = '<p class="text-xs text-gray-600 text-center py-2">All episodes in queue!</p>';
+                return;
+            }
+            el.innerHTML = suggestions.map(ep => `
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-sm" style="background: linear-gradient(135deg, ${topicColor(ep.topic)})">${topicEmoji(ep.topic)}</div>
+                    <p class="flex-1 text-xs text-gray-400 truncate">${ep.title}</p>
+                    <button onclick="addToQueue('${ep.id}')" class="text-gray-500 hover:text-brandBlue transition text-xs">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addToQueue(id) {
+            if (!queue.includes(id)) {
+                queue.push(id);
+                saveQueue();
+                showToast('Added to queue!');
+            } else {
+                showToast('Already in queue');
+            }
+        }
+
+        function removeFromQueue(id) {
+            queue = queue.filter(q => q !== id);
+            saveQueue();
+        }
+
+        function clearQueue() {
+            if (!confirm('Clear your entire queue?')) return;
+            queue = [];
+            saveQueue();
+        }
+
+        function playFromQueue(id) {
+            localStorage.setItem('az_podcast_current', id);
+            window.location.href = 'now-playing.html';
+        }
+
+        function setCurrentAndPlay(id) {
+            localStorage.setItem('az_podcast_current', id);
+            window.location.href = 'now-playing.html';
+        }
+
+        function saveQueue() {
+            localStorage.setItem('az_podcast_queue', JSON.stringify(queue));
+            renderQueue();
+            renderQuickAdd();
+        }
+
+        // Drag and drop reordering
+        let dragId = null;
+        function dragStart(e, id) { dragId = id; e.dataTransfer.effectAllowed = 'move'; }
+        function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+        function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+        function drop(e, targetId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            if (dragId === targetId) return;
+            const fromIdx = queue.indexOf(dragId);
+            const toIdx = queue.indexOf(targetId);
+            if (fromIdx === -1 || toIdx === -1) return;
+            queue.splice(fromIdx, 1);
+            queue.splice(toIdx, 0, dragId);
+            saveQueue();
+        }
+
+        let toastTimer;
+        function showToast(msg) {
+            clearTimeout(toastTimer);
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.className = 'fixed top-20 right-4 z-[200] bg-gray-800 border border-white/10 text-white text-sm px-4 py-2 rounded-xl shadow-xl transition-opacity';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
+        }
+
+        // Init
+        renderNowPlaying();
+        renderQueue();
+        renderHistory();
+        renderQuickAdd();
+    </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The AZ Podcast – Analytics</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40', success: '#00E676' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .bar-fill { transition: width 0.8s ease; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="text-4xl mb-3">🔐</div>
+            <h1 class="text-xl font-black text-orangeAccent mb-5">Admin Access Required</h1>
+            <input type="email" id="login-email" placeholder="Admin Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter') doLogin()"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="doLogin()" class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Login
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="block mt-4 text-xs text-gray-500 hover:text-gray-300 transition">← Back to Admin Dashboard</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="font-black text-transparent bg-clip-text bg-gradient-to-r from-success to-emerald-300 text-lg">Analytics</h1>
+                    <p class="text-xs text-gray-500">Podcast performance insights</p>
+                </div>
+            </div>
+            <button onclick="doLogout()" class="bg-gray-700 hover:bg-red-900/60 text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-6 py-8">
+            <!-- Demo Notice -->
+            <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 mb-6 flex gap-3">
+                <i class="fa-solid fa-circle-info text-blueAccent mt-0.5"></i>
+                <p class="text-sm text-blue-300">Analytics are currently based on demo episode data. Real-time stats will populate once live episodes are uploaded.</p>
+            </div>
+
+            <!-- Top KPIs -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Total Plays</p>
+                    <p class="text-3xl font-black text-white">3,092</p>
+                    <p class="text-xs text-green-400 mt-1"><i class="fa-solid fa-arrow-up mr-1"></i>+12% vs last month</p>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Unique Listeners</p>
+                    <p class="text-3xl font-black text-blueAccent">847</p>
+                    <p class="text-xs text-green-400 mt-1"><i class="fa-solid fa-arrow-up mr-1"></i>+8% vs last month</p>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Avg. Listen Time</p>
+                    <p class="text-3xl font-black text-success">24:18</p>
+                    <p class="text-xs text-gray-500 mt-1">per session</p>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Completion Rate</p>
+                    <p class="text-3xl font-black text-orangeAccent">68%</p>
+                    <p class="text-xs text-green-400 mt-1"><i class="fa-solid fa-arrow-up mr-1"></i>+5pts</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <!-- Episode Performance -->
+                <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                    <h2 class="font-bold text-gray-300 mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-bar-chart text-orangeAccent"></i> Episode Plays
+                    </h2>
+                    <div id="plays-chart" class="space-y-3"></div>
+                </div>
+
+                <!-- Topic Breakdown -->
+                <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                    <h2 class="font-bold text-gray-300 mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-tags text-blueAccent"></i> Plays by Topic
+                    </h2>
+                    <div id="topic-chart" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Top Episodes -->
+                <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                    <h2 class="font-bold text-gray-300 mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-yellow-400"></i> Top Episodes
+                    </h2>
+                    <div id="top-episodes" class="space-y-3"></div>
+                </div>
+
+                <!-- Weekly Trend (simulated) -->
+                <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                    <h2 class="font-bold text-gray-300 mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-success"></i> Weekly Trend
+                    </h2>
+                    <div id="weekly-trend" class="space-y-3"></div>
+                    <p class="text-xs text-gray-600 mt-4 text-center">Simulated data – real tracking enabled on upload</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const MOCK_EPISODES = [
+            { id:'ep001', number:1, title:"Welcome to The AZ Podcast 🎙️", topic:"student life", plays:412 },
+            { id:'ep002', number:2, title:"Tech for Students: Apps You NEED", topic:"tech", plays:287 },
+            { id:'ep003', number:3, title:"The Hustle Is Real: Side Income at Campus", topic:"hustle", plays:534 },
+            { id:'ep004', number:4, title:"Mental Health at University – The Honest Talk", topic:"mental health", plays:691 },
+            { id:'ep005', number:5, title:"Relationships in University: Love, Drama & Growth", topic:"relationships", plays:823 },
+            { id:'ep006', number:6, title:"Building a Personal Brand as a Student", topic:"hustle", plays:345 }
+        ];
+
+        window.doLogin = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const msg = document.getElementById('login-msg');
+            if (!email || !pass) { msg.textContent = 'Please enter email and password.'; return; }
+            try { await signInWithEmailAndPassword(auth, email, pass); }
+            catch (err) { msg.textContent = 'Auth failed: ' + err.message; }
+        };
+
+        window.doLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    renderCharts();
+                } else {
+                    alert('Access denied. Admins only.');
+                    signOut(auth);
+                }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        const topicColors = { tech:'#448AFF', 'student life':'#a855f7', hustle:'#FFAB40', 'mental health':'#10b981', relationships:'#ec4899' };
+
+        function renderCharts() {
+            const maxPlays = Math.max(...MOCK_EPISODES.map(e => e.plays));
+
+            // Episode plays bar chart
+            const playsEl = document.getElementById('plays-chart');
+            playsEl.innerHTML = MOCK_EPISODES.map(ep => `
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-gray-400 truncate flex-1 mr-2">Ep.${ep.number} – ${ep.title.substring(0, 30)}${ep.title.length > 30 ? '…' : ''}</span>
+                        <span class="text-xs font-bold text-gray-300 shrink-0">${ep.plays.toLocaleString()}</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bar-fill h-full rounded-full" style="width:0%; background:${topicColors[ep.topic] || '#FFAB40'}" data-width="${(ep.plays/maxPlays)*100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Topic breakdown
+            const topicTotals = {};
+            MOCK_EPISODES.forEach(ep => { topicTotals[ep.topic] = (topicTotals[ep.topic] || 0) + ep.plays; });
+            const totalPlays = Object.values(topicTotals).reduce((a, b) => a + b, 0);
+            const topicEl = document.getElementById('topic-chart');
+            topicEl.innerHTML = Object.entries(topicTotals).sort((a, b) => b[1] - a[1]).map(([topic, plays]) => `
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${topicColors[topic] || '#888'}"></div>
+                            <span class="text-xs text-gray-400 capitalize">${topic}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-gray-300">${plays.toLocaleString()}</span>
+                            <span class="text-[10px] text-gray-600">${((plays/totalPlays)*100).toFixed(0)}%</span>
+                        </div>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bar-fill h-full rounded-full" style="width:0%; background:${topicColors[topic] || '#888'}" data-width="${(plays/totalPlays)*100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Top episodes
+            const topEl = document.getElementById('top-episodes');
+            const sorted = [...MOCK_EPISODES].sort((a, b) => b.plays - a.plays);
+            topEl.innerHTML = sorted.slice(0, 5).map((ep, i) => `
+                <div class="flex items-center gap-3 py-2 border-b border-gray-700/50">
+                    <span class="text-lg font-black ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-orange-700' : 'text-gray-600'}">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-white truncate">${ep.title}</p>
+                        <p class="text-xs text-gray-500 capitalize">${ep.topic}</p>
+                    </div>
+                    <span class="text-sm font-bold text-gray-300">${ep.plays.toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            // Weekly trend (simulated)
+            const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'];
+            const weekPlays = [180, 290, 350, 420, 480, 530];
+            const maxWeek = Math.max(...weekPlays);
+            const weekEl = document.getElementById('weekly-trend');
+            weekEl.innerHTML = weeks.map((w, i) => `
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-gray-400">${w}</span>
+                        <span class="text-xs font-bold text-gray-300">${weekPlays[i].toLocaleString()}</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bar-fill h-full bg-success rounded-full" style="width:0%" data-width="${(weekPlays[i]/maxWeek)*100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Animate bars
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    document.querySelectorAll('.bar-fill[data-width]').forEach(bar => {
+                        bar.style.width = bar.dataset.width;
+                    });
+                }, 100);
+            });
+        }
+    </script>
+</body>
+</html>

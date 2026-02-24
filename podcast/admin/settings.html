@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The AZ Podcast – Settings</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40', success: '#00E676' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111827; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-gray-700">
+            <div class="text-4xl mb-3">🔐</div>
+            <h1 class="text-xl font-black text-orangeAccent mb-5">Admin Access Required</h1>
+            <input type="email" id="login-email" placeholder="Admin Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter') doLogin()"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orangeAccent transition-colors">
+            <button onclick="doLogin()" class="w-full py-3 bg-gradient-to-r from-orangeAccent to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Login
+            </button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="block mt-4 text-xs text-gray-500 hover:text-gray-300 transition">← Back to Admin Dashboard</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-300 text-lg">Podcast Settings</h1>
+                    <p class="text-xs text-gray-500">Configure The AZ Podcast</p>
+                </div>
+            </div>
+            <button onclick="doLogout()" class="bg-gray-700 hover:bg-red-900/60 text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-6 py-8 space-y-8">
+
+            <!-- Podcast Identity -->
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                <h2 class="font-bold text-purple-400 mb-5 flex items-center gap-2"><i class="fa-solid fa-id-card"></i> Podcast Identity</h2>
+                <div class="grid md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Podcast Name</label>
+                        <input id="s-name" type="text" value="The AZ Podcast"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-purple-400 transition">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Tagline</label>
+                        <input id="s-tagline" type="text" value="Real talk, real stories. Student life, tech, hustle and everything in between."
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-purple-400 transition">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Full Description</label>
+                        <textarea id="s-description" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-purple-400 transition resize-none">The AZ Podcast is the official podcast from the AZ Learner team. We talk about student life, technology, hustle culture, mental health, relationships, and everything that matters to university students in Ghana and beyond. New episodes every week.</textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Primary Host</label>
+                        <input id="s-host" type="text" value="Francis Pwavwe"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-purple-400 transition">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Release Schedule</label>
+                        <select id="s-schedule" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-gray-300 outline-none focus:border-purple-400 transition">
+                            <option value="weekly" selected>Weekly</option>
+                            <option value="biweekly">Bi-weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="irregular">Irregular</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cover Art -->
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                <h2 class="font-bold text-orangeAccent mb-5 flex items-center gap-2"><i class="fa-solid fa-image"></i> Cover Art</h2>
+                <div class="flex gap-6 items-start">
+                    <div id="cover-preview" class="w-32 h-32 rounded-2xl bg-gradient-to-br from-orange-800/60 to-purple-800/60 border-2 border-dashed border-gray-600 flex items-center justify-center text-4xl shrink-0">
+                        🎙️
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-400 mb-3">Recommended: 3000×3000px, JPG or PNG. This appears in episode listings and RSS feeds.</p>
+                        <label class="cursor-pointer inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Cover Art
+                            <input type="file" accept="image/*" class="hidden" onchange="previewCover(this)">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Links -->
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                <h2 class="font-bold text-blueAccent mb-5 flex items-center gap-2"><i class="fa-solid fa-share-nodes"></i> Social Links & Platforms</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 text-center text-gray-400"><i class="fa-brands fa-spotify text-green-500 text-lg"></i></div>
+                        <input id="s-spotify" type="url" placeholder="Spotify podcast URL"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 text-center text-gray-400"><i class="fa-brands fa-apple text-gray-300 text-lg"></i></div>
+                        <input id="s-apple" type="url" placeholder="Apple Podcasts URL"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 text-center text-gray-400"><i class="fa-brands fa-youtube text-red-500 text-lg"></i></div>
+                        <input id="s-youtube" type="url" placeholder="YouTube channel URL"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 text-center text-gray-400"><i class="fa-brands fa-twitter text-sky-400 text-lg"></i></div>
+                        <input id="s-twitter" type="text" placeholder="Twitter/X handle (e.g. @az_podcast)"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 text-center text-gray-400"><i class="fa-brands fa-instagram text-pink-500 text-lg"></i></div>
+                        <input id="s-instagram" type="text" placeholder="Instagram handle"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-blueAccent transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- RSS & Distribution -->
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                <h2 class="font-bold text-success mb-5 flex items-center gap-2"><i class="fa-solid fa-rss"></i> RSS Feed & Distribution</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">RSS Feed URL</label>
+                        <div class="flex gap-2">
+                            <input id="s-rss" type="url" placeholder="https://your-rss-feed-url.com/feed.xml" readonly
+                                class="flex-1 bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-sm text-gray-400 outline-none cursor-default">
+                            <button onclick="copyRSS()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-lg text-xs font-bold transition">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-1">Submit this RSS to Spotify, Apple Podcasts, and other platforms.</p>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Website URL</label>
+                        <input id="s-website" type="url" value="https://azlearner.me/podcast/listeners/"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-success transition">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Contact Email (for podcast)</label>
+                        <input id="s-email" type="email" placeholder="podcast@azlearner.me"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-success transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Settings -->
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+                <h2 class="font-bold text-yellow-400 mb-5 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Player Defaults</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-white">Auto-play next episode</p>
+                            <p class="text-xs text-gray-500">Automatically play the next episode when one ends</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="s-autoplay" checked class="sr-only peer">
+                            <div class="w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-orangeAccent after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-white">Remember playback position</p>
+                            <p class="text-xs text-gray-500">Resume episodes where listeners left off</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="s-remember" checked class="sr-only peer">
+                            <div class="w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-orangeAccent after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-white">Show demo badge</p>
+                            <p class="text-xs text-gray-500">Display "DEMO" label on placeholder episodes</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="s-demo-badge" checked class="sr-only peer">
+                            <div class="w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-orangeAccent after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <button onclick="saveSettings()"
+                class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black rounded-2xl shadow-lg hover:from-purple-500 hover:to-pink-500 active:scale-95 transition-transform text-base flex items-center justify-center gap-3">
+                <i class="fa-solid fa-floppy-disk"></i> Save All Settings
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.doLogin = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const msg = document.getElementById('login-msg');
+            if (!email || !pass) { msg.textContent = 'Please enter email and password.'; return; }
+            try { await signInWithEmailAndPassword(auth, email, pass); }
+            catch (err) { msg.textContent = 'Auth failed: ' + err.message; }
+        };
+
+        window.doLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    loadSettings();
+                } else {
+                    alert('Access denied. Admins only.');
+                    signOut(auth);
+                }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        async function loadSettings() {
+            try {
+                const snap = await getDoc(doc(db, "podcast_settings", "main"));
+                if (!snap.exists()) return;
+                const s = snap.data();
+                if (s.name) document.getElementById('s-name').value = s.name;
+                if (s.tagline) document.getElementById('s-tagline').value = s.tagline;
+                if (s.description) document.getElementById('s-description').value = s.description;
+                if (s.host) document.getElementById('s-host').value = s.host;
+                if (s.schedule) document.getElementById('s-schedule').value = s.schedule;
+                if (s.spotify) document.getElementById('s-spotify').value = s.spotify;
+                if (s.apple) document.getElementById('s-apple').value = s.apple;
+                if (s.youtube) document.getElementById('s-youtube').value = s.youtube;
+                if (s.twitter) document.getElementById('s-twitter').value = s.twitter;
+                if (s.instagram) document.getElementById('s-instagram').value = s.instagram;
+                if (s.website) document.getElementById('s-website').value = s.website;
+                if (s.email) document.getElementById('s-email').value = s.email;
+                if (s.autoplay !== undefined) document.getElementById('s-autoplay').checked = s.autoplay;
+                if (s.remember !== undefined) document.getElementById('s-remember').checked = s.remember;
+                if (s.demoBadge !== undefined) document.getElementById('s-demo-badge').checked = s.demoBadge;
+            } catch (_) {}
+        }
+
+        window.saveSettings = async () => {
+            const settings = {
+                name: document.getElementById('s-name').value.trim(),
+                tagline: document.getElementById('s-tagline').value.trim(),
+                description: document.getElementById('s-description').value.trim(),
+                host: document.getElementById('s-host').value.trim(),
+                schedule: document.getElementById('s-schedule').value,
+                spotify: document.getElementById('s-spotify').value.trim(),
+                apple: document.getElementById('s-apple').value.trim(),
+                youtube: document.getElementById('s-youtube').value.trim(),
+                twitter: document.getElementById('s-twitter').value.trim(),
+                instagram: document.getElementById('s-instagram').value.trim(),
+                website: document.getElementById('s-website').value.trim(),
+                email: document.getElementById('s-email').value.trim(),
+                autoplay: document.getElementById('s-autoplay').checked,
+                remember: document.getElementById('s-remember').checked,
+                demoBadge: document.getElementById('s-demo-badge').checked
+            };
+            try {
+                await setDoc(doc(db, "podcast_settings", "main"), settings, { merge: true });
+                showToast('Settings saved! ✅');
+            } catch (err) { showToast('Save failed: ' + err.message); }
+        };
+
+        window.previewCover = (input) => {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const el = document.getElementById('cover-preview');
+                el.style.background = 'none';
+                el.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-2xl">`;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.copyRSS = () => {
+            const val = document.getElementById('s-rss').value;
+            if (!val) { showToast('No RSS URL configured yet.'); return; }
+            navigator.clipboard.writeText(val).then(() => showToast('RSS URL copied!')).catch(() => showToast('Copy failed.'));
+        };
+
+        let toastTimer;
+        window.showToast = (msg) => {
+            clearTimeout(toastTimer);
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.className = 'fixed top-20 right-4 z-[300] bg-gray-700 border border-white/10 text-white text-sm px-4 py-2 rounded-xl shadow-xl transition-opacity';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
+        };
+    </script>
+</body>
+</html>
