@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Podcast Lead 🎙️</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode:'class', theme:{ extend:{ fontFamily:{ sans:['Roboto','sans-serif'] } } } }</script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0d0a14; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .view { display: none; } .view.active { display: block; }
+        .nav-btn.active { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-purple-700/40">
+            <div class="text-4xl mb-3">🎙️</div>
+            <h1 class="text-2xl font-black text-purple-400 mb-1">Podcast Lead</h1>
+            <p class="text-xs text-gray-400 mb-6">Podcast Division Clearance Required</p>
+            <input type="email" id="login-email" placeholder="Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-purple-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-purple-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-purple-600 to-violet-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Access Portal 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <div class="bg-gray-900 border-b border-purple-700/30 px-5 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎙️</span>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-violet-300 leading-tight">Podcast Portal</h1>
+                    <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../ceo/" class="hidden md:flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-crown text-yellow-400"></i> CEO Portal
+                </a>
+                <button onclick="authManager.logout()" class="bg-gray-800 hover:bg-red-900/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    Logout <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-gauge mr-1.5"></i>Dashboard</button>
+            <button onclick="switchView('episodes')" id="nav-episodes" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-headphones mr-1.5"></i>Episodes</button>
+            <button onclick="switchView('guests')" id="nav-guests" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-user-group mr-1.5"></i>Guests</button>
+            <button onclick="switchView('scripts')" id="nav-scripts" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-scroll mr-1.5"></i>Scripts</button>
+            <button onclick="switchView('schedule')" id="nav-schedule" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-calendar-check mr-1.5"></i>Schedule</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-[#0d0a14]">
+
+            <!-- DASHBOARD -->
+            <div id="view-dashboard" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-purple-900/30 to-gray-900 p-5 rounded-2xl border border-purple-700/30">
+                    <h2 class="text-xl font-black text-purple-400 mb-1">Podcast Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Manage episodes, guests, scripts and publishing schedule.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Episodes</p><p class="text-3xl font-black text-white" id="dash-episodes">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Published</p><p class="text-3xl font-black text-purple-400" id="dash-published">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Guests</p><p class="text-3xl font-black text-violet-400" id="dash-guests">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Scripts</p><p class="text-3xl font-black text-pink-400" id="dash-scripts">—</p></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="switchView('episodes')" class="bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-headphones text-purple-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-purple-300">Episodes</p><p class="text-xs text-gray-500 mt-1">Manage podcast episodes</p>
+                    </button>
+                    <button onclick="switchView('guests')" class="bg-violet-900/30 hover:bg-violet-900/50 border border-violet-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-user-group text-violet-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-violet-300">Guest Tracker</p><p class="text-xs text-gray-500 mt-1">Schedule and manage guests</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- EPISODES -->
+            <div id="view-episodes" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-purple-900/20 to-gray-900 p-5 rounded-2xl border border-purple-700/30">
+                    <h2 class="text-xl font-black text-purple-400 mb-1">Episodes</h2>
+                    <p class="text-gray-400 text-sm">Track all podcast episodes from planning to publishing.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">New Episode</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="ep-title" type="text" placeholder="Episode title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors md:col-span-2">
+                        <input id="ep-number" type="number" placeholder="Episode #" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="ep-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                        <select id="ep-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                            <option value="idea">Idea</option>
+                            <option value="scripting">Scripting</option>
+                            <option value="recording">Recording</option>
+                            <option value="editing">Editing</option>
+                            <option value="published">Published</option>
+                        </select>
+                        <input id="ep-duration" type="text" placeholder="Duration (e.g. 45 min)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                    </div>
+                    <textarea id="ep-desc" placeholder="Episode description / show notes..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addEpisode()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-sm transition">Add Episode</button>
+                    <p id="ep-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="episodes-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading episodes...</p></div>
+            </div>
+
+            <!-- GUESTS -->
+            <div id="view-guests" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-violet-900/20 to-gray-900 p-5 rounded-2xl border border-violet-700/30">
+                    <h2 class="text-xl font-black text-violet-400 mb-1">Guest Tracker</h2>
+                    <p class="text-gray-400 text-sm">Manage podcast guests and interview scheduling.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Add Guest</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="guest-name" type="text" placeholder="Guest name" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-violet-500 text-sm transition-colors">
+                        <input id="guest-title" type="text" placeholder="Title / profession" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-violet-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="guest-contact" type="text" placeholder="Email / contact" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-violet-500 text-sm transition-colors">
+                        <input id="guest-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-violet-500 text-sm transition-colors">
+                        <select id="guest-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-violet-500 text-sm transition-colors">
+                            <option value="prospective">Prospective</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="recorded">Recorded</option>
+                            <option value="published">Published</option>
+                        </select>
+                    </div>
+                    <textarea id="guest-notes" placeholder="Notes about the guest, topics to cover..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-violet-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addGuest()" class="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg text-sm transition">Add Guest</button>
+                    <p id="guest-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="guests-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading guests...</p></div>
+            </div>
+
+            <!-- SCRIPTS -->
+            <div id="view-scripts" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-pink-900/20 to-gray-900 p-5 rounded-2xl border border-pink-700/30">
+                    <h2 class="text-xl font-black text-pink-400 mb-1">Episode Scripts</h2>
+                    <p class="text-gray-400 text-sm">Store episode outlines, scripts and talking points.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Add Script</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="script-title" type="text" placeholder="Episode title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors">
+                        <input id="script-ep" type="text" placeholder="Episode # / code" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors">
+                    </div>
+                    <textarea id="script-body" placeholder="Script / outline / talking points..." rows="5" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addScript()" class="px-5 py-2.5 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg text-sm transition">Save Script</button>
+                    <p id="script-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="scripts-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading scripts...</p></div>
+            </div>
+
+            <!-- SCHEDULE -->
+            <div id="view-schedule" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-purple-900/20 to-gray-900 p-5 rounded-2xl border border-purple-700/30">
+                    <h2 class="text-xl font-black text-purple-400 mb-1">Publishing Schedule</h2>
+                    <p class="text-gray-400 text-sm">Plan and manage the podcast release calendar.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Schedule Release</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="sched-ep" type="text" placeholder="Episode # / title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors md:col-span-2">
+                        <input id="sched-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="sched-platform" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                            <option value="all">All Platforms</option>
+                            <option value="spotify">Spotify</option>
+                            <option value="apple">Apple Podcasts</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="website">Website</option>
+                        </select>
+                        <input id="sched-notes" type="text" placeholder="Notes" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-purple-500 text-sm transition-colors">
+                    </div>
+                    <button onclick="addSchedule()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-sm transition">Add to Schedule</button>
+                    <p id="sched-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="schedule-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading schedule...</p></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, getDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        const OWNER_EMAIL = "pwavwef@gmail.com";
+        const REQUIRED_ROLE = "podcast_lead";
+        let currentUser = null;
+        let unsubEp=null, unsubGuests=null, unsubScripts=null, unsubSched=null;
+
+        function escHtml(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        const epStatusColor = { idea:'text-gray-400 bg-gray-700/30', scripting:'text-yellow-400 bg-yellow-900/30', recording:'text-orange-400 bg-orange-900/30', editing:'text-blue-400 bg-blue-900/30', published:'text-green-400 bg-green-900/30' };
+        const guestStatusColor = { prospective:'text-gray-400', contacted:'text-yellow-400', confirmed:'text-blue-400', recorded:'text-purple-400', published:'text-green-400' };
+
+        window.switchView = function(view) {
+            document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('active'); if(b.id===`nav-${view}`) b.classList.add('active'); });
+        };
+
+        window.authManager = {
+            async login(){ const msg=document.getElementById('login-msg'); msg.innerText=''; try{ await signInWithEmailAndPassword(auth,document.getElementById('login-email').value.trim(),document.getElementById('login-pass').value); }catch(e){msg.innerText='Login failed: '+e.message;} },
+            logout(){ [unsubEp,unsubGuests,unsubScripts,unsubSched].forEach(u=>u&&u()); signOut(auth); }
+        };
+
+        window.addEpisode = async function(){
+            const msg=document.getElementById('ep-msg'); msg.innerText='';
+            const title=document.getElementById('ep-title').value.trim();
+            if(!title){ msg.innerText='Episode title required.'; return; }
+            try {
+                await addDoc(collection(db,'podcast_episodes'),{ title, number:parseInt(document.getElementById('ep-number').value)||null, date:document.getElementById('ep-date').value, status:document.getElementById('ep-status').value, duration:document.getElementById('ep-duration').value.trim(), desc:document.getElementById('ep-desc').value.trim(), by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['ep-title','ep-number','ep-date','ep-duration','ep-desc'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteEpisode = async function(id){ if(!confirm('Delete episode?'))return; try{await deleteDoc(doc(db,'podcast_episodes',id));}catch(e){alert(e.message);} };
+        window.updateEpisodeStatus = async function(id, status){ try{await updateDoc(doc(db,'podcast_episodes',id),{status});}catch(e){alert(e.message);} };
+
+        window.addGuest = async function(){
+            const msg=document.getElementById('guest-msg'); msg.innerText='';
+            const name=document.getElementById('guest-name').value.trim();
+            if(!name){ msg.innerText='Guest name required.'; return; }
+            try {
+                await addDoc(collection(db,'podcast_guests'),{ name, title:document.getElementById('guest-title').value.trim(), contact:document.getElementById('guest-contact').value.trim(), date:document.getElementById('guest-date').value, status:document.getElementById('guest-status').value, notes:document.getElementById('guest-notes').value.trim(), by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['guest-name','guest-title','guest-contact','guest-date','guest-notes'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteGuest = async function(id){ if(!confirm('Delete guest?'))return; try{await deleteDoc(doc(db,'podcast_guests',id));}catch(e){alert(e.message);} };
+        window.updateGuestStatus = async function(id, status){ try{await updateDoc(doc(db,'podcast_guests',id),{status});}catch(e){alert(e.message);} };
+
+        window.addScript = async function(){
+            const msg=document.getElementById('script-msg'); msg.innerText='';
+            const title=document.getElementById('script-title').value.trim();
+            const body=document.getElementById('script-body').value.trim();
+            if(!title||!body){ msg.innerText='Title and script content required.'; return; }
+            try {
+                await addDoc(collection(db,'podcast_scripts'),{ title, episode:document.getElementById('script-ep').value.trim(), body, by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['script-title','script-ep','script-body'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteScript = async function(id){ if(!confirm('Delete script?'))return; try{await deleteDoc(doc(db,'podcast_scripts',id));}catch(e){alert(e.message);} };
+
+        window.addSchedule = async function(){
+            const msg=document.getElementById('sched-msg'); msg.innerText='';
+            const ep=document.getElementById('sched-ep').value.trim();
+            const date=document.getElementById('sched-date').value;
+            if(!ep||!date){ msg.innerText='Episode and date required.'; return; }
+            try {
+                await addDoc(collection(db,'podcast_schedule'),{ episode:ep, date, platform:document.getElementById('sched-platform').value, notes:document.getElementById('sched-notes').value.trim(), status:'planned', by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['sched-ep','sched-date','sched-notes'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteSchedule = async function(id){ if(!confirm('Delete schedule item?'))return; try{await deleteDoc(doc(db,'podcast_schedule',id));}catch(e){alert(e.message);} };
+
+        function startListeners(){
+            const pOrder=orderBy('at','desc');
+            unsubEp=onSnapshot(query(collection(db,'podcast_episodes'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const published=items.filter(e=>e.status==='published').length;
+                const elTotal=document.getElementById('dash-episodes'); if(elTotal) elTotal.innerText=items.length;
+                const elPub=document.getElementById('dash-published'); if(elPub) elPub.innerText=published;
+                const c=document.getElementById('episodes-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No episodes yet.</p>';return;}
+                c.innerHTML=items.map(e=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    ${e.number?`<span class="text-xs font-black text-purple-400">Ep.${e.number}</span>`:''}
+                                    <p class="font-bold text-white">${escHtml(e.title)}</p>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${epStatusColor[e.status]||'text-gray-400'}">${escHtml(e.status||'idea')}</span>
+                                </div>
+                                ${e.desc?`<p class="text-xs text-gray-400 mt-0.5">${escHtml(e.desc)}</p>`:''}
+                                <p class="text-[10px] text-gray-500 mt-1">${e.date?escHtml(e.date)+' · ':''}${e.duration?escHtml(e.duration):''}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-1">
+                            <select onchange="updateEpisodeStatus('${escHtml(e.id)}',this.value)" class="text-xs bg-gray-700 text-gray-300 border border-gray-600 rounded px-2 py-1 outline-none">
+                                ${['idea','scripting','recording','editing','published'].map(s=>`<option value="${s}" ${e.status===s?'selected':''}>${s}</option>`).join('')}
+                            </select>
+                            <button onclick="deleteEpisode('${escHtml(e.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition ml-auto">Delete</button>
+                        </div>
+                    </div>`).join('');
+            });
+            unsubGuests=onSnapshot(query(collection(db,'podcast_guests'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-guests'); if(el) el.innerText=items.length;
+                const c=document.getElementById('guests-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No guests added yet.</p>';return;}
+                c.innerHTML=items.map(g=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-full bg-violet-900/40 flex items-center justify-center text-violet-400 font-black text-lg flex-shrink-0">${(g.name||'?')[0].toUpperCase()}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="font-bold text-white">${escHtml(g.name||'')}</p>
+                                <span class="text-[10px] font-bold ${guestStatusColor[g.status]||'text-gray-400'}">${escHtml(g.status||'prospective')}</span>
+                            </div>
+                            ${g.title?`<p class="text-xs text-gray-400">${escHtml(g.title)}</p>`:''}
+                            ${g.contact?`<p class="text-xs text-gray-500">${escHtml(g.contact)}</p>`:''}
+                            ${g.date?`<p class="text-xs text-purple-400 mt-0.5"><i class="fa-solid fa-calendar mr-1"></i>${escHtml(g.date)}</p>`:''}
+                            ${g.notes?`<p class="text-xs text-gray-400 mt-1 italic">${escHtml(g.notes)}</p>`:''}
+                        </div>
+                        <div class="flex flex-col gap-1 items-end flex-shrink-0">
+                            <select onchange="updateGuestStatus('${escHtml(g.id)}',this.value)" class="text-xs bg-gray-700 text-gray-300 border border-gray-600 rounded px-2 py-1 outline-none">
+                                ${['prospective','contacted','confirmed','recorded','published'].map(s=>`<option value="${s}" ${g.status===s?'selected':''}>${s}</option>`).join('')}
+                            </select>
+                            <button onclick="deleteGuest('${escHtml(g.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition">Delete</button>
+                        </div>
+                    </div>`).join('');
+            });
+            unsubScripts=onSnapshot(query(collection(db,'podcast_scripts'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-scripts'); if(el) el.innerText=items.length;
+                const c=document.getElementById('scripts-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No scripts yet.</p>';return;}
+                c.innerHTML=items.map(s=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="font-bold text-white">${escHtml(s.title)}</p>
+                                ${s.episode?`<p class="text-xs text-pink-400">Episode: ${escHtml(s.episode)}</p>`:''}
+                            </div>
+                            <button onclick="deleteScript('${escHtml(s.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <p class="text-sm text-gray-300 bg-gray-900/50 p-3 rounded-lg whitespace-pre-wrap leading-relaxed">${escHtml(s.body||'')}</p>
+                    </div>`).join('');
+            });
+            unsubSched=onSnapshot(query(collection(db,'podcast_schedule'),orderBy('date','asc')),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const c=document.getElementById('schedule-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No releases scheduled.</p>';return;}
+                c.innerHTML=items.map(s=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center gap-4">
+                        <div class="text-center flex-shrink-0 w-14">
+                            <p class="text-xs text-gray-500">${s.date?new Date(s.date).toLocaleDateString('en',{month:'short'}):'—'}</p>
+                            <p class="text-xl font-black text-purple-400">${s.date?new Date(s.date+'T12:00:00').getDate():'—'}</p>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-white">${escHtml(s.episode||'')}</p>
+                            <p class="text-xs text-gray-400"><i class="fa-solid fa-podcast mr-1"></i>${escHtml(s.platform||'all')}${s.notes?` · ${escHtml(s.notes)}`:''}</p>
+                        </div>
+                        <button onclick="deleteSchedule('${escHtml(s.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition flex-shrink-0"><i class="fa-solid fa-trash"></i></button>
+                    </div>`).join('');
+            });
+        }
+
+        onAuthStateChanged(auth, async user=>{
+            if(user){
+                try {
+                    const ud=await getDoc(doc(db,"users",user.uid));
+                    if(!ud.exists()){alert("Access Denied: Account not found."); signOut(auth);return;}
+                    const data=ud.data();
+                    if(user.email!==OWNER_EMAIL && data.role!==REQUIRED_ROLE){alert("Access Denied: Podcast Division clearance required. Contact the CEO to request access."); signOut(auth);return;}
+                    currentUser={...data,uid:user.uid};
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('user-name-display').innerText=`Podcast Lead: ${data.name||user.email}`;
+                    startListeners();
+                    switchView('dashboard');
+                }catch(e){document.getElementById('login-msg').innerText='Error: '+e.message; signOut(auth);}
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

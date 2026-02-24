@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Communications &amp; Marketing 📣</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode:'class', theme:{ extend:{ fontFamily:{ sans:['Roboto','sans-serif'] } } } }</script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0f0a10; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .view { display: none; } .view.active { display: block; }
+        .nav-btn.active { background: rgba(236,72,153,0.15); color: #f472b6; border-color: rgba(236,72,153,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-pink-700/40">
+            <div class="text-4xl mb-3">📣</div>
+            <h1 class="text-2xl font-black text-pink-400 mb-1">Communications &amp; Marketing</h1>
+            <p class="text-xs text-gray-400 mb-6">Marketing Division Clearance Required</p>
+            <input type="email" id="login-email" placeholder="Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-pink-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-pink-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-pink-600 to-rose-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Access Portal 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <div class="bg-gray-900 border-b border-pink-700/30 px-5 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">📣</span>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-300 leading-tight">Comms &amp; Marketing</h1>
+                    <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../ceo/" class="hidden md:flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-crown text-yellow-400"></i> CEO Portal
+                </a>
+                <button onclick="authManager.logout()" class="bg-gray-800 hover:bg-red-900/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    Logout <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-gauge mr-1.5"></i>Dashboard</button>
+            <button onclick="switchView('content')" id="nav-content" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-calendar-days mr-1.5"></i>Content</button>
+            <button onclick="switchView('campaigns')" id="nav-campaigns" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-bullhorn mr-1.5"></i>Campaigns</button>
+            <button onclick="switchView('social')" id="nav-social" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-share-nodes mr-1.5"></i>Social</button>
+            <button onclick="switchView('analytics')" id="nav-analytics" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-chart-line mr-1.5"></i>Analytics</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-[#0f0a10]">
+
+            <!-- DASHBOARD -->
+            <div id="view-dashboard" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-pink-900/30 to-gray-900 p-5 rounded-2xl border border-pink-700/30">
+                    <h2 class="text-xl font-black text-pink-400 mb-1">Marketing Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Oversee content, campaigns, and platform reach.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Content Items</p><p class="text-3xl font-black text-white" id="dash-content">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Campaigns</p><p class="text-3xl font-black text-pink-400" id="dash-campaigns">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Social Posts</p><p class="text-3xl font-black text-blue-400" id="dash-social">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Metrics</p><p class="text-3xl font-black text-green-400" id="dash-metrics">—</p></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="switchView('content')" class="bg-pink-900/30 hover:bg-pink-900/50 border border-pink-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-calendar-days text-pink-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-pink-300">Content Calendar</p><p class="text-xs text-gray-500 mt-1">Plan and schedule content</p>
+                    </button>
+                    <button onclick="switchView('campaigns')" class="bg-rose-900/30 hover:bg-rose-900/50 border border-rose-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-bullhorn text-rose-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-rose-300">Campaigns</p><p class="text-xs text-gray-500 mt-1">Manage marketing campaigns</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTENT CALENDAR -->
+            <div id="view-content" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-pink-900/20 to-gray-900 p-5 rounded-2xl border border-pink-700/30">
+                    <h2 class="text-xl font-black text-pink-400 mb-1">Content Calendar</h2>
+                    <p class="text-gray-400 text-sm">Plan and schedule content across channels.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Schedule Content</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="cont-title" type="text" placeholder="Content title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors md:col-span-2">
+                        <input id="cont-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <select id="cont-channel" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors">
+                            <option value="instagram">Instagram</option>
+                            <option value="twitter">Twitter/X</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="blog">Blog</option>
+                            <option value="email">Email</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <select id="cont-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors">
+                            <option value="draft">Draft</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="published">Published</option>
+                        </select>
+                        <input id="cont-assign" type="text" placeholder="Assigned to" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors">
+                    </div>
+                    <textarea id="cont-notes" placeholder="Notes / copy..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-pink-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addContent()" class="px-5 py-2.5 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg text-sm transition">Schedule</button>
+                    <p id="cont-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="content-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading content...</p></div>
+            </div>
+
+            <!-- CAMPAIGNS -->
+            <div id="view-campaigns" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-rose-900/20 to-gray-900 p-5 rounded-2xl border border-rose-700/30">
+                    <h2 class="text-xl font-black text-rose-400 mb-1">Marketing Campaigns</h2>
+                    <p class="text-gray-400 text-sm">Plan and execute marketing campaigns.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">New Campaign</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="mcamp-name" type="text" placeholder="Campaign name" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-rose-500 text-sm transition-colors">
+                        <input id="mcamp-goal" type="text" placeholder="Goal / KPI" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-rose-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="mcamp-start" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-rose-500 text-sm transition-colors">
+                        <input id="mcamp-end" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-rose-500 text-sm transition-colors">
+                        <select id="mcamp-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-rose-500 text-sm transition-colors">
+                            <option value="planning">Planning</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <button onclick="addMarketingCampaign()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-sm transition">Create Campaign</button>
+                    <p id="mcamp-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="mcampaigns-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading campaigns...</p></div>
+            </div>
+
+            <!-- SOCIAL MEDIA -->
+            <div id="view-social" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-blue-900/20 to-gray-900 p-5 rounded-2xl border border-blue-700/30">
+                    <h2 class="text-xl font-black text-blue-400 mb-1">Social Media Posts</h2>
+                    <p class="text-gray-400 text-sm">Track and log social media activity.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Log Post</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <select id="post-platform" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-blue-500 text-sm transition-colors">
+                            <option value="instagram">Instagram</option>
+                            <option value="twitter">Twitter/X</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="whatsapp">WhatsApp</option>
+                        </select>
+                        <input id="post-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-blue-500 text-sm transition-colors">
+                        <input id="post-link" type="url" placeholder="Post URL (optional)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-blue-500 text-sm transition-colors">
+                    </div>
+                    <textarea id="post-caption" placeholder="Caption / copy..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-blue-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addPost()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm transition">Log Post</button>
+                    <p id="post-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="posts-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading posts...</p></div>
+            </div>
+
+            <!-- ANALYTICS -->
+            <div id="view-analytics" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-green-900/20 to-gray-900 p-5 rounded-2xl border border-green-700/30">
+                    <h2 class="text-xl font-black text-green-400 mb-1">Analytics &amp; Metrics</h2>
+                    <p class="text-gray-400 text-sm">Record key performance metrics.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Log Metric</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="metric-name" type="text" placeholder="Metric name (e.g. Impressions)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="metric-value" type="number" placeholder="Value" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="metric-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="metric-channel" type="text" placeholder="Channel / Source" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="metric-notes" type="text" placeholder="Notes" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                    </div>
+                    <button onclick="addMetric()" class="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg text-sm transition">Log Metric</button>
+                    <p id="metric-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="metrics-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading metrics...</p></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, getDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        const OWNER_EMAIL = "pwavwef@gmail.com";
+        const REQUIRED_ROLE = "marketing_lead";
+        let currentUser = null;
+        let unsubCont=null, unsubMcamp=null, unsubPosts=null, unsubMetrics=null;
+
+        function escHtml(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        const statusColors = { draft:'text-gray-400 bg-gray-700/30', scheduled:'text-blue-400 bg-blue-900/30', published:'text-green-400 bg-green-900/30', planning:'text-yellow-400 bg-yellow-900/30', active:'text-green-400 bg-green-900/30', completed:'text-gray-400 bg-gray-700/30' };
+        const platformIcons = { instagram:'fa-instagram', twitter:'fa-x-twitter', linkedin:'fa-linkedin', facebook:'fa-facebook', tiktok:'fa-tiktok', blog:'fa-pen', email:'fa-envelope', whatsapp:'fa-whatsapp', other:'fa-share-nodes' };
+
+        window.switchView = function(view) {
+            document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('active'); if(b.id===`nav-${view}`) b.classList.add('active'); });
+        };
+
+        window.authManager = {
+            async login(){ const msg=document.getElementById('login-msg'); msg.innerText=''; try{ await signInWithEmailAndPassword(auth,document.getElementById('login-email').value.trim(),document.getElementById('login-pass').value); }catch(e){msg.innerText='Login failed: '+e.message;} },
+            logout(){ [unsubCont,unsubMcamp,unsubPosts,unsubMetrics].forEach(u=>u&&u()); signOut(auth); }
+        };
+
+        window.addContent = async function(){
+            const msg=document.getElementById('cont-msg'); msg.innerText='';
+            const title=document.getElementById('cont-title').value.trim();
+            if(!title){ msg.innerText='Content title required.'; return; }
+            try {
+                await addDoc(collection(db,'mkt_content'),{ title, date:document.getElementById('cont-date').value, channel:document.getElementById('cont-channel').value, status:document.getElementById('cont-status').value, assign:document.getElementById('cont-assign').value.trim(), notes:document.getElementById('cont-notes').value.trim(), by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['cont-title','cont-date','cont-assign','cont-notes'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteContent = async function(id){ if(!confirm('Delete content item?'))return; try{await deleteDoc(doc(db,'mkt_content',id));}catch(e){alert(e.message);} };
+        window.toggleContent = async function(id, s){ const next=s==='published'?'draft':'published'; try{await updateDoc(doc(db,'mkt_content',id),{status:next});}catch(e){alert(e.message);} };
+
+        window.addMarketingCampaign = async function(){
+            const msg=document.getElementById('mcamp-msg'); msg.innerText='';
+            const name=document.getElementById('mcamp-name').value.trim();
+            if(!name){ msg.innerText='Campaign name required.'; return; }
+            try {
+                await addDoc(collection(db,'mkt_campaigns'),{ name, goal:document.getElementById('mcamp-goal').value.trim(), start:document.getElementById('mcamp-start').value, end:document.getElementById('mcamp-end').value, status:document.getElementById('mcamp-status').value, by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['mcamp-name','mcamp-goal','mcamp-start','mcamp-end'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteMktCampaign = async function(id){ if(!confirm('Delete campaign?'))return; try{await deleteDoc(doc(db,'mkt_campaigns',id));}catch(e){alert(e.message);} };
+
+        window.addPost = async function(){
+            const msg=document.getElementById('post-msg'); msg.innerText='';
+            const caption=document.getElementById('post-caption').value.trim();
+            if(!caption){ msg.innerText='Caption required.'; return; }
+            try {
+                await addDoc(collection(db,'mkt_posts'),{ platform:document.getElementById('post-platform').value, date:document.getElementById('post-date').value, link:document.getElementById('post-link').value.trim(), caption, by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['post-date','post-link','post-caption'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deletePost = async function(id){ if(!confirm('Delete post?'))return; try{await deleteDoc(doc(db,'mkt_posts',id));}catch(e){alert(e.message);} };
+
+        window.addMetric = async function(){
+            const msg=document.getElementById('metric-msg'); msg.innerText='';
+            const name=document.getElementById('metric-name').value.trim();
+            const value=document.getElementById('metric-value').value;
+            if(!name||!value){ msg.innerText='Metric name and value required.'; return; }
+            try {
+                await addDoc(collection(db,'mkt_metrics'),{ name, value:parseFloat(value)||0, date:document.getElementById('metric-date').value, channel:document.getElementById('metric-channel').value.trim(), notes:document.getElementById('metric-notes').value.trim(), by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['metric-name','metric-value','metric-date','metric-channel','metric-notes'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteMetric = async function(id){ try{await deleteDoc(doc(db,'mkt_metrics',id));}catch(e){alert(e.message);} };
+
+        function startListeners(){
+            const pOrder=orderBy('at','desc');
+            unsubCont=onSnapshot(query(collection(db,'mkt_content'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-content'); if(el) el.innerText=items.length;
+                const c=document.getElementById('content-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No content scheduled yet.</p>';return;}
+                c.innerHTML=items.map(i=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <p class="font-bold text-white">${escHtml(i.title)}</p>
+                                    <span class="text-[10px] ${statusColors[i.status]||'text-gray-400'} font-bold px-2 py-0.5 rounded">${escHtml(i.status||'draft')}</span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-0.5">
+                                    <i class="fa-brands ${platformIcons[i.channel]||'fa-share-nodes'} mr-1"></i>${escHtml(i.channel||'')}
+                                    ${i.date?` · ${escHtml(i.date)}`:''}
+                                    ${i.assign?` · ${escHtml(i.assign)}`:''}
+                                </p>
+                                ${i.notes?`<p class="text-xs text-gray-500 mt-1">${escHtml(i.notes)}</p>`:''}
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleContent('${escHtml(i.id)}','${escHtml(i.status||'draft')}')" class="text-xs text-blue-400 hover:text-blue-300 font-bold transition">${i.status==='published'?'Unpublish':'Mark Published'}</button>
+                            <button onclick="deleteContent('${escHtml(i.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition ml-auto">Delete</button>
+                        </div>
+                    </div>`).join('');
+            });
+            unsubMcamp=onSnapshot(query(collection(db,'mkt_campaigns'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-campaigns'); if(el) el.innerText=items.filter(c=>c.status==='active').length;
+                const c=document.getElementById('mcampaigns-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No campaigns yet.</p>';return;}
+                c.innerHTML=items.map(i=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="font-bold text-white">${escHtml(i.name)}</p>
+                            <span class="text-[10px] ${statusColors[i.status]||'text-gray-400'} font-bold px-2 py-0.5 rounded ml-2">${escHtml(i.status||'planning')}</span>
+                        </div>
+                        ${i.goal?`<p class="text-xs text-gray-400">Goal: ${escHtml(i.goal)}</p>`:''}
+                        <p class="text-xs text-gray-500 mt-1">${i.start?`From: ${escHtml(i.start)}`:''}${i.end?` → ${escHtml(i.end)}`:''}</p>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="deleteMktCampaign('${escHtml(i.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition ml-auto">Delete</button>
+                        </div>
+                    </div>`).join('');
+            });
+            unsubPosts=onSnapshot(query(collection(db,'mkt_posts'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-social'); if(el) el.innerText=items.length;
+                const c=document.getElementById('posts-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No posts logged yet.</p>';return;}
+                c.innerHTML=items.map(i=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-brands ${platformIcons[i.platform]||'fa-share-nodes'} text-blue-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-bold text-gray-300 capitalize">${escHtml(i.platform||'')}</p>
+                                ${i.date?`<span class="text-xs text-gray-500">${escHtml(i.date)}</span>`:''}
+                            </div>
+                            <p class="text-xs text-gray-400 mt-0.5 line-clamp-2">${escHtml(i.caption||'')}</p>
+                            ${i.link?`<a href="${escHtml(i.link)}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-400 hover:underline mt-1 inline-block">View Post</a>`:''}
+                        </div>
+                        <button onclick="deletePost('${escHtml(i.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition flex-shrink-0"><i class="fa-solid fa-trash"></i></button>
+                    </div>`).join('');
+            });
+            unsubMetrics=onSnapshot(query(collection(db,'mkt_metrics'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-metrics'); if(el) el.innerText=items.length;
+                const c=document.getElementById('metrics-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No metrics recorded yet.</p>';return;}
+                c.innerHTML=items.map(m=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center gap-4">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-white">${escHtml(m.name)}</p>
+                            <p class="text-xs text-gray-400">${m.channel?escHtml(m.channel)+' · ':''}${m.date?escHtml(m.date)+' · ':''}${m.notes?escHtml(m.notes):''}</p>
+                        </div>
+                        <p class="text-2xl font-black text-green-400">${(m.value||0).toLocaleString()}</p>
+                        <button onclick="deleteMetric('${escHtml(m.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>`).join('');
+            });
+        }
+
+        onAuthStateChanged(auth, async user=>{
+            if(user){
+                try {
+                    const ud=await getDoc(doc(db,"users",user.uid));
+                    if(!ud.exists()){alert("Access Denied: Account not found."); signOut(auth);return;}
+                    const data=ud.data();
+                    if(user.email!==OWNER_EMAIL && data.role!==REQUIRED_ROLE){alert("Access Denied: Marketing Division clearance required. Contact the CEO to request access."); signOut(auth);return;}
+                    currentUser={...data,uid:user.uid};
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('user-name-display').innerText=`Marketing Lead: ${data.name||user.email}`;
+                    startListeners();
+                    switchView('dashboard');
+                }catch(e){document.getElementById('login-msg').innerText='Error: '+e.message; signOut(auth);}
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

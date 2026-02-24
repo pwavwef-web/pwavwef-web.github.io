@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Head of Finance 💰</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0f1115; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .nav-btn.active { background: rgba(255,214,0,0.15); color: #FFD600; border-color: rgba(255,214,0,0.4); }
+        .entry-row:nth-child(even) { background-color: rgba(255,255,255,0.02); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-yellow-700/40">
+            <div class="text-4xl mb-3">💰</div>
+            <h1 class="text-2xl font-black text-yellow-400 mb-1">Head of Finance</h1>
+            <p class="text-xs text-gray-400 mb-6">Finance Clearance Required</p>
+            <input type="email" id="login-email" placeholder="Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-yellow-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-yellow-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Access Portal 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-yellow-700/30 px-5 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">💰</span>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 leading-tight">Head of Finance</h1>
+                    <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../ceo/" class="hidden md:flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-crown text-yellow-400"></i> CEO Portal
+                </a>
+                <button onclick="authManager.logout()"
+                    class="bg-gray-800 hover:bg-red-900/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    Logout <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchView('dashboard')" id="nav-dashboard"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-gauge mr-1.5"></i>Dashboard</button>
+            <button onclick="switchView('journal')" id="nav-journal"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-book mr-1.5"></i>Journal</button>
+            <button onclick="switchView('budget')" id="nav-budget"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-chart-pie mr-1.5"></i>Budget</button>
+            <button onclick="switchView('reports')" id="nav-reports"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-file-chart-column mr-1.5"></i>Reports</button>
+            <button onclick="switchView('team')" id="nav-team"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-users mr-1.5"></i>Team</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-[#0f1115]">
+
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-5 rounded-2xl border border-yellow-700/30">
+                    <h2 class="text-xl font-black text-yellow-400 mb-1">Finance Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Overview of financial activity and key metrics.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Entries</p>
+                        <p class="text-3xl font-black text-white" id="dash-entries">—</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Debits</p>
+                        <p class="text-2xl font-black text-red-400" id="dash-debits">—</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Credits</p>
+                        <p class="text-2xl font-black text-green-400" id="dash-credits">—</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Net Balance</p>
+                        <p class="text-2xl font-black text-yellow-400" id="dash-balance">—</p>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 p-5">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Recent Journal Entries</h3>
+                    <div id="dash-recent-entries" class="space-y-2">
+                        <p class="text-xs text-gray-500">Loading...</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="switchView('journal')" class="bg-yellow-900/30 hover:bg-yellow-900/50 border border-yellow-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-book text-yellow-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-yellow-300">Open Journal</p>
+                        <p class="text-xs text-gray-500 mt-1">Record and view financial entries</p>
+                    </button>
+                    <button onclick="switchView('budget')" class="bg-green-900/30 hover:bg-green-900/50 border border-green-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-chart-pie text-green-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-green-300">Budget Tracker</p>
+                        <p class="text-xs text-gray-500 mt-1">Monitor budget allocations</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- JOURNAL VIEW -->
+            <div id="view-journal" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-yellow-900/20 to-gray-900 p-5 rounded-2xl border border-yellow-700/30">
+                    <h2 class="text-xl font-black text-yellow-400 mb-1">Journal of Entries</h2>
+                    <p class="text-gray-400 text-sm">Double-entry bookkeeping records.</p>
+                </div>
+                <!-- Add Entry Form -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">New Journal Entry</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <input id="entry-date" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-yellow-500 text-sm transition-colors">
+                        <input id="entry-ref" type="text" placeholder="Reference #" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-yellow-500 text-sm transition-colors">
+                        <input id="entry-narration" type="text" placeholder="Description / Narration" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-yellow-500 text-sm col-span-2 md:col-span-1 transition-colors">
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <input id="entry-debit-account" type="text" placeholder="Debit Account" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors">
+                        <input id="entry-credit-account" type="text" placeholder="Credit Account" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="entry-debit" type="number" min="0" step="0.01" placeholder="Debit Amount" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors">
+                        <input id="entry-credit" type="number" min="0" step="0.01" placeholder="Credit Amount" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="addJournalEntry()"
+                            class="px-5 py-2.5 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg text-sm transition">Post Entry</button>
+                        <p id="entry-msg" class="text-xs text-red-400"></p>
+                    </div>
+                </div>
+                <!-- Search -->
+                <input id="search-entries" type="text" placeholder="Search entries..." oninput="filterEntries()"
+                    class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:border-yellow-500 text-sm transition-colors">
+                <!-- Table -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-700 bg-gray-900/50">
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400">Date</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400">Ref</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400">Narration</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400">Debit Acct</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400">Credit Acct</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-400">DR</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-400">CR</th>
+                                    <th class="px-4 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="journal-tbody">
+                                <tr><td colspan="8" class="p-6 text-center text-gray-500 text-sm">No entries yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUDGET VIEW -->
+            <div id="view-budget" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-green-900/20 to-gray-900 p-5 rounded-2xl border border-green-700/30">
+                    <h2 class="text-xl font-black text-green-400 mb-1">Budget Tracker</h2>
+                    <p class="text-gray-400 text-sm">Monitor allocations and spending per category.</p>
+                </div>
+                <!-- Add Budget Item -->
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Add Budget Item</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <input id="budget-category" type="text" placeholder="Category" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="budget-allocated" type="number" min="0" step="0.01" placeholder="Allocated (₦)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="budget-spent" type="number" min="0" step="0.01" placeholder="Spent (₦)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-yellow-500 text-sm transition-colors">
+                        <input id="budget-notes" type="text" placeholder="Notes" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-gray-500 text-sm transition-colors">
+                    </div>
+                    <button onclick="addBudgetItem()" class="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg text-sm transition">Add Item</button>
+                    <p id="budget-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="budget-list" class="space-y-3">
+                    <p class="text-xs text-gray-500">Loading budget items...</p>
+                </div>
+            </div>
+
+            <!-- REPORTS VIEW -->
+            <div id="view-reports" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-blue-900/20 to-gray-900 p-5 rounded-2xl border border-blue-700/30">
+                    <h2 class="text-xl font-black text-blue-400 mb-1">Financial Reports</h2>
+                    <p class="text-gray-400 text-sm">Generate and export financial summaries.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+                        <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-balance-scale text-yellow-400"></i> Trial Balance</h3>
+                        <div id="report-trial-balance" class="space-y-2 text-sm text-gray-400">
+                            <p class="animate-pulse text-xs">Calculating...</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+                        <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-bar text-green-400"></i> Account Summary</h3>
+                        <div id="report-account-summary" class="space-y-2 text-sm text-gray-400">
+                            <p class="animate-pulse text-xs">Calculating...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Export Data</h3>
+                    <div class="flex gap-3 flex-wrap">
+                        <button onclick="exportJournal()" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg text-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-download"></i> Export Journal (CSV)
+                        </button>
+                        <button onclick="exportBudget()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-download"></i> Export Budget (CSV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM VIEW -->
+            <div id="view-team" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-yellow-900/20 to-gray-900 p-5 rounded-2xl border border-yellow-700/30">
+                    <h2 class="text-xl font-black text-yellow-400 mb-1">Finance Team</h2>
+                    <p class="text-gray-400 text-sm">Users with Finance Lead access. To add or remove members, the CEO must update access in the <a href="../ceo/" class="text-yellow-400 underline">CEO Portal</a>.</p>
+                </div>
+                <div id="finance-team-list" class="space-y-3">
+                    <p class="text-xs text-gray-500 animate-pulse">Loading team...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        const OWNER_EMAIL = "pwavwef@gmail.com";
+        const REQUIRED_ROLE = "finance_lead";
+        let currentUser = null;
+        let allEntries = [];
+        let allBudgetItems = [];
+        let unsubEntries = null;
+        let unsubBudget = null;
+
+        function escHtml(str) {
+            return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        window.switchView = function(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.id === `nav-${view}`) btn.classList.add('active');
+            });
+            if (view === 'reports') renderReports();
+            if (view === 'team') loadTeam();
+        };
+
+        window.authManager = {
+            async login() {
+                const msg = document.getElementById('login-msg');
+                msg.innerText = '';
+                try {
+                    await signInWithEmailAndPassword(auth,
+                        document.getElementById('login-email').value.trim(),
+                        document.getElementById('login-pass').value);
+                } catch (err) { msg.innerText = 'Login failed: ' + err.message; }
+            },
+            logout() {
+                if (unsubEntries) unsubEntries();
+                if (unsubBudget) unsubBudget();
+                signOut(auth);
+            }
+        };
+
+        window.addJournalEntry = async function() {
+            const msg = document.getElementById('entry-msg');
+            msg.innerText = '';
+            const date = document.getElementById('entry-date').value;
+            const ref = document.getElementById('entry-ref').value.trim();
+            const debitAccount = document.getElementById('entry-debit-account').value.trim();
+            const creditAccount = document.getElementById('entry-credit-account').value.trim();
+            const debit = parseFloat(document.getElementById('entry-debit').value) || 0;
+            const credit = parseFloat(document.getElementById('entry-credit').value) || 0;
+            const narration = document.getElementById('entry-narration').value.trim();
+            if (!date || !debitAccount || !creditAccount || !narration || debit <= 0 || credit <= 0) {
+                msg.innerText = 'Please fill in all required fields with amounts greater than zero.'; return;
+            }
+            if (debit !== credit) { msg.innerText = 'Debit and Credit must be equal (double-entry rule).'; return; }
+            try {
+                await addDoc(collection(db, "financial_journal"), {
+                    date, ref, debitAccount, creditAccount, debit, credit, narration,
+                    recordedBy: currentUser.name || currentUser.email,
+                    recordedByUid: currentUser.uid, createdAt: serverTimestamp()
+                });
+                ['entry-date','entry-ref','entry-debit-account','entry-credit-account','entry-debit','entry-credit','entry-narration']
+                    .forEach(id => document.getElementById(id).value = '');
+            } catch (err) { msg.innerText = 'Error: ' + err.message; }
+        };
+
+        window.deleteEntry = async function(id) {
+            if (!confirm('Delete this entry? This cannot be undone.')) return;
+            try { await deleteDoc(doc(db, "financial_journal", id)); }
+            catch (err) { alert('Error: ' + err.message); }
+        };
+
+        window.filterEntries = function() {
+            const term = document.getElementById('search-entries').value.toLowerCase();
+            const filtered = term ? allEntries.filter(e =>
+                (e.narration||'').toLowerCase().includes(term) ||
+                (e.debitAccount||'').toLowerCase().includes(term) ||
+                (e.creditAccount||'').toLowerCase().includes(term) ||
+                (e.ref||'').toLowerCase().includes(term)) : allEntries;
+            renderEntries(filtered);
+        };
+
+        function renderEntries(entries) {
+            const tbody = document.getElementById('journal-tbody');
+            if (!entries.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500">No entries yet.</td></tr>';
+                updateDashStats([], []);
+                return;
+            }
+            let totalDebit = 0, totalCredit = 0;
+            tbody.innerHTML = entries.map(e => {
+                totalDebit += e.debit || 0;
+                totalCredit += e.credit || 0;
+                return `<tr class="entry-row hover:bg-gray-700/30 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-300 text-xs">${escHtml(e.date||'-')}</td>
+                    <td class="px-4 py-3 text-gray-400 text-xs">${escHtml(e.ref||'-')}</td>
+                    <td class="px-4 py-3 max-w-[150px]"><p class="truncate text-white text-xs">${escHtml(e.narration)}</p></td>
+                    <td class="px-4 py-3 text-red-300 text-xs">${escHtml(e.debitAccount)}</td>
+                    <td class="px-4 py-3 text-green-300 text-xs">${escHtml(e.creditAccount)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-red-300 text-xs">${(e.debit||0).toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-green-300 text-xs">${(e.credit||0).toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="deleteEntry('${escHtml(e.id)}')" class="text-gray-600 hover:text-red-500 transition text-xs"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+            updateDashStats(totalDebit, totalCredit, entries.length);
+        }
+
+        function updateDashStats(totalDebit, totalCredit, count) {
+            const countEl = document.getElementById('dash-entries');
+            const drEl = document.getElementById('dash-debits');
+            const crEl = document.getElementById('dash-credits');
+            const balEl = document.getElementById('dash-balance');
+            if (countEl) countEl.innerText = count || 0;
+            if (drEl) drEl.innerText = (totalDebit||0).toFixed(2);
+            if (crEl) crEl.innerText = (totalCredit||0).toFixed(2);
+            if (balEl) {
+                const bal = (totalDebit||0) - (totalCredit||0);
+                balEl.innerText = bal.toFixed(2);
+                balEl.className = `text-2xl font-black ${bal >= 0 ? 'text-yellow-400' : 'text-red-400'}`;
+            }
+        }
+
+        window.addBudgetItem = async function() {
+            const msg = document.getElementById('budget-msg');
+            msg.innerText = '';
+            const category = document.getElementById('budget-category').value.trim();
+            const allocated = parseFloat(document.getElementById('budget-allocated').value) || 0;
+            const spent = parseFloat(document.getElementById('budget-spent').value) || 0;
+            const notes = document.getElementById('budget-notes').value.trim();
+            if (!category || allocated <= 0) { msg.innerText = 'Category and Allocated amount are required.'; return; }
+            try {
+                await addDoc(collection(db, "finance_budget"), {
+                    category, allocated, spent, notes,
+                    recordedBy: currentUser.name || currentUser.email,
+                    createdAt: serverTimestamp()
+                });
+                ['budget-category','budget-allocated','budget-spent','budget-notes'].forEach(id => document.getElementById(id).value = '');
+            } catch (err) { msg.innerText = 'Error: ' + err.message; }
+        };
+
+        window.deleteBudgetItem = async function(id) {
+            if (!confirm('Delete this budget item?')) return;
+            try { await deleteDoc(doc(db, "finance_budget", id)); }
+            catch (err) { alert('Error: ' + err.message); }
+        };
+
+        function renderBudget(items) {
+            const container = document.getElementById('budget-list');
+            if (!items.length) { container.innerHTML = '<p class="text-xs text-gray-500 italic">No budget items yet.</p>'; return; }
+            container.innerHTML = items.map(item => {
+                const pct = item.allocated > 0 ? Math.min(100, (item.spent / item.allocated) * 100) : 0;
+                const pctColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-yellow-500' : 'bg-green-500';
+                return `<div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-white">${escHtml(item.category)}</p>
+                            <p class="text-xs text-gray-400">${escHtml(item.notes||'')}</p>
+                        </div>
+                        <button onclick="deleteBudgetItem('${escHtml(item.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="flex gap-4 text-sm mb-2">
+                        <span class="text-gray-400">Allocated: <span class="text-white font-bold">₦${(item.allocated||0).toFixed(2)}</span></span>
+                        <span class="text-gray-400">Spent: <span class="text-yellow-400 font-bold">₦${(item.spent||0).toFixed(2)}</span></span>
+                        <span class="text-gray-400">Remaining: <span class="${(item.allocated-item.spent)>=0?'text-green-400':'text-red-400'} font-bold">₦${((item.allocated||0)-(item.spent||0)).toFixed(2)}</span></span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="${pctColor} h-2 rounded-full transition-all" style="width:${pct}%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1">${pct.toFixed(0)}% used</p>
+                </div>`;
+            }).join('');
+        }
+
+        function renderReports() {
+            // Trial balance
+            const tbContainer = document.getElementById('report-trial-balance');
+            const summaryContainer = document.getElementById('report-account-summary');
+            if (!allEntries.length) {
+                tbContainer.innerHTML = '<p class="text-xs text-gray-500">No journal entries yet.</p>';
+                summaryContainer.innerHTML = '<p class="text-xs text-gray-500">No data available.</p>';
+                return;
+            }
+            let totalDR = 0, totalCR = 0;
+            const accounts = {};
+            allEntries.forEach(e => {
+                totalDR += e.debit || 0;
+                totalCR += e.credit || 0;
+                if (!accounts[e.debitAccount]) accounts[e.debitAccount] = { dr: 0, cr: 0 };
+                if (!accounts[e.creditAccount]) accounts[e.creditAccount] = { dr: 0, cr: 0 };
+                accounts[e.debitAccount].dr += e.debit || 0;
+                accounts[e.creditAccount].cr += e.credit || 0;
+            });
+            tbContainer.innerHTML = `
+                <div class="flex justify-between py-2 border-b border-gray-700">
+                    <span class="text-gray-300 font-bold">Total Debits</span>
+                    <span class="text-red-400 font-black">₦${totalDR.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-700">
+                    <span class="text-gray-300 font-bold">Total Credits</span>
+                    <span class="text-green-400 font-black">₦${totalCR.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-gray-300 font-bold">Balance</span>
+                    <span class="${totalDR===totalCR?'text-yellow-400':'text-red-400'} font-black">₦${(totalDR-totalCR).toFixed(2)}</span>
+                </div>
+                <p class="text-[10px] ${totalDR===totalCR?'text-green-400':'text-red-400'} mt-2">${totalDR===totalCR?'✓ Trial balance agrees':'⚠ Trial balance does not agree'}</p>`;
+            summaryContainer.innerHTML = Object.entries(accounts).map(([acct, vals]) =>
+                `<div class="flex justify-between py-1.5 border-b border-gray-700/50 text-xs">
+                    <span class="text-gray-300">${escHtml(acct)}</span>
+                    <span class="text-red-300">DR: ${vals.dr.toFixed(2)}</span>
+                    <span class="text-green-300">CR: ${vals.cr.toFixed(2)}</span>
+                </div>`).join('');
+        }
+
+        window.exportJournal = function() {
+            if (!allEntries.length) { alert('No entries to export.'); return; }
+            const rows = [['Date','Ref','Narration','Debit Account','Credit Account','Debit','Credit']];
+            allEntries.forEach(e => rows.push([e.date||'',e.ref||'',e.narration||'',e.debitAccount||'',e.creditAccount||'',(e.debit||0).toFixed(2),(e.credit||0).toFixed(2)]));
+            downloadCSV(rows, `finance-journal-${Date.now()}.csv`);
+        };
+
+        window.exportBudget = function() {
+            if (!allBudgetItems.length) { alert('No budget items to export.'); return; }
+            const rows = [['Category','Allocated','Spent','Remaining','Notes']];
+            allBudgetItems.forEach(b => rows.push([b.category||'',(b.allocated||0).toFixed(2),(b.spent||0).toFixed(2),((b.allocated||0)-(b.spent||0)).toFixed(2),b.notes||'']));
+            downloadCSV(rows, `finance-budget-${Date.now()}.csv`);
+        };
+
+        function downloadCSV(rows, filename) {
+            const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = filename; a.click();
+        }
+
+        async function loadTeam() {
+            const container = document.getElementById('finance-team-list');
+            try {
+                const snap = await getDocs(query(collection(db, "users"), where("role", "==", REQUIRED_ROLE)));
+                if (snap.empty) { container.innerHTML = '<p class="text-xs text-gray-500 italic">No team members yet. CEO can add members from the CEO Portal.</p>'; return; }
+                container.innerHTML = snap.docs.map(d => {
+                    const u = d.data();
+                    return `<div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-yellow-900/40 flex items-center justify-center text-yellow-400 font-black text-lg">${(u.name||'?')[0].toUpperCase()}</div>
+                        <div>
+                            <p class="font-bold text-white">${escHtml(u.name||'Unknown')}</p>
+                            <p class="text-xs text-gray-400">${escHtml(u.email||'')}</p>
+                            <span class="text-[10px] font-bold text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded mt-1 inline-block">Finance Lead</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) { container.innerHTML = `<p class="text-xs text-red-400">Error: ${escHtml(err.message)}</p>`; }
+        }
+
+        function startListeners() {
+            const q = query(collection(db, "financial_journal"), orderBy("createdAt", "desc"));
+            unsubEntries = onSnapshot(q, (snap) => {
+                allEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                filterEntries();
+                renderDashRecent();
+            });
+            const bq = query(collection(db, "finance_budget"), orderBy("createdAt", "desc"));
+            unsubBudget = onSnapshot(bq, (snap) => {
+                allBudgetItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderBudget(allBudgetItems);
+            });
+        }
+
+        function renderDashRecent() {
+            const container = document.getElementById('dash-recent-entries');
+            if (!container) return;
+            const recent = allEntries.slice(0, 5);
+            if (!recent.length) { container.innerHTML = '<p class="text-xs text-gray-500">No entries yet.</p>'; return; }
+            container.innerHTML = recent.map(e => `
+                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-white truncate">${escHtml(e.narration||'-')}</p>
+                        <p class="text-xs text-gray-500">${escHtml(e.date||'')} · DR: ${escHtml(e.debitAccount||'')} / CR: ${escHtml(e.creditAccount||'')}</p>
+                    </div>
+                    <span class="text-sm font-bold text-yellow-400 ml-4">₦${(e.debit||0).toFixed(2)}</span>
+                </div>`).join('');
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (!userDoc.exists()) { alert("Access Denied: Account not found."); signOut(auth); return; }
+                    const userData = userDoc.data();
+                    const allowed = user.email === OWNER_EMAIL || userData.role === REQUIRED_ROLE;
+                    if (!allowed) { alert("Access Denied: Finance clearance required. Contact the CEO to request access."); signOut(auth); return; }
+                    currentUser = { ...userData, uid: user.uid };
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('user-name-display').innerText = `Finance Officer: ${userData.name || user.email}`;
+                    startListeners();
+                    switchView('dashboard');
+                } catch (err) { document.getElementById('login-msg').innerText = 'Error: ' + err.message; signOut(auth); }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

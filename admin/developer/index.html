@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Developer Portal 💻</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode:'class', theme:{ extend:{ fontFamily:{ sans:['Roboto','sans-serif'] } } } }</script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #080f0a; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .view { display: none; } .view.active { display: block; }
+        .nav-btn.active { background: rgba(52,211,153,0.15); color: #34d399; border-color: rgba(52,211,153,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-green-700/40">
+            <div class="text-4xl mb-3">💻</div>
+            <h1 class="text-2xl font-black text-green-400 mb-1">Developer Portal</h1>
+            <p class="text-xs text-gray-400 mb-6">Engineering Clearance Required</p>
+            <input type="email" id="login-email" placeholder="Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-green-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-green-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-green-700 to-green-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Access Portal 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <div class="bg-gray-900 border-b border-green-700/30 px-5 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">💻</span>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-teal-300 leading-tight">Developer Portal</h1>
+                    <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../ceo/" class="hidden md:flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-crown text-yellow-400"></i> CEO Portal
+                </a>
+                <button onclick="authManager.logout()" class="bg-gray-800 hover:bg-red-900/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    Logout <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-gauge mr-1.5"></i>Dashboard</button>
+            <button onclick="switchView('projects')" id="nav-projects" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-diagram-project mr-1.5"></i>Projects</button>
+            <button onclick="switchView('issues')" id="nav-issues" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-bug mr-1.5"></i>Issues</button>
+            <button onclick="switchView('deployments')" id="nav-deployments" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-rocket mr-1.5"></i>Deployments</button>
+            <button onclick="switchView('logs')" id="nav-logs" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-terminal mr-1.5"></i>Logs</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-[#080f0a]">
+
+            <!-- DASHBOARD -->
+            <div id="view-dashboard" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-green-900/30 to-gray-900 p-5 rounded-2xl border border-green-700/30">
+                    <h2 class="text-xl font-black text-green-400 mb-1">Engineering Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Track projects, issues, deployments and system health.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Projects</p><p class="text-3xl font-black text-white" id="dash-projects">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Open Issues</p><p class="text-3xl font-black text-red-400" id="dash-issues">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Deployments</p><p class="text-3xl font-black text-green-400" id="dash-deployments">—</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Log Entries</p><p class="text-3xl font-black text-teal-400" id="dash-logs">—</p></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="switchView('projects')" class="bg-green-900/30 hover:bg-green-900/50 border border-green-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-diagram-project text-green-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-green-300">Projects</p><p class="text-xs text-gray-500 mt-1">Track ongoing development work</p>
+                    </button>
+                    <button onclick="switchView('issues')" class="bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-bug text-red-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-red-300">Issues & Bugs</p><p class="text-xs text-gray-500 mt-1">Report and track bugs</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PROJECTS -->
+            <div id="view-projects" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-green-900/20 to-gray-900 p-5 rounded-2xl border border-green-700/30">
+                    <h2 class="text-xl font-black text-green-400 mb-1">Projects</h2>
+                    <p class="text-gray-400 text-sm">Track active and planned development projects.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">New Project</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="proj-name" type="text" placeholder="Project name" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <select id="proj-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                            <option value="active">In Progress</option>
+                            <option value="planning">Planning</option>
+                            <option value="completed">Completed</option>
+                            <option value="paused">Paused</option>
+                        </select>
+                    </div>
+                    <textarea id="proj-desc" placeholder="Description, tech stack, notes..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addProject()" class="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg text-sm transition">Add Project</button>
+                    <p id="proj-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="projects-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading projects...</p></div>
+            </div>
+
+            <!-- ISSUES -->
+            <div id="view-issues" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-red-900/20 to-gray-900 p-5 rounded-2xl border border-red-700/30">
+                    <h2 class="text-xl font-black text-red-400 mb-1">Issues &amp; Bug Tracker</h2>
+                    <p class="text-gray-400 text-sm">Report and manage bugs, improvements, and feature requests.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Report Issue</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="issue-title" type="text" placeholder="Issue title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors md:col-span-2">
+                        <select id="issue-priority" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors">
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="issue-type" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors">
+                            <option value="bug">Bug</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="improvement">Improvement</option>
+                            <option value="security">Security</option>
+                        </select>
+                        <input id="issue-assign" type="text" placeholder="Assign to (name/email)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors">
+                    </div>
+                    <textarea id="issue-desc" placeholder="Steps to reproduce / details..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-red-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addIssue()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-sm transition">Report Issue</button>
+                    <p id="issue-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="issues-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading issues...</p></div>
+            </div>
+
+            <!-- DEPLOYMENTS -->
+            <div id="view-deployments" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-teal-900/20 to-gray-900 p-5 rounded-2xl border border-teal-700/30">
+                    <h2 class="text-xl font-black text-teal-400 mb-1">Deployments</h2>
+                    <p class="text-gray-400 text-sm">Track release history and deployment status.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Log Deployment</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="deploy-version" type="text" placeholder="Version (e.g. v2.1.0)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors">
+                        <input id="deploy-env" type="text" placeholder="Environment (prod / staging)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors">
+                        <select id="deploy-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors">
+                            <option value="success">Success</option>
+                            <option value="failed">Failed</option>
+                            <option value="rollback">Rollback</option>
+                        </select>
+                    </div>
+                    <textarea id="deploy-notes" placeholder="Changes / release notes..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addDeployment()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-sm transition">Log Deployment</button>
+                    <p id="deploy-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="deployments-list" class="space-y-3"><p class="text-xs text-gray-500 animate-pulse">Loading deployments...</p></div>
+            </div>
+
+            <!-- LOGS -->
+            <div id="view-logs" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-2xl border border-gray-700">
+                    <h2 class="text-xl font-black text-teal-400 mb-1">System Logs</h2>
+                    <p class="text-gray-400 text-sm">Record system events, errors, and developer notes.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">Add Log Entry</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="log-level" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors">
+                            <option value="info">INFO</option>
+                            <option value="warning">WARNING</option>
+                            <option value="error">ERROR</option>
+                            <option value="debug">DEBUG</option>
+                        </select>
+                        <input id="log-source" type="text" placeholder="Source / component" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors">
+                    </div>
+                    <textarea id="log-message" placeholder="Log message..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-teal-500 text-sm transition-colors resize-none font-mono text-xs"></textarea>
+                    <button onclick="addLog()" class="px-5 py-2.5 bg-teal-700 hover:bg-teal-600 text-white font-bold rounded-lg text-sm transition">Add Entry</button>
+                    <p id="log-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="logs-list" class="space-y-2 font-mono text-xs"><p class="text-xs text-gray-500 animate-pulse">Loading logs...</p></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, getDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        const OWNER_EMAIL = "pwavwef@gmail.com";
+        const REQUIRED_ROLE = "developer";
+        let currentUser = null;
+        let unsubProj=null, unsubIssues=null, unsubDeploy=null, unsubLogs=null;
+
+        function escHtml(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        window.switchView = function(view) {
+            document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('active'); if(b.id===`nav-${view}`) b.classList.add('active'); });
+        };
+
+        window.authManager = {
+            async login(){ const msg=document.getElementById('login-msg'); msg.innerText=''; try{ await signInWithEmailAndPassword(auth,document.getElementById('login-email').value.trim(),document.getElementById('login-pass').value); }catch(e){msg.innerText='Login failed: '+e.message;} },
+            logout(){ [unsubProj,unsubIssues,unsubDeploy,unsubLogs].forEach(u=>u&&u()); signOut(auth); }
+        };
+
+        const statusColor = { active:'text-green-400 bg-green-900/30', planning:'text-yellow-400 bg-yellow-900/30', completed:'text-gray-400 bg-gray-700/30', paused:'text-orange-400 bg-orange-900/30', success:'text-green-400 bg-green-900/30', failed:'text-red-400 bg-red-900/30', rollback:'text-yellow-400 bg-yellow-900/30' };
+        const priorityColor = { critical:'text-red-400', high:'text-orange-400', medium:'text-yellow-400', low:'text-blue-400' };
+        const levelColor = { info:'text-blue-400', warning:'text-yellow-400', error:'text-red-400', debug:'text-gray-400' };
+
+        window.addProject = async function(){
+            const msg=document.getElementById('proj-msg'); msg.innerText='';
+            const name=document.getElementById('proj-name').value.trim();
+            if(!name){ msg.innerText='Project name required.'; return; }
+            try {
+                await addDoc(collection(db,'dev_projects'),{ name, status:document.getElementById('proj-status').value, desc:document.getElementById('proj-desc').value.trim(), by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['proj-name','proj-desc'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteProject = async function(id){ if(!confirm('Delete project?'))return; try{await deleteDoc(doc(db,'dev_projects',id));}catch(e){alert(e.message);} };
+        window.toggleProject = async function(id, s){ const next=s==='completed'?'active':'completed'; try{await updateDoc(doc(db,'dev_projects',id),{status:next});}catch(e){alert(e.message);} };
+
+        window.addIssue = async function(){
+            const msg=document.getElementById('issue-msg'); msg.innerText='';
+            const title=document.getElementById('issue-title').value.trim();
+            if(!title){ msg.innerText='Issue title required.'; return; }
+            try {
+                await addDoc(collection(db,'dev_issues'),{ title, priority:document.getElementById('issue-priority').value, type:document.getElementById('issue-type').value, assign:document.getElementById('issue-assign').value.trim(), desc:document.getElementById('issue-desc').value.trim(), status:'open', by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['issue-title','issue-assign','issue-desc'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.closeIssue = async function(id, s){ const next=s==='closed'?'open':'closed'; try{await updateDoc(doc(db,'dev_issues',id),{status:next});}catch(e){alert(e.message);} };
+        window.deleteIssue = async function(id){ if(!confirm('Delete issue?'))return; try{await deleteDoc(doc(db,'dev_issues',id));}catch(e){alert(e.message);} };
+
+        window.addDeployment = async function(){
+            const msg=document.getElementById('deploy-msg'); msg.innerText='';
+            const version=document.getElementById('deploy-version').value.trim();
+            if(!version){ msg.innerText='Version required.'; return; }
+            try {
+                await addDoc(collection(db,'dev_deployments'),{ version, env:document.getElementById('deploy-env').value.trim(), status:document.getElementById('deploy-status').value, notes:document.getElementById('deploy-notes').value.trim(), by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['deploy-version','deploy-env','deploy-notes'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteDeployment = async function(id){ if(!confirm('Delete deployment log?'))return; try{await deleteDoc(doc(db,'dev_deployments',id));}catch(e){alert(e.message);} };
+
+        window.addLog = async function(){
+            const msg=document.getElementById('log-msg'); msg.innerText='';
+            const message=document.getElementById('log-message').value.trim();
+            if(!message){ msg.innerText='Log message required.'; return; }
+            try {
+                await addDoc(collection(db,'dev_logs'),{ level:document.getElementById('log-level').value, source:document.getElementById('log-source').value.trim(), message, by:currentUser.name||currentUser.email, at:serverTimestamp() });
+                ['log-source','log-message'].forEach(id=>document.getElementById(id).value='');
+            }catch(e){msg.innerText='Error: '+e.message;}
+        };
+        window.deleteLog = async function(id){ try{await deleteDoc(doc(db,'dev_logs',id));}catch(e){alert(e.message);} };
+
+        function startListeners(){
+            const pOrder=orderBy('at','desc');
+            unsubProj=onSnapshot(query(collection(db,'dev_projects'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-projects'); if(el) el.innerText=items.filter(p=>p.status==='active').length;
+                const c=document.getElementById('projects-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No projects yet.</p>';return;}
+                c.innerHTML=items.map(p=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="font-bold text-white">${escHtml(p.name)}</p>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded ml-2 ${statusColor[p.status]||'text-gray-400'}">${escHtml(p.status||'active')}</span>
+                        </div>
+                        ${p.desc?`<p class="text-xs text-gray-400 mb-2">${escHtml(p.desc)}</p>`:''}
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="toggleProject('${escHtml(p.id)}','${escHtml(p.status||'active')}')" class="text-xs text-blue-400 hover:text-blue-300 font-bold transition">${p.status==='completed'?'Reopen':'Complete'}</button>
+                            <button onclick="deleteProject('${escHtml(p.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition ml-auto">Delete</button>
+                        </div>
+                    </div>`).join('');
+            });
+            unsubIssues=onSnapshot(query(collection(db,'dev_issues'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const open=items.filter(i=>i.status!=='closed').length;
+                const el=document.getElementById('dash-issues'); if(el) el.innerText=open;
+                const c=document.getElementById('issues-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No issues reported.</p>';return;}
+                c.innerHTML=items.map(i=>`
+                    <div class="bg-gray-800 rounded-xl border ${i.status==='closed'?'border-gray-700/40 opacity-60':'border-gray-700'} p-4">
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <p class="font-bold text-white ${i.status==='closed'?'line-through text-gray-400':''}">${escHtml(i.title)}</p>
+                                    <span class="text-[10px] font-bold ${priorityColor[i.priority]||'text-gray-400'}">${escHtml(i.priority||'').toUpperCase()}</span>
+                                    <span class="text-[10px] font-bold text-gray-500 border border-gray-600 px-1.5 py-0.5 rounded">${escHtml(i.type||'bug')}</span>
+                                </div>
+                                ${i.desc?`<p class="text-xs text-gray-400 mt-0.5">${escHtml(i.desc)}</p>`:''}
+                                ${i.assign?`<p class="text-xs text-gray-500 mt-0.5">Assigned: ${escHtml(i.assign)}</p>`:''}
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="closeIssue('${escHtml(i.id)}','${escHtml(i.status||'open')}')" class="text-xs text-blue-400 hover:text-blue-300 font-bold transition">${i.status==='closed'?'Reopen':'Close'}</button>
+                            <button onclick="deleteIssue('${escHtml(i.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition ml-auto">Delete</button>
+                        </div>
+                    </div>`).join('');
+            });
+            unsubDeploy=onSnapshot(query(collection(db,'dev_deployments'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-deployments'); if(el) el.innerText=items.length;
+                const c=document.getElementById('deployments-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No deployments logged.</p>';return;}
+                c.innerHTML=items.map(d=>`
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl ${d.status==='success'?'bg-green-900/40':d.status==='failed'?'bg-red-900/40':'bg-yellow-900/40'} flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid ${d.status==='success'?'fa-check text-green-400':d.status==='failed'?'fa-times text-red-400':'fa-rotate-left text-yellow-400'}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold text-white font-mono">${escHtml(d.version||'—')}</p>
+                                <span class="text-[10px] font-bold ${statusColor[d.status]||'text-gray-400'} px-2 py-0.5 rounded">${escHtml(d.status||'')}</span>
+                            </div>
+                            <p class="text-xs text-gray-400">${d.env?escHtml(d.env)+' · ':''} ${escHtml(d.notes||'')}</p>
+                        </div>
+                        <button onclick="deleteDeployment('${escHtml(d.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition flex-shrink-0"><i class="fa-solid fa-trash"></i></button>
+                    </div>`).join('');
+            });
+            unsubLogs=onSnapshot(query(collection(db,'dev_logs'),pOrder),snap=>{
+                const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+                const el=document.getElementById('dash-logs'); if(el) el.innerText=items.length;
+                const c=document.getElementById('logs-list');
+                if(!items.length){c.innerHTML='<p class="text-xs text-gray-500 italic">No log entries.</p>';return;}
+                c.innerHTML=items.map(l=>`
+                    <div class="bg-gray-900 rounded-lg border border-gray-800 px-4 py-2.5 flex items-start gap-3">
+                        <span class="text-[10px] font-black ${levelColor[l.level]||'text-gray-400'} uppercase w-14 flex-shrink-0 pt-0.5">${escHtml(l.level||'info')}</span>
+                        <div class="flex-1 min-w-0">
+                            ${l.source?`<span class="text-[10px] text-teal-400 mr-2">[${escHtml(l.source)}]</span>`:''}
+                            <span class="text-gray-300">${escHtml(l.message)}</span>
+                        </div>
+                        <button onclick="deleteLog('${escHtml(l.id)}')" class="text-gray-700 hover:text-red-500 transition flex-shrink-0"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                    </div>`).join('');
+            });
+        }
+
+        onAuthStateChanged(auth, async user=>{
+            if(user){
+                try {
+                    const ud=await getDoc(doc(db,"users",user.uid));
+                    if(!ud.exists()){alert("Access Denied: Account not found."); signOut(auth);return;}
+                    const data=ud.data();
+                    if(user.email!==OWNER_EMAIL && data.role!==REQUIRED_ROLE){alert("Access Denied: Engineering clearance required. Contact the CEO to request access."); signOut(auth);return;}
+                    currentUser={...data,uid:user.uid};
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('user-name-display').innerText=`Developer: ${data.name||user.email}`;
+                    startListeners();
+                    switchView('dashboard');
+                }catch(e){document.getElementById('login-msg').innerText='Error: '+e.message; signOut(auth);}
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Chief of Ambassadors 🤝</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode:'class', theme:{ extend:{ fontFamily:{ sans:['Roboto','sans-serif'] } } } }</script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0f0d0a; color: white; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .view { display: none; } .view.active { display: block; }
+        .nav-btn.active { background: rgba(251,146,60,0.15); color: #fb923c; border-color: rgba(251,146,60,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-2xl text-center border border-orange-700/40">
+            <div class="text-4xl mb-3">🤝</div>
+            <h1 class="text-2xl font-black text-orange-400 mb-1">Chief of Ambassadors</h1>
+            <p class="text-xs text-gray-400 mb-6">Ambassador Division Clearance Required</p>
+            <input type="email" id="login-email" placeholder="Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orange-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-orange-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Access Portal 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <div class="bg-gray-900 border-b border-orange-700/30 px-5 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🤝</span>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300 leading-tight">Chief of Ambassadors</h1>
+                    <p id="user-name-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../ceo/" class="hidden md:flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-crown text-yellow-400"></i> CEO Portal
+                </a>
+                <button onclick="authManager.logout()" class="bg-gray-800 hover:bg-red-900/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    Logout <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-gauge mr-1.5"></i>Dashboard</button>
+            <button onclick="switchView('roster')" id="nav-roster" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-users mr-1.5"></i>Roster</button>
+            <button onclick="switchView('campaigns')" id="nav-campaigns" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-flag mr-1.5"></i>Campaigns</button>
+            <button onclick="switchView('tasks')" id="nav-tasks" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-list-check mr-1.5"></i>Tasks</button>
+            <button onclick="switchView('reports')" id="nav-reports" class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400"><i class="fa-solid fa-chart-bar mr-1.5"></i>Reports</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-[#0f0d0a]">
+
+            <!-- DASHBOARD -->
+            <div id="view-dashboard" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-orange-900/30 to-gray-900 p-5 rounded-2xl border border-orange-700/30">
+                    <h2 class="text-xl font-black text-orange-400 mb-1">Ambassador Division</h2>
+                    <p class="text-gray-400 text-sm">Oversee ambassadors, campaigns, and division performance.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Ambassadors</p>
+                        <p class="text-3xl font-black text-white" id="dash-ambassadors">—</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Campaigns</p>
+                        <p class="text-3xl font-black text-orange-400" id="dash-campaigns">—</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Tasks</p>
+                        <p class="text-3xl font-black text-yellow-400" id="dash-tasks">—</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Completed</p>
+                        <p class="text-3xl font-black text-green-400" id="dash-completed">—</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="switchView('roster')" class="bg-orange-900/30 hover:bg-orange-900/50 border border-orange-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-users text-orange-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-orange-300">View Roster</p>
+                        <p class="text-xs text-gray-500 mt-1">Manage ambassador records</p>
+                    </button>
+                    <button onclick="switchView('campaigns')" class="bg-yellow-900/30 hover:bg-yellow-900/50 border border-yellow-700/40 p-4 rounded-xl text-left transition">
+                        <i class="fa-solid fa-flag text-yellow-400 text-xl mb-2 block"></i>
+                        <p class="font-bold text-yellow-300">Campaigns</p>
+                        <p class="text-xs text-gray-500 mt-1">Track active campaigns</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ROSTER -->
+            <div id="view-roster" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-orange-900/20 to-gray-900 p-5 rounded-2xl border border-orange-700/30">
+                    <h2 class="text-xl font-black text-orange-400 mb-1">Ambassador Roster</h2>
+                    <p class="text-gray-400 text-sm">All registered ambassadors on the AZ platform.</p>
+                </div>
+                <input id="roster-search" type="text" placeholder="Search ambassadors..." oninput="filterRoster()"
+                    class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:border-orange-500 text-sm transition-colors">
+                <div id="roster-list" class="space-y-3">
+                    <p class="text-xs text-gray-500 animate-pulse">Loading roster...</p>
+                </div>
+            </div>
+
+            <!-- CAMPAIGNS -->
+            <div id="view-campaigns" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-yellow-900/20 to-gray-900 p-5 rounded-2xl border border-yellow-700/30">
+                    <h2 class="text-xl font-black text-yellow-400 mb-1">Campaigns</h2>
+                    <p class="text-gray-400 text-sm">Create and track ambassador campaigns and missions.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">New Campaign</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="camp-title" type="text" placeholder="Campaign title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors">
+                        <input id="camp-target" type="text" placeholder="Target / Goal" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="camp-deadline" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors">
+                        <select id="camp-status" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors">
+                            <option value="active">Active</option>
+                            <option value="planning">Planning</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <textarea id="camp-desc" placeholder="Description..." rows="2" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors resize-none"></textarea>
+                    <button onclick="addCampaign()" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg text-sm transition">Create Campaign</button>
+                    <p id="camp-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="campaigns-list" class="space-y-3">
+                    <p class="text-xs text-gray-500 animate-pulse">Loading campaigns...</p>
+                </div>
+            </div>
+
+            <!-- TASKS -->
+            <div id="view-tasks" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-orange-900/20 to-gray-900 p-5 rounded-2xl border border-orange-700/30">
+                    <h2 class="text-xl font-black text-orange-400 mb-1">Division Tasks</h2>
+                    <p class="text-gray-400 text-sm">Track tasks and assignments for the ambassador team.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-300">New Task</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="task-title" type="text" placeholder="Task title" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors md:col-span-2">
+                        <input id="task-due" type="date" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors">
+                    </div>
+                    <input id="task-assign" type="text" placeholder="Assign to (name or email)" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-orange-500 text-sm transition-colors">
+                    <button onclick="addTask()" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg text-sm transition">Add Task</button>
+                    <p id="task-msg" class="text-xs text-red-400"></p>
+                </div>
+                <div id="tasks-list" class="space-y-3">
+                    <p class="text-xs text-gray-500 animate-pulse">Loading tasks...</p>
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div id="view-reports" class="view p-4 md:p-6 space-y-5">
+                <div class="bg-gradient-to-br from-orange-900/20 to-gray-900 p-5 rounded-2xl border border-orange-700/30">
+                    <h2 class="text-xl font-black text-orange-400 mb-1">Division Reports</h2>
+                    <p class="text-gray-400 text-sm">Export and review ambassador division data.</p>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 space-y-4">
+                    <h3 class="text-sm font-bold text-gray-300">Summary</h3>
+                    <div id="reports-summary" class="space-y-2 text-sm text-gray-400">
+                        <p class="animate-pulse text-xs">Calculating...</p>
+                    </div>
+                    <div class="flex gap-3 flex-wrap pt-2">
+                        <button onclick="exportCampaigns()" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-download"></i> Export Campaigns (CSV)
+                        </button>
+                        <button onclick="exportTasks()" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg text-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-download"></i> Export Tasks (CSV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        const OWNER_EMAIL = "pwavwef@gmail.com";
+        const REQUIRED_ROLE = "chief_ambassador";
+        let currentUser = null;
+        let allAmbassadors = [], allCampaigns = [], allTasks = [];
+        let unsubAmb = null, unsubCamp = null, unsubTasks = null;
+
+        function escHtml(str) { return String(str??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        window.switchView = function(view) {
+            document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(btn=>{
+                btn.classList.remove('active');
+                if(btn.id===`nav-${view}`) btn.classList.add('active');
+            });
+            if(view==='reports') renderReports();
+        };
+
+        window.authManager = {
+            async login() {
+                const msg = document.getElementById('login-msg'); msg.innerText='';
+                try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value.trim(), document.getElementById('login-pass').value); }
+                catch(err){ msg.innerText='Login failed: '+err.message; }
+            },
+            logout(){ if(unsubAmb)unsubAmb(); if(unsubCamp)unsubCamp(); if(unsubTasks)unsubTasks(); signOut(auth); }
+        };
+
+        window.filterRoster = function() {
+            const term = document.getElementById('roster-search').value.toLowerCase();
+            const filtered = term ? allAmbassadors.filter(u=>(u.name||'').toLowerCase().includes(term)||(u.email||'').toLowerCase().includes(term)) : allAmbassadors;
+            renderRoster(filtered);
+        };
+
+        function renderRoster(users) {
+            const container = document.getElementById('roster-list');
+            if(!users.length){ container.innerHTML='<p class="text-xs text-gray-500 italic">No ambassadors found.</p>'; return; }
+            container.innerHTML = users.map(u=>`
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-orange-900/40 flex items-center justify-center text-orange-400 font-black text-lg">${(u.name||'?')[0].toUpperCase()}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-white">${escHtml(u.name||'Unknown')}</p>
+                        <p class="text-xs text-gray-400">${escHtml(u.email||'')}</p>
+                    </div>
+                    <span class="text-[10px] font-bold text-orange-400 bg-orange-900/30 px-2 py-1 rounded">Ambassador</span>
+                </div>`).join('');
+        }
+
+        window.addCampaign = async function() {
+            const msg = document.getElementById('camp-msg'); msg.innerText='';
+            const title = document.getElementById('camp-title').value.trim();
+            const target = document.getElementById('camp-target').value.trim();
+            const deadline = document.getElementById('camp-deadline').value;
+            const status = document.getElementById('camp-status').value;
+            const desc = document.getElementById('camp-desc').value.trim();
+            if(!title){ msg.innerText='Campaign title is required.'; return; }
+            try {
+                await addDoc(collection(db,"ambassador_campaigns"), { title, target, deadline, status, desc, createdBy: currentUser.name||currentUser.email, createdAt: serverTimestamp() });
+                ['camp-title','camp-target','camp-deadline','camp-desc'].forEach(id=>document.getElementById(id).value='');
+            } catch(err){ msg.innerText='Error: '+err.message; }
+        };
+
+        window.deleteCampaign = async function(id) {
+            if(!confirm('Delete this campaign?')) return;
+            try { await deleteDoc(doc(db,"ambassador_campaigns",id)); } catch(err){ alert('Error: '+err.message); }
+        };
+
+        window.toggleCampaignStatus = async function(id, current) {
+            const next = current==='completed' ? 'active' : 'completed';
+            try { await updateDoc(doc(db,"ambassador_campaigns",id), { status: next }); } catch(err){ alert('Error: '+err.message); }
+        };
+
+        function renderCampaigns(items) {
+            const container = document.getElementById('campaigns-list');
+            if(!items.length){ container.innerHTML='<p class="text-xs text-gray-500 italic">No campaigns yet.</p>'; return; }
+            container.innerHTML = items.map(c=>{
+                const statusColor = c.status==='active'?'text-green-400 bg-green-900/30':c.status==='completed'?'text-gray-400 bg-gray-700/30':'text-yellow-400 bg-yellow-900/30';
+                return `<div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-white">${escHtml(c.title)}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">${escHtml(c.desc||'')}</p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded ml-3 ${statusColor}">${escHtml(c.status||'active')}</span>
+                    </div>
+                    <div class="flex gap-4 text-xs text-gray-500 mt-2">
+                        ${c.target?`<span><i class="fa-solid fa-bullseye mr-1"></i>${escHtml(c.target)}</span>`:''}
+                        ${c.deadline?`<span><i class="fa-solid fa-calendar mr-1"></i>${escHtml(c.deadline)}</span>`:''}
+                        <span><i class="fa-solid fa-user mr-1"></i>${escHtml(c.createdBy||'')}</span>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="toggleCampaignStatus('${escHtml(c.id)}','${escHtml(c.status||'active')}')" class="text-xs text-blue-400 hover:text-blue-300 font-bold transition">${c.status==='completed'?'Reopen':'Mark Done'}</button>
+                        <button onclick="deleteCampaign('${escHtml(c.id)}')" class="text-xs text-red-500 hover:text-red-400 font-bold transition ml-auto">Delete</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.addTask = async function() {
+            const msg = document.getElementById('task-msg'); msg.innerText='';
+            const title = document.getElementById('task-title').value.trim();
+            const due = document.getElementById('task-due').value;
+            const assign = document.getElementById('task-assign').value.trim();
+            if(!title){ msg.innerText='Task title is required.'; return; }
+            try {
+                await addDoc(collection(db,"ambassador_tasks"), { title, due, assignTo: assign, status:'pending', createdBy: currentUser.name||currentUser.email, createdAt: serverTimestamp() });
+                ['task-title','task-due','task-assign'].forEach(id=>document.getElementById(id).value='');
+            } catch(err){ msg.innerText='Error: '+err.message; }
+        };
+
+        window.toggleTask = async function(id, current) {
+            const next = current==='done' ? 'pending' : 'done';
+            try { await updateDoc(doc(db,"ambassador_tasks",id), { status: next }); } catch(err){ alert('Error: '+err.message); }
+        };
+
+        window.deleteTask = async function(id) {
+            if(!confirm('Delete this task?')) return;
+            try { await deleteDoc(doc(db,"ambassador_tasks",id)); } catch(err){ alert('Error: '+err.message); }
+        };
+
+        function renderTasks(items) {
+            const container = document.getElementById('tasks-list');
+            const active = items.filter(t=>t.status!=='done').length;
+            const done = items.filter(t=>t.status==='done').length;
+            const dashTasks = document.getElementById('dash-tasks');
+            const dashCompleted = document.getElementById('dash-completed');
+            if(dashTasks) dashTasks.innerText = active;
+            if(dashCompleted) dashCompleted.innerText = done;
+            if(!items.length){ container.innerHTML='<p class="text-xs text-gray-500 italic">No tasks yet.</p>'; return; }
+            container.innerHTML = items.map(t=>`
+                <div class="bg-gray-800 rounded-xl border ${t.status==='done'?'border-gray-700/40 opacity-70':'border-gray-700'} p-4 flex items-center gap-3">
+                    <button onclick="toggleTask('${escHtml(t.id)}','${escHtml(t.status||'pending')}')" class="w-5 h-5 rounded border-2 ${t.status==='done'?'bg-green-500 border-green-500':'border-gray-500'} flex items-center justify-center flex-shrink-0 transition">
+                        ${t.status==='done'?'<i class="fa-solid fa-check text-white text-[10px]"></i>':''}
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-white ${t.status==='done'?'line-through text-gray-500':''}">${escHtml(t.title)}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">${t.assignTo?`Assigned to: ${escHtml(t.assignTo)} · `:''}${t.due?`Due: ${escHtml(t.due)}`:'No due date'}</p>
+                    </div>
+                    <button onclick="deleteTask('${escHtml(t.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition"><i class="fa-solid fa-trash"></i></button>
+                </div>`).join('');
+        }
+
+        function renderReports() {
+            const container = document.getElementById('reports-summary');
+            const total = allAmbassadors.length;
+            const activeCamp = allCampaigns.filter(c=>c.status==='active').length;
+            const doneTasks = allTasks.filter(t=>t.status==='done').length;
+            container.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center"><p class="text-xs text-gray-500">Total Ambassadors</p><p class="text-2xl font-black text-white">${total}</p></div>
+                    <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center"><p class="text-xs text-gray-500">Active Campaigns</p><p class="text-2xl font-black text-orange-400">${activeCamp}</p></div>
+                    <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center"><p class="text-xs text-gray-500">Tasks Completed</p><p class="text-2xl font-black text-green-400">${doneTasks}</p></div>
+                </div>`;
+        }
+
+        window.exportCampaigns = function() {
+            if(!allCampaigns.length){ alert('No campaigns to export.'); return; }
+            const rows = [['Title','Target','Deadline','Status','Description']];
+            allCampaigns.forEach(c=>rows.push([c.title||'',c.target||'',c.deadline||'',c.status||'',c.desc||'']));
+            downloadCSV(rows, `campaigns-${Date.now()}.csv`);
+        };
+
+        window.exportTasks = function() {
+            if(!allTasks.length){ alert('No tasks to export.'); return; }
+            const rows = [['Title','Assigned To','Due Date','Status']];
+            allTasks.forEach(t=>rows.push([t.title||'',t.assignTo||'',t.due||'',t.status||'']));
+            downloadCSV(rows, `tasks-${Date.now()}.csv`);
+        };
+
+        function downloadCSV(rows, filename) {
+            const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+            a.download = filename; a.click();
+        }
+
+        function startListeners() {
+            const ambQ = query(collection(db,"users"), where("role","==","ambassador"));
+            unsubAmb = onSnapshot(ambQ, snap => {
+                allAmbassadors = snap.docs.map(d=>({id:d.id,...d.data()}));
+                filterRoster();
+                const el = document.getElementById('dash-ambassadors');
+                if(el) el.innerText = allAmbassadors.length;
+            });
+            const campQ = query(collection(db,"ambassador_campaigns"), orderBy("createdAt","desc"));
+            unsubCamp = onSnapshot(campQ, snap => {
+                allCampaigns = snap.docs.map(d=>({id:d.id,...d.data()}));
+                renderCampaigns(allCampaigns);
+                const el = document.getElementById('dash-campaigns');
+                if(el) el.innerText = allCampaigns.filter(c=>c.status==='active').length;
+            });
+            const taskQ = query(collection(db,"ambassador_tasks"), orderBy("createdAt","desc"));
+            unsubTasks = onSnapshot(taskQ, snap => {
+                allTasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+                renderTasks(allTasks);
+            });
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if(user) {
+                try {
+                    const userDoc = await getDoc(doc(db,"users",user.uid));
+                    if(!userDoc.exists()){ alert("Access Denied: Account not found."); signOut(auth); return; }
+                    const userData = userDoc.data();
+                    const allowed = user.email===OWNER_EMAIL || userData.role===REQUIRED_ROLE;
+                    if(!allowed){ alert("Access Denied: Ambassador Division clearance required. Contact the CEO to request access."); signOut(auth); return; }
+                    currentUser = {...userData, uid:user.uid};
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('user-name-display').innerText = `Chief: ${userData.name||user.email}`;
+                    startListeners();
+                    switchView('dashboard');
+                } catch(err){ document.getElementById('login-msg').innerText='Error: '+err.message; signOut(auth); }
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

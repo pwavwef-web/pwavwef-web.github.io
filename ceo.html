@@ -409,6 +409,12 @@
                         <h3 class="text-xs font-black text-yellow-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-crown"></i> CEO-Only Pages</h3>
                         <div class="space-y-2" id="pages-ceo"></div>
                     </div>
+
+                    <!-- Admin Portals -->
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-yellow-700/20 md:col-span-2">
+                        <h3 class="text-xs font-black text-yellow-300 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-building text-yellow-400"></i> Role Admin Portals (CEO-Managed Access)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2" id="pages-admin-portals"></div>
+                    </div>
                 </div>
             </div>
 
@@ -471,7 +477,16 @@
             ],
             ceo: [
                 { name: "CEO Command", url: "ceo.html", icon: "fa-crown", desc: "You are here" },
+                { name: "CEO Admin Portal", url: "admin/ceo/", icon: "fa-crown", desc: "Role access management" },
                 { name: "Database", url: "database.html", icon: "fa-database", desc: "Personnel database" },
+            ],
+            adminPortals: [
+                { name: "Head of Finance", url: "admin/finance/", icon: "fa-coins", desc: "Finance portal (finance_lead)" },
+                { name: "Chief of Ambassadors", url: "admin/ambassadors/", icon: "fa-user-tie", desc: "Ambassador division (chief_ambassador)" },
+                { name: "Administrative Assistant", url: "admin/assistant/", icon: "fa-clipboard-list", desc: "Admin tasks & docs (admin_assistant)" },
+                { name: "Developer", url: "admin/developer/", icon: "fa-code", desc: "Engineering portal (developer)" },
+                { name: "Comms & Marketing", url: "admin/marketing/", icon: "fa-bullhorn", desc: "Marketing portal (marketing_lead)" },
+                { name: "Podcast Lead", url: "admin/podcast/", icon: "fa-microphone", desc: "Podcast portal (podcast_lead)" },
             ]
         };
 
@@ -666,6 +681,7 @@
                 renderSection('pages-student', ALL_PAGES.student);
                 renderSection('pages-admin', ALL_PAGES.admin);
                 renderSection('pages-ceo', ALL_PAGES.ceo);
+                renderSection('pages-admin-portals', ALL_PAGES.adminPortals);
             },
 
             renderPlatformNavMap() {
