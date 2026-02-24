@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Labs | Word of the Day</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; min-height: 100vh; overflow-x: hidden; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(-45deg, #1a1200, #0f172a, #1a0e00, #0f172a); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #f59e0b; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .word-reveal { animation: fadeSlide 0.6s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes fadeSlide { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .toast-enter { opacity:0; transform:translateX(100%); }
+        .toast-enter-active { opacity:1; transform:translateX(0); transition:all .3s ease; }
+        .toast-exit-active { opacity:0; transform:translateX(100%); transition:all .3s ease; }
+        .saved-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:9999px; }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div id="toast-container" class="fixed top-20 right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="text-sm font-bold text-gray-500 hover:text-gray-300 transition flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">arrow_back</span> AZ Labs
+                </a>
+                <span class="text-gray-700">/</span>
+                <span class="text-lg font-black text-white flex items-center gap-2">📖 Word of the Day</span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="text-amber-300 transition">Today</a>
+                <a href="archive.html" class="nav-link hover:text-white transition">Archive</a>
+            </nav>
+            <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 flex gap-6 text-sm font-semibold text-gray-400">
+            <a href="index.html" class="text-amber-300">Today</a>
+            <a href="archive.html" class="hover:text-white transition">Archive →</a>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-2xl mx-auto px-6 pt-12 pb-32 space-y-8">
+
+        <div class="text-center space-y-2">
+            <div id="dateDisplay" class="text-sm font-semibold text-gray-500 uppercase tracking-wider"></div>
+            <h1 class="text-3xl font-black">Word of the Day</h1>
+        </div>
+
+        <!-- Word Card -->
+        <div id="wordCard" class="glass-panel rounded-3xl p-10 space-y-8 word-reveal relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-3">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <h2 id="wordText" class="text-5xl md:text-6xl font-black text-amber-300"></h2>
+                        <div id="wordPhonetic" class="text-gray-500 text-lg mt-1 font-light italic"></div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span id="wordPos" class="saved-badge bg-amber-500/15 border border-amber-500/30 text-amber-300"></span>
+                        <button id="speakBtn" onclick="speakWord()" class="p-2 rounded-xl hover:bg-white/10 transition text-gray-400 hover:text-amber-300" title="Hear pronunciation">
+                            <span class="material-symbols-outlined">volume_up</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Etymology -->
+                <div id="etymSection" class="text-xs font-bold text-gray-600 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[14px] text-amber-500/50">history_edu</span>
+                    <span id="etymText"></span>
+                </div>
+            </div>
+
+            <!-- Definition -->
+            <div class="relative z-10 space-y-2">
+                <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Definition</div>
+                <p id="wordDefinition" class="text-lg text-gray-200 leading-relaxed font-light"></p>
+            </div>
+
+            <!-- Example -->
+            <div class="relative z-10 space-y-2">
+                <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Example</div>
+                <blockquote class="border-l-4 border-amber-500/50 pl-4">
+                    <p id="wordExample" class="text-gray-300 italic leading-relaxed"></p>
+                </blockquote>
+            </div>
+
+            <!-- Synonyms -->
+            <div class="relative z-10 space-y-3">
+                <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Synonyms</div>
+                <div id="synonyms" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="relative z-10 flex gap-3 flex-wrap">
+                <button id="saveBtn" onclick="saveWord()"
+                    class="flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30 transition text-sm">
+                    <span class="material-symbols-outlined text-[18px]">bookmark</span>
+                    Save to Vocabulary
+                </button>
+                <button onclick="copyWord()"
+                    class="py-3 px-5 rounded-2xl font-bold flex items-center justify-center gap-2 glass-panel hover:bg-white/10 transition text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                    Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- Usage tip -->
+        <div class="glass-panel rounded-2xl p-5 flex gap-4 items-start border border-amber-500/10">
+            <span class="material-symbols-outlined text-amber-400 text-[22px] mt-0.5">lightbulb</span>
+            <div>
+                <div class="font-bold text-sm text-amber-200">Pro tip</div>
+                <p class="text-xs text-gray-400 mt-1" id="wordTip">Use this word in a sentence today to lock it into your memory.</p>
+            </div>
+        </div>
+
+        <!-- Saved count -->
+        <div class="flex items-center justify-between">
+            <h2 class="font-black text-lg">Your Vocabulary</h2>
+            <a href="archive.html" class="text-xs text-amber-400 font-bold hover:text-amber-300 transition flex items-center gap-1">
+                View Archive <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+        </div>
+        <div id="savedWords" class="space-y-3"></div>
+
+    </main>
+
+    <script>
+        const WORDS_DB = [
+            { word:'Perspicacious', phonetic:'/ˌpɜː.spɪˈkeɪ.ʃəs/', pos:'adjective', etym:'From Latin perspicax "sharp-sighted"', definition:'Having a ready insight into things; shrewdly perceptive and understanding.', example:'The perspicacious student quickly identified the flaw in the professor\'s argument, earning a standing round of applause.', synonyms:['astute','shrewd','discerning','perceptive','keen'], tip:'Next time someone makes a clever observation, call them perspicacious — they\'ll be impressed.' },
+            { word:'Ephemeral', phonetic:'/ɪˈfem.ər.əl/', pos:'adjective', etym:'From Greek ephemeros "lasting only a day"', definition:'Lasting for a very short time; transitory.', example:'The ephemeral beauty of cherry blossoms reminds us to appreciate every fleeting moment of joy.', synonyms:['transient','fleeting','momentary','brief','short-lived'], tip:'Think of social media stories — ephemeral content that vanishes after 24 hours.' },
+            { word:'Sonder', phonetic:'/ˈsɒn.dər/', pos:'noun', etym:'Coined by John Koenig in "The Dictionary of Obscure Sorrows"', definition:'The profound realization that each passerby has a life as vivid and complex as your own.', example:'Walking through the busy market, she was struck by a deep sonder — each face hiding a universe of stories.', synonyms:['empathy','awareness','introspection','insight'], tip:'Practice sonder in a crowd — it builds empathy and shrinks your ego.' },
+            { word:'Loquacious', phonetic:'/ləʊˈkweɪ.ʃəs/', pos:'adjective', etym:'From Latin loquax "chatty", from loqui "to speak"', definition:'Tending to talk a great deal; talkative.', example:'The loquacious lecturer barely paused for breath during the three-hour class, yet the students hung on every word.', synonyms:['talkative','garrulous','voluble','verbose','chatty'], tip:'Describe yourself as loquacious instead of just "I talk a lot" — instant vocabulary flex.' },
+            { word:'Ineffable', phonetic:'/ɪˈnef.ə.bəl/', pos:'adjective', etym:'From Latin ineffabilis "unutterable"', definition:'Too great or extreme to be expressed or described in words.', example:'Standing at the edge of the cliff at sunrise, she felt an ineffable sense of wonder and smallness.', synonyms:['indescribable','inexpressible','unutterable','beyond words'], tip:'Use ineffable when words literally fail — it\'s the word for what words can\'t capture.' },
+            { word:'Serendipity', phonetic:'/ˌser.ənˈdɪp.ɪ.ti/', pos:'noun', etym:'Coined by Horace Walpole from a Persian fairy tale "The Three Princes of Serendip"', definition:'The occurrence and development of events by chance in a happy or beneficial way.', example:'Finding his future business partner at the wrong bus stop was pure serendipity.', synonyms:['luck','fortune','chance','happy accident','fluke'], tip:'Life\'s best chapters are often unplanned — embrace serendipity.' },
+            { word:'Resilience', phonetic:'/rɪˈzɪl.i.əns/', pos:'noun', etym:'From Latin resilire "to spring back"', definition:'The capacity to recover quickly from difficulties; toughness.', example:'Her resilience after failing the exam was remarkable — she returned stronger, with a new study strategy.', synonyms:['toughness','fortitude','grit','tenacity','durability'], tip:'Resilience isn\'t about never falling. It\'s about how fast you get back up.' },
+            { word:'Eloquent', phonetic:'/ˈel.ə.kwənt/', pos:'adjective', etym:'From Latin eloquens "speaking out"', definition:'Fluent or persuasive in speaking or writing.', example:'The eloquent presentation moved the judges to award her the scholarship without hesitation.', synonyms:['articulate','fluent','expressive','persuasive','well-spoken'], tip:'An eloquent person doesn\'t just have good words — they know when and how to use them.' },
+            { word:'Magnanimous', phonetic:'/mæɡˈnæn.ɪ.məs/', pos:'adjective', etym:'From Latin magnanimus "great-souled"', definition:'Very generous or forgiving, especially towards a rival or someone less powerful.', example:'Despite winning the debate competition, she was magnanimous in victory and praised her opponent\'s strong arguments.', synonyms:['generous','noble','gracious','charitable','big-hearted'], tip:'Winners who are magnanimous are always remembered more fondly than their victory.' },
+            { word:'Quintessential', phonetic:'/ˌkwɪn.tɪˈsen.ʃəl/', pos:'adjective', etym:'From medieval Latin quinta essentia "fifth essence"', definition:'Representing the most perfect or typical example of a quality or class.', example:'He is the quintessential academic weapon — first in class, but still making time for his friends.', synonyms:['archetypal','classic','definitive','exemplary','ideal'], tip:'Call something quintessential when it perfectly embodies everything that thing should be.' },
+            { word:'Audacious', phonetic:'/ɔːˈdeɪ.ʃəs/', pos:'adjective', etym:'From Latin audax "bold", from audere "to dare"', definition:'Showing a willingness to take surprisingly bold risks.', example:'The audacious startup launched in three countries simultaneously on its very first day of operation.', synonyms:['bold','daring','fearless','brave','brazen'], tip:'Audacious is bolder than brave — it\'s brave with a side of "who told you to?!"' },
+            { word:'Tenacity', phonetic:'/tɪˈnæs.ɪ.ti/', pos:'noun', etym:'From Latin tenax "holding fast"', definition:'The quality or fact of being very determined; determination.', example:'Her tenacity in pursuing her research, despite years of setbacks, finally resulted in a groundbreaking discovery.', synonyms:['persistence','determination','grit','perseverance','stubbornness'], tip:'Tenacity is the quiet force behind every success story.' },
+        ];
+
+        const STORAGE_KEY = 'azlabs_savedWords';
+
+        function getSavedWords() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+        }
+
+        function getWordIndex() {
+            // Deterministic based on day of year
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const dayOfYear = Math.floor((now - start) / 86400000);
+            return dayOfYear % WORDS_DB.length;
+        }
+
+        function render() {
+            const idx = getWordIndex();
+            const w = WORDS_DB[idx];
+            const now = new Date();
+            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+            document.getElementById('wordText').textContent = w.word;
+            document.getElementById('wordPhonetic').textContent = w.phonetic;
+            document.getElementById('wordPos').textContent = w.pos;
+            document.getElementById('etymText').textContent = w.etym;
+            document.getElementById('wordDefinition').textContent = w.definition;
+            document.getElementById('wordExample').textContent = `"${w.example}"`;
+            document.getElementById('wordTip').textContent = w.tip;
+            document.getElementById('synonyms').innerHTML = w.synonyms.map(s =>
+                `<span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/20 text-amber-300">${s}</span>`
+            ).join('');
+
+            const saved = getSavedWords();
+            const alreadySaved = saved.some(sw => sw.word === w.word);
+            const saveBtn = document.getElementById('saveBtn');
+            if (alreadySaved) {
+                saveBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">bookmark_added</span> Saved!`;
+                saveBtn.disabled = true;
+                saveBtn.classList.add('opacity-60');
+            }
+
+            renderSaved();
+        }
+
+        function saveWord() {
+            const idx = getWordIndex();
+            const w = WORDS_DB[idx];
+            const saved = getSavedWords();
+            if (saved.some(sw => sw.word === w.word)) return;
+            saved.unshift({ ...w, savedDate: new Date().toISOString().split('T')[0] });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+            document.getElementById('saveBtn').innerHTML = `<span class="material-symbols-outlined text-[18px]">bookmark_added</span> Saved!`;
+            document.getElementById('saveBtn').disabled = true;
+            showToast(`"${w.word}" added to your vocabulary! 📚`);
+            renderSaved();
+        }
+
+        function copyWord() {
+            const idx = getWordIndex();
+            const w = WORDS_DB[idx];
+            const text = `${w.word} (${w.pos}) — ${w.definition}\n\nExample: "${w.example}"`;
+            navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard! ✂️'));
+        }
+
+        function speakWord() {
+            const idx = getWordIndex();
+            const w = WORDS_DB[idx];
+            if ('speechSynthesis' in window) {
+                const utt = new SpeechSynthesisUtterance(w.word);
+                utt.rate = 0.85;
+                window.speechSynthesis.speak(utt);
+            } else {
+                showToast('Speech not supported in this browser', 'error');
+            }
+        }
+
+        function renderSaved() {
+            const saved = getSavedWords();
+            const container = document.getElementById('savedWords');
+            if (!saved.length) {
+                container.innerHTML = '<div class="glass-panel rounded-2xl p-4 text-center text-gray-500 text-sm">No saved words yet. Save today\'s word to start your vocabulary!</div>';
+                return;
+            }
+            container.innerHTML = saved.slice(0, 3).map(w =>
+                `<div class="glass-panel rounded-2xl p-4 flex gap-4 items-center">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-black text-amber-300">${w.word}</span>
+                            <span class="text-xs text-gray-600 italic">${w.pos}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-0.5 truncate">${w.definition}</p>
+                    </div>
+                    <span class="text-xs text-gray-600">${w.savedDate || ''}</span>
+                </div>`
+            ).join('') + (saved.length > 3 ? `<a href="archive.html" class="block text-center text-xs text-amber-400 hover:text-amber-300 transition font-bold pt-1">View all ${saved.length} saved words →</a>` : '');
+        }
+
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const color = type === 'success' ? 'bg-amber-600' : 'bg-red-600';
+            toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter pointer-events-auto`;
+            toast.innerHTML = `<span class="font-bold text-sm">${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
+            setTimeout(() => { toast.classList.add('toast-exit-active'); setTimeout(() => toast.remove(), 300); }, 3000);
+        };
+
+        render();
+    </script>
+</body>
+</html>
