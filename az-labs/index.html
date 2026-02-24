@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AZ Labs | Experimental Projects</title>
+    <title>AZ Labs | Career Acceleration & Academic Optimization</title>
+    <meta name="description" content="AZ Learner Lab — career acceleration and academic optimization platform for African university students. CV Engine, Thought Lab, Abroad Hub, and more.">
     <link rel="icon" type="image/png" href="../favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -24,6 +25,9 @@
         @keyframes pulse-slow { 0%,100%{opacity:.4} 50%{opacity:.8} }
         .animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
         .grid-pattern { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 48px 48px; }
+        .roadmap-line { position: relative; }
+        .roadmap-line::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #34d399, #3b82f6, #a855f7, #f59e0b, #ef4444); opacity: 0.3; }
+        .phase-dot { position: relative; z-index: 1; }
     </style>
 </head>
 <body>
@@ -46,18 +50,24 @@
                 <span class="text-xl font-black tracking-tight text-white">AZ <span class="text-gradient">LABS</span></span>
             </div>
             <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="../cv/index.html" class="nav-link hover:text-white transition">Career Engine</a>
+                <a href="../podcast/index.html" class="nav-link hover:text-white transition">Thought Lab</a>
                 <a href="mood-tracker/index.html" class="nav-link hover:text-white transition">Mood Tracker</a>
                 <a href="word-of-day/index.html" class="nav-link hover:text-white transition">Word of the Day</a>
                 <a href="study-timer/index.html" class="nav-link hover:text-white transition">Study Timer</a>
+                <a href="#roadmap" class="nav-link hover:text-white transition" aria-label="Product Roadmap">Roadmap</a>
             </nav>
             <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
                 <span class="material-symbols-outlined">menu</span>
             </button>
         </div>
         <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 flex flex-col gap-3 text-sm font-semibold text-gray-400">
+            <a href="../cv/index.html" class="py-2 hover:text-white transition">🚀 Career Engine</a>
+            <a href="../podcast/index.html" class="py-2 hover:text-white transition">🎙️ Thought Lab</a>
             <a href="mood-tracker/index.html" class="py-2 hover:text-white transition">🧠 Mood Tracker</a>
             <a href="word-of-day/index.html" class="py-2 hover:text-white transition">📖 Word of the Day</a>
             <a href="study-timer/index.html" class="py-2 hover:text-white transition">⏱️ Study Timer</a>
+            <a href="#roadmap" class="py-2 hover:text-white transition">📌 Roadmap</a>
         </div>
     </header>
 
@@ -66,18 +76,18 @@
         <div class="max-w-3xl mx-auto space-y-6">
             <div class="lab-badge bg-green-500/15 border border-green-500/30 text-green-300 mx-auto">
                 <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                Live Experiments
+                Building Live · 12-Month Roadmap
             </div>
             <h1 class="text-6xl md:text-8xl font-black leading-tight tracking-tighter">
                 AZ <span class="text-gradient">Labs.</span>
             </h1>
             <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto font-light">
-                Where wild ideas get built. Mini-tools, experiments, and side quests from the AZ Learner team.
+                Career acceleration and academic optimization platform for African university students. System-driven. Automated. Professional. Data-backed.
             </p>
             <div class="flex items-center justify-center gap-4 pt-4 flex-wrap">
                 <div class="flex items-center gap-2 text-sm text-gray-500">
-                    <span class="material-symbols-outlined text-green-400 text-[18px]">experiment</span>
-                    3 Active Projects
+                    <span class="material-symbols-outlined text-green-400 text-[18px]">rocket_launch</span>
+                    5 Active Products
                 </div>
                 <div class="h-4 w-px bg-white/10"></div>
                 <div class="flex items-center gap-2 text-sm text-gray-500">
@@ -86,15 +96,104 @@
                 </div>
                 <div class="h-4 w-px bg-white/10"></div>
                 <div class="flex items-center gap-2 text-sm text-gray-500">
-                    <span class="material-symbols-outlined text-purple-400 text-[18px]">lock</span>
-                    Offline-Ready
+                    <span class="material-symbols-outlined text-yellow-400 text-[18px]">flag</span>
+                    Phase 1 MVP Active
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Projects Grid -->
-    <section class="max-w-7xl mx-auto px-6 pb-32">
+    <!-- Core Products Grid -->
+    <section class="max-w-7xl mx-auto px-6 pb-16">
+        <div class="text-center mb-10">
+            <div class="lab-badge bg-blue-500/15 border border-blue-500/30 text-blue-300 mx-auto mb-4">Core Products</div>
+            <h2 class="text-3xl font-black">The Ecosystem</h2>
+            <p class="text-gray-400 mt-2 text-sm">Three pillars. One mission. Career. Knowledge. Aspiration.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+            <!-- AZ Career Engine — FLAGSHIP -->
+            <a href="../cv/index.html" class="md:col-span-2 glass-panel glass-card rounded-3xl p-8 flex flex-col gap-5 group block relative overflow-hidden border border-green-500/20">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-green-500/15 rounded-full blur-3xl group-hover:bg-green-400/25 transition duration-500"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-green-500/15 border border-green-500/30 flex items-center justify-center text-3xl group-hover:scale-110 transition">
+                            🚀
+                        </div>
+                        <div>
+                            <div class="lab-badge bg-green-500/20 border border-green-500/40 text-green-300">🥇 Flagship · Revenue</div>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-black mb-2">AZ Career Engine</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">ATS-optimized CV generator, professional cover letter builder, and career acceleration tools. Built for African students who want real jobs — not just a degree.</p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="flex items-center gap-2 text-gray-300"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> CV Generator (ATS-optimized)</div>
+                        <div class="flex items-center gap-2 text-gray-300"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Cover Letter Builder</div>
+                        <div class="flex items-center gap-2 text-gray-400"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400/60"></span> ATS Score Checker <span class="text-yellow-400/70 ml-1">soon</span></div>
+                        <div class="flex items-center gap-2 text-gray-400"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400/60"></span> Interview Prep Hub <span class="text-yellow-400/70 ml-1">soon</span></div>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                    <div class="flex gap-2 text-xs text-gray-500">
+                        <span class="px-2 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">₵25–₵80</span>
+                        <span class="px-2 py-1 rounded-full bg-white/5">5 Templates</span>
+                    </div>
+                    <span class="text-green-400 group-hover:translate-x-1 transition material-symbols-outlined text-[20px]">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- AZ Thought Lab -->
+            <a href="../podcast/index.html" class="glass-panel glass-card rounded-3xl p-8 flex flex-col gap-5 group block relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-400/20 transition duration-500"></div>
+                <div class="relative z-10">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
+                        🎙️
+                    </div>
+                    <div class="lab-badge bg-orange-500/15 border border-orange-500/30 text-orange-300 mb-4">Brand Authority</div>
+                    <h2 class="text-2xl font-black mb-2">AZ Thought Lab</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed">Weekly 10–15 min episodes on interviews, internships, scholarships, and academic survival. Makes AZ Learner look intellectual, not transactional.</p>
+                </div>
+                <div class="relative z-10 mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                    <div class="flex gap-2 text-xs text-gray-500">
+                        <span class="px-2 py-1 rounded-full bg-white/5">Weekly</span>
+                        <span class="px-2 py-1 rounded-full bg-white/5">Podcast</span>
+                    </div>
+                    <span class="text-orange-400 group-hover:translate-x-1 transition material-symbols-outlined text-[20px]">arrow_forward</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Abroad Readiness Hub (Phase 3 - Coming Soon) -->
+        <div class="glass-panel rounded-3xl p-8 relative overflow-hidden border border-purple-500/20 mb-6">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+                <div class="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-3xl flex-shrink-0">
+                    🌍
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2 flex-wrap">
+                        <h2 class="text-2xl font-black">Abroad Readiness Hub</h2>
+                        <div class="lab-badge bg-purple-500/15 border border-purple-500/30 text-purple-300">Phase 3 · Month 6–9</div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">SOP writing assistant, scholarship directory, visa guides, and alumni mentorship matching. For students who want to take their career global.</p>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">SOP Assistant</span>
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">Scholarship Directory</span>
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">Visa Guides</span>
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">Alumni Mentorship</span>
+                    </div>
+                </div>
+                <div class="lab-badge bg-white/5 border border-white/10 text-gray-400 flex-shrink-0">Coming Soon</div>
+            </div>
+        </div>
+
+        <!-- Utility Tools -->
+        <div class="text-center mb-6 mt-12">
+            <div class="lab-badge bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 mx-auto mb-4">Academic Tools</div>
+            <h2 class="text-2xl font-black">Student Utility Lab</h2>
+            <p class="text-gray-400 mt-2 text-sm">Mini-tools for the daily academic grind.</p>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             <!-- Mood Tracker -->
@@ -165,11 +264,159 @@
                     <span class="material-symbols-outlined text-gray-400">construction</span>
                 </div>
                 <div>
-                    <div class="font-bold text-sm">More projects cooking 🔥</div>
-                    <div class="text-xs text-gray-500">Flash Cards, Habit Builder, Campus Polls — dropping soon</div>
+                    <div class="font-bold text-sm">More coming in Phase 3 & 4 🔥</div>
+                    <div class="text-xs text-gray-500">Digital Badges, ATS Score Checker, Student Data Dashboard, Subscription Tier — dropping on schedule</div>
                 </div>
             </div>
             <div class="lab-badge bg-white/5 border border-white/10 text-gray-400">Coming Soon</div>
+        </div>
+    </section>
+
+    <!-- 12-Month Product Roadmap -->
+    <section class="max-w-5xl mx-auto px-6 pb-32" id="roadmap">
+        <div class="text-center mb-12">
+            <div class="lab-badge bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 mx-auto mb-4">
+                <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                12-Month Plan
+            </div>
+            <h2 class="text-4xl font-black mb-4">🚀 Product Roadmap</h2>
+            <p class="text-gray-400 max-w-xl mx-auto text-sm">AZ Learner Lab is building a career ecosystem — not just tools. Here's the plan.</p>
+        </div>
+
+        <div class="space-y-6 roadmap-line pl-12 relative">
+
+            <!-- Phase 0 -->
+            <div class="relative">
+                <div class="phase-dot absolute -left-12 top-4 w-10 h-10 rounded-full bg-green-500/20 border-2 border-green-500/60 flex items-center justify-center text-lg">🎯</div>
+                <div class="glass-panel rounded-2xl p-6 border border-green-500/20">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4 flex-wrap">
+                        <div class="lab-badge bg-green-500/20 border border-green-500/40 text-green-300">✅ Phase 0 · Month 0–1</div>
+                        <h3 class="text-xl font-black">Foundation</h3>
+                        <span class="text-xs text-gray-500 md:ml-auto">Clarify positioning + clean infrastructure</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-300">
+                        <div class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span><span>Core identity defined: "Career acceleration and academic optimization platform for African university students"</span></div>
+                        <div class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span><span>AZ Career Engine chosen as Flagship MVP — solves urgent pain, students pay for career help, scales beyond University of Cape Coast (UCC)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 1 -->
+            <div class="relative">
+                <div class="phase-dot absolute -left-12 top-4 w-10 h-10 rounded-full bg-blue-500/20 border-2 border-blue-500/60 flex items-center justify-center text-lg">🧱</div>
+                <div class="glass-panel rounded-2xl p-6 border border-blue-500/20">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4 flex-wrap">
+                        <div class="lab-badge bg-blue-500/20 border border-blue-500/40 text-blue-300">🔨 Phase 1 · Month 1–3</div>
+                        <h3 class="text-xl font-black">MVP — AZ Career Engine</h3>
+                        <span class="text-xs text-gray-500 md:ml-auto">Small but powerful</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-300 mb-4">
+                        <div class="flex items-start gap-2"><span class="text-blue-400 mt-0.5">✓</span><span>CV Generator with ATS-optimized templates</span></div>
+                        <div class="flex items-start gap-2"><span class="text-blue-400 mt-0.5">✓</span><span>Cover Letter Generator</span></div>
+                        <div class="flex items-start gap-2"><span class="text-blue-400 mt-0.5">✓</span><span>WhatsApp automation: request intake, payment confirmation, file delivery</span></div>
+                        <div class="flex items-start gap-2"><span class="text-blue-400 mt-0.5">✓</span><span>Basic dashboard (lightweight backend)</span></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs mt-2 pt-4 border-t border-white/5">
+                        <span class="text-gray-500 font-bold uppercase tracking-wide mr-2">Pricing:</span>
+                        <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/20">CV Rewrite ₵25–₵40</span>
+                        <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/20">CV + Cover Letter ₵60</span>
+                        <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/20">Premium Optimization ₵80</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 2 -->
+            <div class="relative">
+                <div class="phase-dot absolute -left-12 top-4 w-10 h-10 rounded-full bg-orange-500/20 border-2 border-orange-500/60 flex items-center justify-center text-lg">📈</div>
+                <div class="glass-panel rounded-2xl p-6 border border-orange-500/20">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4 flex-wrap">
+                        <div class="lab-badge bg-orange-500/20 border border-orange-500/40 text-orange-300">⚡ Phase 2 · Month 3–6</div>
+                        <h3 class="text-xl font-black">Authority + Growth</h3>
+                        <span class="text-xs text-gray-500 md:ml-auto">Build credibility + trust layer</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-300">
+                        <div class="flex items-start gap-2"><span class="text-orange-400 mt-0.5">→</span><span><strong class="text-white">AZ Thought Lab Launch:</strong> Weekly 10–15 min episodes — interviews, internships, scholarships, academic hacks</span></div>
+                        <div class="flex items-start gap-2"><span class="text-orange-400 mt-0.5">→</span><span><strong class="text-white">ATS Score Checker:</strong> Upload CV → formatting score + keyword match + improvement checklist</span></div>
+                        <div class="flex items-start gap-2"><span class="text-orange-400 mt-0.5">→</span><span>Move from service business toward tech product</span></div>
+                        <div class="flex items-start gap-2"><span class="text-orange-400 mt-0.5">→</span><span>Campus ambassador network + LinkedIn content engine</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 3 -->
+            <div class="relative">
+                <div class="phase-dot absolute -left-12 top-4 w-10 h-10 rounded-full bg-purple-500/20 border-2 border-purple-500/60 flex items-center justify-center text-lg">🌍</div>
+                <div class="glass-panel rounded-2xl p-6 border border-purple-500/20">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4 flex-wrap">
+                        <div class="lab-badge bg-purple-500/20 border border-purple-500/40 text-purple-300">🌍 Phase 3 · Month 6–9</div>
+                        <h3 class="text-xl font-black">Expansion + Differentiation</h3>
+                        <span class="text-xs text-gray-500 md:ml-auto">Build the ladder you want to climb</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-300">
+                        <div class="flex items-start gap-2"><span class="text-purple-400 mt-0.5">→</span><span><strong class="text-white">Abroad Readiness Hub:</strong> SOP writing assistant, scholarship directory, visa guides, alumni mentorship matching</span></div>
+                        <div class="flex items-start gap-2"><span class="text-purple-400 mt-0.5">→</span><span><strong class="text-white">Digital Badge System:</strong> Shareable LinkedIn badges + verified "AZ Career Ready" certificates</span></div>
+                        <div class="flex items-start gap-2"><span class="text-purple-400 mt-0.5">→</span><span>Gamification for CV workshops, interview training, mini courses</span></div>
+                        <div class="flex items-start gap-2"><span class="text-purple-400 mt-0.5">→</span><span>Institutional partnerships + department collaborations</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 4 -->
+            <div class="relative">
+                <div class="phase-dot absolute -left-12 top-4 w-10 h-10 rounded-full bg-red-500/20 border-2 border-red-500/60 flex items-center justify-center text-lg">🧠</div>
+                <div class="glass-panel rounded-2xl p-6 border border-red-500/20">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4 flex-wrap">
+                        <div class="lab-badge bg-red-500/20 border border-red-500/40 text-red-300">🧠 Phase 4 · Month 9–12</div>
+                        <h3 class="text-xl font-black">Product Intelligence</h3>
+                        <span class="text-xs text-gray-500 md:ml-auto">Ecosystem, not just a tool</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-300 mb-4">
+                        <div class="flex items-start gap-2"><span class="text-red-400 mt-0.5">→</span><span><strong class="text-white">Student Data Dashboard:</strong> popular career paths, in-demand skills, interview trends, hiring patterns</span></div>
+                        <div class="flex items-start gap-2"><span class="text-red-400 mt-0.5">→</span><span>Insights → Industry Reports → Partnerships → Revenue</span></div>
+                        <div class="flex items-start gap-2"><span class="text-red-400 mt-0.5">→</span><span>Corporate recruitment partnerships — companies pay to access talent pool</span></div>
+                        <div class="flex items-start gap-2"><span class="text-red-400 mt-0.5">→</span><span>Subscription tier (₵20/month) for full tools access</span></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs pt-4 border-t border-white/5">
+                        <span class="text-gray-500 font-bold uppercase tracking-wide mr-2">Monetization Evolution:</span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400">Pay-per-service</span>
+                        <span class="text-gray-600">→</span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400">Subscription</span>
+                        <span class="text-gray-600">→</span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400">Institutional</span>
+                        <span class="text-gray-600">→</span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400">Corporate Recruitment</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Competitive Advantage -->
+        <div class="mt-12 glass-panel rounded-2xl p-8 border border-white/10">
+            <div class="text-center mb-6">
+                <div class="lab-badge bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 mx-auto mb-3">🔥 Competitive Edge</div>
+                <h3 class="text-2xl font-black">Why AZ Learner Wins</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel rounded-xl p-5 border border-red-500/10">
+                    <div class="text-sm font-bold text-red-400 mb-3 uppercase tracking-wide">❌ Most Campus Services</div>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-red-500/60"></span>Manual & disorganized</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-red-500/60"></span>Personality-driven, not scalable</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-red-500/60"></span>No data, no insights</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-red-500/60"></span>Random CV writers</li>
+                    </ul>
+                </div>
+                <div class="glass-panel rounded-xl p-5 border border-green-500/20">
+                    <div class="text-sm font-bold text-green-400 mb-3 uppercase tracking-wide">✅ AZ Learner Lab</div>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>System-driven & automated</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>Professional & structured</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>Data-backed insights</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>Scales to the whole continent</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -177,9 +424,11 @@
     <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md py-8">
         <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-sm text-gray-600">
-                <span class="font-black text-gray-400">AZ LABS</span> — An AZ Learner Experiment
+                <span class="font-black text-gray-400">AZ LABS</span> — Career Acceleration & Academic Optimization Platform
             </div>
             <div class="flex gap-4 text-sm text-gray-600">
+                <a href="../cv/index.html" class="hover:text-green-400 transition">🚀 Career Engine</a>
+                <a href="../podcast/index.html" class="hover:text-orange-400 transition">🎙️ Thought Lab</a>
                 <a href="../az-learner/index.html" class="hover:text-white transition">← Back to AZ Learner</a>
             </div>
         </div>
