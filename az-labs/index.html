@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Labs — Experimental projects, creative tools, and digital experiments by the AZ team.">
+    <title>AZ Labs | Where Ideas Get Built</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #07090f; color: white; overflow-x: hidden; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: linear-gradient(-45deg, #07090f, #0d1117, #0d2818, #0a1628); background-size: 400% 400%; animation: gradientBG 18s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-card { transition: all 0.3s ease; }
+        .glass-card:hover { background: rgba(255,255,255,0.06); transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,0.4); }
+        .text-gradient { background: linear-gradient(135deg, #10b981, #06b6d4, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #10b981; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .marquee-container { overflow: hidden; white-space: nowrap; }
+        .marquee-content { display: inline-block; animation: marquee 35s linear infinite; }
+        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .text-outline { -webkit-text-stroke: 1px rgba(255,255,255,0.2); color: transparent; }
+        .lab-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+        .grid-bg { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .dot-glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; pointer-events: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-animated"></div>
+    <div class="fixed inset-0 grid-bg z-[-1]"></div>
+    <div class="dot-glow w-96 h-96 bg-emerald-400 top-20 left-20 z-[-1]"></div>
+    <div class="dot-glow w-80 h-80 bg-cyan-400 top-40 right-10 z-[-1]"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/30 border border-emerald-500/50 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-emerald-400 text-base">science</span>
+                </span>
+                <span class="text-white">AZ <span class="text-gradient">LABS</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="vibe-craft/index.html" class="nav-link hover:text-white">VibeCraft</a>
+                <a href="focus-forge/index.html" class="nav-link hover:text-white">FocusForge</a>
+                <a href="byte-forge/index.html" class="nav-link hover:text-white">ByteForge</a>
+                <a href="flash-forge/index.html" class="nav-link hover:text-white">FlashForge</a>
+                <a href="lofi-lab/index.html" class="nav-link hover:text-white">LofiLab</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="../az-learner/index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span> AZ Learner
+                </a>
+                <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 grid grid-cols-3 gap-3 text-center text-xs font-semibold text-gray-400">
+            <a href="vibe-craft/index.html" class="py-2 hover:text-white transition">VibeCraft</a>
+            <a href="focus-forge/index.html" class="py-2 hover:text-white transition">FocusForge</a>
+            <a href="byte-forge/index.html" class="py-2 hover:text-white transition">ByteForge</a>
+            <a href="flash-forge/index.html" class="py-2 hover:text-white transition">FlashForge</a>
+            <a href="lofi-lab/index.html" class="col-span-3 py-2 hover:text-white transition">LofiLab</a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="relative px-6 pt-32 pb-20 text-center max-w-5xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-emerald-500/20 text-xs font-semibold tracking-wide uppercase text-emerald-300 mb-6">
+            <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+            5 Experiments Live
+        </div>
+        <h1 class="text-6xl md:text-8xl font-black leading-tight tracking-tight mb-6">
+            Where Ideas<br>
+            <span class="text-gradient">Get Built.</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light mb-10">
+            Experimental tools, creative playgrounds, and digital experiments — crafted with obsession by the AZ team.
+        </p>
+        <div class="flex justify-center">
+            <a href="#projects" class="px-8 py-4 bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 rounded-full font-bold text-lg transition hover:bg-emerald-500/30 flex items-center gap-2">
+                <span class="material-symbols-outlined">explore</span> Explore Projects
+            </a>
+        </div>
+    </section>
+
+    <!-- Marquee -->
+    <div class="py-5 glass-panel border-y border-white/5 transform -rotate-1 scale-105 mb-24">
+        <div class="marquee-container">
+            <div class="marquee-content text-3xl font-black uppercase opacity-40">
+                <span class="mx-8 text-outline">Build Different</span> •
+                <span class="mx-8 text-white">Ship Fast</span> •
+                <span class="mx-8 text-outline">Break Things</span> •
+                <span class="mx-8 text-white">Learn More</span> •
+                <span class="mx-8 text-outline">Iterate Always</span> •
+                <span class="mx-8 text-white">Stay Curious</span> •
+                <span class="mx-8 text-outline">Build Different</span> •
+                <span class="mx-8 text-white">Ship Fast</span> •
+                <span class="mx-8 text-outline">Break Things</span> •
+                <span class="mx-8 text-white">Learn More</span> •
+                <span class="mx-8 text-outline">Iterate Always</span> •
+                <span class="mx-8 text-white">Stay Curious</span> •
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <section id="projects" class="max-w-7xl mx-auto px-6 pb-32">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4">The Lab Projects</h2>
+            <p class="text-gray-400">Five experiments. Infinite possibilities.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+            <!-- VibeCraft — wide card -->
+            <a href="vibe-craft/index.html" class="md:col-span-7 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group block">
+                <div class="absolute top-0 right-0 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-400/30 transition duration-700"></div>
+                <div class="relative z-10">
+                    <div class="lab-badge bg-purple-500/20 border border-purple-500/30 text-purple-300 mb-4">
+                        <span class="material-symbols-outlined text-sm">palette</span> Visual Tool
+                    </div>
+                    <h3 class="text-4xl font-black mb-3">VibeCraft 🎨</h3>
+                    <p class="text-gray-400 max-w-sm text-base mb-6">Build aesthetic mood boards that capture your vibe. Curate colors, textures, and inspiration for your next project or study aesthetic.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold">Mood Boards</span>
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold">Color Palettes</span>
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold">Gallery</span>
+                    </div>
+                </div>
+                <div class="absolute bottom-6 right-8 text-6xl opacity-30 group-hover:opacity-60 transition duration-500">🎨</div>
+            </a>
+
+            <!-- FocusForge — narrow card -->
+            <a href="focus-forge/index.html" class="md:col-span-5 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group block">
+                <div class="absolute top-0 right-0 w-56 h-56 bg-orange-500/20 rounded-full blur-3xl group-hover:bg-orange-400/30 transition duration-700"></div>
+                <div class="relative z-10">
+                    <div class="lab-badge bg-orange-500/20 border border-orange-500/30 text-orange-300 mb-4">
+                        <span class="material-symbols-outlined text-sm">timer</span> Productivity
+                    </div>
+                    <h3 class="text-4xl font-black mb-3">FocusForge ⏱️</h3>
+                    <p class="text-gray-400 text-base mb-6">Pomodoro timer meets study analytics. Track sessions, build streaks, and dominate your focus game.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-bold">Pomodoro</span>
+                        <span class="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-bold">Stats</span>
+                    </div>
+                </div>
+                <div class="absolute bottom-6 right-8 text-6xl opacity-30 group-hover:opacity-60 transition duration-500">⏱️</div>
+            </a>
+
+            <!-- ByteForge — narrow card -->
+            <a href="byte-forge/index.html" class="md:col-span-5 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group block">
+                <div class="absolute top-0 right-0 w-56 h-56 bg-cyan-500/20 rounded-full blur-3xl group-hover:bg-cyan-400/30 transition duration-700"></div>
+                <div class="relative z-10">
+                    <div class="lab-badge bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 mb-4">
+                        <span class="material-symbols-outlined text-sm">code</span> Dev Tool
+                    </div>
+                    <h3 class="text-4xl font-black mb-3">ByteForge 💻</h3>
+                    <p class="text-gray-400 text-base mb-6">Live HTML/CSS/JS playground + a set of coding challenges designed for the next-gen developer.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold">Playground</span>
+                        <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-bold">Challenges</span>
+                    </div>
+                </div>
+                <div class="absolute bottom-6 right-8 text-6xl opacity-30 group-hover:opacity-60 transition duration-500">💻</div>
+            </a>
+
+            <!-- FlashForge — wide card -->
+            <a href="flash-forge/index.html" class="md:col-span-7 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group block">
+                <div class="absolute top-0 right-0 w-72 h-72 bg-pink-500/20 rounded-full blur-3xl group-hover:bg-pink-400/30 transition duration-700"></div>
+                <div class="relative z-10">
+                    <div class="lab-badge bg-pink-500/20 border border-pink-500/30 text-pink-300 mb-4">
+                        <span class="material-symbols-outlined text-sm">style</span> Study Tool
+                    </div>
+                    <h3 class="text-4xl font-black mb-3">FlashForge ⚡</h3>
+                    <p class="text-gray-400 max-w-sm text-base mb-6">Create, study, and master flashcard decks with spaced-repetition principles. Never blank on an exam again.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs font-bold">Create Decks</span>
+                        <span class="px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs font-bold">Study Mode</span>
+                        <span class="px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs font-bold">Spaced Rep</span>
+                    </div>
+                </div>
+                <div class="absolute bottom-6 right-8 text-6xl opacity-30 group-hover:opacity-60 transition duration-500">⚡</div>
+            </a>
+
+            <!-- LofiLab — full-width card -->
+            <a href="lofi-lab/index.html" class="md:col-span-12 glass-panel glass-card rounded-3xl p-8 relative overflow-hidden group block">
+                <div class="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-emerald-500/10 to-transparent group-hover:from-emerald-400/20 transition duration-700"></div>
+                <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div>
+                        <div class="lab-badge bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 mb-4">
+                            <span class="material-symbols-outlined text-sm">headphones</span> Ambient Music
+                        </div>
+                        <h3 class="text-4xl font-black mb-3">LofiLab 🎧</h3>
+                        <p class="text-gray-400 text-base max-w-xl mb-6">Your study soundtrack, curated. Ambient, lofi, and focus-mode playlists to keep you in the zone during long study sessions.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-bold">Ambient Player</span>
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-bold">Study Sessions</span>
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-bold">Playlists</span>
+                        </div>
+                    </div>
+                    <div class="text-8xl opacity-40 group-hover:opacity-70 transition duration-500 hidden md:block">🎧</div>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-12 pb-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-emerald-400">science</span>
+                <span class="text-2xl font-black tracking-tight">AZ LABS</span>
+            </div>
+            <p class="text-gray-500 mb-4">An experimental wing of <a href="../az-learner/index.html" class="text-blue-400 hover:underline">AZ Learner</a></p>
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-500 mb-4">
+                <a href="index.html" class="hover:text-white transition">Labs Home</a>
+                <a href="vibe-craft/index.html" class="hover:text-white transition">VibeCraft</a>
+                <a href="focus-forge/index.html" class="hover:text-white transition">FocusForge</a>
+                <a href="byte-forge/index.html" class="hover:text-white transition">ByteForge</a>
+                <a href="flash-forge/index.html" class="hover:text-white transition">FlashForge</a>
+                <a href="lofi-lab/index.html" class="hover:text-white transition">LofiLab</a>
+            </div>
+            <div class="text-sm text-gray-600">&copy; 2026 Francis Pwavwe Production. Built in the Lab.</div>
+        </div>
+    </footer>
+</body>
+</html>

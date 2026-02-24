@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusForge | My Stats</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f0800; color: white; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #f97316, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #f97316; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .stat-big { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2); border-radius: 1.5rem; padding: 2rem; text-align: center; }
+        .bar { height: 120px; min-width: 32px; border-radius: 8px 8px 0 0; background: linear-gradient(to top, #f97316, #eab308); transition: height 0.5s ease; }
+        .bar-label { font-size: 11px; color: #6b7280; font-weight: 600; text-align: center; margin-top: 6px; }
+        .rank-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 999px; font-weight: 800; font-size: 14px; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">⏱️</span>
+                <span class="text-white">Focus<span class="text-gradient">Forge</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="timer.html" class="nav-link hover:text-white">Timer</a>
+                <a href="stats.html" class="nav-link hover:text-white text-orange-300">My Stats</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-12">
+        <div class="mb-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
+            <div>
+                <h1 class="text-4xl font-black mb-2">My Stats 📊</h1>
+                <p class="text-gray-400">Track your focus journey over time.</p>
+            </div>
+            <a href="timer.html" class="px-6 py-3 bg-gradient-to-r from-orange-600 to-yellow-600 rounded-full font-bold text-sm hover:opacity-90 transition flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">play_arrow</span> Start a Session
+            </a>
+        </div>
+
+        <!-- Big Numbers -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10" id="bigStats">
+        </div>
+
+        <!-- Rank -->
+        <div class="glass-panel rounded-2xl p-6 mb-10 text-center" id="rankSection">
+        </div>
+
+        <!-- Weekly Chart (simulated) -->
+        <div class="glass-panel rounded-2xl p-6 mb-10">
+            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-6">This Week's Pomodoros</h3>
+            <div class="flex items-end justify-around gap-2 px-4">
+                <div id="weekChart" class="flex items-end gap-3 w-full justify-around"></div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-6">Achievements 🏆</h3>
+            <div id="achievements" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-8">
+        <div class="text-xl font-black mb-1">⏱️ FocusForge</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="timer.html" class="hover:text-white transition">Timer</a>
+            <a href="stats.html" class="hover:text-white transition">Stats</a>
+        </div>
+    </footer>
+
+    <script>
+        // Read data from localStorage (saved by timer.html)
+        const todayPomodoros = parseInt(localStorage.getItem('ff_today') || '0');
+
+        // Simulate some historical data for visual richness
+        const weekDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const weekData = [5,8,3,7,6,4,todayPomodoros].map((v,i) => i === 6 ? todayPomodoros : v);
+        const totalPomodoros = weekData.reduce((a,b) => a+b, 0) + 14; // simulate some history
+        const totalMins = totalPomodoros * 25;
+        const streak = 5; // simulated streak
+
+        const RANKS = [
+            { name:'Freshman', min:0, color:'#6b7280', emoji:'📚' },
+            { name:'Focused', min:10, color:'#3b82f6', emoji:'🎯' },
+            { name:'Grinder', min:30, color:'#8b5cf6', emoji:'💪' },
+            { name:'Academic Weapon', min:80, color:'#f97316', emoji:'⚡' },
+            { name:'Legend', min:150, color:'#eab308', emoji:'👑' },
+        ];
+
+        function getRank(n) {
+            let r = RANKS[0];
+            RANKS.forEach(rank => { if (n >= rank.min) r = rank; });
+            return r;
+        }
+
+        // Big Stats
+        const stats = [
+            { label:'Total Pomodoros', value: totalPomodoros, color:'orange' },
+            { label:'Hours Focused', value: Math.round(totalMins/60 * 10)/10 + 'h', color:'yellow' },
+            { label:'Day Streak 🔥', value: streak, color:'orange' },
+            { label:"Today's Sessions", value: todayPomodoros, color:'yellow' },
+        ];
+        document.getElementById('bigStats').innerHTML = stats.map(s => `
+            <div class="stat-big">
+                <div class="text-3xl font-black text-${s.color}-400 mb-1">${s.value}</div>
+                <div class="text-xs text-gray-400 font-semibold">${s.label}</div>
+            </div>`).join('');
+
+        // Rank
+        const rank = getRank(totalPomodoros);
+        const nextRank = RANKS.find(r => r.min > totalPomodoros);
+        document.getElementById('rankSection').innerHTML = `
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">Current Rank</div>
+            <div class="text-5xl mb-3">${rank.emoji}</div>
+            <div class="rank-badge" style="background:${rank.color}20;border:1px solid ${rank.color}40;color:${rank.color}">
+                ${rank.name}
+            </div>
+            ${nextRank ? `<p class="text-xs text-gray-400 mt-4">Reach <strong class="text-white">${nextRank.min} pomodoros</strong> to unlock <strong style="color:${nextRank.color}">${nextRank.emoji} ${nextRank.name}</strong></p>` : '<p class="text-xs text-orange-400 mt-4 font-bold">Maximum rank achieved! 👑</p>'}`;
+
+        // Week Chart
+        const maxVal = Math.max(...weekData, 1);
+        document.getElementById('weekChart').innerHTML = weekData.map((v, i) => {
+            const h = Math.round((v / maxVal) * 100);
+            const isToday = i === 6;
+            return `<div class="flex flex-col items-center gap-1">
+                <div class="text-xs font-bold" style="color:${isToday?'#f97316':'#6b7280'}">${v}</div>
+                <div class="bar" style="height:${h}px;width:36px;opacity:${isToday?1:0.5};"></div>
+                <div class="bar-label" style="color:${isToday?'#fdba74':'#6b7280'}">${weekDays[i]}</div>
+            </div>`;
+        }).join('');
+
+        // Achievements
+        const ACHIEVEMENTS = [
+            { emoji:'🍅', name:'First Pomodoro', desc:'Complete your first session', done: totalPomodoros >= 1 },
+            { emoji:'🔥', name:'3-Day Streak', desc:'Focus 3 days in a row', done: streak >= 3 },
+            { emoji:'💯', name:'Century Club', desc:'Complete 100 pomodoros', done: totalPomodoros >= 100 },
+            { emoji:'⚡', name:'Power Hour', desc:'Complete 4 sessions in a day', done: todayPomodoros >= 4 },
+            { emoji:'🌅', name:'Early Bird', desc:'Start before 8am', done: false },
+            { emoji:'🌙', name:'Night Owl', desc:'Session after midnight', done: false },
+            { emoji:'🎯', name:'Perfect Week', desc:'Hit 8 pomos every day', done: false },
+            { emoji:'👑', name:'Legend', desc:'Reach 150 total pomodoros', done: totalPomodoros >= 150 },
+        ];
+        document.getElementById('achievements').innerHTML = ACHIEVEMENTS.map(a => `
+            <div class="p-4 rounded-2xl text-center border transition ${a.done ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/2 border-white/5 opacity-40'}">
+                <div class="text-3xl mb-2">${a.emoji}</div>
+                <div class="text-sm font-bold ${a.done ? 'text-orange-300' : 'text-gray-400'}">${a.name}</div>
+                <div class="text-xs text-gray-500 mt-1">${a.desc}</div>
+                ${a.done ? '<div class="text-xs text-orange-400 font-bold mt-1">✓ Unlocked</div>' : ''}
+            </div>`).join('');
+    </script>
+</body>
+</html>

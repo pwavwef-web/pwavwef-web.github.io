@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCraft | Create a Mood Board</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0d0814; color: white; overflow-x: hidden; min-height: 100vh; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #a855f7; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .palette-btn { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; flex-shrink: 0; }
+        .palette-btn.active, .palette-btn:hover { transform: scale(1.2); border-color: white; }
+        .board-preview { min-height: 320px; border-radius: 1.5rem; transition: all 0.5s; }
+        .tag-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; cursor: pointer; transition: all 0.2s; }
+        .tag-chip:hover, .tag-chip.active { background: rgba(168,85,247,0.3); }
+        input, textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; width: 100%; transition: border-color 0.2s; }
+        input:focus, textarea:focus { outline: none; border-color: #a855f7; }
+        textarea { resize: none; }
+        .toast { position: fixed; top: 80px; right: 24px; z-index: 999; background: #10b981; color: white; padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(200%); transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(0); }
+    </style>
+</head>
+<body>
+    <div id="toast" class="toast"><span class="material-symbols-outlined">check_circle</span> <span id="toastMsg">Saved!</span></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">🎨</span>
+                <span class="text-white">Vibe<span class="text-gradient">Craft</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="create.html" class="nav-link hover:text-white text-purple-300">Create Board</a>
+                <a href="explore.html" class="nav-link hover:text-white">Explore</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="mb-8">
+            <h1 class="text-4xl font-black mb-2">Create Your Board 🎨</h1>
+            <p class="text-gray-400">Customize your mood board in real-time and save it.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Left: Controls -->
+            <div class="space-y-6">
+
+                <!-- Board Name -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Board Name</label>
+                    <input type="text" id="boardName" placeholder="e.g. Dark Academia Vibes" maxlength="40">
+                </div>
+
+                <!-- Palette Picker -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <label class="block text-sm font-bold text-gray-300 mb-4 uppercase tracking-wide">Choose a Palette</label>
+                    <div id="paletteList" class="space-y-3"></div>
+                </div>
+
+                <!-- Mood Tags -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <label class="block text-sm font-bold text-gray-300 mb-4 uppercase tracking-wide">Mood Tags</label>
+                    <div id="moodTags" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Caption -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Board Caption</label>
+                    <textarea id="boardCaption" rows="3" placeholder="Describe the feeling of your board..." maxlength="120"></textarea>
+                    <div class="text-right text-xs text-gray-500 mt-1"><span id="captionLen">0</span>/120</div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4">
+                    <button onclick="saveBoard()" class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-base hover:opacity-90 transition flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">save</span> Save Board
+                    </button>
+                    <button onclick="resetBoard()" class="flex-1 py-3 glass-panel border border-white/10 rounded-xl font-bold text-base hover:bg-white/5 transition flex items-center justify-center gap-2 text-gray-300">
+                        <span class="material-symbols-outlined">refresh</span> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Live Preview -->
+            <div class="sticky top-24 self-start">
+                <div class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">Live Preview</div>
+                <div id="boardPreview" class="board-preview p-8 flex flex-col justify-between relative overflow-hidden" style="background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);">
+                    <!-- Decorative circles -->
+                    <div id="deco1" class="absolute w-48 h-48 rounded-full blur-3xl opacity-30 top-0 right-0" style="background: #533483;"></div>
+                    <div id="deco2" class="absolute w-32 h-32 rounded-full blur-2xl opacity-20 bottom-4 left-4" style="background: #e94560;"></div>
+                    <div class="relative z-10">
+                        <div id="previewTags" class="flex flex-wrap gap-2 mb-4"></div>
+                        <h2 id="previewName" class="text-3xl font-black text-white mb-2">Your Board Name</h2>
+                        <p id="previewCaption" class="text-white/60 text-sm">Your caption will appear here...</p>
+                    </div>
+                    <div class="relative z-10 mt-8">
+                        <div id="previewPalette" class="flex gap-3"></div>
+                        <div id="previewPaletteName" class="text-xs text-white/40 mt-2">Midnight Bloom</div>
+                    </div>
+                </div>
+                <div class="mt-4 glass-panel rounded-xl p-4 border border-white/5 text-center">
+                    <p class="text-xs text-gray-400">Boards are saved locally in your browser.</p>
+                </div>
+                <!-- Saved boards -->
+                <div id="savedSection" class="mt-6 hidden">
+                    <div class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Your Saved Boards</div>
+                    <div id="savedList" class="space-y-2"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-16">
+        <div class="text-xl font-black mb-1">🎨 VibeCraft</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="create.html" class="hover:text-white transition">Create</a>
+            <a href="explore.html" class="hover:text-white transition">Explore</a>
+        </div>
+    </footer>
+
+    <script>
+        const PALETTES = [
+            { name: 'Midnight Bloom', colors: ['#1a1a2e','#16213e','#0f3460','#533483','#e94560'], accent1: '#533483', accent2: '#e94560' },
+            { name: 'Forest Study', colors: ['#2d6a4f','#40916c','#52b788','#74c69d','#b7e4c7'], accent1: '#40916c', accent2: '#b7e4c7' },
+            { name: 'Sunset Campus', colors: ['#ff6b6b','#ffa07a','#ffd700','#98fb98','#87ceeb'], accent1: '#ffd700', accent2: '#ff6b6b' },
+            { name: 'Ocean Deep', colors: ['#03045e','#0077b6','#0096c7','#00b4d8','#90e0ef'], accent1: '#0096c7', accent2: '#00b4d8' },
+            { name: 'Sakura Dreams', colors: ['#ffb3c1','#ff85a1','#ff4d6d','#c9184a','#800f2f'], accent1: '#ff85a1', accent2: '#ffb3c1' },
+            { name: 'Neon Grind', colors: ['#000000','#0d0221','#7b2d8b','#00ff87','#00b3ff'], accent1: '#7b2d8b', accent2: '#00ff87' },
+        ];
+
+        const MOOD_TAGS = ['Chill','Study Mode','Dark','Bright','Aesthetic','Minimal','Bold','Warm','Cool','Dreamy','Hustle','Zen'];
+
+        let currentPalette = PALETTES[0];
+        let activeTags = new Set();
+
+        function renderPalettes() {
+            const list = document.getElementById('paletteList');
+            list.innerHTML = PALETTES.map((p, i) => `
+                <div class="palette-option flex items-center gap-3 cursor-pointer rounded-xl p-2 transition hover:bg-white/5 ${i===0?'bg-white/5':''}" onclick="selectPalette(${i})" id="pal-${i}">
+                    <div class="flex gap-1 flex-shrink-0">${p.colors.map(c=>`<span class="palette-btn" style="background:${c};width:28px;height:28px;"></span>`).join('')}</div>
+                    <span class="text-sm font-semibold text-gray-300">${p.name}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderTags() {
+            const tags = document.getElementById('moodTags');
+            tags.innerHTML = MOOD_TAGS.map(t => `
+                <span class="tag-chip" onclick="toggleTag(this,'${t}')">${t}</span>
+            `).join('');
+        }
+
+        function selectPalette(i) {
+            currentPalette = PALETTES[i];
+            document.querySelectorAll('.palette-option').forEach((el,j) => {
+                el.classList.toggle('bg-white/5', j===i);
+            });
+            updatePreview();
+        }
+
+        function toggleTag(el, tag) {
+            if (activeTags.has(tag)) { activeTags.delete(tag); el.classList.remove('active'); }
+            else { activeTags.add(tag); el.classList.add('active'); }
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const name = document.getElementById('boardName').value || 'Your Board Name';
+            const caption = document.getElementById('boardCaption').value || 'Your caption will appear here...';
+            const p = currentPalette;
+
+            const bg = `linear-gradient(135deg, ${p.colors[0]}, ${p.colors[1] || p.colors[0]}, ${p.colors[2] || p.colors[0]})`;
+            document.getElementById('boardPreview').style.background = bg;
+            document.getElementById('deco1').style.background = p.accent1;
+            document.getElementById('deco2').style.background = p.accent2;
+
+            document.getElementById('previewName').textContent = name;
+            document.getElementById('previewCaption').textContent = caption;
+            document.getElementById('previewPaletteName').textContent = p.name;
+
+            document.getElementById('previewPalette').innerHTML = p.colors.map(c =>
+                `<span style="width:32px;height:32px;border-radius:50%;background:${c};display:inline-block;border:2px solid rgba(255,255,255,0.2)"></span>`
+            ).join('');
+
+            document.getElementById('previewTags').innerHTML = [...activeTags].map(t =>
+                `<span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;color:white;">${t}</span>`
+            ).join('');
+        }
+
+        function saveBoard() {
+            const name = document.getElementById('boardName').value.trim();
+            if (!name) { showToast('Give your board a name first!', 'error'); return; }
+            const boards = JSON.parse(localStorage.getItem('vibecraft_boards') || '[]');
+            boards.unshift({ name, palette: currentPalette.name, tags: [...activeTags], caption: document.getElementById('boardCaption').value, created: new Date().toISOString() });
+            localStorage.setItem('vibecraft_boards', JSON.stringify(boards.slice(0,20)));
+            showToast('Board saved! 🎨');
+            renderSaved();
+        }
+
+        function resetBoard() {
+            document.getElementById('boardName').value = '';
+            document.getElementById('boardCaption').value = '';
+            document.getElementById('captionLen').textContent = '0';
+            activeTags.clear();
+            document.querySelectorAll('.tag-chip').forEach(el => el.classList.remove('active'));
+            selectPalette(0);
+        }
+
+        function renderSaved() {
+            const boards = JSON.parse(localStorage.getItem('vibecraft_boards') || '[]');
+            const section = document.getElementById('savedSection');
+            if (!boards.length) { section.classList.add('hidden'); return; }
+            section.classList.remove('hidden');
+            document.getElementById('savedList').innerHTML = boards.map(b => `
+                <div class="glass-panel rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div><div class="font-bold text-sm">${b.name}</div><div class="text-xs text-gray-400">${b.palette} · ${b.tags.join(', ') || 'No tags'}</div></div>
+                    <span class="text-xs text-gray-500">${new Date(b.created).toLocaleDateString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function showToast(msg, type='success') {
+            const toast = document.getElementById('toast');
+            toast.style.background = type === 'error' ? '#ef4444' : '#10b981';
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // Live updates
+        document.getElementById('boardName').addEventListener('input', updatePreview);
+        document.getElementById('boardCaption').addEventListener('input', function() {
+            document.getElementById('captionLen').textContent = this.value.length;
+            updatePreview();
+        });
+
+        renderPalettes();
+        renderTags();
+        updatePreview();
+        renderSaved();
+    </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteForge | AZ Labs — Code Playground</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030d14; color: white; overflow-x: hidden; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: linear-gradient(-45deg, #030d14, #061520, #041a2a, #030d14); background-size: 400% 400%; animation: gradientBG 18s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #06b6d4; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .dot-glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.1; pointer-events: none; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        .feature-card { background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.15); border-radius: 1.5rem; padding: 1.5rem; transition: all 0.3s; }
+        .feature-card:hover { background: rgba(6,182,212,0.1); transform: translateY(-4px); }
+        .terminal-line { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; }
+        .cursor-blink { display: inline-block; width: 8px; height: 14px; background: #06b6d4; animation: blink 1s step-end infinite; vertical-align: middle; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-animated"></div>
+    <div class="dot-glow w-96 h-96 bg-cyan-500 top-20 right-10 z-[-1]"></div>
+    <div class="dot-glow w-72 h-72 bg-blue-600 bottom-20 left-10 z-[-1]"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">💻</span>
+                <span class="text-white">Byte<span class="text-gradient">Forge</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white text-cyan-300">Home</a>
+                <a href="playground.html" class="nav-link hover:text-white">Playground</a>
+                <a href="challenges.html" class="nav-link hover:text-white">Challenges</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+                </a>
+                <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 flex flex-col gap-2 text-sm text-gray-400">
+            <a href="index.html" class="py-2 hover:text-white">Home</a>
+            <a href="playground.html" class="py-2 hover:text-white">Playground</a>
+            <a href="challenges.html" class="py-2 hover:text-white">Challenges</a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="max-w-5xl mx-auto px-6 pt-28 pb-16 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-cyan-500/20 text-xs font-semibold tracking-wide uppercase text-cyan-300 mb-6">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            Live Code Editor + Challenges
+        </div>
+        <h1 class="text-6xl md:text-8xl font-black leading-tight tracking-tight mb-6">
+            Forge Your<br><span class="text-gradient">Code.</span>
+        </h1>
+        <p class="text-xl text-gray-400 max-w-xl mx-auto mb-10">
+            A live HTML/CSS/JS playground in your browser, plus a library of bite-sized coding challenges to sharpen your dev skills.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="playground.html" class="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full font-bold text-lg transition hover:opacity-90 hover:shadow-[0_0_40px_rgba(6,182,212,0.4)] flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">code</span> Open Playground
+            </a>
+            <a href="challenges.html" class="px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-cyan-300 border border-cyan-500/30">
+                <span class="material-symbols-outlined">emoji_events</span> View Challenges
+            </a>
+        </div>
+    </section>
+
+    <!-- Terminal Demo -->
+    <section class="max-w-3xl mx-auto px-6 mb-20">
+        <div class="bg-black rounded-2xl overflow-hidden border border-cyan-500/20 shadow-2xl">
+            <div class="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-white/5">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                <span class="text-xs text-gray-400 ml-2 code-font">byteforge ~ index.html</span>
+            </div>
+            <div class="p-6 space-y-1">
+                <div class="terminal-line text-gray-500">// Welcome to ByteForge 🚀</div>
+                <div class="terminal-line"><span class="text-cyan-400">const</span> <span class="text-white">student</span> <span class="text-gray-400">=</span> <span class="text-yellow-300">{</span></div>
+                <div class="terminal-line pl-6"><span class="text-blue-300">name</span><span class="text-gray-400">:</span> <span class="text-green-300">'You'</span><span class="text-gray-400">,</span></div>
+                <div class="terminal-line pl-6"><span class="text-blue-300">level</span><span class="text-gray-400">:</span> <span class="text-green-300">'Building'</span><span class="text-gray-400">,</span></div>
+                <div class="terminal-line pl-6"><span class="text-blue-300">skills</span><span class="text-gray-400">:</span> <span class="text-yellow-300">['HTML','CSS','JS']</span></div>
+                <div class="terminal-line"><span class="text-yellow-300">}</span><span class="text-gray-400">;</span></div>
+                <div class="terminal-line mt-2"><span class="text-cyan-400">console</span><span class="text-gray-400">.</span><span class="text-yellow-300">log</span><span class="text-gray-400">(</span><span class="text-green-300">`Let's build something, ${student.name}!`</span><span class="text-gray-400">);</span></div>
+                <div class="terminal-line text-green-400 mt-1">▶ Let's build something, You! <span class="cursor-blink"></span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="max-w-7xl mx-auto px-6 pb-32">
+        <h2 class="text-3xl font-bold text-center mb-10">What's Inside</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="feature-card">
+                <div class="text-4xl mb-4">⚡</div>
+                <h3 class="text-xl font-bold mb-2">Live Preview</h3>
+                <p class="text-gray-400 text-sm">Write HTML, CSS, and JavaScript and see results instantly. No setup, no waiting.</p>
+            </div>
+            <div class="feature-card">
+                <div class="text-4xl mb-4">🧩</div>
+                <h3 class="text-xl font-bold mb-2">20+ Challenges</h3>
+                <p class="text-gray-400 text-sm">From beginner to advanced. Solve problems, build components, and level up your skills.</p>
+            </div>
+            <div class="feature-card">
+                <div class="text-4xl mb-4">💾</div>
+                <h3 class="text-xl font-bold mb-2">Auto-Save</h3>
+                <p class="text-gray-400 text-sm">Your code is saved locally as you type. Come back anytime and pick up where you left off.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-10 pb-8 text-center">
+        <div class="text-xl font-black mb-1">💻 ByteForge</div>
+        <p class="text-gray-500 text-sm mb-4">Part of <a href="../index.html" class="text-cyan-400 hover:underline">AZ Labs</a></p>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="playground.html" class="hover:text-white transition">Playground</a>
+            <a href="challenges.html" class="hover:text-white transition">Challenges</a>
+        </div>
+    </footer>
+</body>
+</html>

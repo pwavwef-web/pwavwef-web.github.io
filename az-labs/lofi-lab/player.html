@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LofiLab | Ambient Sound Mixer</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #040d09; color: white; min-height: 100vh; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #10b981; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .sound-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.25rem; transition: all 0.3s; }
+        .sound-card.active { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.35); }
+        input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; width: 100%; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #10b981; cursor: pointer; }
+        .soundwave { display: flex; align-items: flex-end; gap: 2px; height: 20px; }
+        .soundwave-bar { width: 3px; background: #10b981; border-radius: 2px; animation: wave 1.2s ease-in-out infinite; }
+        .soundwave-bar:nth-child(2){animation-delay:0.2s}.soundwave-bar:nth-child(3){animation-delay:0.4s}.soundwave-bar:nth-child(4){animation-delay:0.1s}.soundwave-bar:nth-child(5){animation-delay:0.3s}
+        @keyframes wave { 0%,100%{height:4px}50%{height:18px} }
+        .soundwave.paused .soundwave-bar { animation-play-state:paused; height:6px; }
+        .toggle-btn { width: 44px; height: 24px; border-radius: 12px; position: relative; transition: background 0.3s; cursor: pointer; }
+        .toggle-btn.on { background: #10b981; }
+        .toggle-btn.off { background: rgba(255,255,255,0.1); }
+        .toggle-knob { width: 18px; height: 18px; border-radius: 50%; background: white; position: absolute; top: 3px; transition: left 0.3s; }
+        .toggle-btn.on .toggle-knob { left: 23px; }
+        .toggle-btn.off .toggle-knob { left: 3px; }
+        .timer-btn { padding: 8px 18px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; transition: all 0.2s; cursor: pointer; }
+        .timer-btn.active { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+        .note { background: rgba(255,255,255,0.03); border: 1px solid rgba(16,185,129,0.15); border-radius: 12px; padding: 12px 16px; font-size: 13px; color: #6ee7b7; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">🎧</span>
+                <span class="text-white">Lofi<span class="text-gradient">Lab</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="player.html" class="nav-link hover:text-white text-emerald-300">Player</a>
+                <a href="sessions.html" class="nav-link hover:text-white">Sessions</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left: Sound Controls -->
+            <div class="lg:col-span-2">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-3xl font-black">Sound Mixer 🎚️</h1>
+                        <p class="text-gray-400 text-sm mt-1">Toggle and blend ambient sounds</p>
+                    </div>
+                    <div class="soundwave" id="mainWave">
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                    </div>
+                </div>
+
+                <div class="note mb-6">
+                    <span class="material-symbols-outlined text-sm align-middle mr-1">info</span>
+                    This is a <em>sound mix planner</em> (UI only &mdash; no audio files are played). Toggle sounds and adjust volumes to design your ideal study environment, then open a matching YouTube lofi stream in a separate tab.
+                </div>
+
+                <div id="soundGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6"></div>
+
+                <!-- Master controls -->
+                <div class="glass-panel rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm font-bold text-gray-300 uppercase tracking-wide">Master Volume</div>
+                        <span id="masterVol" class="text-emerald-400 font-bold text-sm">70%</span>
+                    </div>
+                    <input type="range" id="masterVolume" min="0" max="100" value="70" oninput="updateMasterVol(this.value)">
+
+                    <div class="flex gap-2 mt-4 flex-wrap">
+                        <button onclick="muteAll()" class="px-4 py-2 glass-panel border border-white/10 rounded-full text-sm font-bold text-gray-300 hover:bg-white/5 transition flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">volume_off</span> Mute All
+                        </button>
+                        <button onclick="resetMix()" class="px-4 py-2 glass-panel border border-white/10 rounded-full text-sm font-bold text-gray-300 hover:bg-white/5 transition flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">refresh</span> Reset
+                        </button>
+                        <button onclick="saveMix()" class="px-4 py-2 bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 rounded-full text-sm font-bold hover:bg-emerald-500/20 transition flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">save</span> Save Mix
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Timer & Presets -->
+            <div class="space-y-5">
+                <!-- Session Timer -->
+                <div class="glass-panel rounded-2xl p-5">
+                    <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-4">Session Timer</h3>
+                    <div class="text-4xl font-black text-emerald-400 text-center mb-4" id="timerDisplay">00:00</div>
+                    <div class="flex gap-2 flex-wrap justify-center mb-4">
+                        <button class="timer-btn" onclick="setTimer(25)">25m</button>
+                        <button class="timer-btn" onclick="setTimer(45)">45m</button>
+                        <button class="timer-btn" onclick="setTimer(60)">1h</button>
+                        <button class="timer-btn" onclick="setTimer(90)">1.5h</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="startTimer()" id="timerBtn" class="flex-1 py-2 bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 rounded-xl font-bold text-sm hover:bg-emerald-500/30 transition flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm" id="timerBtnIcon">play_arrow</span>
+                            <span id="timerBtnLabel">Start</span>
+                        </button>
+                        <button onclick="resetTimer()" class="p-2 glass-panel border border-white/10 rounded-xl text-gray-400 hover:text-white transition">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="glass-panel rounded-2xl p-5">
+                    <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-4">Quick Presets</h3>
+                    <div class="space-y-2" id="presetList"></div>
+                </div>
+
+                <!-- Saved mixes -->
+                <div class="glass-panel rounded-2xl p-5" id="savedMixesPanel">
+                    <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-3">Saved Mixes</h3>
+                    <div id="savedMixesList" class="space-y-2">
+                        <p class="text-xs text-gray-500">No saved mixes yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-8">
+        <div class="text-xl font-black mb-1">🎧 LofiLab</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="player.html" class="hover:text-white transition">Player</a>
+            <a href="sessions.html" class="hover:text-white transition">Sessions</a>
+        </div>
+    </footer>
+
+    <script>
+        const SOUNDS = [
+            { id:'rain', label:'Heavy Rain', emoji:'🌧️', defaultVol:60 },
+            { id:'thunder', label:'Thunderstorm', emoji:'⛈️', defaultVol:30 },
+            { id:'cafe', label:'Café Chatter', emoji:'☕', defaultVol:40 },
+            { id:'lofi', label:'Lofi Beats', emoji:'🎵', defaultVol:70 },
+            { id:'forest', label:'Forest Birds', emoji:'🌿', defaultVol:50 },
+            { id:'ocean', label:'Ocean Waves', emoji:'🌊', defaultVol:55 },
+            { id:'fire', label:'Crackling Fire', emoji:'🔥', defaultVol:45 },
+            { id:'keyboard', label:'Keyboard Typing', emoji:'⌨️', defaultVol:35 },
+            { id:'fan', label:'White Noise Fan', emoji:'💨', defaultVol:40 },
+            { id:'jazz', label:'Midnight Jazz', emoji:'🎷', defaultVol:50 },
+        ];
+
+        const PRESETS = [
+            { name:'☕ Café Study', sounds:{ cafe:70, lofi:60, keyboard:30 } },
+            { name:'🌧️ Rainy Focus', sounds:{ rain:65, thunder:20, lofi:50 } },
+            { name:'🌿 Nature Zen', sounds:{ forest:70, ocean:50, rain:30 } },
+            { name:'🔥 Cozy Night', sounds:{ fire:70, rain:40, jazz:45 } },
+            { name:'💻 Deep Work', sounds:{ lofi:80, keyboard:25, fan:30 } },
+        ];
+
+        let state = {};
+        SOUNDS.forEach(s => { state[s.id] = { on: false, vol: s.defaultVol }; });
+
+        let timerInterval = null;
+        let timerRemaining = 0;
+        let timerTotal = 0;
+        let timerRunning = false;
+
+        function renderSounds() {
+            document.getElementById('soundGrid').innerHTML = SOUNDS.map(s => `
+                <div class="sound-card ${state[s.id].on ? 'active' : ''}" id="card-${s.id}">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">${s.emoji}</span>
+                            <span class="font-bold text-sm">${s.label}</span>
+                        </div>
+                        <div class="toggle-btn ${state[s.id].on ? 'on' : 'off'}" onclick="toggleSound('${s.id}')" id="toggle-${s.id}">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <input type="range" min="0" max="100" value="${state[s.id].vol}"
+                        class="${state[s.id].on ? '' : 'opacity-40'}"
+                        oninput="setVol('${s.id}',this.value)" id="vol-${s.id}">
+                    <div class="text-right text-xs text-gray-500 mt-1" id="volLabel-${s.id}">${state[s.id].vol}%</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleSound(id) {
+            state[id].on = !state[id].on;
+            updateMainWave();
+            renderSounds();
+        }
+
+        function setVol(id, val) {
+            state[id].vol = parseInt(val);
+            document.getElementById('volLabel-' + id).textContent = val + '%';
+        }
+
+        function updateMasterVol(val) {
+            document.getElementById('masterVol').textContent = val + '%';
+        }
+
+        function muteAll() {
+            SOUNDS.forEach(s => { state[s.id].on = false; });
+            updateMainWave();
+            renderSounds();
+        }
+
+        function resetMix() {
+            SOUNDS.forEach(s => { state[s.id] = { on: false, vol: s.defaultVol }; });
+            document.getElementById('masterVolume').value = 70;
+            document.getElementById('masterVol').textContent = '70%';
+            updateMainWave();
+            renderSounds();
+        }
+
+        function applyPreset(preset) {
+            SOUNDS.forEach(s => { state[s.id] = { on: false, vol: s.defaultVol }; });
+            Object.entries(preset.sounds).forEach(([id, vol]) => { state[id] = { on: true, vol }; });
+            updateMainWave();
+            renderSounds();
+        }
+
+        function updateMainWave() {
+            const anyOn = SOUNDS.some(s => state[s.id].on);
+            document.getElementById('mainWave').classList.toggle('paused', !anyOn);
+        }
+
+        function saveMix() {
+            const on = SOUNDS.filter(s => state[s.id].on);
+            if (!on.length) { alert('Turn on some sounds first!'); return; }
+            const mixes = JSON.parse(localStorage.getItem('lofilab_mixes') || '[]');
+            const name = prompt('Name this mix:', `Mix ${mixes.length + 1}`);
+            if (!name) return;
+            mixes.unshift({ name, state: JSON.parse(JSON.stringify(state)), created: new Date().toISOString() });
+            localStorage.setItem('lofilab_mixes', JSON.stringify(mixes.slice(0,10)));
+            renderSavedMixes();
+        }
+
+        function renderSavedMixes() {
+            const mixes = JSON.parse(localStorage.getItem('lofilab_mixes') || '[]');
+            const list = document.getElementById('savedMixesList');
+            if (!mixes.length) {
+                list.innerHTML = '<p class="text-xs text-gray-500">No saved mixes yet.</p>';
+                return;
+            }
+            list.innerHTML = mixes.map((m, i) => `
+                <div class="flex items-center justify-between p-2 rounded-lg bg-white/3 hover:bg-white/5 transition">
+                    <span class="text-sm font-semibold cursor-pointer hover:text-emerald-300 transition" onclick="loadMix(${i})">${m.name}</span>
+                    <span class="text-xs text-gray-500">${new Date(m.created).toLocaleDateString()}</span>
+                </div>`).join('');
+        }
+
+        function loadMix(i) {
+            const mixes = JSON.parse(localStorage.getItem('lofilab_mixes') || '[]');
+            if (!mixes[i]) return;
+            state = JSON.parse(JSON.stringify(mixes[i].state));
+            updateMainWave();
+            renderSounds();
+        }
+
+        // Timer
+        function setTimer(mins) {
+            timerRemaining = mins * 60;
+            timerTotal = timerRemaining;
+            updateTimerDisplay();
+            document.querySelectorAll('.timer-btn').forEach(b => b.classList.remove('active'));
+        }
+
+        function startTimer() {
+            if (!timerRemaining) return;
+            if (timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                document.getElementById('timerBtnIcon').textContent = 'play_arrow';
+                document.getElementById('timerBtnLabel').textContent = 'Resume';
+            } else {
+                timerRunning = true;
+                document.getElementById('timerBtnIcon').textContent = 'pause';
+                document.getElementById('timerBtnLabel').textContent = 'Pause';
+                timerInterval = setInterval(() => {
+                    if (timerRemaining > 0) {
+                        timerRemaining--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        document.getElementById('timerBtnIcon').textContent = 'check';
+                        document.getElementById('timerBtnLabel').textContent = 'Done!';
+                        alert('⏰ Session complete! Take a break.');
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerRemaining = timerTotal;
+            updateTimerDisplay();
+            document.getElementById('timerBtnIcon').textContent = 'play_arrow';
+            document.getElementById('timerBtnLabel').textContent = 'Start';
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerRemaining / 60);
+            const s = timerRemaining % 60;
+            document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        // Presets
+        document.getElementById('presetList').innerHTML = PRESETS.map(p => `
+            <button onclick='applyPreset(${JSON.stringify(p)})' class="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-300 transition">
+                ${p.name}
+            </button>`).join('');
+
+        // Apply URL vibe
+        const vibe = new URLSearchParams(location.search).get('vibe');
+        if (vibe) {
+            const map = { lofi:'lofi', rain:'rain', forest:'forest', jazz:'jazz' };
+            if (map[vibe]) { state[map[vibe]].on = true; }
+        }
+
+        renderSounds();
+        updateMainWave();
+        renderSavedMixes();
+    </script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCraft | Explore Mood Boards</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0d0814; color: white; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #a855f7; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .board-card { border-radius: 1.5rem; overflow: hidden; transition: all 0.3s; cursor: pointer; }
+        .board-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,0.5); }
+        .filter-btn { padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; transition: all 0.2s; cursor: pointer; }
+        .filter-btn:hover, .filter-btn.active { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #c084fc; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">🎨</span>
+                <span class="text-white">Vibe<span class="text-gradient">Craft</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="create.html" class="nav-link hover:text-white">Create Board</a>
+                <a href="explore.html" class="nav-link hover:text-white text-purple-300">Explore</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+            <div>
+                <h1 class="text-4xl font-black mb-2">Explore Boards 🌐</h1>
+                <p class="text-gray-400">Discover aesthetic mood boards curated for every vibe.</p>
+            </div>
+            <a href="create.html" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full font-bold text-sm hover:opacity-90 transition flex items-center gap-2 self-start md:self-auto">
+                <span class="material-symbols-outlined text-sm">add</span> Create Yours
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 mb-8" id="filters">
+            <button class="filter-btn active" onclick="filterBoards('all',this)">All</button>
+            <button class="filter-btn" onclick="filterBoards('study',this)">Study</button>
+            <button class="filter-btn" onclick="filterBoards('dark',this)">Dark</button>
+            <button class="filter-btn" onclick="filterBoards('bright',this)">Bright</button>
+            <button class="filter-btn" onclick="filterBoards('minimal',this)">Minimal</button>
+            <button class="filter-btn" onclick="filterBoards('dreamy',this)">Dreamy</button>
+        </div>
+
+        <!-- Board Grid -->
+        <div id="boardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <!-- Local Saved Boards -->
+        <div id="myBoardsSection" class="hidden mt-16">
+            <h2 class="text-2xl font-bold mb-6">Your Saved Boards 💾</h2>
+            <div id="myBoardsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-16">
+        <div class="text-xl font-black mb-1">🎨 VibeCraft</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="create.html" class="hover:text-white transition">Create</a>
+            <a href="explore.html" class="hover:text-white transition">Explore</a>
+        </div>
+    </footer>
+
+    <script>
+        const BOARDS = [
+            { id:1, name:'Dark Academia', author:'Alex K.', tags:['dark','study'], colors:['#1a1a2e','#16213e','#0f3460','#533483','#e94560'], caption:'Candlelight, old books, midnight coffee. The aesthetic is everything.', likes:84 },
+            { id:2, name:'Forest Study', author:'Nana O.', tags:['study','minimal'], colors:['#2d6a4f','#40916c','#52b788','#74c69d','#b7e4c7'], caption:'Green spaces for clear minds. Nature-inspired focus mode.', likes:67 },
+            { id:3, name:'Sunset Campus', author:'Kwame A.', tags:['bright','dreamy'], colors:['#ff6b6b','#ffa07a','#ffd700','#98fb98','#87ceeb'], caption:'Golden hour energy for golden-grade results.', likes:112 },
+            { id:4, name:'Ocean Deep', author:'Ama B.', tags:['dark','dreamy'], colors:['#03045e','#0077b6','#0096c7','#00b4d8','#90e0ef'], caption:'Dive deep into focus. Let the waves carry your thoughts.', likes:95 },
+            { id:5, name:'Sakura Dreams', author:'Efua M.', tags:['bright','dreamy'], colors:['#ffb3c1','#ff85a1','#ff4d6d','#c9184a','#800f2f'], caption:'Soft pink energy for soft-life academic excellence.', likes:138 },
+            { id:6, name:'Neon Grind', author:'Kofi T.', tags:['dark','study'], colors:['#000000','#0d0221','#7b2d8b','#00ff87','#00b3ff'], caption:'Code, build, ship. Repeat. Neon never sleeps.', likes:201 },
+            { id:7, name:'Warm Minimal', author:'Abena P.', tags:['minimal','bright'], colors:['#fdf0d5','#e9c46a','#f4a261','#e76f51','#264653'], caption:'Simple strokes, warm tones. Clarity in every session.', likes:56 },
+            { id:8, name:'Midnight Jazz', author:'Mensah R.', tags:['dark','dreamy'], colors:['#13001e','#2b0057','#4b0082','#6a0dad','#9b59b6'], caption:'Late-night sessions with a jazz playlist and a cup of something warm.', likes:73 },
+            { id:9, name:'Paper & Ink', author:'Sika D.', tags:['minimal','study'], colors:['#f5f0e8','#d4c5a9','#b8a99a','#8b7355','#4a3728'], caption:'Old school cool. Notebooks, pens, and pure focus.', likes:44 },
+        ];
+
+        let activeFilter = 'all';
+
+        function filterBoards(cat, btn) {
+            activeFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderBoards();
+        }
+
+        function renderBoards() {
+            const grid = document.getElementById('boardGrid');
+            const filtered = activeFilter === 'all' ? BOARDS : BOARDS.filter(b => b.tags.includes(activeFilter));
+            grid.innerHTML = filtered.map(b => {
+                const bg = `linear-gradient(135deg, ${b.colors[0]}, ${b.colors[1] || b.colors[0]}, ${b.colors[2] || b.colors[0]})`;
+                return `
+                <div class="board-card" onclick="openBoard(${b.id})">
+                    <div style="background:${bg}; min-height:180px; padding:1.5rem; position:relative; overflow:hidden;">
+                        <div style="position:absolute;top:0;right:0;width:120px;height:120px;background:${b.colors[3] || b.colors[0]};border-radius:50%;filter:blur(40px);opacity:0.3;"></div>
+                        <div class="relative z-10">
+                            <div class="flex gap-1 mb-3">${b.colors.map(c=>`<span style="width:20px;height:20px;border-radius:50%;background:${c};display:inline-block;border:2px solid rgba(255,255,255,0.3);"></span>`).join('')}</div>
+                            <div class="flex flex-wrap gap-1">${b.tags.map(t=>`<span style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;color:white;">${t}</span>`).join('')}</div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-4 border-t border-white/5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="font-bold text-base">${b.name}</div>
+                                <div class="text-xs text-gray-400 mt-1">by ${b.author}</div>
+                            </div>
+                            <div class="flex items-center gap-1 text-pink-400 text-xs font-bold flex-shrink-0">
+                                <span class="material-symbols-outlined text-sm">favorite</span>${b.likes}
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-xs mt-2 line-clamp-2">${b.caption}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openBoard(id) {
+            const b = BOARDS.find(x => x.id === id);
+            if (!b) return;
+            alert(`🎨 ${b.name}\n\n"${b.caption}"\n\nby ${b.author} · ❤️ ${b.likes} likes\nTags: ${b.tags.join(', ')}`);
+        }
+
+        function renderMyBoards() {
+            const boards = JSON.parse(localStorage.getItem('vibecraft_boards') || '[]');
+            if (!boards.length) return;
+            const section = document.getElementById('myBoardsSection');
+            section.classList.remove('hidden');
+            document.getElementById('myBoardsList').innerHTML = boards.map(b => {
+                const palette = b.palette || 'Custom';
+                return `
+                <div class="glass-panel rounded-2xl p-5">
+                    <div class="font-bold text-base mb-1">${b.name}</div>
+                    <div class="text-xs text-gray-400 mb-2">${palette} · ${b.tags.join(', ') || 'No tags'}</div>
+                    <p class="text-gray-400 text-xs">${b.caption || ''}</p>
+                    <div class="text-xs text-gray-600 mt-2">${new Date(b.created).toLocaleDateString()}</div>
+                </div>`;
+            }).join('');
+        }
+
+        renderBoards();
+        renderMyBoards();
+    </script>
+</body>
+</html>

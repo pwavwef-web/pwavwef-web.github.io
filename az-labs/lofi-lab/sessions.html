@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LofiLab | Study Sessions</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #040d09; color: white; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #10b981; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .session-card { border-radius: 1.5rem; overflow: hidden; transition: all 0.3s; cursor: pointer; }
+        .session-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,0.5); }
+        .track-item { display: flex; align-items: center; gap-3; padding: 12px 14px; border-radius: 12px; transition: all 0.2s; cursor: pointer; }
+        .track-item:hover { background: rgba(16,185,129,0.08); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: #07120e; border: 1px solid rgba(16,185,129,0.2); border-radius: 1.5rem; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">🎧</span>
+                <span class="text-white">Lofi<span class="text-gradient">Lab</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="player.html" class="nav-link hover:text-white">Player</a>
+                <a href="sessions.html" class="nav-link hover:text-white text-emerald-300">Sessions</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <!-- Session Detail Modal -->
+    <div id="sessionModal" class="modal-overlay hidden" onclick="closeModal(event)">
+        <div class="modal-box" id="modalContent"></div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-10">
+            <div>
+                <h1 class="text-4xl font-black mb-2">Study Sessions 🎵</h1>
+                <p class="text-gray-400">Curated playlists and sound environments for every kind of grind.</p>
+            </div>
+            <a href="player.html" class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full font-bold text-sm hover:opacity-90 transition flex items-center gap-2 self-start md:self-auto">
+                <span class="material-symbols-outlined text-sm">tune</span> Open Mixer
+            </a>
+        </div>
+
+        <!-- Featured Session -->
+        <div id="featuredSession" class="mb-12"></div>
+
+        <!-- All Sessions -->
+        <h2 class="text-2xl font-bold mb-6">All Sessions</h2>
+        <div id="sessionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-16">
+        <div class="text-xl font-black mb-1">🎧 LofiLab</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="player.html" class="hover:text-white transition">Player</a>
+            <a href="sessions.html" class="hover:text-white transition">Sessions</a>
+        </div>
+    </footer>
+
+    <script>
+        const SESSIONS = [
+            {
+                id:1, name:'Midnight Deep Work', emoji:'🌙', duration:'3h 20m',
+                gradient:'linear-gradient(135deg,#0d0221,#2b0057)',
+                accent:'#7c3aed',
+                tags:['focus','night','lofi'],
+                desc:'The late-night coder\'s anthem. Pure lofi beats with a hint of ambient noise to keep you locked in.',
+                sounds:['Lofi Beats 🎵','Keyboard Typing ⌨️','White Noise Fan 💨'],
+                tracks: [
+                    { title:'2am Coding Session', artist:'Chillhop Essentials', duration:'4:32' },
+                    { title:'Late Nights & Coffee', artist:'Jinsang', duration:'3:15' },
+                    { title:'Sleepy Night', artist:'Philanthrope', duration:'3:48' },
+                    { title:'Lo-fi for the Night', artist:'Idealism', duration:'5:02' },
+                    { title:'Cozy Autumn', artist:'j\'san', duration:'4:21' },
+                ],
+                featured: true
+            },
+            {
+                id:2, name:'Morning Focus Sprint', emoji:'☀️', duration:'1h 45m',
+                gradient:'linear-gradient(135deg,#1a2a00,#2d5016)',
+                accent:'#10b981',
+                tags:['morning','energy','lofi'],
+                desc:'Energetic lofi to power your morning study session. Rise, grind, and get that first block of deep work done.',
+                sounds:['Lofi Beats 🎵','Birds 🌿','Café Chatter ☕'],
+                tracks: [
+                    { title:'Morning Ritual', artist:'Sagun', duration:'3:42' },
+                    { title:'Summer Nights', artist:'Tomppabeats', duration:'4:18' },
+                    { title:'In the Garden', artist:'Hanu Dixit', duration:'3:55' },
+                    { title:'Sunrise Lofi', artist:'Chill Study Beats', duration:'4:10' },
+                ],
+            },
+            {
+                id:3, name:'Rainy Day Library', emoji:'📚', duration:'2h 15m',
+                gradient:'linear-gradient(135deg,#0d1b2a,#1b3a4b)',
+                accent:'#06b6d4',
+                tags:['rain','calm','study'],
+                desc:'Rain on the window, a hot beverage, and a mountain of notes. This is the aesthetic.',
+                sounds:['Heavy Rain 🌧️','Thunderstorm ⛈️','Lofi Beats 🎵'],
+                tracks: [
+                    { title:'Rainy Afternoon', artist:'Idealism', duration:'4:45' },
+                    { title:'Monsoon', artist:'Jinsang', duration:'3:30' },
+                    { title:'Reading in the Rain', artist:'bsd.u', duration:'5:12' },
+                    { title:'November Rain Study', artist:'Chill Vibes', duration:'4:00' },
+                ],
+            },
+            {
+                id:4, name:'Café & Books', emoji:'☕', duration:'2h 30m',
+                gradient:'linear-gradient(135deg,#1a0e00,#2d1a00)',
+                accent:'#f59e0b',
+                tags:['café','warm','focus'],
+                desc:'Background chatter, espresso machines, and jazz snippets. Study like you\'re at the coolest café in town.',
+                sounds:['Café Chatter ☕','Midnight Jazz 🎷','Keyboard Typing ⌨️'],
+                tracks: [
+                    { title:'Bossa Nova Study', artist:'ChillHop', duration:'4:23' },
+                    { title:'Parisian Café', artist:'Bon Iver (Remix)', duration:'3:58' },
+                    { title:'Slow Mornings', artist:'Matt Cab', duration:'5:11' },
+                    { title:'Jazz at the Corner', artist:'Nujabes', duration:'4:32' },
+                ],
+            },
+            {
+                id:5, name:'Nature & Flow', emoji:'🌿', duration:'2h 00m',
+                gradient:'linear-gradient(135deg,#0a1a0a,#143114)',
+                accent:'#22c55e',
+                tags:['nature','zen','ambient'],
+                desc:'Birds, ocean waves, and soft forest sounds for a completely zen study environment.',
+                sounds:['Forest Birds 🌿','Ocean Waves 🌊','Crackling Fire 🔥'],
+                tracks: [
+                    { title:'Forest Meditation', artist:'Ambient World', duration:'6:00' },
+                    { title:'Ocean Study Vibes', artist:'Nature Sounds', duration:'5:30' },
+                    { title:'Birds & Stream', artist:'Relaxing Melodies', duration:'4:45' },
+                    { title:'Deep Forest', artist:'Enya (Remix)', duration:'5:15' },
+                ],
+            },
+            {
+                id:6, name:'Exam Prep Mode', emoji:'📝', duration:'4h 00m',
+                gradient:'linear-gradient(135deg,#100616,#1f0030)',
+                accent:'#ec4899',
+                tags:['focus','intense','study'],
+                desc:'Crunch time. No distractions, just the purest concentration-boosting audio environment.',
+                sounds:['White Noise Fan 💨','Lofi Beats 🎵','Keyboard Typing ⌨️'],
+                tracks: [
+                    { title:'Study Hall', artist:'Chillhop Music', duration:'4:50' },
+                    { title:'Academic Weapon', artist:'AZ Beats', duration:'3:40' },
+                    { title:'Flow State', artist:'Idealism', duration:'5:20' },
+                    { title:'Final Push', artist:'Tomppabeats', duration:'4:10' },
+                    { title:'Grade A Energy', artist:'Sagun', duration:'3:55' },
+                ],
+            },
+        ];
+
+        function openSession(id) {
+            const s = SESSIONS.find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('modalContent').innerHTML = `
+                <div style="background:${s.gradient};padding:2rem;border-radius:1.5rem 1.5rem 0 0">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-5xl mb-3">${s.emoji}</div>
+                            <h2 class="text-2xl font-black mb-1">${s.name}</h2>
+                            <div class="flex flex-wrap gap-2 mt-2">${s.tags.map(t=>`<span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;color:white;">${t}</span>`).join('')}</div>
+                        </div>
+                        <button onclick="document.getElementById('sessionModal').classList.add('hidden')" class="text-white/50 hover:text-white ml-4">
+                            <span class="material-symbols-outlined text-2xl">close</span>
+                        </button>
+                    </div>
+                </div>
+                <div style="padding:1.5rem 2rem">
+                    <p class="text-gray-300 mb-5 text-sm">${s.desc}</p>
+                    <div class="mb-5">
+                        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Active Sounds</div>
+                        <div class="flex flex-wrap gap-2">${s.sounds.map(s=>`<span style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#6ee7b7;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;">${s}</span>`).join('')}</div>
+                    </div>
+                    <div class="mb-6">
+                        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Tracks</div>
+                        <div class="space-y-1">${s.tracks.map((t,i)=>`
+                            <div class="track-item">
+                                <div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:11px;color:#6b7280;font-weight:700;flex-shrink:0;">${i+1}</div>
+                                <div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate">${t.title}</div><div class="text-xs text-gray-400">${t.artist}</div></div>
+                                <div class="text-xs text-gray-500">${t.duration}</div>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="player.html?vibe=${s.tags[0]}" class="flex-1 py-3 rounded-xl font-bold text-sm text-center flex items-center justify-center gap-2 hover:opacity-90 transition" style="background:linear-gradient(135deg,${s.accent}99,${s.accent}66);border:1px solid ${s.accent}44;color:white;">
+                            <span class="material-symbols-outlined text-sm">tune</span> Set Up Mixer
+                        </a>
+                    </div>
+                </div>`;
+            document.getElementById('sessionModal').classList.remove('hidden');
+        }
+
+        function closeModal(e) {
+            if (e.target === document.getElementById('sessionModal')) {
+                document.getElementById('sessionModal').classList.add('hidden');
+            }
+        }
+
+        // Featured session
+        const featured = SESSIONS.find(s => s.featured);
+        if (featured) {
+            document.getElementById('featuredSession').innerHTML = `
+                <div class="session-card" onclick="openSession(${featured.id})" style="background:${featured.gradient}">
+                    <div class="p-8 md:p-10 relative overflow-hidden">
+                        <div style="position:absolute;top:0;right:0;width:300px;height:300px;background:${featured.accent};border-radius:50%;filter:blur(80px);opacity:0.15;"></div>
+                        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+                            <div>
+                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-4" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);">
+                                    ⭐ Featured Session
+                                </div>
+                                <div class="text-5xl mb-3">${featured.emoji}</div>
+                                <h2 class="text-3xl md:text-4xl font-black mb-2">${featured.name}</h2>
+                                <p class="text-white/60 max-w-lg">${featured.desc}</p>
+                                <div class="flex flex-wrap gap-2 mt-4">${featured.sounds.map(s=>`<span style="background:rgba(255,255,255,0.12);padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.8);">${s}</span>`).join('')}</div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="text-white/40 text-sm font-semibold">${featured.duration}</div>
+                                <div class="text-white/40 text-sm">${featured.tracks.length} tracks</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // All sessions grid
+        document.getElementById('sessionsGrid').innerHTML = SESSIONS.map(s => `
+            <div class="session-card" onclick="openSession(${s.id})" style="background:${s.gradient}">
+                <div class="p-6 relative overflow-hidden">
+                    <div style="position:absolute;top:0;right:0;width:140px;height:140px;background:${s.accent};border-radius:50%;filter:blur(40px);opacity:0.2;"></div>
+                    <div class="relative z-10">
+                        <div class="text-4xl mb-3">${s.emoji}</div>
+                        <h3 class="text-xl font-black mb-1">${s.name}</h3>
+                        <p class="text-white/50 text-xs mb-4 line-clamp-2">${s.desc}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-wrap gap-1">${s.tags.slice(0,2).map(t=>`<span style="background:rgba(255,255,255,0.12);padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);">${t}</span>`).join('')}</div>
+                            <span class="text-white/40 text-xs font-semibold">${s.duration}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`).join('');
+    </script>
+</body>
+</html>

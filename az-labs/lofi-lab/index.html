@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LofiLab | AZ Labs — Study Music Player</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #040d09; color: white; overflow-x: hidden; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: linear-gradient(-45deg, #040d09, #081510, #041009, #040d09); background-size: 400% 400%; animation: gradientBG 18s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #10b981; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .dot-glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.1; pointer-events: none; }
+        .playlist-card { background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.15); border-radius: 1.5rem; padding: 1.5rem; transition: all 0.3s; }
+        .playlist-card:hover { background: rgba(16,185,129,0.1); transform: translateY(-4px); }
+        .soundwave { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+        .soundwave-bar { width: 3px; background: #10b981; border-radius: 2px; animation: wave 1.2s ease-in-out infinite; }
+        .soundwave-bar:nth-child(2) { animation-delay: 0.2s; }
+        .soundwave-bar:nth-child(3) { animation-delay: 0.4s; }
+        .soundwave-bar:nth-child(4) { animation-delay: 0.1s; }
+        .soundwave-bar:nth-child(5) { animation-delay: 0.3s; }
+        @keyframes wave { 0%,100% { height: 6px; } 50% { height: 22px; } }
+        .soundwave.paused .soundwave-bar { animation-play-state: paused; height: 8px; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-animated"></div>
+    <div class="dot-glow w-96 h-96 bg-emerald-400 top-20 right-10 z-[-1]"></div>
+    <div class="dot-glow w-72 h-72 bg-cyan-500 bottom-20 left-10 z-[-1]"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">🎧</span>
+                <span class="text-white">Lofi<span class="text-gradient">Lab</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white text-emerald-300">Home</a>
+                <a href="player.html" class="nav-link hover:text-white">Player</a>
+                <a href="sessions.html" class="nav-link hover:text-white">Sessions</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+                </a>
+                <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 flex flex-col gap-2 text-sm text-gray-400">
+            <a href="index.html" class="py-2 hover:text-white">Home</a>
+            <a href="player.html" class="py-2 hover:text-white">Player</a>
+            <a href="sessions.html" class="py-2 hover:text-white">Sessions</a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="max-w-5xl mx-auto px-6 pt-28 pb-16 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-emerald-500/20 text-xs font-semibold tracking-wide uppercase text-emerald-300 mb-6">
+            <div class="soundwave">
+                <div class="soundwave-bar"></div>
+                <div class="soundwave-bar"></div>
+                <div class="soundwave-bar"></div>
+                <div class="soundwave-bar"></div>
+                <div class="soundwave-bar"></div>
+            </div>
+            Now Vibing
+        </div>
+        <h1 class="text-6xl md:text-8xl font-black leading-tight tracking-tight mb-6">
+            Set the<br><span class="text-gradient">Mood.</span>
+        </h1>
+        <p class="text-xl text-gray-400 max-w-xl mx-auto mb-10">
+            Curated ambient sounds, lofi beats, and focus playlists designed to keep you in the zone for those long study sessions.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="player.html" class="px-8 py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full font-bold text-lg transition hover:opacity-90 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">headphones</span> Open Player
+            </a>
+            <a href="sessions.html" class="px-8 py-4 glass-panel rounded-full font-bold text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-emerald-300 border border-emerald-500/30">
+                <span class="material-symbols-outlined">playlist_play</span> Browse Sessions
+            </a>
+        </div>
+    </section>
+
+    <!-- Vibes preview -->
+    <section class="max-w-7xl mx-auto px-6 mb-20">
+        <h2 class="text-3xl font-bold text-center mb-10">Pick Your Vibe</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="player.html?vibe=lofi" class="playlist-card text-center">
+                <div class="text-4xl mb-3">☕</div>
+                <div class="font-bold">Lofi Hip-Hop</div>
+                <div class="text-xs text-gray-400 mt-1">Beats to study/relax to</div>
+            </a>
+            <a href="player.html?vibe=rain" class="playlist-card text-center">
+                <div class="text-4xl mb-3">🌧️</div>
+                <div class="font-bold">Rain & Thunder</div>
+                <div class="text-xs text-gray-400 mt-1">Cozy ambient sounds</div>
+            </a>
+            <a href="player.html?vibe=forest" class="playlist-card text-center">
+                <div class="text-4xl mb-3">🌿</div>
+                <div class="font-bold">Forest Study</div>
+                <div class="text-xs text-gray-400 mt-1">Nature + focus vibes</div>
+            </a>
+            <a href="player.html?vibe=jazz" class="playlist-card text-center">
+                <div class="text-4xl mb-3">🎷</div>
+                <div class="font-bold">Midnight Jazz</div>
+                <div class="text-xs text-gray-400 mt-1">Late-night focus mode</div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="max-w-7xl mx-auto px-6 pb-32">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="playlist-card">
+                <div class="text-4xl mb-4">🎚️</div>
+                <h3 class="text-xl font-bold mb-2">Mix Sounds</h3>
+                <p class="text-gray-400 text-sm">Layer rain, café noise, lofi beats, and nature sounds into your perfect study mix.</p>
+            </div>
+            <div class="playlist-card">
+                <div class="text-4xl mb-4">⏲️</div>
+                <h3 class="text-xl font-bold mb-2">Session Timer</h3>
+                <p class="text-gray-400 text-sm">Set a study session duration and LofiLab will fade out the music when your time is up.</p>
+            </div>
+            <div class="playlist-card">
+                <div class="text-4xl mb-4">💾</div>
+                <h3 class="text-xl font-bold mb-2">Save Mixes</h3>
+                <p class="text-gray-400 text-sm">Save your favourite sound combinations as custom sessions and recall them instantly.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-10 pb-8 text-center">
+        <div class="text-xl font-black mb-1">🎧 LofiLab</div>
+        <p class="text-gray-500 text-sm mb-4">Part of <a href="../index.html" class="text-emerald-400 hover:underline">AZ Labs</a></p>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="player.html" class="hover:text-white transition">Player</a>
+            <a href="sessions.html" class="hover:text-white transition">Sessions</a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusForge | Pomodoro Timer</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f0800; color: white; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #f97316, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #f97316; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .timer-display { font-family: 'JetBrains Mono', monospace; font-size: clamp(5rem, 20vw, 10rem); font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+        .ring-container { position: relative; width: 320px; height: 320px; margin: 0 auto; }
+        .ring-svg { transform: rotate(-90deg); }
+        #progress-ring { transition: stroke-dashoffset 1s linear; }
+        .mode-btn { padding: 8px 20px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; transition: all 0.2s; cursor: pointer; }
+        .mode-btn.active { background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.5); color: #fdba74; }
+        .task-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; width: 100%; }
+        .task-input:focus { outline: none; border-color: #f97316; }
+        .session-log-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">⏱️</span>
+                <span class="text-white">Focus<span class="text-gradient">Forge</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="timer.html" class="nav-link hover:text-white text-orange-300">Timer</a>
+                <a href="stats.html" class="nav-link hover:text-white">My Stats</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+            <!-- Timer Column -->
+            <div class="lg:col-span-3">
+
+                <!-- Mode Tabs -->
+                <div class="flex gap-2 justify-center mb-8">
+                    <button class="mode-btn active" id="btn-focus" onclick="setMode('focus')">Focus 25m</button>
+                    <button class="mode-btn" id="btn-short" onclick="setMode('short')">Short Break 5m</button>
+                    <button class="mode-btn" id="btn-long" onclick="setMode('long')">Long Break 15m</button>
+                </div>
+
+                <!-- Ring Timer -->
+                <div class="ring-container mb-8">
+                    <svg class="ring-svg" width="320" height="320" viewBox="0 0 320 320">
+                        <!-- Background ring -->
+                        <circle cx="160" cy="160" r="145" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
+                        <!-- Progress ring -->
+                        <circle id="progress-ring" cx="160" cy="160" r="145" fill="none"
+                            stroke="url(#timerGrad)" stroke-width="12" stroke-linecap="round"
+                            stroke-dasharray="911" stroke-dashoffset="0"/>
+                        <defs>
+                            <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#f97316"/>
+                                <stop offset="100%" stop-color="#eab308"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <div class="timer-display" id="timerDisplay">25:00</div>
+                        <div class="text-sm font-semibold text-gray-400 mt-2 uppercase tracking-widest" id="modeLabel">Focus Time</div>
+                        <div class="text-xs text-orange-400 mt-1 font-bold" id="roundLabel">Round 1 / 4</div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex justify-center gap-4 mb-8">
+                    <button id="startBtn" onclick="toggleTimer()" class="px-10 py-4 bg-gradient-to-r from-orange-600 to-yellow-600 rounded-full font-black text-lg hover:opacity-90 transition hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] flex items-center gap-2">
+                        <span class="material-symbols-outlined" id="startIcon">play_arrow</span>
+                        <span id="startLabel">Start</span>
+                    </button>
+                    <button onclick="resetTimer()" class="p-4 glass-panel border border-white/10 rounded-full hover:bg-white/5 transition text-gray-300 hover:text-white">
+                        <span class="material-symbols-outlined">refresh</span>
+                    </button>
+                    <button onclick="skipSession()" class="p-4 glass-panel border border-white/10 rounded-full hover:bg-white/5 transition text-gray-300 hover:text-white">
+                        <span class="material-symbols-outlined">skip_next</span>
+                    </button>
+                </div>
+
+                <!-- Task Input -->
+                <div class="glass-panel rounded-2xl p-5">
+                    <label class="block text-sm font-bold text-gray-300 uppercase tracking-wide mb-3">What are you working on?</label>
+                    <input type="text" id="taskInput" class="task-input" placeholder="e.g. Study UGRC 110 Chapter 3...">
+                </div>
+            </div>
+
+            <!-- Log Column -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Today's Stats -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">Today's Session</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                            <div class="text-2xl font-black text-orange-400" id="sessionsCount">0</div>
+                            <div class="text-xs text-gray-400 font-semibold">Pomodoros</div>
+                        </div>
+                        <div class="text-center p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                            <div class="text-2xl font-black text-yellow-400" id="totalMins">0</div>
+                            <div class="text-xs text-gray-400 font-semibold">Mins Focused</div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="text-xs text-gray-400 font-semibold mb-2">Daily Goal: 8 Pomodoros</div>
+                        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div id="goalBar" class="h-full bg-gradient-to-r from-orange-600 to-yellow-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Log -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">Session Log</h3>
+                    <div id="sessionLog" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-xs text-gray-500 text-center py-4">No sessions yet. Start the timer!</p>
+                    </div>
+                </div>
+
+                <!-- Tips -->
+                <div class="glass-panel rounded-2xl p-6 border border-orange-500/10">
+                    <h3 class="text-sm font-bold text-orange-400 uppercase tracking-wide mb-3">💡 Focus Tip</h3>
+                    <p id="tipText" class="text-sm text-gray-300"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-8">
+        <div class="text-xl font-black mb-1">⏱️ FocusForge</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="timer.html" class="hover:text-white transition">Timer</a>
+            <a href="stats.html" class="hover:text-white transition">Stats</a>
+        </div>
+    </footer>
+
+    <script>
+        const MODES = {
+            focus: { label: 'Focus Time', mins: 25, color: '#f97316' },
+            short: { label: 'Short Break', mins: 5, color: '#10b981' },
+            long: { label: 'Long Break', mins: 15, color: '#3b82f6' },
+        };
+        const TIPS = [
+            "Put your phone in another room during focus sessions.",
+            "Use noise-canceling headphones if available.",
+            "Keep a glass of water on your desk — hydration boosts focus.",
+            "Write down distracting thoughts to address after the session.",
+            "The first 5 minutes are the hardest. Push through!",
+            "After 4 pomodoros, take a 15-min break and go outside.",
+        ];
+        const CIRCUMFERENCE = 2 * Math.PI * 145;
+
+        let mode = 'focus';
+        let totalSecs = 25 * 60;
+        let remaining = totalSecs;
+        let running = false;
+        let interval = null;
+        let round = 1;
+        let completedToday = parseInt(localStorage.getItem('ff_today') || '0');
+        let lastDate = localStorage.getItem('ff_date') || '';
+
+        function checkDate() {
+            const today = new Date().toDateString();
+            if (lastDate !== today) {
+                completedToday = 0;
+                localStorage.setItem('ff_today', '0');
+                localStorage.setItem('ff_date', today);
+            }
+        }
+
+        function setMode(m) {
+            mode = m;
+            totalSecs = MODES[m].mins * 60;
+            remaining = totalSecs;
+            running = false;
+            clearInterval(interval);
+            updateDisplay();
+            updateStartBtn(false);
+            document.getElementById('modeLabel').textContent = MODES[m].label;
+            ['focus','short','long'].forEach(k => {
+                document.getElementById(`btn-${k}`).classList.toggle('active', k===m);
+            });
+            updateRing(1);
+        }
+
+        function toggleTimer() {
+            if (running) {
+                running = false;
+                clearInterval(interval);
+                updateStartBtn(false);
+            } else {
+                running = true;
+                updateStartBtn(true);
+                interval = setInterval(tick, 1000);
+            }
+        }
+
+        function tick() {
+            if (remaining <= 0) {
+                clearInterval(interval);
+                running = false;
+                sessionComplete();
+                return;
+            }
+            remaining--;
+            updateDisplay();
+            updateRing(remaining / totalSecs);
+        }
+
+        function updateDisplay() {
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function updateRing(fraction) {
+            const offset = CIRCUMFERENCE * (1 - fraction);
+            document.getElementById('progress-ring').style.strokeDashoffset = offset;
+            document.getElementById('progress-ring').style.strokeDasharray = CIRCUMFERENCE;
+        }
+
+        function updateStartBtn(isRunning) {
+            document.getElementById('startIcon').textContent = isRunning ? 'pause' : 'play_arrow';
+            document.getElementById('startLabel').textContent = isRunning ? 'Pause' : 'Start';
+        }
+
+        function resetTimer() {
+            clearInterval(interval);
+            running = false;
+            remaining = totalSecs;
+            updateDisplay();
+            updateRing(1);
+            updateStartBtn(false);
+        }
+
+        function skipSession() {
+            clearInterval(interval);
+            running = false;
+            remaining = 0;
+            sessionComplete();
+        }
+
+        function sessionComplete() {
+            updateStartBtn(false);
+            if (mode === 'focus') {
+                completedToday++;
+                localStorage.setItem('ff_today', completedToday);
+                const task = document.getElementById('taskInput').value || 'Unnamed session';
+                logSession(task);
+                updateStats();
+                round = round >= 4 ? 1 : round + 1;
+                document.getElementById('roundLabel').textContent = `Round ${round} / 4`;
+            }
+            // Auto-switch
+            if (mode === 'focus') {
+                setMode(round === 1 ? 'long' : 'short');
+            } else {
+                setMode('focus');
+            }
+        }
+
+        function logSession(task) {
+            const log = document.getElementById('sessionLog');
+            const now = new Date();
+            const time = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+            const isEmpty = log.querySelector('p');
+            if (isEmpty) log.innerHTML = '';
+            const item = document.createElement('div');
+            item.className = 'session-log-item';
+            item.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-orange-400 text-lg">🍅</span>
+                    <div><div class="text-sm font-semibold">${task.substring(0,30)}</div><div class="text-xs text-gray-500">${time}</div></div>
+                </div>
+                <span class="text-xs text-gray-400 font-bold">25m</span>`;
+            log.prepend(item);
+        }
+
+        function updateStats() {
+            document.getElementById('sessionsCount').textContent = completedToday;
+            document.getElementById('totalMins').textContent = completedToday * 25;
+            const pct = Math.min((completedToday / 8) * 100, 100);
+            document.getElementById('goalBar').style.width = pct + '%';
+        }
+
+        function showTip() {
+            document.getElementById('tipText').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+        }
+
+        // Init
+        checkDate();
+        updateDisplay();
+        updateRing(1);
+        updateStats();
+        showTip();
+        setInterval(showTip, 30000);
+    </script>
+</body>
+</html>

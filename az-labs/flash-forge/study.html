@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashForge | Study Mode</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #100616; color: white; min-height: 100vh; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #ec4899; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        /* Flip card */
+        .flip-scene { perspective: 1000px; width: 100%; max-width: 540px; height: 320px; margin: 0 auto; cursor: pointer; }
+        .flip-card { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.4,0,0.2,1); }
+        .flip-card.flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+        .card-front { background: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(249,115,22,0.1)); border: 2px solid rgba(236,72,153,0.25); }
+        .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(236,72,153,0.1)); border: 2px solid rgba(249,115,22,0.25); }
+        .progress-dot { width: 10px; height: 10px; border-radius: 50%; transition: all 0.3s; }
+        .dot-default { background: rgba(255,255,255,0.1); }
+        .dot-current { background: #ec4899; }
+        .dot-easy { background: #10b981; }
+        .dot-hard { background: #ef4444; }
+        .answer-btn { padding: 14px 24px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .deck-option { background: rgba(236,72,153,0.05); border: 1px solid rgba(236,72,153,0.15); border-radius: 1rem; padding: 1rem 1.25rem; cursor: pointer; transition: all 0.2s; }
+        .deck-option:hover { background: rgba(236,72,153,0.1); border-color: rgba(236,72,153,0.3); transform: translateX(4px); }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">⚡</span>
+                <span class="text-white">Flash<span class="text-gradient">Forge</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="create.html" class="nav-link hover:text-white">Create Deck</a>
+                <a href="study.html" class="nav-link hover:text-white text-pink-300">Study</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-6 py-12">
+
+        <!-- Deck Selector -->
+        <div id="deckSelector">
+            <h1 class="text-4xl font-black mb-2">Study Mode 📖</h1>
+            <p class="text-gray-400 mb-8">Choose a deck to study from your collection, or use the demo deck.</p>
+            <div id="deckOptions" class="space-y-3 mb-6"></div>
+            <button onclick="loadDemo()" class="w-full py-3 glass-panel border border-pink-500/20 text-pink-300 rounded-xl font-bold text-sm hover:bg-pink-500/10 transition flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">science</span> Use Demo Deck
+            </button>
+            <a href="create.html" class="mt-4 flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-pink-300 transition">
+                <span class="material-symbols-outlined text-sm">add</span> Create a new deck
+            </a>
+        </div>
+
+        <!-- Study Area (hidden initially) -->
+        <div id="studyArea" class="hidden">
+            <!-- Header info -->
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-black" id="deckTitle">Deck Name</h2>
+                    <div class="text-sm text-gray-400 mt-1">
+                        Card <span id="cardIndex">1</span> of <span id="totalCards">0</span>
+                        · <span class="text-emerald-400 font-bold" id="easyCount">0 easy</span>
+                        · <span class="text-red-400 font-bold" id="hardCount">0 hard</span>
+                    </div>
+                </div>
+                <button onclick="exitStudy()" class="p-2 glass-panel rounded-full hover:bg-white/5 transition text-gray-400 hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Progress dots -->
+            <div id="progressDots" class="flex flex-wrap gap-2 justify-center mb-8"></div>
+
+            <!-- Card -->
+            <div class="flip-scene mb-6" onclick="flipCard()" id="cardScene">
+                <div class="flip-card" id="flashCard">
+                    <div class="card-face card-front">
+                        <div class="text-xs font-bold text-pink-400 uppercase tracking-widest mb-4">Question</div>
+                        <div class="text-2xl font-black leading-tight" id="frontText">Loading...</div>
+                        <div class="text-xs text-gray-400 mt-6 animate-pulse">Tap to reveal answer</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="text-xs font-bold text-orange-400 uppercase tracking-widest mb-4">Answer</div>
+                        <div class="text-2xl font-black leading-tight" id="backText"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rating Buttons -->
+            <div id="ratingBtns" class="hidden grid grid-cols-2 gap-3 mb-6">
+                <button class="answer-btn bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 transition" onclick="rateCard('easy')">
+                    <span class="material-symbols-outlined">thumb_up</span> Got it! Easy
+                </button>
+                <button class="answer-btn bg-red-600/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition" onclick="rateCard('hard')">
+                    <span class="material-symbols-outlined">thumb_down</span> Still tricky
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex items-center justify-between gap-4">
+                <button onclick="prevCard()" class="px-6 py-3 glass-panel border border-white/10 rounded-xl font-bold text-sm hover:bg-white/5 transition flex items-center gap-2 text-gray-300">
+                    <span class="material-symbols-outlined">arrow_back</span> Prev
+                </button>
+                <button onclick="shuffleCards()" class="px-4 py-3 glass-panel border border-white/10 rounded-xl font-bold text-sm hover:bg-white/5 transition text-gray-400">
+                    <span class="material-symbols-outlined">shuffle</span>
+                </button>
+                <button onclick="nextCard()" class="px-6 py-3 bg-gradient-to-r from-pink-600 to-orange-600 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center gap-2">
+                    Next <span class="material-symbols-outlined">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Results screen -->
+        <div id="resultsScreen" class="hidden text-center py-16">
+            <div class="text-7xl mb-6" id="resultEmoji">🎉</div>
+            <h2 class="text-4xl font-black mb-3">Session Complete!</h2>
+            <p class="text-gray-400 mb-8" id="resultSummary"></p>
+            <div class="grid grid-cols-2 gap-4 max-w-xs mx-auto mb-8">
+                <div class="glass-panel rounded-2xl p-4 text-center">
+                    <div class="text-3xl font-black text-emerald-400" id="resultEasy">0</div>
+                    <div class="text-xs text-gray-400 font-semibold">Easy</div>
+                </div>
+                <div class="glass-panel rounded-2xl p-4 text-center">
+                    <div class="text-3xl font-black text-red-400" id="resultHard">0</div>
+                    <div class="text-xs text-gray-400 font-semibold">Hard</div>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-center flex-wrap">
+                <button onclick="restartStudy()" class="px-8 py-3 bg-gradient-to-r from-pink-600 to-orange-600 rounded-full font-bold hover:opacity-90 transition">
+                    Study Again
+                </button>
+                <button onclick="studyHardOnly()" class="px-8 py-3 glass-panel border border-red-500/30 text-red-300 rounded-full font-bold hover:bg-red-500/10 transition">
+                    Review Hard Cards
+                </button>
+                <button onclick="exitStudy()" class="px-8 py-3 glass-panel border border-white/10 text-gray-300 rounded-full font-bold hover:bg-white/5 transition">
+                    Choose Deck
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-8">
+        <div class="text-xl font-black mb-1">⚡ FlashForge</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="create.html" class="hover:text-white transition">Create</a>
+            <a href="study.html" class="hover:text-white transition">Study</a>
+        </div>
+    </footer>
+
+    <script>
+        const DEMO_DECK = {
+            id: 'demo', name: 'Biology Basics 🧬',
+            cards: [
+                { front: 'What is the powerhouse of the cell?', back: 'The Mitochondria 🔋' },
+                { front: 'What is the basic unit of life?', back: 'The Cell 🔬' },
+                { front: 'What is DNA short for?', back: 'Deoxyribonucleic Acid 🧬' },
+                { front: 'What is photosynthesis?', back: 'Process by which plants convert sunlight, water, and CO₂ into glucose and oxygen.' },
+                { front: 'What are the four types of tissues?', back: 'Epithelial, Connective, Muscle, Nervous' },
+                { front: 'What is osmosis?', back: 'Movement of water through a semi-permeable membrane from high to low concentration.' },
+                { front: 'Name the stages of mitosis', back: 'Prophase → Metaphase → Anaphase → Telophase' },
+                { front: 'What is the role of ribosomes?', back: 'Synthesize proteins by translating mRNA' },
+            ]
+        };
+
+        let currentDeck = null;
+        let cards = [];
+        let idx = 0;
+        let ratings = {};
+
+        function loadDecks() {
+            const decks = JSON.parse(localStorage.getItem('flashforge_decks') || '[]');
+            const opts = document.getElementById('deckOptions');
+            if (!decks.length) {
+                opts.innerHTML = '<p class="text-sm text-gray-500">No saved decks. Create one first or use the demo.</p>';
+                return;
+            }
+            opts.innerHTML = decks.map(d => `
+                <div class="deck-option" onclick="startStudy(${d.id})">
+                    <div class="font-bold">${d.name}</div>
+                    <div class="text-xs text-gray-400 mt-1">${d.cards.length} cards · ${d.subject || 'General'}</div>
+                </div>`).join('');
+        }
+
+        function loadDemo() { startStudy('demo'); }
+
+        function startStudy(deckId) {
+            if (deckId === 'demo') {
+                currentDeck = DEMO_DECK;
+            } else {
+                const decks = JSON.parse(localStorage.getItem('flashforge_decks') || '[]');
+                currentDeck = decks.find(d => d.id === deckId);
+            }
+            if (!currentDeck) return;
+            cards = [...currentDeck.cards];
+            idx = 0;
+            ratings = {};
+            document.getElementById('deckSelector').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('studyArea').classList.remove('hidden');
+            document.getElementById('deckTitle').textContent = currentDeck.name;
+            document.getElementById('totalCards').textContent = cards.length;
+            renderCard();
+        }
+
+        function renderCard() {
+            if (idx >= cards.length) { showResults(); return; }
+            const c = cards[idx];
+            document.getElementById('flashCard').classList.remove('flipped');
+            document.getElementById('ratingBtns').classList.add('hidden');
+            document.getElementById('frontText').textContent = c.front;
+            document.getElementById('backText').textContent = c.back;
+            document.getElementById('cardIndex').textContent = idx + 1;
+            document.getElementById('easyCount').textContent = Object.values(ratings).filter(r=>r==='easy').length + ' easy';
+            document.getElementById('hardCount').textContent = Object.values(ratings).filter(r=>r==='hard').length + ' hard';
+            renderDots();
+        }
+
+        function flipCard() {
+            document.getElementById('flashCard').classList.toggle('flipped');
+            const flipped = document.getElementById('flashCard').classList.contains('flipped');
+            document.getElementById('ratingBtns').classList.toggle('hidden', !flipped);
+        }
+
+        function rateCard(rating) {
+            ratings[idx] = rating;
+            nextCard();
+        }
+
+        function nextCard() {
+            if (idx < cards.length - 1) { idx++; renderCard(); }
+            else { showResults(); }
+        }
+
+        function prevCard() {
+            if (idx > 0) { idx--; renderCard(); }
+        }
+
+        function shuffleCards() {
+            for (let i = cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cards[i], cards[j]] = [cards[j], cards[i]];
+            }
+            idx = 0;
+            ratings = {};
+            renderCard();
+        }
+
+        function renderDots() {
+            const dots = document.getElementById('progressDots');
+            dots.innerHTML = cards.map((_, i) => {
+                let cls = 'dot-default';
+                if (i === idx) cls = 'dot-current';
+                else if (ratings[i] === 'easy') cls = 'dot-easy';
+                else if (ratings[i] === 'hard') cls = 'dot-hard';
+                return `<div class="progress-dot ${cls}"></div>`;
+            }).join('');
+        }
+
+        function showResults() {
+            const easy = Object.values(ratings).filter(r=>r==='easy').length;
+            const hard = Object.values(ratings).filter(r=>r==='hard').length;
+            const unrated = cards.length - easy - hard;
+            document.getElementById('studyArea').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+            document.getElementById('resultEasy').textContent = easy;
+            document.getElementById('resultHard').textContent = hard;
+            const pct = Math.round((easy / cards.length) * 100);
+            document.getElementById('resultEmoji').textContent = pct >= 80 ? '🏆' : pct >= 50 ? '💪' : '📚';
+            document.getElementById('resultSummary').textContent = `You nailed ${easy}/${cards.length} cards (${pct}%). ${unrated > 0 ? `${unrated} unrated.` : ''} ${pct >= 80 ? 'Incredible session! ⚡' : 'Keep grinding!'}`;
+        }
+
+        function restartStudy() { startStudy(currentDeck.id); }
+
+        function studyHardOnly() {
+            const hardIndices = Object.entries(ratings).filter(([,v])=>v==='hard').map(([k])=>parseInt(k));
+            if (!hardIndices.length) { alert('No hard cards to review!'); return; }
+            cards = hardIndices.map(i => currentDeck.cards[i]);
+            idx = 0;
+            ratings = {};
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('studyArea').classList.remove('hidden');
+            document.getElementById('totalCards').textContent = cards.length;
+            renderCard();
+        }
+
+        function exitStudy() {
+            currentDeck = null;
+            document.getElementById('studyArea').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('deckSelector').classList.remove('hidden');
+            loadDecks();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            if (!currentDeck) return;
+            if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+            if (e.code === 'ArrowRight') nextCard();
+            if (e.code === 'ArrowLeft') prevCard();
+        });
+
+        // Check URL param
+        const deckParam = new URLSearchParams(location.search).get('deck');
+        if (deckParam) {
+            loadDecks();
+            if (deckParam === 'demo') { loadDemo(); }
+            else { startStudy(parseInt(deckParam)); }
+        } else {
+            loadDecks();
+        }
+    </script>
+</body>
+</html>

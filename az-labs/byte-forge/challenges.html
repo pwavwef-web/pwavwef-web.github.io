@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteForge | Coding Challenges</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030d14; color: white; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #06b6d4; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .challenge-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; transition: all 0.3s; cursor: pointer; }
+        .challenge-card:hover { background: rgba(6,182,212,0.06); border-color: rgba(6,182,212,0.3); transform: translateY(-4px); }
+        .diff-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .diff-easy { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+        .diff-medium { background: rgba(234,179,8,0.15); color: #fcd34d; border: 1px solid rgba(234,179,8,0.3); }
+        .diff-hard { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .filter-btn { padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; transition: all 0.2s; cursor: pointer; }
+        .filter-btn.active { background: rgba(6,182,212,0.2); border-color: rgba(6,182,212,0.5); color: #67e8f9; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: #07121b; border: 1px solid rgba(6,182,212,0.2); border-radius: 1.5rem; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; padding: 2rem; }
+        .code-hint { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 16px; color: #67e8f9; white-space: pre-wrap; word-break: break-all; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight flex items-center gap-2">
+                <span class="text-2xl">💻</span>
+                <span class="text-white">Byte<span class="text-gradient">Forge</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white">Home</a>
+                <a href="playground.html" class="nav-link hover:text-white">Playground</a>
+                <a href="challenges.html" class="nav-link hover:text-white text-cyan-300">Challenges</a>
+            </nav>
+            <a href="../index.html" class="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-full font-bold text-sm transition hover:bg-white/10 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">science</span> AZ Labs
+            </a>
+        </div>
+    </header>
+
+    <!-- Challenge Detail Modal -->
+    <div id="challengeModal" class="modal-overlay hidden" onclick="closeModal(event)">
+        <div class="modal-box" id="modalContent">
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="mb-10">
+            <h1 class="text-4xl font-black mb-2">Coding Challenges 🧩</h1>
+            <p class="text-gray-400">Level up your skills one challenge at a time.</p>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="glass-panel rounded-2xl p-5 mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-bold text-gray-300">Your Progress</span>
+                <span class="text-sm font-bold text-cyan-400" id="progressLabel">0 / 20 solved</span>
+            </div>
+            <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-cyan-600 to-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 mb-8">
+            <button class="filter-btn active" onclick="filterChallenges('all',this)">All</button>
+            <button class="filter-btn" onclick="filterChallenges('easy',this)">Easy</button>
+            <button class="filter-btn" onclick="filterChallenges('medium',this)">Medium</button>
+            <button class="filter-btn" onclick="filterChallenges('hard',this)">Hard</button>
+            <button class="filter-btn" onclick="filterChallenges('html',this)">HTML</button>
+            <button class="filter-btn" onclick="filterChallenges('css',this)">CSS</button>
+            <button class="filter-btn" onclick="filterChallenges('js',this)">JavaScript</button>
+        </div>
+
+        <div id="challengeGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 pt-8 pb-6 text-center mt-8">
+        <div class="text-xl font-black mb-1">💻 ByteForge</div>
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="index.html" class="hover:text-white transition">Home</a>
+            <a href="playground.html" class="hover:text-white transition">Playground</a>
+            <a href="challenges.html" class="hover:text-white transition">Challenges</a>
+        </div>
+    </footer>
+
+    <script>
+        const CHALLENGES = [
+            { id:1, title:'Hello World Button', diff:'easy', tags:['html','js'], desc:'Create a button that shows an alert saying "Hello, World!" when clicked.', hint:`<button onclick="alert('Hello, World!')">Click Me</button>`, xp:50 },
+            { id:2, title:'Centered Box', diff:'easy', tags:['css'], desc:'Center a 200×200px blue box perfectly on the page using CSS flexbox or grid.', hint:`body { display:flex; align-items:center; justify-content:center; min-height:100vh; }\n.box { width:200px; height:200px; background:#3b82f6; }`, xp:50 },
+            { id:3, title:'Color Changer', diff:'easy', tags:['js'], desc:'Make the page background change to a random color every time a button is clicked.', hint:`function randomColor() {\n  const r = () => Math.floor(Math.random()*256);\n  return \`rgb(\${r()},\${r()},\${r()})\`;\n}`, xp:50 },
+            { id:4, title:'Countdown Timer', diff:'medium', tags:['js'], desc:'Build a 60-second countdown timer with Start, Pause, and Reset buttons.', hint:`let interval;\nfunction start() { interval = setInterval(() => { if(secs > 0) secs--; else clearInterval(interval); }, 1000); }`, xp:150 },
+            { id:5, title:'Todo List', diff:'medium', tags:['html','js'], desc:'Build a simple todo list where users can add tasks, mark them complete, and delete them.', hint:`function addTodo() {\n  const li = document.createElement('li');\n  li.textContent = input.value;\n  li.onclick = () => li.classList.toggle('done');\n  list.appendChild(li);\n}`, xp:150 },
+            { id:6, title:'CSS Gradient Card', diff:'easy', tags:['css'], desc:'Create a beautiful card with a gradient background, rounded corners, and a hover shadow effect.', hint:`.card {\n  background: linear-gradient(135deg, #667eea, #764ba2);\n  border-radius: 16px;\n  padding: 2rem;\n  transition: box-shadow 0.3s;\n}\n.card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.3); }`, xp:50 },
+            { id:7, title:'Typewriter Effect', diff:'medium', tags:['js'], desc:'Create a typewriter animation that types out "I am an Academic Weapon." character by character.', hint:`const text = "I am an Academic Weapon.";\nlet i = 0;\nconst interval = setInterval(() => {\n  el.textContent += text[i++];\n  if (i >= text.length) clearInterval(interval);\n}, 80);`, xp:150 },
+            { id:8, title:'Dark Mode Toggle', diff:'medium', tags:['html','css','js'], desc:'Build a toggle button that switches the page between dark and light mode.', hint:`function toggle() {\n  document.body.classList.toggle('dark');\n  btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';\n}`, xp:150 },
+            { id:9, title:'Animated Loader', diff:'easy', tags:['css'], desc:'Create a spinning loading animation using only CSS — no JavaScript allowed.', hint:`@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }\n.loader { border: 4px solid #e5e7eb; border-top-color:#3b82f6; border-radius:50%; width:48px; height:48px; animation: spin 0.8s linear infinite; }`, xp:50 },
+            { id:10, title:'Accordion FAQ', diff:'medium', tags:['html','css','js'], desc:'Build an accordion component where clicking a question expands/collapses the answer.', hint:`function toggle(btn) {\n  const ans = btn.nextElementSibling;\n  ans.style.display = ans.style.display==='block' ? 'none' : 'block';\n}`, xp:150 },
+            { id:11, title:'CSS Glassmorphism', diff:'medium', tags:['css'], desc:'Recreate the glassmorphism effect with a frosted-glass card floating over a gradient background.', hint:`.glass { background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); border-radius:16px; }`, xp:150 },
+            { id:12, title:'Character Counter', diff:'easy', tags:['html','js'], desc:'Build a text area that counts remaining characters (limit: 280) like Twitter\'s compose box.', hint:`textarea.addEventListener('input', () => {\n  counter.textContent = 280 - textarea.value.length;\n});`, xp:50 },
+            { id:13, title:'Pixel Canvas', diff:'hard', tags:['html','js'], desc:'Create a 20×20 grid where clicking cells colors them, creating a pixel art drawing tool.', hint:`for(let i=0; i<400; i++) {\n  const cell = document.createElement('div');\n  cell.addEventListener('click', () => cell.style.background = color);\n  grid.appendChild(cell);\n}`, xp:300 },
+            { id:14, title:'Word Frequency Map', diff:'hard', tags:['js'], desc:'Build a tool that takes a paragraph of text and displays the top 10 most frequent words.', hint:`const words = text.toLowerCase().match(/\\b\\w+\\b/g);\nconst freq = {};\nwords.forEach(w => freq[w] = (freq[w]||0)+1);\nconst sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,10);`, xp:300 },
+            { id:15, title:'Local Storage Notes', diff:'medium', tags:['html','js'], desc:'Build a simple notepad where notes are saved to localStorage and persist on page refresh.', hint:`function save() { localStorage.setItem('note', textarea.value); }\ntextarea.value = localStorage.getItem('note') || '';`, xp:150 },
+            { id:16, title:'CSS Neon Text', diff:'easy', tags:['css'], desc:'Create glowing neon text using CSS text-shadow to simulate a neon sign effect.', hint:`.neon { color:#fff; text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #06b6d4, 0 0 80px #06b6d4; }`, xp:50 },
+            { id:17, title:'Snake Game', diff:'hard', tags:['html','js'], desc:'Build a simple Snake game on an HTML canvas. Arrow keys control direction. Score increases on food.', hint:`// Use requestAnimationFrame for the game loop\n// Store snake as array of {x,y} objects\n// On each frame: add head, check food, remove tail`, xp:300 },
+            { id:18, title:'Drag & Drop List', diff:'hard', tags:['html','js'], desc:'Create a list of items that can be reordered by dragging and dropping them.', hint:`el.draggable = true;\nel.addEventListener('dragstart', e => e.dataTransfer.setData('text', el.id));\ndropZone.addEventListener('drop', e => { const id = e.dataTransfer.getData('text'); dropZone.appendChild(document.getElementById(id)); });`, xp:300 },
+            { id:19, title:'CSS Scroll Animation', diff:'medium', tags:['css'], desc:'Create elements that animate into view as the user scrolls down the page using IntersectionObserver.', hint:`const obs = new IntersectionObserver(entries => {\n  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });\n});\ndocument.querySelectorAll('.fade-in').forEach(el => obs.observe(el));`, xp:150 },
+            { id:20, title:'Quiz App', diff:'hard', tags:['html','js'], desc:'Build a multi-question quiz with 5 questions, score tracking, and a results screen at the end.', hint:`const questions = [{q:'...', options:[...], answer:0}];\nlet score=0, idx=0;\nfunction next() { if(selected===questions[idx].answer) score++; idx++; render(); }`, xp:300 },
+        ];
+
+        const solved = JSON.parse(localStorage.getItem('byteforge_solved') || '[]');
+        let activeFilter = 'all';
+
+        function filterChallenges(cat, btn) {
+            activeFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderChallenges();
+        }
+
+        function renderChallenges() {
+            const filtered = CHALLENGES.filter(c => {
+                if (activeFilter === 'all') return true;
+                if (['easy','medium','hard'].includes(activeFilter)) return c.diff === activeFilter;
+                return c.tags.includes(activeFilter);
+            });
+            document.getElementById('challengeGrid').innerHTML = filtered.map(c => {
+                const done = solved.includes(c.id);
+                return `
+                <div class="challenge-card ${done ? 'border-emerald-500/30' : ''}" onclick="openChallenge(${c.id})">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">${done ? '✅' : getCatEmoji(c.tags)}</span>
+                            <h3 class="font-bold text-base leading-tight">${c.title}</h3>
+                        </div>
+                        <span class="diff-badge diff-${c.diff} flex-shrink-0">${c.diff}</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-4 line-clamp-2">${c.desc}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-1">${c.tags.map(t=>`<span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);color:#67e8f9;font-weight:700;">${t.toUpperCase()}</span>`).join('')}</div>
+                        <span class="text-xs font-bold ${done ? 'text-emerald-400' : 'text-cyan-400'}">+${c.xp} XP</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function getCatEmoji(tags) {
+            if (tags.includes('js')) return '⚡';
+            if (tags.includes('css')) return '🎨';
+            return '📄';
+        }
+
+        function openChallenge(id) {
+            const c = CHALLENGES.find(x => x.id === id);
+            if (!c) return;
+            const done = solved.includes(id);
+            document.getElementById('modalContent').innerHTML = `
+                <div class="flex items-start justify-between mb-6">
+                    <div>
+                        <div class="diff-badge diff-${c.diff} mb-2">${c.diff}</div>
+                        <h2 class="text-2xl font-black">${c.title}</h2>
+                        <div class="text-cyan-400 font-bold text-sm mt-1">+${c.xp} XP</div>
+                    </div>
+                    <button onclick="document.getElementById('challengeModal').classList.add('hidden')" class="text-gray-400 hover:text-white ml-4">
+                        <span class="material-symbols-outlined text-2xl">close</span>
+                    </button>
+                </div>
+                <p class="text-gray-300 mb-6 text-base leading-relaxed">${c.desc}</p>
+                <div class="mb-6">
+                    <div class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">Code Hint</div>
+                    <pre class="code-hint">${c.hint}</pre>
+                </div>
+                <div class="flex gap-3 flex-wrap">
+                    <a href="playground.html" class="flex-1 min-w-[160px] px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-sm hover:opacity-90 transition text-center flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">code</span> Open in Playground
+                    </a>
+                    ${!done ? `<button onclick="markSolved(${id})" class="flex-1 min-w-[160px] px-5 py-3 bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 rounded-xl font-bold text-sm hover:bg-emerald-500/30 transition flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">check_circle</span> Mark as Solved
+                    </button>` : `<div class="flex-1 min-w-[160px] px-5 py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl font-bold text-sm text-center flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">check_circle</span> Solved ✓
+                    </div>`}
+                </div>`;
+            document.getElementById('challengeModal').classList.remove('hidden');
+        }
+
+        function markSolved(id) {
+            if (!solved.includes(id)) {
+                solved.push(id);
+                localStorage.setItem('byteforge_solved', JSON.stringify(solved));
+                updateProgress();
+                renderChallenges();
+                document.getElementById('challengeModal').classList.add('hidden');
+            }
+        }
+
+        function closeModal(e) {
+            if (e.target === document.getElementById('challengeModal')) {
+                document.getElementById('challengeModal').classList.add('hidden');
+            }
+        }
+
+        function updateProgress() {
+            const pct = Math.round((solved.length / CHALLENGES.length) * 100);
+            document.getElementById('progressLabel').textContent = `${solved.length} / ${CHALLENGES.length} solved`;
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        renderChallenges();
+        updateProgress();
+    </script>
+</body>
+</html>

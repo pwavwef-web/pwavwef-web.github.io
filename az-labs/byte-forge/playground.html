@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteForge | Live Playground</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030d14; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #06b6d4; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        textarea { font-family: 'JetBrains Mono', monospace; font-size: 13px; resize: none; background: #010a12; color: #e2e8f0; border: none; outline: none; width: 100%; height: 100%; padding: 16px; line-height: 1.6; tab-size: 2; }
+        .tab-btn { padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; color: #6b7280; }
+        .tab-btn.active { background: rgba(6,182,212,0.2); color: #67e8f9; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+        .panel-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; }
+        .editor-pane { flex: 1; overflow: auto; }
+        .playground-layout { display: flex; flex: 1; overflow: hidden; gap: 0; }
+        .editors-col { display: flex; flex-direction: column; width: 50%; border-right: 1px solid rgba(255,255,255,0.06); }
+        .preview-col { width: 50%; display: flex; flex-direction: column; }
+        iframe { width: 100%; height: 100%; border: none; background: white; }
+        .snippet-btn { font-size: 11px; padding: 3px 10px; border-radius: 6px; background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2); color: #67e8f9; cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+        .snippet-btn:hover { background: rgba(6,182,212,0.2); }
+        @media (max-width: 768px) {
+            .playground-layout { flex-direction: column; }
+            .editors-col, .preview-col { width: 100%; height: 50%; }
+            .editors-col { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 flex-shrink-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-lg font-black flex items-center gap-1.5">
+                    <span class="text-xl">💻</span>
+                    <span class="hidden sm:inline text-white">Byte<span class="text-gradient">Forge</span></span>
+                </a>
+                <div class="hidden md:flex gap-2 ml-4">
+                    <button class="snippet-btn" onclick="loadSnippet('hello')">Hello World</button>
+                    <button class="snippet-btn" onclick="loadSnippet('card')">Card</button>
+                    <button class="snippet-btn" onclick="loadSnippet('counter')">Counter</button>
+                    <button class="snippet-btn" onclick="loadSnippet('animation')">Animation</button>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="runCode()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg font-bold text-sm hover:opacity-90 transition flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">play_arrow</span> Run
+                </button>
+                <button onclick="clearAll()" class="px-3 py-2 glass-panel border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition flex items-center gap-1">
+                    <span class="material-symbols-outlined text-base">delete_sweep</span>
+                </button>
+                <a href="challenges.html" class="hidden md:flex px-3 py-2 glass-panel border border-white/10 rounded-lg text-sm text-cyan-300 hover:bg-white/5 transition items-center gap-1">
+                    <span class="material-symbols-outlined text-base">emoji_events</span> Challenges
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Playground -->
+    <div class="playground-layout">
+        <!-- Editors -->
+        <div class="editors-col">
+            <!-- HTML editor -->
+            <div style="height:40%;display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,0.06)">
+                <div class="panel-header">
+                    <span class="panel-label" style="color:#f97316">◈ HTML</span>
+                    <span class="text-xs text-gray-600 hidden sm:inline">structure</span>
+                </div>
+                <div class="editor-pane">
+                    <textarea id="htmlCode" placeholder="<!-- HTML here -->" spellcheck="false" oninput="autoRun()"></textarea>
+                </div>
+            </div>
+            <!-- CSS editor -->
+            <div style="height:30%;display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,0.06)">
+                <div class="panel-header">
+                    <span class="panel-label" style="color:#06b6d4">◈ CSS</span>
+                    <span class="text-xs text-gray-600 hidden sm:inline">style</span>
+                </div>
+                <div class="editor-pane">
+                    <textarea id="cssCode" placeholder="/* CSS here */" spellcheck="false" oninput="autoRun()"></textarea>
+                </div>
+            </div>
+            <!-- JS editor -->
+            <div style="height:30%;display:flex;flex-direction:column;">
+                <div class="panel-header">
+                    <span class="panel-label" style="color:#eab308">◈ JavaScript</span>
+                    <span class="text-xs text-gray-600 hidden sm:inline">logic</span>
+                </div>
+                <div class="editor-pane">
+                    <textarea id="jsCode" placeholder="// JavaScript here" spellcheck="false" oninput="autoRun()"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-col">
+            <div class="panel-header">
+                <span class="panel-label" style="color:#10b981">◈ Preview</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-500" id="statusLabel">Ready</span>
+                    <button onclick="openFullscreen()" title="Fullscreen" class="text-gray-500 hover:text-white transition">
+                        <span class="material-symbols-outlined text-sm">open_in_full</span>
+                    </button>
+                </div>
+            </div>
+            <iframe id="preview" title="Live Preview"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const SNIPPETS = {
+            hello: {
+                html: `<div class="container">\n  <h1>Hello, World! 👋</h1>\n  <p>Welcome to ByteForge playground.</p>\n  <button onclick="greet()">Click me</button>\n</div>`,
+                css: `body {\n  font-family: sans-serif;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 100vh;\n  margin: 0;\n  background: #0f172a;\n  color: white;\n}\n.container {\n  text-align: center;\n  padding: 40px;\n}\nh1 { font-size: 2.5rem; margin-bottom: 1rem; }\nbutton {\n  padding: 12px 28px;\n  background: #06b6d4;\n  color: white;\n  border: none;\n  border-radius: 8px;\n  font-size: 1rem;\n  cursor: pointer;\n}`,
+                js: `function greet() {\n  const name = prompt('What is your name?');\n  if (name) document.querySelector('h1').textContent = \`Hello, \${name}! 👋\`;\n}`
+            },
+            card: {
+                html: `<div class="card">\n  <div class="avatar">🎓</div>\n  <h2>AZ Learner</h2>\n  <p>The Squad Companion for Ghanaian university students.</p>\n  <div class="tags">\n    <span>Study</span>\n    <span>UCC</span>\n    <span>Ghana</span>\n  </div>\n</div>`,
+                css: `body {\n  display:flex; align-items:center; justify-content:center;\n  min-height:100vh; margin:0;\n  background: linear-gradient(135deg, #1e3a8a, #0f172a);\n}\n.card {\n  background: rgba(255,255,255,0.05);\n  border: 1px solid rgba(255,255,255,0.1);\n  backdrop-filter: blur(12px);\n  border-radius: 20px;\n  padding: 2rem;\n  max-width: 320px;\n  text-align: center;\n  color: white;\n  font-family: sans-serif;\n}\n.avatar { font-size: 3rem; margin-bottom: 0.75rem; }\nh2 { margin: 0 0 0.5rem; font-size: 1.5rem; }\np { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 1.5rem; }\n.tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }\n.tags span { background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4); color: #93c5fd; padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }`,
+                js: ``
+            },
+            counter: {
+                html: `<div class="counter-app">\n  <h1>Counter</h1>\n  <div class="display" id="count">0</div>\n  <div class="buttons">\n    <button onclick="change(-1)">−</button>\n    <button onclick="reset()">↺</button>\n    <button onclick="change(1)">+</button>\n  </div>\n</div>`,
+                css: `body {\n  font-family: sans-serif;\n  display:flex; align-items:center; justify-content:center;\n  min-height:100vh; margin:0;\n  background: #07090f; color: white;\n}\n.counter-app { text-align: center; }\nh1 { font-size: 1.5rem; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2rem; }\n.display { font-size: 8rem; font-weight: 900; font-variant-numeric: tabular-nums; color: #06b6d4; line-height: 1; margin-bottom: 2rem; transition: color 0.2s; }\n.buttons { display: flex; gap: 16px; justify-content: center; }\nbutton {\n  width: 60px; height: 60px; border-radius: 50%;\n  background: rgba(255,255,255,0.05);\n  border: 1px solid rgba(255,255,255,0.1);\n  color: white; font-size: 1.5rem;\n  cursor: pointer; transition: all 0.2s;\n}\nbutton:hover { background: rgba(6,182,212,0.2); border-color: rgba(6,182,212,0.5); }`,
+                js: `let n = 0;\nfunction change(delta) {\n  n += delta;\n  document.getElementById('count').textContent = n;\n  document.getElementById('count').style.color = n > 0 ? '#10b981' : n < 0 ? '#ef4444' : '#06b6d4';\n}\nfunction reset() { n = 0; change(0); }`
+            },
+            animation: {
+                html: `<div class="scene">\n  <div class="orb" id="orb"></div>\n  <p class="label">Click the orb!</p>\n</div>`,
+                css: `body {\n  display:flex; align-items:center; justify-content:center;\n  min-height:100vh; margin:0;\n  background: #030d14;\n  overflow: hidden;\n}\n.scene { text-align: center; }\n.orb {\n  width: 120px; height: 120px; border-radius: 50%;\n  background: radial-gradient(circle at 35% 35%, #67e8f9, #0e7490);\n  box-shadow: 0 0 40px rgba(6,182,212,0.5);\n  cursor: pointer;\n  animation: float 3s ease-in-out infinite;\n  margin: 0 auto 24px;\n  transition: transform 0.1s;\n}\n.orb:active { transform: scale(0.9) !important; }\n.label { color: rgba(255,255,255,0.4); font-family:sans-serif; font-size:0.9rem; }\n@keyframes float {\n  0%,100% { transform: translateY(0); }\n  50% { transform: translateY(-20px); }\n}`,
+                js: `const orb = document.getElementById('orb');\nconst colors = [\n  ['#67e8f9','#0e7490','rgba(6,182,212,0.5)'],\n  ['#c4b5fd','#5b21b6','rgba(139,92,246,0.5)'],\n  ['#fda4af','#9f1239','rgba(244,63,94,0.5)'],\n  ['#86efac','#14532d','rgba(34,197,94,0.5)'],\n];\nlet ci = 0;\norb.addEventListener('click', () => {\n  ci = (ci+1) % colors.length;\n  const [a,b,s] = colors[ci];\n  orb.style.background = \`radial-gradient(circle at 35% 35%, \${a}, \${b})\`;\n  orb.style.boxShadow = \`0 0 60px \${s}\`;\n});`
+            }
+        };
+
+        let autoRunTimeout = null;
+
+        function loadSnippet(name) {
+            const s = SNIPPETS[name];
+            document.getElementById('htmlCode').value = s.html;
+            document.getElementById('cssCode').value = s.css;
+            document.getElementById('jsCode').value = s.js;
+            runCode();
+        }
+
+        function runCode() {
+            const html = document.getElementById('htmlCode').value;
+            const css = document.getElementById('cssCode').value;
+            const js = document.getElementById('jsCode').value;
+            const combined = `<!DOCTYPE html><html><head><style>${css}</style></head><body>${html}<script>${js}<\/script></body></html>`;
+            const iframe = document.getElementById('preview');
+            iframe.srcdoc = combined;
+            document.getElementById('statusLabel').textContent = '✓ Running';
+            save();
+        }
+
+        function autoRun() {
+            clearTimeout(autoRunTimeout);
+            autoRunTimeout = setTimeout(runCode, 800);
+        }
+
+        function clearAll() {
+            if (confirm('Clear all code?')) {
+                ['htmlCode','cssCode','jsCode'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('preview').srcdoc = '';
+                document.getElementById('statusLabel').textContent = 'Cleared';
+                localStorage.removeItem('byteforge_code');
+            }
+        }
+
+        function openFullscreen() {
+            const iframe = document.getElementById('preview');
+            if (iframe.requestFullscreen) iframe.requestFullscreen();
+        }
+
+        function save() {
+            localStorage.setItem('byteforge_code', JSON.stringify({
+                html: document.getElementById('htmlCode').value,
+                css: document.getElementById('cssCode').value,
+                js: document.getElementById('jsCode').value,
+            }));
+        }
+
+        // Load saved code or default snippet
+        const saved = localStorage.getItem('byteforge_code');
+        if (saved) {
+            try {
+                const d = JSON.parse(saved);
+                document.getElementById('htmlCode').value = d.html || '';
+                document.getElementById('cssCode').value = d.css || '';
+                document.getElementById('jsCode').value = d.js || '';
+                runCode();
+            } catch(e) { loadSnippet('hello'); }
+        } else {
+            loadSnippet('hello');
+        }
+
+        // Tab key support in textareas
+        document.querySelectorAll('textarea').forEach(ta => {
+            ta.addEventListener('keydown', e => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const s = ta.selectionStart;
+                    const end = ta.selectionEnd;
+                    ta.value = ta.value.substring(0,s) + '  ' + ta.value.substring(end);
+                    ta.selectionStart = ta.selectionEnd = s + 2;
+                    autoRun();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
