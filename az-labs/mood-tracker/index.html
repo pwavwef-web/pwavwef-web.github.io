@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Labs | Mood Tracker</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; min-height: 100vh; overflow-x: hidden; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(-45deg, #1a0a1e, #0f172a, #1e0a2e, #0f172a); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #ec4899; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .mood-btn { transition: all 0.2s ease; cursor: pointer; }
+        .mood-btn:hover { transform: scale(1.15); }
+        .mood-btn.selected { transform: scale(1.2); outline: 3px solid rgba(236,72,153,0.7); outline-offset: 4px; }
+        .tag-btn { transition: all 0.2s; cursor: pointer; }
+        .tag-btn.active { background: rgba(236,72,153,0.3); border-color: rgba(236,72,153,0.7); color: white; }
+        .toast-enter { opacity:0; transform:translateX(100%); }
+        .toast-enter-active { opacity:1; transform:translateX(0); transition:all .3s ease; }
+        .toast-exit-active { opacity:0; transform:translateX(100%); transition:all .3s ease; }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div id="toast-container" class="fixed top-20 right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="text-sm font-bold text-gray-500 hover:text-gray-300 transition flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">arrow_back</span> AZ Labs
+                </a>
+                <span class="text-gray-700">/</span>
+                <span class="text-lg font-black text-white flex items-center gap-2">🧠 Mood Tracker</span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="text-pink-300 transition">Log Mood</a>
+                <a href="insights.html" class="nav-link hover:text-white transition">Insights</a>
+            </nav>
+            <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 flex gap-6 text-sm font-semibold text-gray-400">
+            <a href="index.html" class="text-pink-300">Log Mood</a>
+            <a href="insights.html" class="hover:text-white transition">Insights →</a>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-2xl mx-auto px-6 pt-12 pb-32 space-y-8">
+
+        <!-- Date + greeting -->
+        <div class="text-center space-y-2">
+            <div id="dateDisplay" class="text-sm font-semibold text-gray-500 uppercase tracking-wider"></div>
+            <h1 class="text-4xl font-black" id="greeting">How are you feeling?</h1>
+            <p class="text-gray-400 text-sm">Be honest. This is just for you.</p>
+        </div>
+
+        <!-- Mood picker -->
+        <div class="glass-panel rounded-3xl p-8 space-y-6">
+            <div class="text-xs font-bold uppercase tracking-widest text-gray-500 text-center">Pick your vibe</div>
+            <div class="flex justify-around items-center flex-wrap gap-4" id="moodPicker">
+                <button class="mood-btn flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5" data-mood="amazing" data-emoji="🤩" data-score="5">
+                    <span class="text-5xl">🤩</span>
+                    <span class="text-xs font-bold text-gray-400">Amazing</span>
+                </button>
+                <button class="mood-btn flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5" data-mood="good" data-emoji="😊" data-score="4">
+                    <span class="text-5xl">😊</span>
+                    <span class="text-xs font-bold text-gray-400">Good</span>
+                </button>
+                <button class="mood-btn flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5" data-mood="okay" data-emoji="😐" data-score="3">
+                    <span class="text-5xl">😐</span>
+                    <span class="text-xs font-bold text-gray-400">Okay</span>
+                </button>
+                <button class="mood-btn flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5" data-mood="meh" data-emoji="😔" data-score="2">
+                    <span class="text-5xl">😔</span>
+                    <span class="text-xs font-bold text-gray-400">Meh</span>
+                </button>
+                <button class="mood-btn flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5" data-mood="rough" data-emoji="😩" data-score="1">
+                    <span class="text-5xl">😩</span>
+                    <span class="text-xs font-bold text-gray-400">Rough</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="glass-panel rounded-3xl p-8 space-y-4">
+            <div class="text-xs font-bold uppercase tracking-widest text-gray-500">What's contributing?</div>
+            <div class="flex flex-wrap gap-2" id="tagPicker">
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="studying">📚 Studying</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="exams">📝 Exams</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="friends">👯 Friends</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="sleep">😴 Sleep</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="food">🍜 Food</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="exercise">🏃 Exercise</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="social">🎉 Social</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="lonely">🌧️ Lonely</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="motivated">🔥 Motivated</button>
+                <button class="tag-btn px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400" data-tag="tired">💤 Tired</button>
+            </div>
+        </div>
+
+        <!-- Note -->
+        <div class="glass-panel rounded-3xl p-8 space-y-4">
+            <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Add a note (optional)</div>
+            <textarea id="moodNote" rows="3" placeholder="Anything on your mind today..."
+                class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-pink-500 transition resize-none placeholder:text-gray-600"></textarea>
+        </div>
+
+        <!-- Submit -->
+        <button id="submitBtn" onclick="logMood()"
+            class="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl font-black text-lg hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] transition flex items-center justify-center gap-3 disabled:opacity-50">
+            <span class="material-symbols-outlined">favorite</span>
+            Log Today's Mood
+        </button>
+
+        <!-- Recent entries -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-black text-lg">Recent Check-ins</h2>
+                <a href="insights.html" class="text-xs text-pink-400 font-bold hover:text-pink-300 transition flex items-center gap-1">
+                    View Insights <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </a>
+            </div>
+            <div id="recentList" class="space-y-3">
+                <div class="glass-panel rounded-2xl p-4 text-center text-gray-500 text-sm">No entries yet. Log your first mood! 🌟</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const STORAGE_KEY = 'azlabs_moods';
+        let selectedMood = null;
+        let selectedTags = [];
+
+        // Date + greeting
+        const now = new Date();
+        document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const hr = now.getHours();
+        document.getElementById('greeting').textContent = hr < 12 ? 'Good morning ☀️' : hr < 17 ? 'Good afternoon 👋' : 'Good evening 🌙';
+
+        // Mood picker
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedMood = { mood: btn.dataset.mood, emoji: btn.dataset.emoji, score: parseInt(btn.dataset.score) };
+            });
+        });
+
+        // Tag picker
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                const tag = btn.dataset.tag;
+                if (selectedTags.includes(tag)) {
+                    selectedTags = selectedTags.filter(t => t !== tag);
+                } else {
+                    selectedTags.push(tag);
+                }
+            });
+        });
+
+        function getMoods() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+        }
+
+        function saveMoods(moods) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(moods));
+        }
+
+        function logMood() {
+            if (!selectedMood) { showToast('Pick a mood first! 🎭', 'error'); return; }
+            const moods = getMoods();
+            const today = now.toISOString().split('T')[0];
+            const existing = moods.findIndex(m => m.date === today);
+            const entry = {
+                date: today,
+                emoji: selectedMood.emoji,
+                mood: selectedMood.mood,
+                score: selectedMood.score,
+                tags: [...selectedTags],
+                note: document.getElementById('moodNote').value.trim(),
+                time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            };
+            if (existing >= 0) { moods[existing] = entry; } else { moods.unshift(entry); }
+            saveMoods(moods);
+            showToast('Mood logged! Keep checking in 💪', 'success');
+            renderRecent();
+        }
+
+        function renderRecent() {
+            const moods = getMoods();
+            const container = document.getElementById('recentList');
+            if (!moods.length) {
+                container.innerHTML = '<div class="glass-panel rounded-2xl p-4 text-center text-gray-500 text-sm">No entries yet. Log your first mood! 🌟</div>';
+                return;
+            }
+            container.innerHTML = moods.slice(0, 5).map(m => {
+                const d = new Date(m.date + 'T12:00:00');
+                const label = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+                const tagsHtml = m.tags.map(t => `<span class="px-2 py-0.5 rounded-full bg-white/5 text-xs text-gray-500">${t}</span>`).join('');
+                const scoreColor = m.score >= 4 ? 'text-green-400' : m.score === 3 ? 'text-yellow-400' : 'text-red-400';
+                return `
+                <div class="glass-panel rounded-2xl p-4 flex gap-4 items-start">
+                    <div class="text-3xl">${m.emoji}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-bold capitalize">${m.mood}</span>
+                            <span class="text-xs text-gray-500">${label}</span>
+                        </div>
+                        ${m.note ? `<p class="text-sm text-gray-400 mt-1 truncate">${m.note}</p>` : ''}
+                        ${m.tags.length ? `<div class="flex flex-wrap gap-1 mt-2">${tagsHtml}</div>` : ''}
+                    </div>
+                    <div class="${scoreColor} font-black text-lg">${m.score}/5</div>
+                </div>`;
+            }).join('');
+        }
+
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const color = type === 'success' ? 'bg-pink-600' : 'bg-red-600';
+            toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter pointer-events-auto`;
+            toast.innerHTML = `<span class="font-bold text-sm">${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
+            setTimeout(() => { toast.classList.add('toast-exit-active'); setTimeout(() => toast.remove(), 300); }, 3000);
+        };
+
+        renderRecent();
+    </script>
+</body>
+</html>

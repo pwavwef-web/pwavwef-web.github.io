@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Labs | Mood Insights</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; min-height: 100vh; overflow-x: hidden; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(-45deg, #1a0a1e, #0f172a, #1e0a2e, #0f172a); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .nav-link { position: relative; transition: color 0.2s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #ec4899; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        .bar { transition: height 0.6s cubic-bezier(0.4,0,0.2,1); }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="text-sm font-bold text-gray-500 hover:text-gray-300 transition flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">arrow_back</span> AZ Labs
+                </a>
+                <span class="text-gray-700">/</span>
+                <span class="text-lg font-black text-white flex items-center gap-2">🧠 Mood Tracker</span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="index.html" class="nav-link hover:text-white transition">Log Mood</a>
+                <a href="insights.html" class="text-pink-300 transition">Insights</a>
+            </nav>
+            <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 flex gap-6 text-sm font-semibold text-gray-400">
+            <a href="index.html" class="hover:text-white transition">Log Mood</a>
+            <a href="insights.html" class="text-pink-300">Insights</a>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-4xl mx-auto px-6 pt-12 pb-32 space-y-10">
+
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black">Your Mood Story 📊</h1>
+            <p class="text-gray-400">Patterns, trends, and what your data says about you.</p>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="statsRow">
+            <!-- Filled by JS -->
+        </div>
+
+        <!-- Mood frequency chart -->
+        <div class="glass-panel rounded-3xl p-8 space-y-6">
+            <h2 class="font-black text-lg">Mood Frequency</h2>
+            <div class="flex items-end justify-around gap-2 h-40" id="barChart">
+                <!-- Bars filled by JS -->
+            </div>
+            <div class="flex justify-around" id="barLabels"></div>
+        </div>
+
+        <!-- 7-day timeline -->
+        <div class="glass-panel rounded-3xl p-8 space-y-6">
+            <h2 class="font-black text-lg">Last 7 Days</h2>
+            <div class="flex items-end justify-around gap-3 h-32" id="timelineChart"></div>
+            <div class="flex justify-around text-xs text-gray-500" id="timelineLabels"></div>
+        </div>
+
+        <!-- Top tags -->
+        <div class="glass-panel rounded-3xl p-8 space-y-5">
+            <h2 class="font-black text-lg">Your Top Tags</h2>
+            <div id="tagStats" class="space-y-3">
+                <div class="text-gray-500 text-sm text-center py-4">No tag data yet. Start logging moods!</div>
+            </div>
+        </div>
+
+        <!-- All entries -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-black text-lg">All Check-ins</h2>
+                <button onclick="clearAll()" class="text-xs text-red-400 hover:text-red-300 transition font-bold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">delete</span> Clear All
+                </button>
+            </div>
+            <div id="allEntries" class="space-y-3"></div>
+        </div>
+
+        <a href="index.html"
+            class="flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl font-black text-lg hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] transition">
+            <span class="material-symbols-outlined">favorite</span>
+            Log Today's Mood
+        </a>
+    </main>
+
+    <script>
+        const STORAGE_KEY = 'azlabs_moods';
+        const MOOD_COLORS = { amazing: '#34d399', good: '#3b82f6', okay: '#facc15', meh: '#fb923c', rough: '#ef4444' };
+        const MOOD_ORDER = ['amazing', 'good', 'okay', 'meh', 'rough'];
+
+        function getMoods() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+        }
+
+        function clearAll() {
+            if (!confirm('Delete all mood entries? This cannot be undone.')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+
+        function render() {
+            const moods = getMoods();
+
+            // --- Stats ---
+            const statsRow = document.getElementById('statsRow');
+            if (!moods.length) {
+                statsRow.innerHTML = '<div class="col-span-4 glass-panel rounded-2xl p-6 text-center text-gray-500 text-sm">No data yet. <a href="index.html" class="text-pink-400 underline">Log your first mood!</a></div>';
+            } else {
+                const avg = (moods.reduce((s,m) => s + m.score, 0) / moods.length).toFixed(1);
+                const streak = calcStreak(moods);
+                const bestMood = MOOD_ORDER.find(m => moods.some(e => e.mood === m)) || '—';
+                const bestEntry = moods.find(m => m.mood === bestMood);
+                const stats = [
+                    { label: 'Entries', value: moods.length, icon: 'calendar_today', color: 'text-pink-400' },
+                    { label: 'Avg Score', value: avg + '/5', icon: 'bar_chart', color: 'text-purple-400' },
+                    { label: 'Day Streak', value: streak + ' 🔥', icon: 'local_fire_department', color: 'text-orange-400' },
+                    { label: 'Best Mood', value: (bestEntry ? bestEntry.emoji : '—'), icon: 'emoji_emotions', color: 'text-green-400' },
+                ];
+                statsRow.innerHTML = stats.map(s => `
+                    <div class="glass-panel rounded-2xl p-5 flex flex-col gap-1">
+                        <span class="material-symbols-outlined ${s.color} text-[22px]">${s.icon}</span>
+                        <div class="text-2xl font-black">${s.value}</div>
+                        <div class="text-xs text-gray-500">${s.label}</div>
+                    </div>`).join('');
+            }
+
+            // --- Bar chart (frequency) ---
+            const freq = {};
+            MOOD_ORDER.forEach(m => freq[m] = 0);
+            moods.forEach(m => { if (freq[m.mood] !== undefined) freq[m.mood]++; });
+            const maxFreq = Math.max(...Object.values(freq), 1);
+            const barChart = document.getElementById('barChart');
+            const barLabels = document.getElementById('barLabels');
+            const emojiMap = { amazing:'🤩', good:'😊', okay:'😐', meh:'😔', rough:'😩' };
+            barChart.innerHTML = MOOD_ORDER.map(m => {
+                const pct = Math.round((freq[m] / maxFreq) * 100);
+                return `<div class="flex flex-col items-center gap-2 flex-1">
+                    <span class="text-xs font-bold text-gray-400">${freq[m]}</span>
+                    <div class="w-full rounded-t-xl bar" style="height:${Math.max(pct, 4)}%; background:${MOOD_COLORS[m]}; opacity:0.8; min-height:8px;"></div>
+                </div>`;
+            }).join('');
+            barLabels.innerHTML = MOOD_ORDER.map(m => `<div class="text-center text-xl flex-1">${emojiMap[m]}</div>`).join('');
+
+            // --- 7-day timeline ---
+            const days7 = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const entry = moods.find(m => m.date === dateStr);
+                days7.push({ dateStr, entry, label: d.toLocaleDateString('en-US', { weekday:'short' }) });
+            }
+            const timeline = document.getElementById('timelineChart');
+            const tlLabels = document.getElementById('timelineLabels');
+            timeline.innerHTML = days7.map(d => {
+                if (!d.entry) return `<div class="flex-1 flex flex-col items-center justify-end gap-1">
+                    <div class="w-full rounded-t-xl bg-white/5 min-h-[8px]" style="height:8%;"></div>
+                </div>`;
+                const pct = (d.entry.score / 5) * 100;
+                return `<div class="flex-1 flex flex-col items-center justify-end gap-1">
+                    <span class="text-lg">${d.entry.emoji}</span>
+                    <div class="w-full rounded-t-xl bar" style="height:${pct}%; background:${MOOD_COLORS[d.entry.mood]}; opacity:0.8; min-height:8px;"></div>
+                </div>`;
+            }).join('');
+            tlLabels.innerHTML = days7.map(d => `<div class="flex-1 text-center">${d.label}</div>`).join('');
+
+            // --- Tag stats ---
+            const tagCount = {};
+            moods.forEach(m => m.tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+            const sortedTags = Object.entries(tagCount).sort((a,b) => b[1]-a[1]);
+            const tagStats = document.getElementById('tagStats');
+            if (!sortedTags.length) {
+                tagStats.innerHTML = '<div class="text-gray-500 text-sm text-center py-4">No tag data yet. Start logging moods!</div>';
+            } else {
+                const maxTag = sortedTags[0][1];
+                tagStats.innerHTML = sortedTags.slice(0, 8).map(([tag, count]) => {
+                    const pct = Math.round((count / maxTag) * 100);
+                    return `<div class="flex items-center gap-3">
+                        <span class="text-sm font-bold text-gray-300 w-28 capitalize">${tag}</span>
+                        <div class="flex-1 bg-white/5 rounded-full h-2 overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-500" style="width:${pct}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-500 w-8 text-right">${count}x</span>
+                    </div>`;
+                }).join('');
+            }
+
+            // --- All entries ---
+            const allEntries = document.getElementById('allEntries');
+            if (!moods.length) {
+                allEntries.innerHTML = '<div class="glass-panel rounded-2xl p-4 text-center text-gray-500 text-sm">No entries yet.</div>';
+            } else {
+                allEntries.innerHTML = moods.map(m => {
+                    const d = new Date(m.date + 'T12:00:00');
+                    const label = d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+                    const tagsHtml = m.tags.map(t => `<span class="px-2 py-0.5 rounded-full bg-white/5 text-xs text-gray-500">${t}</span>`).join('');
+                    return `<div class="glass-panel rounded-2xl p-4 flex gap-4 items-start">
+                        <div class="text-3xl">${m.emoji}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-bold capitalize">${m.mood}</span>
+                                <span class="text-xs text-gray-500">${label}${m.time ? ' · ' + m.time : ''}</span>
+                            </div>
+                            ${m.note ? `<p class="text-sm text-gray-400 mt-1">${m.note}</p>` : ''}
+                            ${m.tags.length ? `<div class="flex flex-wrap gap-1 mt-2">${tagsHtml}</div>` : ''}
+                        </div>
+                        <div class="font-black text-lg" style="color:${MOOD_COLORS[m.mood]}">${m.score}/5</div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        function calcStreak(moods) {
+            if (!moods.length) return 0;
+            const dates = moods.map(m => m.date).sort().reverse();
+            const today = new Date().toISOString().split('T')[0];
+            let streak = 0, check = today;
+            for (const date of dates) {
+                if (date === check) { streak++; const d = new Date(check); d.setDate(d.getDate()-1); check = d.toISOString().split('T')[0]; }
+                else if (date < check) break;
+            }
+            return streak;
+        }
+
+        render();
+    </script>
+</body>
+</html>
