@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Podcast Lead</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { background-color: #0a0a0f; color: white; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+        .tab-btn.active { background: rgba(248,113,113,0.15); color: #f87171; border-color: rgba(248,113,113,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-red-700/40">
+            <div class="text-5xl mb-4">🎙️</div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-400 mb-1">Podcast Lead</h1>
+            <p class="text-sm text-gray-500 mb-6">Restricted · Authorized Personnel Only</p>
+            <input type="email" id="login-email" placeholder="Your Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-red-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-red-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Sign In 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400 mt-3 inline-block transition">← Back to Portals</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-red-700/30 px-5 py-3 flex justify-between items-center shrink-0 shadow-md">
+            <div>
+                <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-300">🎙️ PODCAST LEAD</h1>
+                <p id="user-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-800 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Sign Out <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-chart-pie mr-2 text-red-400"></i>Overview</button>
+            <button onclick="switchTab('episodes')" id="tab-episodes" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-play-circle mr-2 text-orange-400"></i>Episodes</button>
+            <button onclick="switchTab('guests')" id="tab-guests" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-user-tie mr-2 text-yellow-400"></i>Guests</button>
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-calendar mr-2 text-blue-400"></i>Schedule</button>
+            <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-note-sticky mr-2 text-purple-400"></i>Notes</button>
+        </div>
+
+        <!-- Tab Views -->
+        <div class="flex-1 overflow-hidden bg-[#0a0a0f]">
+
+            <!-- Overview -->
+            <div id="view-overview" class="tab-view active overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-red-900/30 to-gray-900 p-6 rounded-2xl border border-red-700/40">
+                    <h2 class="text-2xl font-black text-red-400 mb-1">Podcast Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Manage episodes, guests, and recording schedule.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Episodes</h3>
+                        <p class="text-2xl font-black text-red-400" id="stat-eps">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Guests</h3>
+                        <p class="text-2xl font-black text-yellow-400" id="stat-guests">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Upcoming Recs</h3>
+                        <p class="text-2xl font-black text-blue-400" id="stat-upcoming">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Published</h3>
+                        <p class="text-2xl font-black text-green-400" id="stat-published">—</p>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 p-5">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Latest Episodes</h3>
+                    <div id="overview-eps" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Episodes -->
+            <div id="view-episodes" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-orange-900/30 to-gray-900 p-6 rounded-2xl border border-orange-700/40">
+                    <h2 class="text-2xl font-black text-orange-400 mb-1">Episode Manager</h2>
+                    <p class="text-gray-400 text-sm">Plan, track, and manage podcast episodes.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Add Episode</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="ep-number" type="text" placeholder="Episode number (e.g. E01)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-orange-500 text-sm">
+                        <input id="ep-title" type="text" placeholder="Episode title"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-orange-500 text-sm">
+                        <input id="ep-guest" type="text" placeholder="Guest name (optional)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-orange-500 text-sm">
+                        <select id="ep-status"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-orange-500 text-sm">
+                            <option value="planned">Planned</option>
+                            <option value="recorded">Recorded</option>
+                            <option value="editing">In Editing</option>
+                            <option value="published">Published</option>
+                        </select>
+                        <textarea id="ep-desc" placeholder="Episode description / notes..."
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-orange-500 text-sm resize-none h-20 md:col-span-2"></textarea>
+                    </div>
+                    <button onclick="addEpisode()"
+                        class="bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Add Episode
+                    </button>
+                </div>
+                <div id="episodes-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Guests -->
+            <div id="view-guests" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-2xl border border-yellow-700/40">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1">Guest Management</h2>
+                    <p class="text-gray-400 text-sm">Track podcast guests and manage outreach.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Add Guest</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="guest-name" type="text" placeholder="Guest name"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <input id="guest-title" type="text" placeholder="Title / Role"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <input id="guest-contact" type="text" placeholder="Contact (email / social)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <select id="guest-status"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                            <option value="outreach">Outreach Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="recorded">Recorded</option>
+                        </select>
+                    </div>
+                    <button onclick="addGuest()"
+                        class="bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Add Guest
+                    </button>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-gray-400">
+                            <thead class="bg-gray-900/50 text-gray-500 uppercase">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">Name</th>
+                                    <th class="px-4 py-3 text-left">Title</th>
+                                    <th class="px-4 py-3 text-left">Contact</th>
+                                    <th class="px-4 py-3 text-left">Status</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guests-list" class="divide-y divide-gray-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div id="view-schedule" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-blue-900/30 to-gray-900 p-6 rounded-2xl border border-blue-700/40">
+                    <h2 class="text-2xl font-black text-blue-400 mb-1">Recording Schedule</h2>
+                    <p class="text-gray-400 text-sm">Plan and manage recording sessions and release dates.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Add Session</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="session-title" type="text" placeholder="Session title"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <input id="session-date" type="datetime-local"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <input id="session-type" type="text" placeholder="Type (e.g. Recording, Editing, Release)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <input id="session-notes" type="text" placeholder="Notes"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                    </div>
+                    <button onclick="addSession()"
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-calendar-plus mr-2"></i>Add Session
+                    </button>
+                </div>
+                <div id="schedule-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Notes -->
+            <div id="view-notes" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-purple-900/30 to-gray-900 p-6 rounded-2xl border border-purple-700/40">
+                    <h2 class="text-2xl font-black text-purple-400 mb-1">Podcast Notes</h2>
+                    <p class="text-gray-400 text-sm">Private workspace for show ideas and production notes.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Show Notes</h3>
+                    <textarea id="podcast-notes" placeholder="Episode ideas, talking points, production notes, equipment checklist..."
+                        class="w-full bg-gray-900 border border-purple-500/30 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-purple-400 resize-none h-56"></textarea>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="saveNotes()"
+                            class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                            <i class="fa-solid fa-save mr-1"></i> Save Notes
+                        </button>
+                        <span id="notes-saved" class="text-xs text-green-400 opacity-0 transition-opacity flex items-center gap-1">
+                            <i class="fa-solid fa-check"></i> Saved
+                        </span>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Episode Ideas</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input id="idea-input" type="text" placeholder="Add episode idea..."
+                            class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-purple-400">
+                        <button onclick="addIdea()"
+                            class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                    <ul id="ideas-list" class="space-y-2"></ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, query, orderBy, serverTimestamp, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const ROLE_KEY = "podcast";
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+        let episodes = [];
+        let guests = [];
+        let sessions = [];
+        let ideas = [];
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                msg.innerText = '';
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.innerText = "Sign in failed: " + err.message;
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const roleDoc = await getDoc(doc(db, "admin_roles", ROLE_KEY));
+                const allowed = roleDoc.exists() ? (roleDoc.data().allowedEmails || []) : [];
+                if (!allowed.includes(user.email)) {
+                    document.getElementById('login-msg').innerText = "⛔ Access not granted for this portal.";
+                    signOut(auth);
+                    return;
+                }
+                currentUser = { email: user.email, uid: user.uid };
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = user.email;
+                loadData();
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        const ns = `podcast_portal`;
+
+        async function loadData() {
+            const epsSnap = await getDocs(query(collection(db, `${ns}_episodes`), orderBy('timestamp', 'desc')));
+            episodes = [];
+            epsSnap.forEach(d => episodes.push({ id: d.id, ...d.data() }));
+            renderEpisodes();
+
+            const guestsSnap = await getDocs(query(collection(db, `${ns}_guests`), orderBy('name')));
+            guests = [];
+            guestsSnap.forEach(d => guests.push({ id: d.id, ...d.data() }));
+            renderGuests();
+
+            const sessionsSnap = await getDoc(doc(db, `${ns}_data`, 'schedule'));
+            sessions = sessionsSnap.exists() ? (sessionsSnap.data().items || []) : [];
+            sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+            renderSchedule();
+
+            const notesSnap = await getDoc(doc(db, `podcast_data_${currentUser.uid}`, 'notes'));
+            if (notesSnap.exists()) document.getElementById('podcast-notes').value = notesSnap.data().content || '';
+
+            const ideasSnap = await getDoc(doc(db, `podcast_data_${currentUser.uid}`, 'ideas'));
+            ideas = ideasSnap.exists() ? (ideasSnap.data().items || []) : [];
+            renderIdeas();
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const published = episodes.filter(e => e.status === 'published').length;
+            const upcoming = sessions.filter(s => new Date(s.date) >= new Date()).length;
+            document.getElementById('stat-eps').innerText = episodes.length;
+            document.getElementById('stat-guests').innerText = guests.length;
+            document.getElementById('stat-upcoming').innerText = upcoming;
+            document.getElementById('stat-published').innerText = published;
+            renderOverviewEps();
+        }
+
+        function renderOverviewEps() {
+            const list = document.getElementById('overview-eps');
+            const recent = episodes.slice(0, 4);
+            list.innerHTML = recent.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No episodes yet.</p>' : '';
+            recent.forEach(e => {
+                const sColor = { published: 'text-green-400', recorded: 'text-blue-400', editing: 'text-yellow-400', planned: 'text-gray-400' }[e.status] || 'text-gray-400';
+                list.innerHTML += `<div class="flex items-center justify-between bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg text-xs">
+                    <span class="text-orange-300 font-bold mr-2">${e.number || ''}</span>
+                    <span class="text-gray-300 flex-1">${e.title}</span>
+                    <span class="${sColor} font-bold uppercase">${e.status}</span>
+                </div>`;
+            });
+        }
+
+        window.addEpisode = async function() {
+            const number = document.getElementById('ep-number').value.trim();
+            const title = document.getElementById('ep-title').value.trim();
+            const guest = document.getElementById('ep-guest').value.trim();
+            const status = document.getElementById('ep-status').value;
+            const desc = document.getElementById('ep-desc').value.trim();
+            if (!title) { alert("Please enter an episode title."); return; }
+            await addDoc(collection(db, `${ns}_episodes`), { number, title, guest, status, desc, timestamp: serverTimestamp() });
+            document.getElementById('ep-number').value = '';
+            document.getElementById('ep-title').value = '';
+            document.getElementById('ep-guest').value = '';
+            document.getElementById('ep-desc').value = '';
+            await loadData();
+        };
+
+        window.updateEpStatus = async function(id, status) {
+            await updateDoc(doc(db, `${ns}_episodes`, id), { status });
+            await loadData();
+        };
+
+        window.deleteEpisode = async function(id) {
+            if (!confirm("Delete this episode?")) return;
+            await deleteDoc(doc(db, `${ns}_episodes`, id));
+            await loadData();
+        };
+
+        function renderEpisodes() {
+            const list = document.getElementById('episodes-list');
+            list.innerHTML = episodes.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No episodes added yet.</p>' : '';
+            episodes.forEach(e => {
+                const sColor = { published: 'bg-green-900/40 text-green-300', recorded: 'bg-blue-900/40 text-blue-300', editing: 'bg-yellow-900/40 text-yellow-300', planned: 'bg-gray-700/40 text-gray-400' }[e.status] || 'bg-gray-700/40 text-gray-400';
+                list.innerHTML += `<div class="bg-gray-800/80 border border-gray-700 p-5 rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2">
+                            ${e.number ? `<span class="text-[10px] bg-orange-900/40 text-orange-300 font-bold px-2 py-0.5 rounded">${e.number}</span>` : ''}
+                            <h3 class="text-sm font-black text-gray-200">${e.title}</h3>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+                            <select onchange="updateEpStatus('${e.id}', this.value)" class="bg-gray-900 text-xs border border-gray-700 rounded px-2 py-1 text-gray-300 outline-none">
+                                <option ${e.status === 'planned' ? 'selected' : ''} value="planned">Planned</option>
+                                <option ${e.status === 'recorded' ? 'selected' : ''} value="recorded">Recorded</option>
+                                <option ${e.status === 'editing' ? 'selected' : ''} value="editing">Editing</option>
+                                <option ${e.status === 'published' ? 'selected' : ''} value="published">Published</option>
+                            </select>
+                            <button onclick="deleteEpisode('${e.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                        </div>
+                    </div>
+                    ${e.guest ? `<p class="text-xs text-gray-500 mb-1"><i class="fa-solid fa-user mr-1"></i>Guest: ${e.guest}</p>` : ''}
+                    ${e.desc ? `<p class="text-xs text-gray-400">${e.desc}</p>` : ''}
+                </div>`;
+            });
+        }
+
+        window.addGuest = async function() {
+            const name = document.getElementById('guest-name').value.trim();
+            const title = document.getElementById('guest-title').value.trim();
+            const contact = document.getElementById('guest-contact').value.trim();
+            const status = document.getElementById('guest-status').value;
+            if (!name) { alert("Please enter a guest name."); return; }
+            await addDoc(collection(db, `${ns}_guests`), { name, title, contact, status, timestamp: serverTimestamp() });
+            document.getElementById('guest-name').value = '';
+            document.getElementById('guest-title').value = '';
+            document.getElementById('guest-contact').value = '';
+            await loadData();
+        };
+
+        window.deleteGuest = async function(id) {
+            if (!confirm("Remove this guest?")) return;
+            await deleteDoc(doc(db, `${ns}_guests`, id));
+            await loadData();
+        };
+
+        function renderGuests() {
+            const list = document.getElementById('guests-list');
+            list.innerHTML = guests.length === 0 ? '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-600">No guests added yet.</td></tr>' : '';
+            guests.forEach(g => {
+                const sColor = { confirmed: 'bg-green-900/40 text-green-300', recorded: 'bg-blue-900/40 text-blue-300', outreach: 'bg-yellow-900/40 text-yellow-300' }[g.status] || 'bg-gray-700/40 text-gray-400';
+                list.innerHTML += `<tr class="hover:bg-gray-700/20 transition">
+                    <td class="px-4 py-3 text-gray-300 font-bold">${g.name}</td>
+                    <td class="px-4 py-3 text-gray-500">${g.title || '—'}</td>
+                    <td class="px-4 py-3 text-gray-500">${g.contact || '—'}</td>
+                    <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded font-bold ${sColor}">${g.status}</span></td>
+                    <td class="px-4 py-3 text-right"><button onclick="deleteGuest('${g.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">REMOVE</button></td>
+                </tr>`;
+            });
+        }
+
+        window.addSession = async function() {
+            const title = document.getElementById('session-title').value.trim();
+            const date = document.getElementById('session-date').value;
+            const type = document.getElementById('session-type').value.trim();
+            const notes = document.getElementById('session-notes').value.trim();
+            if (!title || !date) { alert("Please enter title and date."); return; }
+            sessions.push({ title, date, type, notes });
+            sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+            await setDoc(doc(db, `${ns}_data`, 'schedule'), { items: sessions });
+            document.getElementById('session-title').value = '';
+            document.getElementById('session-date').value = '';
+            document.getElementById('session-type').value = '';
+            document.getElementById('session-notes').value = '';
+            renderSchedule();
+            updateStats();
+        };
+
+        window.removeSession = async function(i) {
+            sessions.splice(i, 1);
+            await setDoc(doc(db, `${ns}_data`, 'schedule'), { items: sessions });
+            renderSchedule();
+            updateStats();
+        };
+
+        function renderSchedule() {
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = sessions.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No sessions scheduled.</p>' : '';
+            sessions.forEach((s, i) => {
+                const isPast = new Date(s.date) < new Date();
+                list.innerHTML += `<div class="bg-gray-800/80 border ${isPast ? 'border-gray-700/50 opacity-60' : 'border-blue-700/30'} p-5 rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-black text-blue-300">${s.title}</h3>
+                        <button onclick="removeSession(${i})" class="text-red-400 hover:text-red-300 text-[10px] font-bold">REMOVE</button>
+                    </div>
+                    <div class="flex gap-4 text-xs text-gray-400">
+                        <span><i class="fa-solid fa-clock mr-1"></i>${new Date(s.date).toLocaleString()}</span>
+                        ${s.type ? `<span><i class="fa-solid fa-tag mr-1"></i>${s.type}</span>` : ''}
+                    </div>
+                    ${s.notes ? `<p class="text-xs text-gray-500 mt-2">${s.notes}</p>` : ''}
+                </div>`;
+            });
+        }
+
+        window.saveNotes = async function() {
+            const content = document.getElementById('podcast-notes').value;
+            await setDoc(doc(db, `podcast_data_${currentUser.uid}`, 'notes'), { content });
+            const ind = document.getElementById('notes-saved');
+            ind.style.opacity = '1';
+            setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+        };
+
+        window.addIdea = async function() {
+            const val = document.getElementById('idea-input').value.trim();
+            if (!val) return;
+            ideas.push({ text: val, done: false });
+            await setDoc(doc(db, `podcast_data_${currentUser.uid}`, 'ideas'), { items: ideas });
+            document.getElementById('idea-input').value = '';
+            renderIdeas();
+        };
+
+        window.toggleIdea = async function(i) {
+            ideas[i].done = !ideas[i].done;
+            await setDoc(doc(db, `podcast_data_${currentUser.uid}`, 'ideas'), { items: ideas });
+            renderIdeas();
+        };
+
+        window.removeIdea = async function(i) {
+            ideas.splice(i, 1);
+            await setDoc(doc(db, `podcast_data_${currentUser.uid}`, 'ideas'), { items: ideas });
+            renderIdeas();
+        };
+
+        function renderIdeas() {
+            const list = document.getElementById('ideas-list');
+            list.innerHTML = ideas.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No ideas yet.</p>' : '';
+            ideas.forEach((idea, i) => {
+                list.innerHTML += `<li class="flex items-center gap-3 bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg">
+                    <input type="checkbox" ${idea.done ? 'checked' : ''} onchange="toggleIdea(${i})" class="w-4 h-4 accent-purple-500 cursor-pointer">
+                    <span class="flex-1 text-sm ${idea.done ? 'line-through text-gray-600' : 'text-gray-300'}">${idea.text}</span>
+                    <button onclick="removeIdea(${i})" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                </li>`;
+            });
+        }
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        };
+    </script>
+</body>
+</html>

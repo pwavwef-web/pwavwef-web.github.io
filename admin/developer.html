@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Developer Portal</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
+        }
+    </script>
+    <style>
+        body { background-color: #0a0a0f; color: white; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+        .tab-btn.active { background: rgba(167,139,250,0.15); color: #a78bfa; border-color: rgba(167,139,250,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-purple-700/40">
+            <div class="text-5xl mb-4">💻</div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-violet-400 mb-1">Developer Portal</h1>
+            <p class="text-sm text-gray-500 mb-6">Restricted · Authorized Personnel Only</p>
+            <input type="email" id="login-email" placeholder="Your Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-purple-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-purple-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-purple-600 to-violet-600 text-white font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Sign In 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400 mt-3 inline-block transition">← Back to Portals</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-purple-700/30 px-5 py-3 flex justify-between items-center shrink-0 shadow-md">
+            <div>
+                <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-violet-300">💻 DEVELOPER PORTAL</h1>
+                <p id="user-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-800 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Sign Out <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-gauge mr-2 text-purple-400"></i>Status</button>
+            <button onclick="switchTab('bugs')" id="tab-bugs" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-bug mr-2 text-red-400"></i>Bug Tracker</button>
+            <button onclick="switchTab('deployments')" id="tab-deployments" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-rocket mr-2 text-blue-400"></i>Deployments</button>
+            <button onclick="switchTab('docs')" id="tab-docs" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-book mr-2 text-green-400"></i>Tech Docs</button>
+            <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-code mr-2 text-yellow-400"></i>Dev Notes</button>
+        </div>
+
+        <!-- Tab Views -->
+        <div class="flex-1 overflow-hidden bg-[#0a0a0f]">
+
+            <!-- Status Overview -->
+            <div id="view-overview" class="tab-view active overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-purple-900/30 to-gray-900 p-6 rounded-2xl border border-purple-700/40">
+                    <h2 class="text-2xl font-black text-purple-400 mb-1">Platform Status</h2>
+                    <p class="text-gray-400 text-sm">Monitor all systems, track bugs, and manage deployments.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Open Bugs</h3>
+                        <p class="text-2xl font-black text-red-400" id="stat-bugs">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Fixed</h3>
+                        <p class="text-2xl font-black text-green-400" id="stat-fixed">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Deployments</h3>
+                        <p class="text-2xl font-black text-blue-400" id="stat-deploys">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Tech Docs</h3>
+                        <p class="text-2xl font-black text-yellow-400" id="stat-docs">—</p>
+                    </div>
+                </div>
+                <!-- System Status Checks -->
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-green-400"></i> System Health
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Web App (azlearner.me)</span>
+                            <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">LIVE</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Firebase (Firestore)</span>
+                            <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">CONNECTED</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Firebase (Auth)</span>
+                            <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">ACTIVE</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Admin HQ</span>
+                            <span class="bg-green-900/50 text-green-400 px-2 py-1 rounded font-bold border border-green-700/40">LIVE</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Android App</span>
+                            <span class="bg-blue-900/50 text-blue-400 px-2 py-1 rounded font-bold border border-blue-700/40">DEPLOYED</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700"><h3 class="text-sm font-bold text-gray-300">Recent Bugs</h3></div>
+                    <div id="overview-bugs" class="p-4 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Bug Tracker -->
+            <div id="view-bugs" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-red-900/30 to-gray-900 p-6 rounded-2xl border border-red-700/40">
+                    <h2 class="text-2xl font-black text-red-400 mb-1">Bug Tracker</h2>
+                    <p class="text-gray-400 text-sm">Track, prioritize, and resolve platform bugs.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Report Bug</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="bug-title" type="text" placeholder="Bug title / description"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-red-500 text-sm md:col-span-2">
+                        <select id="bug-severity"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-red-500 text-sm">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                        <input id="bug-page" type="text" placeholder="Affected page / component"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-red-500 text-sm">
+                    </div>
+                    <button onclick="addBug()"
+                        class="bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Report Bug
+                    </button>
+                </div>
+                <div id="bugs-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Deployments -->
+            <div id="view-deployments" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-blue-900/30 to-gray-900 p-6 rounded-2xl border border-blue-700/40">
+                    <h2 class="text-2xl font-black text-blue-400 mb-1">Deployment Log</h2>
+                    <p class="text-gray-400 text-sm">Record and track platform deployments and releases.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Log Deployment</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="deploy-version" type="text" placeholder="Version (e.g. v2.1.0)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm font-mono">
+                        <input id="deploy-date" type="datetime-local"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <textarea id="deploy-changes" placeholder="What changed in this deployment..."
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm resize-none h-20 md:col-span-2"></textarea>
+                    </div>
+                    <button onclick="addDeployment()"
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-rocket mr-2"></i>Log Deployment
+                    </button>
+                </div>
+                <div id="deployments-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Tech Docs -->
+            <div id="view-docs" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-green-900/30 to-gray-900 p-6 rounded-2xl border border-green-700/40">
+                    <h2 class="text-2xl font-black text-green-400 mb-1">Technical Documentation</h2>
+                    <p class="text-gray-400 text-sm">Save links to technical docs, API references, and resources.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Add Doc Link</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <input id="doc-title" type="text" placeholder="Title"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-green-500 text-sm">
+                        <input id="doc-url" type="url" placeholder="URL"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-green-500 text-sm">
+                        <select id="doc-category"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-green-500 text-sm">
+                            <option value="api">API Reference</option>
+                            <option value="guide">Guide</option>
+                            <option value="firebase">Firebase</option>
+                            <option value="design">Design</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <button onclick="addTechDoc()"
+                        class="bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Save Doc
+                    </button>
+                </div>
+                <div id="tech-docs-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Dev Notes -->
+            <div id="view-notes" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-2xl border border-yellow-700/40">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1">Dev Notes</h2>
+                    <p class="text-gray-400 text-sm">Private developer scratchpad for code snippets and ideas.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Scratchpad</h3>
+                    <textarea id="dev-notes" placeholder="Code snippets, ideas, TODOs, architecture notes..."
+                        class="w-full bg-gray-900 border border-yellow-500/30 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-yellow-400 resize-none font-mono h-64"></textarea>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="saveNotes()"
+                            class="bg-yellow-600 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg text-xs font-bold transition">
+                            <i class="fa-solid fa-save mr-1"></i> Save Notes
+                        </button>
+                        <span id="notes-saved" class="text-xs text-green-400 opacity-0 transition-opacity flex items-center gap-1">
+                            <i class="fa-solid fa-check"></i> Saved
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, query, orderBy, serverTimestamp, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const ROLE_KEY = "developer";
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+        let bugs = [];
+        let deployments = [];
+        let techDocs = [];
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                msg.innerText = '';
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.innerText = "Sign in failed: " + err.message;
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const roleDoc = await getDoc(doc(db, "admin_roles", ROLE_KEY));
+                const allowed = roleDoc.exists() ? (roleDoc.data().allowedEmails || []) : [];
+                if (!allowed.includes(user.email)) {
+                    document.getElementById('login-msg').innerText = "⛔ Access not granted for this portal.";
+                    signOut(auth);
+                    return;
+                }
+                currentUser = { email: user.email, uid: user.uid };
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = user.email;
+                loadData();
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        const ns = 'developer_portal';
+
+        async function loadData() {
+            const bugsSnap = await getDocs(query(collection(db, `${ns}_bugs`), orderBy('timestamp', 'desc')));
+            bugs = [];
+            bugsSnap.forEach(d => bugs.push({ id: d.id, ...d.data() }));
+            renderBugs();
+
+            const deploysSnap = await getDocs(query(collection(db, `${ns}_deployments`), orderBy('timestamp', 'desc')));
+            deployments = [];
+            deploysSnap.forEach(d => deployments.push({ id: d.id, ...d.data() }));
+            renderDeployments();
+
+            const docsSnap = await getDoc(doc(db, `${ns}_data`, 'techdocs'));
+            techDocs = docsSnap.exists() ? (docsSnap.data().items || []) : [];
+            renderTechDocs();
+
+            const notesSnap = await getDoc(doc(db, `developer_data_${currentUser.uid}`, 'notes'));
+            if (notesSnap.exists()) document.getElementById('dev-notes').value = notesSnap.data().content || '';
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const openBugs = bugs.filter(b => b.status !== 'fixed').length;
+            const fixedBugs = bugs.filter(b => b.status === 'fixed').length;
+            document.getElementById('stat-bugs').innerText = openBugs;
+            document.getElementById('stat-fixed').innerText = fixedBugs;
+            document.getElementById('stat-deploys').innerText = deployments.length;
+            document.getElementById('stat-docs').innerText = techDocs.length;
+            renderOverviewBugs();
+        }
+
+        function renderOverviewBugs() {
+            const list = document.getElementById('overview-bugs');
+            const recent = bugs.filter(b => b.status !== 'fixed').slice(0, 5);
+            list.innerHTML = recent.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No open bugs. 🎉</p>' : '';
+            recent.forEach(b => {
+                const sColor = b.severity === 'critical' ? 'text-red-400' : b.severity === 'high' ? 'text-orange-400' : 'text-yellow-400';
+                list.innerHTML += `<div class="flex items-center justify-between bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg text-xs">
+                    <span class="text-gray-300">${b.title}</span>
+                    <span class="${sColor} font-bold uppercase">${b.severity}</span>
+                </div>`;
+            });
+        }
+
+        window.addBug = async function() {
+            const title = document.getElementById('bug-title').value.trim();
+            const severity = document.getElementById('bug-severity').value;
+            const page = document.getElementById('bug-page').value.trim();
+            if (!title) { alert("Please enter a bug description."); return; }
+            await addDoc(collection(db, `${ns}_bugs`), { title, severity, page, status: 'open', timestamp: serverTimestamp() });
+            document.getElementById('bug-title').value = '';
+            document.getElementById('bug-page').value = '';
+            await loadData();
+        };
+
+        window.markFixed = async function(id) {
+            await updateDoc(doc(db, `${ns}_bugs`, id), { status: 'fixed' });
+            await loadData();
+        };
+
+        window.deleteBug = async function(id) {
+            if (!confirm("Delete this bug?")) return;
+            await deleteDoc(doc(db, `${ns}_bugs`, id));
+            await loadData();
+        };
+
+        function renderBugs() {
+            const list = document.getElementById('bugs-list');
+            list.innerHTML = bugs.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No bugs reported yet.</p>' : '';
+            bugs.forEach(b => {
+                const sColor = b.severity === 'critical' ? 'bg-red-900/50 text-red-300 border-red-700/40' :
+                    b.severity === 'high' ? 'bg-orange-900/50 text-orange-300 border-orange-700/40' :
+                    b.severity === 'medium' ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/40' :
+                    'bg-gray-700/50 text-gray-400 border-gray-600/40';
+                const isFixed = b.status === 'fixed';
+                list.innerHTML += `<div class="bg-gray-800/80 border ${isFixed ? 'border-green-700/30 opacity-70' : 'border-gray-700'} p-5 rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-black text-gray-200 ${isFixed ? 'line-through text-gray-500' : ''}">${b.title}</h3>
+                        <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+                            <span class="text-[10px] px-2 py-0.5 rounded font-bold border ${sColor}">${b.severity}</span>
+                            ${isFixed ? '<span class="text-[10px] bg-green-900/40 text-green-400 px-2 py-0.5 rounded font-bold">FIXED</span>' :
+                                `<button onclick="markFixed('${b.id}')" class="text-green-400 hover:text-green-300 text-[10px] font-bold">MARK FIXED</button>`}
+                            <button onclick="deleteBug('${b.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                        </div>
+                    </div>
+                    ${b.page ? `<span class="text-[10px] text-gray-500"><i class="fa-solid fa-file mr-1"></i>${b.page}</span>` : ''}
+                </div>`;
+            });
+        }
+
+        window.addDeployment = async function() {
+            const version = document.getElementById('deploy-version').value.trim();
+            const date = document.getElementById('deploy-date').value;
+            const changes = document.getElementById('deploy-changes').value.trim();
+            if (!version) { alert("Please enter a version number."); return; }
+            await addDoc(collection(db, `${ns}_deployments`), { version, date, changes, timestamp: serverTimestamp() });
+            document.getElementById('deploy-version').value = '';
+            document.getElementById('deploy-date').value = '';
+            document.getElementById('deploy-changes').value = '';
+            await loadData();
+        };
+
+        window.deleteDeployment = async function(id) {
+            if (!confirm("Remove this deployment log?")) return;
+            await deleteDoc(doc(db, `${ns}_deployments`, id));
+            await loadData();
+        };
+
+        function renderDeployments() {
+            const list = document.getElementById('deployments-list');
+            list.innerHTML = deployments.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No deployments logged yet.</p>' : '';
+            deployments.forEach(d => {
+                const date = d.date ? new Date(d.date).toLocaleString() : (d.timestamp?.toDate ? new Date(d.timestamp.toDate()).toLocaleString() : '—');
+                list.innerHTML += `<div class="bg-gray-800/80 border border-blue-700/30 p-5 rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-blue-300 font-black font-mono">${d.version}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">${date}</span>
+                            <button onclick="deleteDeployment('${d.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                        </div>
+                    </div>
+                    ${d.changes ? `<p class="text-xs text-gray-400 font-mono whitespace-pre-wrap">${d.changes}</p>` : ''}
+                </div>`;
+            });
+        }
+
+        window.addTechDoc = async function() {
+            const title = document.getElementById('doc-title').value.trim();
+            const url = document.getElementById('doc-url').value.trim();
+            const category = document.getElementById('doc-category').value;
+            if (!title || !url) { alert("Please enter title and URL."); return; }
+            techDocs.push({ title, url, category });
+            await setDoc(doc(db, `${ns}_data`, 'techdocs'), { items: techDocs });
+            document.getElementById('doc-title').value = '';
+            document.getElementById('doc-url').value = '';
+            renderTechDocs();
+            updateStats();
+        };
+
+        window.removeTechDoc = async function(i) {
+            techDocs.splice(i, 1);
+            await setDoc(doc(db, `${ns}_data`, 'techdocs'), { items: techDocs });
+            renderTechDocs();
+            updateStats();
+        };
+
+        function renderTechDocs() {
+            const list = document.getElementById('tech-docs-list');
+            const catColors = { api: 'text-blue-400', guide: 'text-green-400', firebase: 'text-yellow-400', design: 'text-pink-400', other: 'text-gray-400' };
+            list.innerHTML = techDocs.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No docs saved yet.</p>' : '';
+            techDocs.forEach((d, i) => {
+                list.innerHTML += `<div class="flex items-center justify-between bg-gray-800/80 border border-gray-700 px-4 py-3 rounded-xl text-sm">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <i class="fa-solid fa-book ${catColors[d.category] || 'text-gray-400'} flex-shrink-0"></i>
+                        <a href="${d.url}" target="_blank" class="${catColors[d.category] || 'text-gray-400'} hover:brightness-125 font-bold truncate flex items-center gap-1">
+                            ${d.title} <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+                        <span class="text-[10px] text-gray-500 hidden md:block">${d.category}</span>
+                        <button onclick="removeTechDoc(${i})" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        window.saveNotes = async function() {
+            const content = document.getElementById('dev-notes').value;
+            await setDoc(doc(db, `developer_data_${currentUser.uid}`, 'notes'), { content });
+            const ind = document.getElementById('notes-saved');
+            ind.style.opacity = '1';
+            setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+        };
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        };
+    </script>
+</body>
+</html>

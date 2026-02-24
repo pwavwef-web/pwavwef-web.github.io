@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Chief of Ambassadors</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { background-color: #0a0a0f; color: white; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+        .tab-btn.active { background: rgba(251,146,60,0.15); color: #fb923c; border-color: rgba(251,146,60,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-orange-700/40">
+            <div class="text-5xl mb-4">🎓</div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400 mb-1">Chief of Ambassadors</h1>
+            <p class="text-sm text-gray-500 mb-6">Restricted · Authorized Personnel Only</p>
+            <input type="email" id="login-email" placeholder="Your Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-orange-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-orange-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Sign In 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400 mt-3 inline-block transition">← Back to Portals</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-orange-700/30 px-5 py-3 flex justify-between items-center shrink-0 shadow-md">
+            <div>
+                <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">🎓 CHIEF OF AMBASSADORS</h1>
+                <p id="user-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-800 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Sign Out <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-chart-pie mr-2 text-orange-400"></i>Overview</button>
+            <button onclick="switchTab('ambassadors')" id="tab-ambassadors" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-users mr-2 text-yellow-400"></i>Ambassadors</button>
+            <button onclick="switchTab('challenges')" id="tab-challenges" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-trophy mr-2 text-blue-400"></i>Challenges</button>
+            <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-ranking-star mr-2 text-purple-400"></i>Leaderboard</button>
+            <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-note-sticky mr-2 text-green-400"></i>Notes</button>
+        </div>
+
+        <!-- Tab Views -->
+        <div class="flex-1 overflow-hidden bg-[#0a0a0f]">
+
+            <!-- Overview -->
+            <div id="view-overview" class="tab-view active overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-orange-900/30 to-gray-900 p-6 rounded-2xl border border-orange-700/40">
+                    <h2 class="text-2xl font-black text-orange-400 mb-1">Ambassador Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Manage campus ambassadors, track challenges, and review leaderboards.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Ambassadors</h3>
+                        <p class="text-2xl font-black text-orange-400" id="stat-amb-count">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Challenges</h3>
+                        <p class="text-2xl font-black text-blue-400" id="stat-challenge-count">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Top Scorer</h3>
+                        <p class="text-sm font-black text-yellow-400 truncate" id="stat-top-scorer">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Pending Reviews</h3>
+                        <p class="text-2xl font-black text-red-400" id="stat-pending">—</p>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700">
+                        <h3 class="text-sm font-bold text-gray-300">Ambassador List Preview</h3>
+                    </div>
+                    <div id="overview-amb-list" class="p-4 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Ambassadors -->
+            <div id="view-ambassadors" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-2xl border border-yellow-700/40">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1">Ambassador Management</h2>
+                    <p class="text-gray-400 text-sm">Add, manage, and review campus ambassadors.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Register Ambassador</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <input id="amb-name" type="text" placeholder="Full Name"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <input id="amb-school" type="text" placeholder="School / Institution"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <input id="amb-contact" type="text" placeholder="Contact (email or phone)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                    </div>
+                    <button onclick="addAmbassador()"
+                        class="bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Register Ambassador
+                    </button>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                        <span class="text-sm font-bold text-gray-300">All Ambassadors</span>
+                        <span id="amb-count" class="text-xs text-gray-500 font-mono">0 registered</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-gray-400">
+                            <thead class="bg-gray-900/50 text-gray-500 uppercase">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">Name</th>
+                                    <th class="px-4 py-3 text-left">School</th>
+                                    <th class="px-4 py-3 text-left">Contact</th>
+                                    <th class="px-4 py-3 text-left">Status</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="amb-list" class="divide-y divide-gray-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Challenges -->
+            <div id="view-challenges" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-blue-900/30 to-gray-900 p-6 rounded-2xl border border-blue-700/40">
+                    <h2 class="text-2xl font-black text-blue-400 mb-1">Challenges</h2>
+                    <p class="text-gray-400 text-sm">Create and manage ambassador challenges and missions.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Create Challenge</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="challenge-title" type="text" placeholder="Challenge Title"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <input id="challenge-points" type="number" placeholder="Points Value"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <textarea id="challenge-desc" placeholder="Challenge description..."
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm resize-none h-20 md:col-span-2"></textarea>
+                    </div>
+                    <button onclick="addChallenge()"
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Post Challenge
+                    </button>
+                </div>
+                <div id="challenge-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div id="view-leaderboard" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-purple-900/30 to-gray-900 p-6 rounded-2xl border border-purple-700/40">
+                    <h2 class="text-2xl font-black text-purple-400 mb-1">Ambassador Leaderboard</h2>
+                    <p class="text-gray-400 text-sm">Track ambassador scores and rankings.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Update Score</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <select id="score-amb" class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-purple-500 text-sm">
+                            <option value="">Select Ambassador</option>
+                        </select>
+                        <input id="score-points" type="number" placeholder="Add points"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-purple-500 text-sm">
+                        <button onclick="addPoints()"
+                            class="bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg px-4 py-3 text-sm transition">
+                            <i class="fa-solid fa-plus mr-2"></i>Add Points
+                        </button>
+                    </div>
+                </div>
+                <div id="leaderboard-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Notes -->
+            <div id="view-notes" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-green-900/30 to-gray-900 p-6 rounded-2xl border border-green-700/40">
+                    <h2 class="text-2xl font-black text-green-400 mb-1">Ambassador Notes</h2>
+                    <p class="text-gray-400 text-sm">Private workspace for ambassador program memos.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Quick Notes</h3>
+                    <textarea id="amb-notes" placeholder="Ambassador program notes, meeting minutes, reminders..."
+                        class="w-full bg-gray-900 border border-green-500/30 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-green-400 resize-none font-mono h-48"></textarea>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="saveNotes()"
+                            class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                            <i class="fa-solid fa-save mr-1"></i> Save Notes
+                        </button>
+                        <span id="notes-saved" class="text-xs text-green-400 opacity-0 transition-opacity flex items-center gap-1">
+                            <i class="fa-solid fa-check"></i> Saved
+                        </span>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Action Items</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input id="task-input" type="text" placeholder="Add action item..."
+                            class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-green-400">
+                        <button onclick="addTask()"
+                            class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                    <ul id="task-list" class="space-y-2"></ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, query, orderBy, serverTimestamp, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const ROLE_KEY = "ambassadors";
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+        let ambassadors = [];
+        let challenges = [];
+        let tasks = [];
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                msg.innerText = '';
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.innerText = "Sign in failed: " + err.message;
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const roleDoc = await getDoc(doc(db, "admin_roles", ROLE_KEY));
+                const allowed = roleDoc.exists() ? (roleDoc.data().allowedEmails || []) : [];
+                if (!allowed.includes(user.email)) {
+                    document.getElementById('login-msg').innerText = "⛔ Access not granted for this portal.";
+                    signOut(auth);
+                    return;
+                }
+                currentUser = { email: user.email, uid: user.uid };
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = user.email;
+                loadData();
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        async function loadData() {
+            const ns = `ambassadors_portal`;
+            // Ambassadors
+            const ambSnap = await getDocs(query(collection(db, `${ns}_members`), orderBy('name')));
+            ambassadors = [];
+            ambSnap.forEach(d => ambassadors.push({ id: d.id, ...d.data() }));
+            renderAmbassadors();
+            updateStats();
+
+            // Challenges
+            const chalSnap = await getDocs(query(collection(db, `${ns}_challenges`), orderBy('timestamp', 'desc')));
+            challenges = [];
+            chalSnap.forEach(d => challenges.push({ id: d.id, ...d.data() }));
+            renderChallenges();
+
+            // Notes & Tasks
+            const notesSnap = await getDoc(doc(db, `${ns}_data_${currentUser.uid}`, 'notes'));
+            if (notesSnap.exists()) document.getElementById('amb-notes').value = notesSnap.data().content || '';
+            const tasksSnap = await getDoc(doc(db, `${ns}_data_${currentUser.uid}`, 'tasks'));
+            tasks = tasksSnap.exists() ? (tasksSnap.data().items || []) : [];
+            renderTasks();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-amb-count').innerText = ambassadors.length;
+            document.getElementById('stat-challenge-count').innerText = challenges.length;
+            const pending = ambassadors.filter(a => a.status === 'pending').length;
+            document.getElementById('stat-pending').innerText = pending;
+            const sorted = [...ambassadors].sort((a, b) => (b.points || 0) - (a.points || 0));
+            document.getElementById('stat-top-scorer').innerText = sorted[0]?.name || '—';
+            renderOverviewList();
+        }
+
+        function renderOverviewList() {
+            const list = document.getElementById('overview-amb-list');
+            const preview = ambassadors.slice(0, 5);
+            list.innerHTML = preview.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No ambassadors registered yet.</p>' : '';
+            preview.forEach(a => {
+                list.innerHTML += `<div class="flex items-center justify-between bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg text-sm">
+                    <span class="text-gray-300 font-bold">${a.name}</span>
+                    <span class="text-gray-500 text-xs">${a.school || '—'}</span>
+                    <span class="text-yellow-400 font-bold text-xs">${a.points || 0} pts</span>
+                </div>`;
+            });
+        }
+
+        function renderAmbassadors() {
+            const list = document.getElementById('amb-list');
+            const count = document.getElementById('amb-count');
+            count.innerText = `${ambassadors.length} registered`;
+            list.innerHTML = ambassadors.length === 0 ? '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-600">No ambassadors yet.</td></tr>' : '';
+            ambassadors.forEach(a => {
+                const statusColor = a.status === 'active' ? 'bg-green-900/40 text-green-300' : 'bg-yellow-900/40 text-yellow-300';
+                list.innerHTML += `<tr class="hover:bg-gray-700/20 transition">
+                    <td class="px-4 py-3 text-gray-300 font-bold">${a.name}</td>
+                    <td class="px-4 py-3">${a.school || '—'}</td>
+                    <td class="px-4 py-3">${a.contact || '—'}</td>
+                    <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded ${statusColor} font-bold">${a.status || 'pending'}</span></td>
+                    <td class="px-4 py-3 text-right">
+                        ${a.status !== 'active' ? `<button onclick="activateAmb('${a.id}')" class="text-green-400 hover:text-green-300 text-[10px] font-bold mr-2">ACTIVATE</button>` : ''}
+                        <button onclick="deleteAmb('${a.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">REMOVE</button>
+                    </td>
+                </tr>`;
+            });
+            // Populate score select
+            const sel = document.getElementById('score-amb');
+            sel.innerHTML = '<option value="">Select Ambassador</option>';
+            ambassadors.forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.name}</option>`; });
+            renderLeaderboard();
+        }
+
+        window.addAmbassador = async function() {
+            const name = document.getElementById('amb-name').value.trim();
+            const school = document.getElementById('amb-school').value.trim();
+            const contact = document.getElementById('amb-contact').value.trim();
+            if (!name) { alert("Please enter a name."); return; }
+            await addDoc(collection(db, `ambassadors_portal_members`), { name, school, contact, status: 'pending', points: 0, timestamp: serverTimestamp() });
+            document.getElementById('amb-name').value = '';
+            document.getElementById('amb-school').value = '';
+            document.getElementById('amb-contact').value = '';
+            await loadData();
+        };
+
+        window.activateAmb = async function(id) {
+            await updateDoc(doc(db, `ambassadors_portal_members`, id), { status: 'active' });
+            await loadData();
+        };
+
+        window.deleteAmb = async function(id) {
+            if (!confirm("Remove this ambassador?")) return;
+            await deleteDoc(doc(db, `ambassadors_portal_members`, id));
+            await loadData();
+        };
+
+        function renderChallenges() {
+            const list = document.getElementById('challenge-list');
+            list.innerHTML = challenges.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No challenges posted yet.</p>' : '';
+            challenges.forEach(c => {
+                list.innerHTML += `<div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-black text-blue-300">${c.title}</h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-yellow-400 bg-yellow-900/30 px-2 py-1 rounded">${c.points || 0} pts</span>
+                            <button onclick="deleteChallenge('${c.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">REMOVE</button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400">${c.desc || ''}</p>
+                </div>`;
+            });
+        }
+
+        window.addChallenge = async function() {
+            const title = document.getElementById('challenge-title').value.trim();
+            const desc = document.getElementById('challenge-desc').value.trim();
+            const points = parseInt(document.getElementById('challenge-points').value) || 0;
+            if (!title) { alert("Please enter a challenge title."); return; }
+            await addDoc(collection(db, `ambassadors_portal_challenges`), { title, desc, points, timestamp: serverTimestamp() });
+            document.getElementById('challenge-title').value = '';
+            document.getElementById('challenge-desc').value = '';
+            document.getElementById('challenge-points').value = '';
+            await loadData();
+        };
+
+        window.deleteChallenge = async function(id) {
+            if (!confirm("Remove this challenge?")) return;
+            await deleteDoc(doc(db, `ambassadors_portal_challenges`, id));
+            await loadData();
+        };
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            const sorted = [...ambassadors].sort((a, b) => (b.points || 0) - (a.points || 0));
+            list.innerHTML = sorted.length === 0 ? '<p class="text-gray-600 text-xs text-center py-8">No scores yet.</p>' : '';
+            sorted.forEach((a, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+                list.innerHTML += `<div class="flex items-center justify-between bg-gray-800/80 border border-gray-700 px-5 py-4 rounded-xl">
+                    <span class="text-lg mr-3">${medal}</span>
+                    <span class="flex-1 text-gray-300 font-bold text-sm">${a.name}</span>
+                    <span class="text-xs text-gray-500 mr-4">${a.school || '—'}</span>
+                    <span class="text-xl font-black text-yellow-400">${a.points || 0}</span>
+                    <span class="text-xs text-gray-600 ml-1">pts</span>
+                </div>`;
+            });
+        }
+
+        window.addPoints = async function() {
+            const id = document.getElementById('score-amb').value;
+            const pts = parseInt(document.getElementById('score-points').value);
+            if (!id || isNaN(pts)) { alert("Select an ambassador and enter points."); return; }
+            const amb = ambassadors.find(a => a.id === id);
+            if (!amb) return;
+            await updateDoc(doc(db, `ambassadors_portal_members`, id), { points: (amb.points || 0) + pts });
+            document.getElementById('score-points').value = '';
+            await loadData();
+        };
+
+        window.saveNotes = async function() {
+            const content = document.getElementById('amb-notes').value;
+            await setDoc(doc(db, `ambassadors_portal_data_${currentUser.uid}`, 'notes'), { content });
+            const ind = document.getElementById('notes-saved');
+            ind.style.opacity = '1';
+            setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+        };
+
+        window.addTask = async function() {
+            const val = document.getElementById('task-input').value.trim();
+            if (!val) return;
+            tasks.push({ text: val, done: false });
+            await saveTasks();
+            document.getElementById('task-input').value = '';
+            renderTasks();
+        };
+
+        async function saveTasks() {
+            await setDoc(doc(db, `ambassadors_portal_data_${currentUser.uid}`, 'tasks'), { items: tasks });
+        }
+
+        window.toggleTask = async function(i) {
+            tasks[i].done = !tasks[i].done;
+            await saveTasks();
+            renderTasks();
+        };
+
+        window.removeTask = async function(i) {
+            tasks.splice(i, 1);
+            await saveTasks();
+            renderTasks();
+        };
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = tasks.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No action items yet.</p>' : '';
+            tasks.forEach((t, i) => {
+                list.innerHTML += `<li class="flex items-center gap-3 bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg">
+                    <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 accent-green-500 cursor-pointer">
+                    <span class="flex-1 text-sm ${t.done ? 'line-through text-gray-600' : 'text-gray-300'}">${t.text}</span>
+                    <button onclick="removeTask(${i})" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                </li>`;
+            });
+        }
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        };
+    </script>
+</body>
+</html>

@@ -97,6 +97,9 @@
             <button onclick="app.switchView('pages')" id="nav-pages"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
                 <i class="fa-solid fa-sitemap mr-2 text-purple-400"></i>All Pages</button>
+            <button onclick="app.switchView('access')" id="nav-access"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-key mr-2 text-pink-400"></i>Role Access</button>
         </div>
 
         <div class="flex-1 overflow-hidden flex flex-col bg-[#0a0a0f]">
@@ -412,12 +415,23 @@
                 </div>
             </div>
 
+            <!-- ROLE ACCESS VIEW -->
+            <div id="view-access" class="ceo-view space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gradient-to-br from-pink-900/30 to-gray-900 p-6 rounded-2xl border border-pink-700/40">
+                    <h2 class="text-2xl font-black text-pink-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-key"></i> Role Access Control</h2>
+                    <p class="text-gray-400 text-sm">Define which user emails can access each admin role portal. CEO-exclusive control.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="role-access-cards">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
         const firebaseConfig = {
@@ -464,6 +478,13 @@
             ],
             admin: [
                 { name: "Admin HQ", url: "admin.html", icon: "fa-shield", desc: "Admin command center" },
+                { name: "Admin Portals Hub", url: "admin/index.html", icon: "fa-folder-open", desc: "Role-based admin portals" },
+                { name: "Finance Portal", url: "admin/finance.html", icon: "fa-coins", desc: "Head of Finance" },
+                { name: "Ambassadors Portal", url: "admin/ambassadors.html", icon: "fa-graduation-cap", desc: "Chief of Ambassadors" },
+                { name: "Assistant Portal", url: "admin/assistant.html", icon: "fa-clipboard-list", desc: "Administrative Assistant" },
+                { name: "Developer Portal", url: "admin/developer.html", icon: "fa-code", desc: "Developer" },
+                { name: "Marketing Portal", url: "admin/marketing.html", icon: "fa-bullhorn", desc: "Comms & Marketing Lead" },
+                { name: "Podcast Portal", url: "admin/podcast.html", icon: "fa-microphone", desc: "Podcast Lead" },
                 { name: "CV Admin", url: "cv/admin.html", icon: "fa-user-gear", desc: "CV admin tools" },
                 { name: "Emmanuel", url: "emmanuel.html", icon: "fa-user-secret", desc: "Emmanuel panel" },
                 { name: "Francis", url: "francis.html", icon: "fa-star", desc: "Francis panel" },
@@ -582,6 +603,7 @@
 
                 this.renderAllPages();
                 this.renderPlatformNavMap();
+                this.loadRoleAccess();
             },
 
             renderUserTable(users) {
@@ -798,6 +820,99 @@
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
                 a.download = `az-logs-${Date.now()}.csv`; a.click();
+            },
+
+            ROLES: [
+                { key: 'finance', label: 'Head of Finance', icon: '💰', color: 'green', url: 'admin/finance.html' },
+                { key: 'ambassadors', label: 'Chief of Ambassadors', icon: '🎓', color: 'orange', url: 'admin/ambassadors.html' },
+                { key: 'assistant', label: 'Administrative Assistant', icon: '📋', color: 'blue', url: 'admin/assistant.html' },
+                { key: 'developer', label: 'Developer', icon: '💻', color: 'purple', url: 'admin/developer.html' },
+                { key: 'marketing', label: 'Comms & Marketing Lead', icon: '📣', color: 'pink', url: 'admin/marketing.html' },
+                { key: 'podcast', label: 'Podcast Lead', icon: '🎙️', color: 'red', url: 'admin/podcast.html' }
+            ],
+
+            roleAccessData: {},
+
+            async loadRoleAccess() {
+                for (const role of this.ROLES) {
+                    const snap = await getDoc(doc(db, "admin_roles", role.key));
+                    this.roleAccessData[role.key] = snap.exists() ? (snap.data().allowedEmails || []) : [];
+                }
+                this.renderRoleAccessCards();
+            },
+
+            renderRoleAccessCards() {
+                const container = document.getElementById('role-access-cards');
+                const colorMap = {
+                    green: { border: 'border-green-700/40', text: 'text-green-400', bg: 'bg-green-900/30', btn: 'bg-green-600 hover:bg-green-500' },
+                    orange: { border: 'border-orange-700/40', text: 'text-orange-400', bg: 'bg-orange-900/30', btn: 'bg-orange-600 hover:bg-orange-500' },
+                    blue: { border: 'border-blue-700/40', text: 'text-blue-400', bg: 'bg-blue-900/30', btn: 'bg-blue-600 hover:bg-blue-500' },
+                    purple: { border: 'border-purple-700/40', text: 'text-purple-400', bg: 'bg-purple-900/30', btn: 'bg-purple-600 hover:bg-purple-500' },
+                    pink: { border: 'border-pink-700/40', text: 'text-pink-400', bg: 'bg-pink-900/30', btn: 'bg-pink-600 hover:bg-pink-500' },
+                    red: { border: 'border-red-700/40', text: 'text-red-400', bg: 'bg-red-900/30', btn: 'bg-red-600 hover:bg-red-500' }
+                };
+                container.innerHTML = '';
+                this.ROLES.forEach(role => {
+                    const c = colorMap[role.color];
+                    const emails = this.roleAccessData[role.key] || [];
+                    const emailBadges = emails.map((e, i) =>
+                        `<span class="inline-flex items-center gap-1 bg-gray-700/60 text-gray-200 text-[10px] px-2 py-1 rounded font-mono">
+                            ${e}
+                            <button onclick="app.removeRoleEmail('${role.key}', ${i})" class="text-red-400 hover:text-red-300 font-bold ml-1">✕</button>
+                        </span>`
+                    ).join('');
+                    container.innerHTML += `
+                        <div class="bg-gray-800/80 p-5 rounded-xl ${c.border} border">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl">${role.icon}</span>
+                                    <div>
+                                        <h3 class="text-sm font-black ${c.text}">${role.label}</h3>
+                                        <a href="${role.url}" target="_blank" class="text-[10px] text-gray-500 hover:text-gray-300 transition flex items-center gap-1">
+                                            ${role.url} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <span class="text-xs ${c.text} font-bold bg-gray-900/50 px-2 py-1 rounded">${emails.length} user${emails.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="flex gap-2 mb-3">
+                                <input id="role-email-${role.key}" type="email" placeholder="Add email to grant access..."
+                                    class="flex-1 p-2 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-pink-500 text-xs"
+                                    onkeydown="if(event.key==='Enter') app.addRoleEmail('${role.key}')">
+                                <button onclick="app.addRoleEmail('${role.key}')"
+                                    class="${c.btn} text-white px-4 py-2 rounded-lg font-bold text-xs transition">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                            ${emails.length > 0 ?
+                                `<div class="flex flex-wrap gap-2">${emailBadges}</div>` :
+                                `<p class="text-xs text-gray-600 italic">No users granted access yet.</p>`
+                            }
+                        </div>`;
+                });
+            },
+
+            async addRoleEmail(roleKey) {
+                const input = document.getElementById(`role-email-${roleKey}`);
+                const email = input.value.trim().toLowerCase();
+                if (!email) return;
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert("Please enter a valid email address."); return; }
+                if (!this.roleAccessData[roleKey]) this.roleAccessData[roleKey] = [];
+                if (this.roleAccessData[roleKey].includes(email)) { alert("This email already has access."); return; }
+                this.roleAccessData[roleKey].push(email);
+                await setDoc(doc(db, "admin_roles", roleKey), { allowedEmails: this.roleAccessData[roleKey] });
+                await this.logAction('ROLE_ACCESS_GRANTED', `CEO granted ${email} access to ${roleKey} portal`);
+                input.value = '';
+                this.renderRoleAccessCards();
+            },
+
+            async removeRoleEmail(roleKey, index) {
+                const email = this.roleAccessData[roleKey][index];
+                if (!confirm(`Remove ${email} from ${roleKey} portal access?`)) return;
+                this.roleAccessData[roleKey].splice(index, 1);
+                await setDoc(doc(db, "admin_roles", roleKey), { allowedEmails: this.roleAccessData[roleKey] });
+                await this.logAction('ROLE_ACCESS_REVOKED', `CEO revoked ${email} access to ${roleKey} portal`);
+                this.renderRoleAccessCards();
             }
         };
 

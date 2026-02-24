@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – Head of Finance</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { background-color: #0a0a0f; color: white; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+        .tab-btn.active { background: rgba(74,222,128,0.15); color: #4ade80; border-color: rgba(74,222,128,0.4); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-gray-900 p-8 rounded-2xl shadow-2xl text-center border border-green-700/40">
+            <div class="text-5xl mb-4">💰</div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 mb-1">Head of Finance</h1>
+            <p class="text-sm text-gray-500 mb-6">Restricted · Authorized Personnel Only</p>
+            <input type="email" id="login-email" placeholder="Your Email"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-green-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password"
+                class="w-full mb-6 p-3 rounded-lg bg-gray-800 outline-none text-white border border-gray-700 focus:border-green-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-4">Sign In 🔐</button>
+            <p id="login-msg" class="text-red-500 text-xs h-4"></p>
+            <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400 mt-3 inline-block transition">← Back to Portals</a>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gray-900 border-b border-green-700/30 px-5 py-3 flex justify-between items-center shrink-0 shadow-md">
+            <div>
+                <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">💰 HEAD OF FINANCE</h1>
+                <p id="user-display" class="text-xs text-gray-400 font-mono">Loading...</p>
+            </div>
+            <button onclick="authManager.logout()"
+                class="bg-gray-800 hover:bg-red-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                Sign Out <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-gray-900 border-b border-gray-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-chart-pie mr-2 text-green-400"></i>Overview</button>
+            <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-wallet mr-2 text-yellow-400"></i>Budget</button>
+            <button onclick="switchTab('transactions')" id="tab-transactions" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-arrow-right-arrow-left mr-2 text-blue-400"></i>Transactions</button>
+            <button onclick="switchTab('reports')" id="tab-reports" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-file-chart-column mr-2 text-purple-400"></i>Reports</button>
+            <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-note-sticky mr-2 text-orange-400"></i>Notes</button>
+        </div>
+
+        <!-- Tab Views -->
+        <div class="flex-1 overflow-hidden bg-[#0a0a0f]">
+
+            <!-- Overview -->
+            <div id="view-overview" class="tab-view active overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-green-900/30 to-gray-900 p-6 rounded-2xl border border-green-700/40">
+                    <h2 class="text-2xl font-black text-green-400 mb-1">Finance Dashboard</h2>
+                    <p class="text-gray-400 text-sm">Track, manage, and report on all financial activities.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Budget</h3>
+                        <p class="text-2xl font-black text-green-400" id="stat-budget">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Spent</h3>
+                        <p class="text-2xl font-black text-red-400" id="stat-spent">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Remaining</h3>
+                        <p class="text-2xl font-black text-blue-400" id="stat-remaining">—</p>
+                    </div>
+                    <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Transactions</h3>
+                        <p class="text-2xl font-black text-purple-400" id="stat-txn-count">—</p>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700">
+                        <h3 class="text-sm font-bold text-gray-300">Recent Transactions</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-gray-400">
+                            <thead class="bg-gray-900/50 text-gray-500 uppercase">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">Date</th>
+                                    <th class="px-4 py-3 text-left">Description</th>
+                                    <th class="px-4 py-3 text-left">Category</th>
+                                    <th class="px-4 py-3 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-txn-list" class="divide-y divide-gray-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget -->
+            <div id="view-budget" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-yellow-900/30 to-gray-900 p-6 rounded-2xl border border-yellow-700/40">
+                    <h2 class="text-2xl font-black text-yellow-400 mb-1">Budget Management</h2>
+                    <p class="text-gray-400 text-sm">Set and track budget allocations by category.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Set Budget Allocation</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <input id="budget-category" type="text" placeholder="Category (e.g. Events)"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <input id="budget-amount" type="number" placeholder="Amount"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-yellow-500 text-sm">
+                        <button onclick="addBudgetItem()"
+                            class="bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg px-4 py-3 text-sm transition">
+                            <i class="fa-solid fa-plus mr-2"></i>Add Category
+                        </button>
+                    </div>
+                    <div id="budget-list" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Transactions -->
+            <div id="view-transactions" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-blue-900/30 to-gray-900 p-6 rounded-2xl border border-blue-700/40">
+                    <h2 class="text-2xl font-black text-blue-400 mb-1">Transactions</h2>
+                    <p class="text-gray-400 text-sm">Log and manage all financial transactions.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-4">Add Transaction</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input id="txn-desc" type="text" placeholder="Description"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <input id="txn-amount" type="number" placeholder="Amount"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                        <select id="txn-type"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                        <input id="txn-category" type="text" placeholder="Category"
+                            class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-blue-500 text-sm">
+                    </div>
+                    <button onclick="addTransaction()"
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg px-6 py-3 text-sm transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Log Transaction
+                    </button>
+                </div>
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-gray-400">
+                            <thead class="bg-gray-900/50 text-gray-500 uppercase">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">Date</th>
+                                    <th class="px-4 py-3 text-left">Description</th>
+                                    <th class="px-4 py-3 text-left">Category</th>
+                                    <th class="px-4 py-3 text-left">Type</th>
+                                    <th class="px-4 py-3 text-right">Amount</th>
+                                    <th class="px-4 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="txn-list" class="divide-y divide-gray-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports -->
+            <div id="view-reports" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-purple-900/30 to-gray-900 p-6 rounded-2xl border border-purple-700/40">
+                    <h2 class="text-2xl font-black text-purple-400 mb-1">Financial Reports</h2>
+                    <p class="text-gray-400 text-sm">Generate and download financial summaries.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-purple-400"></i> Expense Breakdown
+                        </h3>
+                        <div id="expense-breakdown" class="space-y-2 text-xs"></div>
+                    </div>
+                    <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                        <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-file-export text-green-400"></i> Export Data
+                        </h3>
+                        <div class="space-y-3">
+                            <button onclick="exportTransactions()"
+                                class="w-full bg-green-900/30 hover:bg-green-900/50 text-green-300 border border-green-700/40 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 text-sm">
+                                <i class="fa-solid fa-download"></i> Export Transactions (CSV)
+                            </button>
+                            <button onclick="exportBudget()"
+                                class="w-full bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-300 border border-yellow-700/40 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 text-sm">
+                                <i class="fa-solid fa-download"></i> Export Budget Plan (CSV)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Summary</h3>
+                    <div id="finance-summary" class="text-sm text-gray-400 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div id="view-notes" class="tab-view overflow-y-auto h-full p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-orange-900/30 to-gray-900 p-6 rounded-2xl border border-orange-700/40">
+                    <h2 class="text-2xl font-black text-orange-400 mb-1">Finance Notes</h2>
+                    <p class="text-gray-400 text-sm">Private workspace for financial memos and reminders.</p>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Quick Notes</h3>
+                    <textarea id="finance-notes" placeholder="Jot down financial notes, reminders, or action items..."
+                        class="w-full bg-gray-900 border border-orange-500/30 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-orange-400 resize-none font-mono h-48"></textarea>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="saveNotes()"
+                            class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                            <i class="fa-solid fa-save mr-1"></i> Save Notes
+                        </button>
+                        <span id="notes-saved" class="text-xs text-green-400 opacity-0 transition-opacity flex items-center gap-1">
+                            <i class="fa-solid fa-check"></i> Saved
+                        </span>
+                    </div>
+                </div>
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">Action Items</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input id="task-input" type="text" placeholder="Add action item..."
+                            class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-orange-400">
+                        <button onclick="addTask()"
+                            class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                    <ul id="task-list" class="space-y-2"></ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const ROLE_KEY = "finance";
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        let currentUser = null;
+        let transactions = [];
+        let budgetItems = [];
+        let tasks = [];
+
+        window.authManager = {
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                const msg = document.getElementById('login-msg');
+                msg.innerText = '';
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.innerText = "Sign in failed: " + err.message;
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const roleDoc = await getDoc(doc(db, "admin_roles", ROLE_KEY));
+                const allowed = roleDoc.exists() ? (roleDoc.data().allowedEmails || []) : [];
+                if (!allowed.includes(user.email)) {
+                    document.getElementById('login-msg').innerText = "⛔ Access not granted for this portal.";
+                    signOut(auth);
+                    return;
+                }
+                currentUser = { email: user.email, uid: user.uid };
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('user-display').innerText = user.email;
+                loadData();
+            } else {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        async function loadData() {
+            const ns = `finance_${currentUser.uid}`;
+            // Load transactions
+            const txnSnap = await getDocs(query(collection(db, `${ns}_transactions`), orderBy('timestamp', 'desc')));
+            transactions = [];
+            txnSnap.forEach(d => transactions.push({ id: d.id, ...d.data() }));
+            renderTransactions();
+            updateStats();
+
+            // Load budget
+            const budgetSnap = await getDoc(doc(db, `${ns}_data`, 'budget'));
+            budgetItems = budgetSnap.exists() ? (budgetSnap.data().items || []) : [];
+            renderBudget();
+
+            // Load notes
+            const notesSnap = await getDoc(doc(db, `${ns}_data`, 'notes'));
+            if (notesSnap.exists()) {
+                document.getElementById('finance-notes').value = notesSnap.data().content || '';
+            }
+
+            // Load tasks
+            const tasksSnap = await getDoc(doc(db, `${ns}_data`, 'tasks'));
+            tasks = tasksSnap.exists() ? (tasksSnap.data().items || []) : [];
+            renderTasks();
+            renderReports();
+        }
+
+        function updateStats() {
+            const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
+            const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amount || 0), 0);
+            document.getElementById('stat-budget').innerText = `$${income.toFixed(2)}`;
+            document.getElementById('stat-spent').innerText = `$${expenses.toFixed(2)}`;
+            document.getElementById('stat-remaining').innerText = `$${(income - expenses).toFixed(2)}`;
+            document.getElementById('stat-txn-count').innerText = transactions.length;
+            renderOverviewTxns();
+        }
+
+        function renderOverviewTxns() {
+            const list = document.getElementById('overview-txn-list');
+            const recent = transactions.slice(0, 8);
+            list.innerHTML = recent.length === 0 ? '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-600">No transactions yet.</td></tr>' : '';
+            recent.forEach(t => {
+                const color = t.type === 'income' ? 'text-green-400' : 'text-red-400';
+                const sign = t.type === 'income' ? '+' : '-';
+                const date = t.timestamp?.toDate ? new Date(t.timestamp.toDate()).toLocaleDateString() : '—';
+                list.innerHTML += `<tr class="hover:bg-gray-700/20 transition">
+                    <td class="px-4 py-3">${date}</td>
+                    <td class="px-4 py-3 text-gray-300">${t.desc || '—'}</td>
+                    <td class="px-4 py-3">${t.category || '—'}</td>
+                    <td class="px-4 py-3 text-right font-bold ${color}">${sign}$${(t.amount || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+        }
+
+        function renderTransactions() {
+            const list = document.getElementById('txn-list');
+            list.innerHTML = transactions.length === 0 ? '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-600">No transactions yet.</td></tr>' : '';
+            transactions.forEach(t => {
+                const color = t.type === 'income' ? 'text-green-400' : 'text-red-400';
+                const sign = t.type === 'income' ? '+' : '-';
+                const date = t.timestamp?.toDate ? new Date(t.timestamp.toDate()).toLocaleDateString() : '—';
+                list.innerHTML += `<tr class="hover:bg-gray-700/20 transition">
+                    <td class="px-4 py-3">${date}</td>
+                    <td class="px-4 py-3 text-gray-300">${t.desc || '—'}</td>
+                    <td class="px-4 py-3">${t.category || '—'}</td>
+                    <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded ${t.type === 'income' ? 'bg-green-900/40 text-green-300' : 'bg-red-900/40 text-red-300'} font-bold">${t.type}</span></td>
+                    <td class="px-4 py-3 text-right font-bold ${color}">${sign}$${(t.amount || 0).toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right"><button onclick="deleteTransaction('${t.id}')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">DELETE</button></td>
+                </tr>`;
+            });
+        }
+
+        window.addTransaction = async function() {
+            const desc = document.getElementById('txn-desc').value.trim();
+            const amount = parseFloat(document.getElementById('txn-amount').value);
+            const type = document.getElementById('txn-type').value;
+            const category = document.getElementById('txn-category').value.trim();
+            if (!desc || isNaN(amount)) { alert("Please fill in description and amount."); return; }
+            const ns = `finance_${currentUser.uid}`;
+            await addDoc(collection(db, `${ns}_transactions`), { desc, amount, type, category, timestamp: serverTimestamp() });
+            document.getElementById('txn-desc').value = '';
+            document.getElementById('txn-amount').value = '';
+            document.getElementById('txn-category').value = '';
+            await loadData();
+        };
+
+        window.deleteTransaction = async function(id) {
+            if (!confirm("Delete this transaction?")) return;
+            const ns = `finance_${currentUser.uid}`;
+            await deleteDoc(doc(db, `${ns}_transactions`, id));
+            await loadData();
+        };
+
+        function renderBudget() {
+            const list = document.getElementById('budget-list');
+            list.innerHTML = budgetItems.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No budget categories yet.</p>' : '';
+            budgetItems.forEach((item, i) => {
+                list.innerHTML += `<div class="flex justify-between items-center bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg text-sm">
+                    <span class="text-gray-300 font-bold">${item.category}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-yellow-400 font-black">$${(item.amount || 0).toFixed(2)}</span>
+                        <button onclick="removeBudgetItem(${i})" class="text-red-400 hover:text-red-300 text-[10px] font-bold">REMOVE</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        window.addBudgetItem = async function() {
+            const cat = document.getElementById('budget-category').value.trim();
+            const amt = parseFloat(document.getElementById('budget-amount').value);
+            if (!cat || isNaN(amt)) { alert("Please fill in category and amount."); return; }
+            budgetItems.push({ category: cat, amount: amt });
+            await saveBudget();
+            document.getElementById('budget-category').value = '';
+            document.getElementById('budget-amount').value = '';
+            renderBudget();
+        };
+
+        window.removeBudgetItem = async function(index) {
+            budgetItems.splice(index, 1);
+            await saveBudget();
+            renderBudget();
+        };
+
+        async function saveBudget() {
+            const ns = `finance_${currentUser.uid}`;
+            await setDoc(doc(db, `${ns}_data`, 'budget'), { items: budgetItems });
+        }
+
+        function renderReports() {
+            const breakdown = document.getElementById('expense-breakdown');
+            const summary = document.getElementById('finance-summary');
+            const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
+            const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amount || 0), 0);
+            const byCategory = {};
+            transactions.filter(t => t.type === 'expense').forEach(t => {
+                byCategory[t.category || 'Other'] = (byCategory[t.category || 'Other'] || 0) + (t.amount || 0);
+            });
+            breakdown.innerHTML = Object.keys(byCategory).length === 0 ? '<p class="text-gray-600 text-center py-4">No expense data.</p>' : '';
+            Object.entries(byCategory).forEach(([cat, amt]) => {
+                const pct = expenses > 0 ? ((amt / expenses) * 100).toFixed(1) : 0;
+                breakdown.innerHTML += `<div>
+                    <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">${cat}</span><span class="text-red-400 font-bold">$${amt.toFixed(2)} (${pct}%)</span></div>
+                    <div class="h-1.5 bg-gray-700 rounded-full"><div class="h-1.5 bg-red-500 rounded-full" style="width:${pct}%"></div></div>
+                </div>`;
+            });
+            summary.innerHTML = `
+                <div class="flex justify-between border-b border-gray-700 pb-2"><span>Total Income</span><span class="text-green-400 font-bold">$${income.toFixed(2)}</span></div>
+                <div class="flex justify-between border-b border-gray-700 pb-2"><span>Total Expenses</span><span class="text-red-400 font-bold">$${expenses.toFixed(2)}</span></div>
+                <div class="flex justify-between border-b border-gray-700 pb-2"><span>Net Balance</span><span class="${income - expenses >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">$${(income - expenses).toFixed(2)}</span></div>
+                <div class="flex justify-between"><span>Total Transactions</span><span class="text-blue-400 font-bold">${transactions.length}</span></div>`;
+        }
+
+        window.exportTransactions = function() {
+            const rows = [["Date", "Description", "Category", "Type", "Amount"]];
+            transactions.forEach(t => {
+                const date = t.timestamp?.toDate ? new Date(t.timestamp.toDate()).toLocaleDateString() : '';
+                rows.push([date, t.desc || '', t.category || '', t.type || '', t.amount || 0]);
+            });
+            downloadCSV(rows, 'finance-transactions');
+        };
+
+        window.exportBudget = function() {
+            const rows = [["Category", "Budget Amount"]];
+            budgetItems.forEach(item => rows.push([item.category, item.amount]));
+            downloadCSV(rows, 'finance-budget');
+        };
+
+        function downloadCSV(rows, filename) {
+            const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = `${filename}-${Date.now()}.csv`;
+            a.click();
+        }
+
+        window.saveNotes = async function() {
+            const ns = `finance_${currentUser.uid}`;
+            const content = document.getElementById('finance-notes').value;
+            await setDoc(doc(db, `${ns}_data`, 'notes'), { content });
+            const ind = document.getElementById('notes-saved');
+            ind.style.opacity = '1';
+            setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+        };
+
+        window.addTask = async function() {
+            const val = document.getElementById('task-input').value.trim();
+            if (!val) return;
+            tasks.push({ text: val, done: false });
+            await saveTasks();
+            document.getElementById('task-input').value = '';
+            renderTasks();
+        };
+
+        async function saveTasks() {
+            const ns = `finance_${currentUser.uid}`;
+            await setDoc(doc(db, `${ns}_data`, 'tasks'), { items: tasks });
+        }
+
+        window.toggleTask = async function(i) {
+            tasks[i].done = !tasks[i].done;
+            await saveTasks();
+            renderTasks();
+        };
+
+        window.removeTask = async function(i) {
+            tasks.splice(i, 1);
+            await saveTasks();
+            renderTasks();
+        };
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = tasks.length === 0 ? '<p class="text-gray-600 text-xs text-center py-4">No action items yet.</p>' : '';
+            tasks.forEach((t, i) => {
+                list.innerHTML += `<li class="flex items-center gap-3 bg-gray-900/50 border border-gray-700 px-4 py-3 rounded-lg">
+                    <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 accent-orange-500 cursor-pointer">
+                    <span class="flex-1 text-sm ${t.done ? 'line-through text-gray-600' : 'text-gray-300'}">${t.text}</span>
+                    <button onclick="removeTask(${i})" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button>
+                </li>`;
+            });
+        }
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        };
+    </script>
+</body>
+</html>
