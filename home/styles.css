@@ -1,0 +1,74 @@
+        body { -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        
+        /* --- NOTCH & SAFE AREA HANDLING --- */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        
+        .header-safe-area { padding-top: env(safe-area-inset-top); height: calc(4rem + env(safe-area-inset-top)); }
+        .main-safe-area { margin-top: calc(4rem + env(safe-area-inset-top)); }
+        
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        #sidebar-drawer { transition: transform 0.3s ease-in-out; }
+        .task-done { text-decoration: line-through; opacity: 0.5; }
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .msg-enter { animation: popIn 0.2s ease-out; }
+        @keyframes popIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .today-highlight { background-color: rgba(72,187,120,0.1) !important; border: 1px solid #48bb78 !important; }
+        
+        /* Star Rating Hover Effect */
+        .star-rating i:hover, .star-rating i.active { color: #FFAB40; transform: scale(1.2); }
+        
+        /* Heartbeat Animation for Thank You */
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .heart-beat { animation: heartbeat 1.5s infinite; }
+        
+        /* Profile Gradient */
+        .profile-gradient { background: linear-gradient(135deg, #448AFF 0%, #00d2ff 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Gold Gradient for VIP */
+        .vip-gradient { background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); }
+        
+        /* Leaderboard Ranks */
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: 2px solid #fff; }
+        .rank-2 { background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: black; border: 2px solid #fff; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: white; border: 2px solid #fff; }
+        /* Ticket Perforation Effect */
+        .ticket-stub {
+        background-image: radial-gradient(circle at 0 50%, transparent 10px, white 11px);
+        background-position: 0 0;
+        background-size: 100% 100%;
+        }
+        .dark .ticket-stub {
+        background-image: radial-gradient(circle at 0 50%, transparent 10px, #424242 11px);
+        }
+        /* --- BLOG STYLES --- */
+.font-roboto { font-family: 'Roboto', sans-serif; }
+.font-playfair { font-family: 'Playfair Display', serif; }
+.font-dancing { font-family: 'Dancing Script', cursive; }
+.font-mono { font-family: 'Fira Code', monospace; }
+
+.blog-media-container {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 12px;
+    background: #000;
+}
+/* Play Button Overlay */
+.play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.play-overlay:hover { background: rgba(0,0,0,0.6); }

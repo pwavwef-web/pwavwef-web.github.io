@@ -1,0 +1,2794 @@
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, collectionGroup, addDoc, deleteDoc, updateDoc, doc, query, where, onSnapshot, setDoc, getDoc, getDocs, orderBy, limit, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, sendPasswordResetEmail, getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor, RecaptchaVerifier, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+        const storage = getStorage(appInstance);
+
+        let currentUser = null;
+        let listeners = [];
+        let alertInterval = null;
+        let activeChatListener = null;
+        let activeJobListener = null; 
+        let activeChatType = null; 
+        let activeChatId = null; 
+        let valuation = 1000000000;
+
+        window.authManager = {
+            async login() { 
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-pass').value;
+        
+        try { 
+            await signInWithEmailAndPassword(auth, email, password); 
+            // Normal login success handled by onAuthStateChanged
+        } catch (err) { 
+            if (err.code === 'auth/multi-factor-auth-required') {
+                // MFA IS REQUIRED - TRIGGER CHALLENGE
+                mfaManager.handleLoginChallenge(err);
+            } else {
+                document.getElementById('login-msg').innerText = "Error: " + err.message; 
+            }
+        } 
+    },
+            async signup() {
+                try {
+                    const email = document.getElementById('signup-email').value;
+                    const pass = document.getElementById('signup-pass').value;
+                    const name = document.getElementById('signup-name').value;
+                    const phone = document.getElementById('signup-phone').value;
+                    
+                    const school = document.getElementById('signup-school').value.trim();
+                    const program = document.getElementById('signup-program').value;
+                    const confirmPass = document.getElementById('signup-pass-confirm').value;
+            if (pass !== confirmPass) {
+                throw new Error("Passwords do not match!");
+            }
+
+                    if(!name || !phone || !school || !program) throw new Error("All fields including School and Program are required.");
+                    
+                    const schoolLower = school.toLowerCase();
+                    const uccVariants = ['ucc', 'university of cape coast', 'univ of cape coast', 'cape coast university'];
+                    const isUCC = uccVariants.some(v => schoolLower.includes(v));
+
+                    if(!isUCC) {
+                        const confirmMsg = "Just a heads up! 🚀\n\nPremium services (like Print & Deliver) are currently optimized for UCC students. You can still use the app for your classes and notes.\n\nContinue signing up?";
+                        if(!confirm(confirmMsg)) return; 
+                    }
+
+                    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                    await setDoc(doc(db, "users", cred.user.uid), { 
+                        userId: cred.user.uid, 
+                        email, 
+                        name, 
+                        phone, 
+                        school: school,
+                        program: program, 
+                        role: "student",
+                        weeklyXp: 50 // Signup Bonus
+                    });
+                } catch (err) { document.getElementById('signup-msg').innerText = err.message; }
+            },
+            logout() { if(confirm('Log out?')) signOut(auth); },
+            toggleView(view) {
+                if(view === 'signup') { document.getElementById('view-login').classList.add('hidden'); document.getElementById('view-signup').classList.remove('hidden'); }
+                else { document.getElementById('view-signup').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); }
+            }
+        };
+
+        window.app = {
+            data: { 
+                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], blogs: [], currentBlogFont: 'font-roboto', theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
+                badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
+                currentTabIndex: 0
+            },
+            togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    },
+
+            init() {
+                onAuthStateChanged(auth, async (user) => {
+                    const splash = document.getElementById('splash-screen');
+                    const authOverlay = document.getElementById('auth-overlay');
+
+                    if (user) {
+                        // Logged In Logic
+                        currentUser = user;
+                        authOverlay.classList.add('hidden');
+
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if(userDoc.exists()) {
+                            this.data.user = userDoc.data();
+                            
+                            // XP RESET LOGIC (Weekly)
+                            const now = new Date();
+                            const currentWeekId = `${now.getFullYear()}-W${Math.ceil((now - new Date(now.getFullYear(),0,1)) / 86400000 / 7)}`;
+                            
+                            if (this.data.user.weekId !== currentWeekId) {
+                                // New week, reset XP
+                                await updateDoc(doc(db, "users", user.uid), { weeklyXp: 0, weekId: currentWeekId });
+                                this.data.user.weeklyXp = 0;
+                                this.data.user.weekId = currentWeekId;
+                                this.sendSystemNotification("New Week! 🔄", "XP has been reset. Time to grind!");
+                            } else {
+                                // Same week, check for daily login bonus
+                                const lastLogin = this.data.user.lastLogin ? new Date(this.data.user.lastLogin).getDate() : 0;
+                                if (lastLogin !== now.getDate()) {
+                                    this.addXp(50, "Daily Login ☀️");
+                                    await updateDoc(doc(db, "users", user.uid), { lastLogin: Date.now() });
+                                }
+                            }
+                            
+                            if(this.data.user.role === 'banned') {
+                                alert("Your account has been restricted. Contact support.");
+                                signOut(auth);
+                                return;
+                            }
+
+                            if(user.email === "pwavwef@gmail.com" && this.data.user.role !== 'admin') { await updateDoc(doc(db, "users", user.uid), { role: "admin" }); this.data.user.role = 'admin'; }
+                            this.updateProfileUI(this.data.user);
+                            if(this.data.user.role === 'admin') document.getElementById('header-admin-btn').classList.remove('hidden');
+                            
+                            if(user.email === "pwavwef@gmail.com") {
+                                document.getElementById('adm-btn-godmode').classList.remove('hidden');
+                            }
+                        }
+                        const read = localStorage.getItem('az_read_notifs');
+                        if(read) this.data.readNotifications = JSON.parse(read);
+                        this.startListeners();
+                        this.startAlertSystem();
+                        this.setupSwipeNavigation();
+                        
+                        // In multipage mode, determine tab from body attribute
+                        const tabIndex = parseInt(document.body.dataset.tabIndex || '0');
+                        this.switchTab(tabIndex, true);
+                        // Trigger initial render for the current page
+                        if (tabIndex === 0) this.renderHome();
+                        if (tabIndex === 4) this.renderChatList();
+                        
+                        window.addEventListener('popstate', (event) => {
+    // 1. Defined views ordered by PRIORITY (Top-most layers first!)
+    // If 'modal-blog-comments' is found open, we close it and STOP looking.
+    const views = [
+        'modal-image-view',       
+        'modal-blog-comments',    // Top priority (on top of blogs)
+        'full-screen-feedback',   
+        'full-screen-chat',       
+        'modal-write-blog',
+        'full-screen-profile',    
+        'full-screen-settings',   
+        'full-screen-leaderboard',
+        'full-screen-blogs',      // Lower priority (bottom layer)
+        'modal-notifications',    
+        'modal-note-editor',      
+        'modal-contacts',         
+        'modal-overlay'           
+    ];
+
+    let viewClosed = false;
+
+    // 2. Use a for...of loop so we can use 'break'
+    for (const id of views) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) {
+            el.classList.add('hidden'); // Close this view
+            viewClosed = true;
+
+            // Special cleanup for Chat
+            if (id === 'full-screen-chat' && this.activeChatListener) {
+                this.activeChatListener(); 
+                this.activeChatListener = null;
+            }
+            
+            // Special cleanup for generic overlay
+            if (id === 'modal-overlay') {
+                document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden'));
+            }
+
+            // 3. CRITICAL FIX: Stop the loop here! 
+            // This prevents the code from continuing and closing the Blogs page underneath.
+            break; 
+        }
+    }
+
+    // If we closed a view (like comments), stop here. Don't switch tabs.
+    if (viewClosed) return;
+
+    // In multipage mode, browser back/forward handles page navigation
+    // Only handle overlay state here - tab switching is done via URL navigation
+});
+
+                        setTimeout(() => { splash.classList.add('opacity-0', 'pointer-events-none'); }, 800);
+
+                    } else {
+                        currentUser = null;
+                        this.stopListeners();
+                        clearInterval(alertInterval);
+                        authOverlay.classList.remove('hidden');
+                        setTimeout(() => { splash.classList.add('opacity-0', 'pointer-events-none'); }, 500);
+                    }
+                });
+                try { const ls = localStorage; if(ls.getItem('az_theme')) this.data.theme = ls.getItem('az_theme'); if(ls.getItem('az_sys_notif')) this.data.systemNotifications = JSON.parse(ls.getItem('az_sys_notif')); } catch(e){}
+                this.applyTheme();
+                this.updateToggleUI('notif-toggle-btn', this.data.systemNotifications);
+            },
+
+            // --- XP SYSTEM ---
+            async addXp(amount, reason) {
+                if(!currentUser) return;
+                try {
+                    const newXp = (this.data.user.weeklyXp || 0) + amount;
+                    this.data.user.weeklyXp = newXp;
+                    await updateDoc(doc(db, "users", currentUser.uid), { weeklyXp: newXp });
+                    
+                    // SFX
+                    try { document.getElementById('xp-sound').play(); } catch(e){}
+                    
+                    // Toast
+                    const toast = document.createElement('div');
+                    toast.className = "fixed top-20 right-4 bg-yellow-500 text-black font-bold px-4 py-2 rounded-full shadow-xl z-[100] animate-bounce flex items-center gap-2 border-2 border-white";
+                    toast.innerHTML = `<i class="fa-solid fa-bolt"></i> +${amount} XP`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2000);
+                    
+                    this.updateProfileUI(this.data.user); // Update rank instantly
+                } catch(e) { console.log("XP Error", e); }
+            },
+
+            getRank(xp) {
+                if (xp >= 2000) return "God Tier ⚡";
+                if (xp >= 1000) return "Academic Weapon ⚔️";
+                if (xp >= 500) return "Main Character ✨";
+                if (xp >= 100) return "Scholar 📚";
+                return "Rookie 🥚";
+            },
+
+            async renderLeaderboard() {
+                const list = document.getElementById('leaderboard-list');
+                const progName = document.getElementById('lb-program-name');
+                list.innerHTML = '<tr><td class="p-4 text-center opacity-50">Loading rankings...</td></tr>';
+                
+                const userProg = this.data.user.program || "General";
+                progName.innerText = userProg;
+
+                // Simple query: get all users (filtering locally for prototype simplicity as compound queries require index)
+                // In production: query(collection(db, "users"), where("program", "==", userProg), orderBy("weeklyXp", "desc"), limit(50))
+                const q = query(collection(db, "users"), limit(100)); // Fetch top 100 mostly
+                const snap = await getDocs(q);
+                
+                let users = [];
+                snap.forEach(d => users.push(d.data()));
+                
+                // Filter by program and sort by XP locally
+                users = users.filter(u => u.program && u.program.toLowerCase() === userProg.toLowerCase());
+                users.sort((a,b) => (b.weeklyXp || 0) - (a.weeklyXp || 0));
+                
+                list.innerHTML = '';
+                if(users.length === 0) {
+                    list.innerHTML = '<tr><td class="p-4 text-center opacity-50">No one here yet. Be the first! 🥇</td></tr>';
+                    return;
+                }
+
+                users.forEach((u, index) => {
+                    const rank = index + 1;
+                    const isMe = u.userId === currentUser.uid;
+                    const xp = u.weeklyXp || 0;
+                    const rankTitle = this.getRank(xp);
+                    
+                    let rankClass = "bg-white dark:bg-darkCard";
+                    let rankIcon = `<span class="font-bold text-gray-400">#${rank}</span>`;
+                    
+                    if(rank === 1) { rankClass = "rank-1"; rankIcon = "🥇"; }
+                    else if(rank === 2) { rankClass = "rank-2"; rankIcon = "🥈"; }
+                    else if(rank === 3) { rankClass = "rank-3"; rankIcon = "🥉"; }
+                    
+                    const border = isMe ? "border-2 border-blueAccent" : "border-b border-gray-100 dark:border-gray-700";
+
+                    list.innerHTML += `
+                    <tr class="${rankClass} ${border} transition">
+                        <td class="px-4 py-3 text-lg">${rankIcon}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-bold flex items-center gap-2">
+                                ${u.name} ${isMe ? '(You)' : ''}
+                            </div>
+                            <div class="text-[10px] opacity-80 uppercase tracking-wider font-bold">${rankTitle}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-black text-lg">${xp} <span class="text-[10px] font-normal opacity-60">XP</span></td>
+                    </tr>`;
+                });
+            },
+
+            openProfile() { 
+                history.pushState({ view: 'profile' }, null, ""); // Push State
+                document.getElementById('stat-courses').innerText = this.data.courses.length;
+                document.getElementById('stat-assignments').innerText = this.data.assignments.filter(a => !a.isCompleted).length;
+                document.getElementById('stat-notes').innerText = this.data.notes.length;
+                
+                // Show actual rank based on XP
+                this.updateProfileUI(this.data.user);
+
+                // Ensure clean state on open
+                ['prof-name', 'prof-phone', 'prof-program'].forEach(id => document.getElementById(id).disabled = true);
+                document.getElementById('btn-edit-profile').classList.remove('hidden');
+                document.getElementById('btn-save-profile').classList.add('hidden');
+                document.getElementById('profile-camera-btn').classList.add('hidden');
+
+                document.getElementById('full-screen-profile').classList.remove('hidden'); 
+            },
+            toggleProfileEdit() {
+                const isEditing = document.getElementById('prof-name').disabled;
+                const inputs = ['prof-name', 'prof-phone', 'prof-program'];
+                inputs.forEach(id => document.getElementById(id).disabled = !isEditing);
+                
+                const editBtn = document.getElementById('btn-edit-profile');
+                const saveBtn = document.getElementById('btn-save-profile');
+                const camBtn = document.getElementById('profile-camera-btn');
+                
+                if (isEditing) {
+                    editBtn.classList.add('hidden');
+                    saveBtn.classList.remove('hidden');
+                    camBtn.classList.remove('hidden');
+                    document.getElementById('prof-name').focus();
+                } else {
+                    editBtn.classList.remove('hidden');
+                    saveBtn.classList.add('hidden');
+                    camBtn.classList.add('hidden');
+                }
+            },
+            
+            // --- FULL SCREEN LEADERBOARD ---
+            openLeaderboard() {
+                history.pushState({ view: 'leaderboard' }, null, ""); // Push State
+                this.renderLeaderboard();
+                document.getElementById('full-screen-leaderboard').classList.remove('hidden');
+            },
+            
+            openSettings() { 
+                history.pushState({ view: 'settings' }, null, ""); // Push State
+                document.getElementById('full-screen-settings').classList.remove('hidden'); 
+            },
+            closeFullScreen(id) { document.getElementById(id).classList.add('hidden'); }, // Deprecated by history.back() mostly
+            openFeedback() { 
+                history.pushState({ view: 'feedback' }, null, ""); // Push State
+                document.getElementById('full-screen-feedback').classList.remove('hidden'); 
+                document.getElementById('feedback-form-content').classList.remove('hidden');
+                document.getElementById('feedback-success').classList.add('hidden');
+            },
+            // FIND THIS AND REPLACE IT
+showNotifications() {
+    // 1. Push History State (So back button works)
+    history.pushState({ view: 'notifications' }, null, "");
+
+    // 2. Update Title
+    const header = document.querySelector('#modal-notifications h1');
+    if(header) header.innerText = "AZ Learner Core 📢";
+
+    // 3. Mark as read logic
+    if(this.data.notifications.length > 0) {
+       const ids = this.data.notifications.map(n => n.id);
+       this.data.readNotifications = [...new Set([...this.data.readNotifications, ...ids])];
+       localStorage.setItem('az_read_notifs', JSON.stringify(this.data.readNotifications));
+       try { this.updateBadge(); } catch(e) {} // Extra safety
+    }
+
+    // 4. Render content
+    this.renderNotifications();
+
+    // 5. SHOW THE SCREEN (Directly, NOT via openModal)
+    document.getElementById('modal-notifications').classList.remove('hidden');
+    
+    // CRITICAL: Ensure the black overlay is HIDDEN so you can click buttons
+    document.getElementById('modal-overlay').classList.add('hidden');
+},
+            viewImage(src) { 
+                document.getElementById('full-image').src = src; 
+                this.openModal('modal-image-view');
+            },
+
+            openPdfPreview(url) {
+    const modal = document.getElementById('modal-pdf-view');
+    const frame = document.getElementById('pdf-frame');
+    const dlBtn = document.getElementById('pdf-download-btn');
+    
+    // Set source
+    frame.src = url;
+    dlBtn.href = url;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+},
+            // --- EVENT & HOME LOGIC ---
+            renderHome() {
+                // Guard: only run if home page elements are present
+                if (!document.getElementById('home-events-feed')) return;
+                // Greeting Logic
+                const hour = new Date().getHours();
+                const greeting = hour < 12 ? "Good Morning! ☀️" : hour < 18 ? "Good Afternoon! 🌤️" : "Good Evening! 🌙";
+                document.getElementById('home-greeting').innerText = greeting;
+
+                // Render Events
+                const feed = document.getElementById('home-events-feed');
+                // CSS CHANGE: Changed to flex row with overflow-x-auto for horizontal scroll
+                feed.className = "flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x"; 
+    
+                feed.innerHTML = '';
+                if (this.data.events.length === 0) {
+                    feed.className = "space-y-4"; // Revert to stack if empty message needed
+                    document.getElementById('home-no-events').classList.remove('hidden');
+               } else {
+                   document.getElementById('home-no-events').classList.add('hidden');
+                   this.data.events.forEach(ev => {
+                       const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+            
+                       // Ticket Logic
+                       const price = ev.price || 0;
+                       const sold = ev.ticketsSold || 0;
+                       const total = ev.totalTickets || 0;
+                       const isSoldOut = total > 0 && sold >= total;
+                       const rsvpCount = (ev.rsvps || []).length;
+            
+                       let statusBadge = '';
+                       if(total > 0) {
+                           if(isSoldOut) statusBadge = `<div class="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">SOLD OUT</div>`;
+                           else statusBadge = `<div class="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow">GHS ${price}</div>`;
+                       } else {
+                            // Optional: Badge for free events
+                            statusBadge = `<div class="absolute top-2 right-2 bg-blueAccent text-white text-[10px] font-bold px-2 py-1 rounded shadow">FREE</div>`;
+                        }
+
+                       let bottomBadge = '';
+                        if (total > 0) {
+                             bottomBadge = `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 font-bold">${total - sold} left</div>`;
+                        } else {
+                             bottomBadge = `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 flex items-center gap-1 font-bold"><i class="fa-solid fa-user-group text-[8px]"></i> ${rsvpCount} Going</div>`;
+                        }
+
+                       // Fixed width for horizontal scroll items (min-w-[280px])
+                       feed.innerHTML += `
+                       <div onclick='app.openEventModal(${JSON.stringify(ev).replace(/'/g, "&apos;")})' class="min-w-[280px] w-[280px] snap-center bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-transform relative">
+                           <div class="h-32 bg-gray-200 relative">
+                               <img src="${ev.image || 'https://via.placeholder.com/400x200?text=Event'}" class="w-full h-full object-cover">
+                               ${statusBadge}
+                               <div class="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm font-bold">
+                                   ${ev.date}
+                               </div>
+                           </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg leading-tight mb-1 truncate">${ev.title}</h3>
+                            <p class="text-xs opacity-60 mb-3 truncate">${ev.venue} • ${ev.time}</p>
+                            <div class="flex justify-between items-center">
+                                <div class="text-xs font-bold text-blueAccent">Tap for details</div>
+                                ${total > 0 ? `<div class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500">${total - sold} left</div>` : ''}
+                           </div>
+                       </div>
+                   </div>`;
+                });
+              }
+           },
+
+            openEventModal(ev) {
+    const modal = document.getElementById('modal-event-details');
+    document.getElementById('modal-event-img').src = ev.image || 'https://via.placeholder.com/400x200?text=Event';
+    document.getElementById('modal-event-title').innerText = ev.title;
+    document.getElementById('modal-event-date').innerText = ev.date;
+    document.getElementById('modal-event-time').innerText = ev.time;
+    document.getElementById('modal-event-venue').innerText = ev.venue;
+    document.getElementById('modal-event-desc').innerText = ev.description;
+    
+    const btn = document.getElementById('btn-rsvp');
+    
+    // TICKET LOGIC
+    const price = ev.price || 0;
+    const total = ev.totalTickets || 0;
+    const sold = ev.ticketsSold || 0;
+    const rsvpCount = (ev.rsvps || []).length;            
+    
+    if (total > 0) {
+        // It is a paid/ticketed event
+        if (sold >= total) {
+            btn.innerHTML = `<span>SOLD OUT 🚫</span>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-gray-400 text-white cursor-not-allowed";
+            btn.onclick = null;
+        } else {
+            btn.innerHTML = `<span>Buy Ticket (GHS ${price})</span> <i class="fa-solid fa-ticket"></i>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-600 text-white hover:bg-green-500";
+            // Pass event details to buy function
+            btn.onclick = () => app.buyTicket(ev);
+        }
+        // Show counter in description
+        document.getElementById('modal-event-desc').innerHTML = `
+            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 flex justify-between items-center">
+                <span class="text-sm font-bold text-blue-800 dark:text-blue-300">Tickets Available:</span>
+                <span class="text-xl font-black text-blueAccent">${total - sold} / ${total}</span>
+            </div>
+            ${ev.description}
+        `;
+    } else {
+        // Standard RSVP Event
+        const isRsvp = ev.rsvps && ev.rsvps.includes(currentUser.uid);
+        btn.onclick = () => app.toggleRsvp(ev.id, ev.rsvps || []);
+        if (isRsvp) {
+            btn.innerHTML = `<span>You're Going! ✅</span>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-green-500 text-white";
+        } else {
+            btn.innerHTML = `<span>Count Me In</span> <i class="fa-solid fa-hand"></i>`;
+            btn.className = "w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg bg-blueAccent text-white";
+        }
+        document.getElementById('modal-event-desc').innerHTML = `
+            <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-500 dark:text-gray-400">People Going:</span>
+                <span class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users text-blueAccent text-sm"></i> ${rsvpCount}
+                </span>
+            </div>
+            ${ev.description}
+        `;
+    }
+
+    this.openModal('modal-event-details');
+},
+
+
+            openBlogs() {
+    history.pushState({ view: 'blogs' }, null, "");
+    document.getElementById('full-screen-blogs').classList.remove('hidden');
+    this.startBlogListener(); 
+},
+
+openWriteBlog() { document.getElementById('modal-write-blog').classList.remove('hidden'); },
+
+setBlogFont(fontClass) {
+    this.data.currentBlogFont = fontClass;
+    const txt = document.getElementById('blog-input-text');
+    txt.classList.remove('font-roboto', 'font-playfair', 'font-mono', 'font-dancing');
+    txt.classList.add(fontClass);
+},
+
+async handleBlogMedia(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    document.getElementById('blog-media-preview').classList.remove('hidden');
+    if (file.type.startsWith('image/')) {
+        document.getElementById('blog-img-prev').src = url;
+        document.getElementById('blog-img-prev').classList.remove('hidden');
+        document.getElementById('blog-vid-prev').classList.add('hidden');
+    } else {
+        document.getElementById('blog-vid-prev').src = url;
+        document.getElementById('blog-vid-prev').classList.remove('hidden');
+        document.getElementById('blog-img-prev').classList.add('hidden');
+    }
+},
+
+clearBlogMedia() {
+    document.getElementById('blog-media-input').value = '';
+    document.getElementById('blog-media-preview').classList.add('hidden');
+},
+
+            // Toggles the visibility of the specific blog post menu
+toggleBlogMenu(id) {
+    // Close all other menus first
+    document.querySelectorAll('[id^="blog-menu-"]').forEach(el => {
+        if(el.id !== `blog-menu-${id}`) el.classList.add('hidden');
+    });
+    
+    // Toggle current
+    const menu = document.getElementById(`blog-menu-${id}`);
+    if(menu) menu.classList.toggle('hidden');
+},
+
+// Handles deleting a post
+async deleteBlog(id) {
+    if(confirm("Are you sure you want to delete this post?")) {
+        await deleteDoc(doc(db, "blogs", id));
+        // Menu will disappear automatically as the listener refreshes
+        this.addXp(-10, "Deleted Post 🗑️");
+    }
+},
+
+// Prepares the write modal for editing
+editBlog(id, text, mediaObj) {
+    this.data.editingBlogId = id;
+    this.data.activeBlogMedia = mediaObj; // Store media to keep it if they don't change it
+
+    // Populate Modal
+    document.getElementById('blog-input-text').value = text;
+    
+    // Show Media Preview if exists
+    if(mediaObj && mediaObj.data) {
+        document.getElementById('blog-media-preview').classList.remove('hidden');
+        if(mediaObj.type === 'image') {
+            document.getElementById('blog-img-prev').src = mediaObj.data;
+            document.getElementById('blog-img-prev').classList.remove('hidden');
+            document.getElementById('blog-vid-prev').classList.add('hidden');
+        } else {
+            document.getElementById('blog-vid-prev').src = mediaObj.data;
+            document.getElementById('blog-vid-prev').classList.remove('hidden');
+            document.getElementById('blog-img-prev').classList.add('hidden');
+        }
+    }
+
+    // Change Button Text
+    document.querySelector('#modal-write-blog h3').innerText = "Edit Post";
+    document.querySelector('#modal-write-blog header button:last-child').innerText = "Update";
+
+    this.openWriteBlog();
+    
+    // Hide the menu
+    document.getElementById(`blog-menu-${id}`).classList.add('hidden');
+},
+
+// Reports a blog
+reportBlog(id) {
+    if(confirm("Report this post as inappropriate?")) {
+        // Send report to database
+        addDoc(collection(db, "reports"), {
+            type: "blog",
+            contentId: id,
+            reporterId: currentUser.uid,
+            timestamp: Date.now()
+        });
+        alert("Thanks. We will review this post shortly. 🛡️");
+        document.getElementById(`blog-menu-${id}`).classList.add('hidden');
+    }
+},
+
+async saveBlog() {
+    const text = document.getElementById('blog-input-text').value;
+    const fileInput = document.getElementById('blog-media-input');
+    
+    // Safety check for user name
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Anonymous Student";
+    const userPic = (this.data.user && this.data.user.profilePic) ? this.data.user.profilePic : null;
+
+    if (!text && fileInput.files.length === 0) return alert("Write something!");
+
+    // UI Loading State
+    const postBtn = document.querySelector('#modal-write-blog header button:last-child');
+    const originalText = postBtn.innerText;
+    postBtn.innerText = "Posting...";
+    postBtn.disabled = true;
+
+    let mediaData = null; // This will be the URL
+    let mediaType = 'text';
+
+    try {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            
+            // 1. Handle VIDEO (Upload to Storage)
+            if (file.type.startsWith('video')) {
+                mediaType = 'video';
+                if (file.size > 50 * 1024 * 1024) throw new Error("Video too large! Max 50MB.");
+                
+                // Upload to Firebase Storage
+                const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                mediaData = await getDownloadURL(snapshot.ref);
+            } 
+            // 2. Handle IMAGE (Compress & Upload)
+            else if (file.type.startsWith('image')) {
+                mediaType = 'image';
+                // Compress logic (keeping your existing helper)
+                const compressedBase64 = await this.compressImage(file);
+                
+                // Upload compressed image to Storage (Better than Firestore Base64)
+                // Convert Base64 back to Blob for upload
+                const res = await fetch(compressedBase64);
+                const blob = await res.blob();
+                
+                const storageRef = ref(storage, `blog_uploads/${currentUser.uid}/${Date.now()}_img.jpg`);
+                const snapshot = await uploadBytes(storageRef, blob);
+                mediaData = await getDownloadURL(snapshot.ref);
+            }
+        } else {
+            // Keep existing media if editing and no new file selected
+            if (this.data.editingBlogId && this.data.activeBlogMedia) {
+                mediaData = this.data.activeBlogMedia.data;
+                mediaType = this.data.activeBlogMedia.type;
+            }
+        }
+
+        const blogData = {
+            userId: currentUser.uid,
+            userName: userName,
+            userPic: userPic,
+            text: text,
+            font: this.data.currentBlogFont || 'font-roboto',
+            mediaData: mediaData,
+            mediaType: mediaType,
+            timestamp: Date.now()
+        };
+
+        if (this.data.editingBlogId) {
+            // --- UPDATE EXISTING POST ---
+            await updateDoc(doc(db, "blogs", this.data.editingBlogId), blogData);
+            this.addXp(5, "Edited Post ✏️");
+        } else {
+            // --- CREATE NEW POST ---
+            blogData.likes = [];
+            blogData.dislikes = [];
+            blogData.reposts = 0;
+            await addDoc(collection(db, "blogs"), blogData);
+            this.addXp(20, "Posted a Blog ✍️");
+        }
+
+        // Cleanup
+        document.getElementById('modal-write-blog').classList.add('hidden');
+        document.getElementById('blog-input-text').value = '';
+        this.clearBlogMedia();
+        this.data.editingBlogId = null; // Reset edit state
+
+    } catch (e) {
+        console.error(e);
+        alert("Error posting: " + e.message);
+    } finally {
+        postBtn.innerText = originalText;
+        postBtn.disabled = false;
+    }
+},
+
+startBlogListener() {
+    if (this.blogUnsub) return;
+    const q = query(collection(db, "blogs"), orderBy("timestamp", "desc"), limit(20));
+    
+    this.blogUnsub = onSnapshot(q, (snap) => {
+        const feed = document.getElementById('blogs-feed');
+        feed.innerHTML = '';
+        
+        if(snap.empty) {
+            feed.innerHTML = '<div class="text-center opacity-50 py-10">No blogs yet. Write the first one! ✍️</div>';
+            return;
+        }
+
+        snap.forEach(docSnap => {
+            const b = docSnap.data();
+            const id = docSnap.id;
+            const safeName = b.userName || 'Student';
+            const safeText = b.text || '';
+            const time = b.timestamp ? new Date(b.timestamp).toLocaleDateString() : 'Just now';
+            
+            // Interaction Data
+            const likes = b.likes || [];
+            const dislikes = b.dislikes || [];
+            const isLiked = likes.includes(currentUser.uid);
+            const isDisliked = dislikes.includes(currentUser.uid);
+            const repostCount = b.reposts || 0;
+
+            // --- MEDIA RENDERING ---
+            let mediaHtml = '';
+            if (b.mediaType === 'video' && b.mediaData) {
+                // INLINE VIDEO PLAYER
+                mediaHtml = `
+                <div class="blog-media-container mt-3">
+                    <video src="${b.mediaData}" class="w-full rounded-lg bg-black max-h-[400px]" controls playsinline preload="metadata"></video>
+                </div>`;
+            } else if (b.mediaType === 'image' && b.mediaData) {
+                mediaHtml = `<div class="blog-media-container mt-3"><img src="${b.mediaData}" class="w-full rounded-lg" onclick="app.viewImage('${b.mediaData}')"></div>`;
+            }
+
+            // --- THREE DOT MENU LOGIC ---
+            const isAuthor = currentUser.uid === b.userId;
+            let menuItems = '';
+
+            if (isAuthor) {
+                // Escaping text for the onclick function
+                const escapedText = safeText.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                const mediaJson = b.mediaData ? JSON.stringify({data: b.mediaData, type: b.mediaType}).replace(/"/g, "&quot;") : "null";
+
+                menuItems = `
+                    <button onclick="app.editBlog('${id}', '${escapedText}', ${mediaJson})" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold text-blueAccent flex items-center gap-2">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </button>
+                    <button onclick="app.deleteBlog('${id}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold text-red-500 flex items-center gap-2">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                `;
+            } else {
+                menuItems = `
+                    <button onclick="app.reportBlog('${id}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold text-orange-500 flex items-center gap-2">
+                        <i class="fa-solid fa-flag"></i> Report
+                    </button>
+                `;
+            }
+
+            const pic = b.userPic ? `<img src="${b.userPic}" class="w-10 h-10 rounded-full object-cover border border-gray-200">` : `<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`;
+
+            // --- RENDER CARD ---
+            feed.innerHTML += `
+            <div class="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700 relative">
+                <div class="flex items-center gap-3 mb-3">
+                    ${pic}
+                    <div>
+                        <h4 class="font-bold text-sm">${safeName}</h4>
+                        <p class="text-[10px] opacity-60">${time}</p>
+                    </div>
+                    
+                    <div class="ml-auto relative">
+                        <button onclick="app.toggleBlogMenu('${id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition">
+                            <i class="fa-solid fa-ellipsis text-gray-500"></i>
+                        </button>
+                        <div id="blog-menu-${id}" class="hidden absolute right-0 top-8 w-32 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-10 overflow-hidden">
+                            ${menuItems}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="${b.font || 'font-sans'} text-base leading-relaxed whitespace-pre-wrap dark:text-gray-200">${safeText}</div>
+                ${mediaHtml}
+                
+                <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex gap-4">
+                        <button onclick="app.toggleReaction('${id}', 'like')" class="flex items-center gap-1 text-sm transition ${isLiked ? 'text-red-500 font-bold' : 'text-gray-500 hover:text-red-500'}">
+                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                            <span>${likes.length || ''}</span>
+                        </button>
+
+                        <button onclick="app.toggleReaction('${id}', 'dislike')" class="flex items-center gap-1 text-sm transition ${isDisliked ? 'text-orange-500 font-bold' : 'text-gray-500 hover:text-orange-500'}">
+                            <i class="${isDisliked ? 'fa-solid' : 'fa-regular'} fa-thumbs-down"></i>
+                        </button>
+
+                        <button onclick="app.openComments('${id}')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-blueAccent">
+                            <i class="fa-regular fa-comment"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="app.shareBlog('${safeName}', 'Check out this post on AZ Learner!')" class="flex items-center gap-1 text-sm text-gray-500 hover:text-blueAccent">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        });
+    });
+},
+            // --- NEW INTERACTION FUNCTIONS ---
+
+async toggleReaction(blogId, type) {
+    if (!currentUser) return alert("Login needed!");
+    
+    const blogRef = doc(db, "blogs", blogId);
+    // Optimistic UI updates happen via the listener automatically
+    
+    try {
+        if (type === 'like') {
+            const docSnap = await getDoc(blogRef);
+            const likes = docSnap.data().likes || [];
+            
+            if (likes.includes(currentUser.uid)) {
+                // Unlike
+                await updateDoc(blogRef, { likes: arrayRemove(currentUser.uid) });
+            } else {
+                // Like (and remove dislike if exists)
+                await updateDoc(blogRef, { 
+                    likes: arrayUnion(currentUser.uid),
+                    dislikes: arrayRemove(currentUser.uid) 
+                });
+                this.addXp(5, "Liked a Post ❤️");
+            }
+        } else if (type === 'dislike') {
+            const docSnap = await getDoc(blogRef);
+            const dislikes = docSnap.data().dislikes || [];
+            
+            if (dislikes.includes(currentUser.uid)) {
+                // Remove Dislike
+                await updateDoc(blogRef, { dislikes: arrayRemove(currentUser.uid) });
+            } else {
+                // Dislike (and remove like if exists)
+                await updateDoc(blogRef, { 
+                    dislikes: arrayUnion(currentUser.uid),
+                    likes: arrayRemove(currentUser.uid)
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Reaction error", e);
+    }
+},
+
+async repostBlog(originalId, originalText) {
+    if (!confirm("Repost this to your viewers? 🔄")) return;
+    
+    try {
+        // 1. Create a new post referencing the old one
+        const safeName = this.data.user.name || "Anonymous";
+        await addDoc(collection(db, "blogs"), {
+            userId: currentUser.uid,
+            userName: safeName,
+            userPic: this.data.user.profilePic || null,
+            text: `🔄 Reposted:\n\n"${originalText.substring(0, 100)}..."`, // Quote the text
+            mediaType: 'text',
+            likes: [],
+            dislikes: [],
+            reposts: 0,
+            isRepost: true,
+            originalBlogId: originalId,
+            timestamp: Date.now()
+        });
+
+        // 2. Increment repost counter on original doc
+        await updateDoc(doc(db, "blogs", originalId), {
+            reposts: increment(1)
+        });
+
+        this.addXp(10, "Reposted 🔄");
+        alert("Reposted to your feed!");
+    } catch (e) {
+        console.error(e);
+        alert("Could not repost.");
+    }
+},
+
+shareBlog(authorName, text) {
+    if (navigator.share) {
+        navigator.share({
+            title: `AZ Learner Post by ${authorName}`,
+            text: text,
+            url: window.location.href
+        }).catch(console.error);
+    } else {
+        // Fallback for desktop/unsupported browsers
+        navigator.clipboard.writeText(`${text} - by ${authorName} on AZ Learner`);
+        alert("Link copied to clipboard! 📋");
+    }
+},
+            // --- FIX FOR UNDEFINED BLOGS ---
+async saveBlog() {
+    const text = document.getElementById('blog-input-text').value;
+    const fileInput = document.getElementById('blog-media-input');
+    
+    // Safety check for user name
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Anonymous Student";
+    const userPic = (this.data.user && this.data.user.profilePic) ? this.data.user.profilePic : null;
+
+    if (!text && fileInput.files.length === 0) return alert("Write something!");
+
+    let mediaData = null;
+    let mediaType = 'text';
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        mediaType = file.type.startsWith('video') ? 'video' : 'image';
+        if (mediaType === 'image') {
+            mediaData = await this.compressImage(file);
+        } else {
+            // Read video as DataURL
+            mediaData = await new Promise(r => {
+                const reader = new FileReader();
+                reader.onload = e => r(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    await addDoc(collection(db, "blogs"), {
+        userId: currentUser.uid,
+        userName: userName,
+        userPic: userPic,
+        text: text,
+        font: this.data.currentBlogFont || 'font-roboto',
+        mediaData: mediaData,
+        mediaType: mediaType,
+        timestamp: Date.now()
+    });
+
+    document.getElementById('modal-write-blog').classList.add('hidden');
+    document.getElementById('blog-input-text').value = '';
+    this.clearBlogMedia();
+    this.addXp(20, "Posted a Blog ✍️");
+},
+
+// --- COMMENT LOGIC ---
+openComments(blogId) {
+    this.data.activeBlogId = blogId;
+    history.pushState({ view: 'comments' }, null, "");
+    document.getElementById('modal-blog-comments').classList.remove('hidden');
+    
+    // Load Comments
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div class="text-center opacity-50 py-4">Loading thoughts...</div>';
+    
+    // Real-time listener for comments on this specific blog
+    const q = query(collection(db, "blog_comments"), where("blogId", "==", blogId), orderBy("timestamp", "desc"));
+    
+    // Stop previous listener if exists
+    if(this.commentListener) this.commentListener();
+    
+    this.commentListener = onSnapshot(q, (snap) => {
+        list.innerHTML = '';
+        if(snap.empty) {
+            list.innerHTML = '<div class="text-center opacity-40 py-10">No comments yet. Be the first!</div>';
+            return;
+        }
+        snap.forEach(d => {
+            const c = d.data();
+            list.innerHTML += `
+                <div class="flex gap-3 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center font-bold text-xs shrink-0">${c.userName[0]}</div>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none">
+                        <p class="text-[10px] font-bold opacity-60 mb-1">${c.userName}</p>
+                        <p class="text-sm">${c.text}</p>
+                    </div>
+                </div>`;
+        });
+    });
+},
+
+async postComment() {
+    const input = document.getElementById('comment-input');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    const userName = (this.data.user && this.data.user.name) ? this.data.user.name : "Student";
+    
+    await addDoc(collection(db, "blog_comments"), {
+        blogId: this.data.activeBlogId,
+        userId: currentUser.uid,
+        userName: userName,
+        text: text,
+        timestamp: Date.now()
+    });
+    
+    input.value = '';
+    // Optional: Add tiny XP for engagement
+    this.addXp(5, "Commented 💬");
+},
+        // --- ADD THIS NEW FUNCTION TO window.app ---
+
+async downloadSchedule() {
+    if (this.data.courses.length === 0) return alert("No classes to save! Add some first.");
+
+    // 1. Create a temporary container for the image (Hidden off-screen)
+    // We style this specifically to look good in the image, regardless of current theme
+    const exportContainer = document.createElement('div');
+    exportContainer.style.width = "600px"; // Fixed width for consistent high quality
+    exportContainer.style.position = "fixed";
+    exportContainer.style.top = "-9999px";
+    exportContainer.style.zIndex = "9999";
+    // Force light mode styles for the image so it looks clean
+    exportContainer.className = "bg-white text-gray-900 rounded-3xl overflow-hidden shadow-2xl font-sans";
+
+    // 2. Sort Courses by Day and Time
+    const daysMap = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":7};
+    const sortedCourses = [...this.data.courses].sort((a,b) => {
+        if(daysMap[a.day] !== daysMap[b.day]) return daysMap[a.day] - daysMap[b.day];
+        return a.time.localeCompare(b.time);
+    });
+
+    // 3. Build HTML Content
+    const userName = this.data.user.name || "Student";
+    const program = this.data.user.program || "Academic Schedule";
+
+    let contentHtml = `
+        <div class="bg-gradient-to-r from-blue-600 to-blue-400 p-8 text-white relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="flex justify-between items-center relative z-10">
+                <div>
+                    <p class="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">AZ Learner 🎓</p>
+                    <h1 class="text-4xl font-black mb-1">Weekly Schedule</h1>
+                    <p class="opacity-90 font-medium text-lg">${userName}</p>
+                    <p class="text-xs opacity-60">${program}</p>
+                </div>
+                <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-4xl shadow-lg border border-white/30">
+                    📅
+                </div>
+            </div>
+        </div>
+        <div class="p-8 bg-white min-h-[400px]">
+    `;
+
+    // Loop through sorted courses
+    sortedCourses.forEach(c => {
+        contentHtml += `
+            <div class="flex items-center gap-6 mb-6">
+                <div class="w-20 h-20 rounded-2xl bg-blue-50 flex flex-col items-center justify-center shrink-0 border border-blue-100">
+                    <span class="text-xs font-bold text-blue-400 uppercase tracking-wide">${c.day.substring(0,3)}</span>
+                    <span class="font-black text-2xl text-gray-800">${c.time}</span>
+                </div>
+                <div class="flex-1 border-b border-gray-100 pb-6">
+                    <h3 class="font-black text-2xl text-gray-800 leading-tight mb-1">${c.name}</h3>
+                    <div class="flex items-center gap-2 text-gray-500 font-medium">
+                        <i class="fa-solid fa-location-dot text-red-400"></i>
+                        <span>${c.venue}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    contentHtml += `
+        </div>
+        <div class="bg-gray-50 p-4 text-center text-gray-400 text-xs font-bold uppercase tracking-widest border-t border-gray-100">
+            Generated by AZ Learner 🚀
+        </div>
+    `;
+
+    exportContainer.innerHTML = contentHtml;
+    document.body.appendChild(exportContainer);
+
+    // 4. Capture & Download using html2canvas
+    try {
+        const canvas = await html2canvas(exportContainer, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const link = document.createElement('a');
+        link.download = `Timetable-${userName.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Optional: Play sound or vibrate
+        try { document.getElementById('xp-sound').play(); } catch(e){}
+        alert("Schedule downloaded successfully! 📸");
+    } catch(e) {
+        console.error(e);
+        alert("Oops! Could not generate image.");
+    } finally {
+        document.body.removeChild(exportContainer);
+    }
+},   
+
+toggleHomeView(view) {
+    this.data.currentHomeView = view;
+    const btnEvents = document.getElementById('btn-view-events');
+    const btnTickets = document.getElementById('btn-view-tickets');
+    const feed = document.getElementById('home-events-feed');
+    const noEvents = document.getElementById('home-no-events');
+    const ticketView = document.getElementById('home-tickets-view');
+    const title = document.getElementById('home-section-title');
+
+    if (view === 'events') {
+        // UI Styles
+        btnEvents.classList.add('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnEvents.classList.remove('text-gray-500');
+        btnTickets.classList.remove('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnTickets.classList.add('text-gray-500');
+        
+        // Visibility
+        feed.classList.remove('hidden');
+        if(this.data.events.length === 0) noEvents.classList.remove('hidden');
+        ticketView.classList.add('hidden');
+        title.innerText = "What's Poppin' 🎉";
+    } else {
+        // UI Styles
+        btnTickets.classList.add('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnTickets.classList.remove('text-gray-500');
+        btnEvents.classList.remove('bg-white', 'dark:bg-darkCard', 'shadow', 'text-blueAccent');
+        btnEvents.classList.add('text-gray-500');
+
+        // Visibility
+        feed.classList.add('hidden');
+        noEvents.classList.add('hidden');
+        ticketView.classList.remove('hidden');
+        title.innerText = "My Wallet 🎟️";
+        this.renderMyTickets();
+    }
+},
+
+renderMyTickets() {
+    const container = document.getElementById('home-tickets-view');
+    container.innerHTML = '';
+
+    if (this.data.myTickets.length === 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10 opacity-50">
+                <i class="fa-solid fa-ticket text-4xl mb-3"></i>
+                <p class="text-sm">You haven't bought any tickets yet.</p>
+            </div>`;
+        return;
+    }
+
+    this.data.myTickets.forEach(t => {
+        const dateStr = new Date(t.purchaseDate).toLocaleDateString();
+        // Generate a nice ticket card
+        container.innerHTML += `
+            <div class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row border border-gray-100 dark:border-gray-700 relative">
+                <div class="bg-blueAccent dark:bg-orangeAccent p-4 text-white flex flex-col justify-between w-full md:w-1/3 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-white/20 rounded-full blur-xl"></div>
+                    <div>
+                        <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest">Event Ticket</p>
+                        <h3 class="font-black text-xl leading-tight mt-1">${t.eventTitle}</h3>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs opacity-80">Price</p>
+                        <p class="font-bold">GHS ${t.price}</p>
+                    </div>
+                    <div class="absolute right-0 top-0 bottom-0 w-2 h-full ticket-stub"></div>
+                </div>
+
+                <div class="p-5 flex-1 flex flex-col justify-between bg-white dark:bg-darkCard">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase font-bold">Ticket ID</p>
+                            <p class="text-2xl font-black text-gray-800 dark:text-white tracking-wider font-mono">${t.ticketId}</p>
+                        </div>
+                        <div class="bg-green-100 text-green-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Valid</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mt-auto">
+                        <button onclick="app.downloadTicket('${t.id}')" class="flex-1 bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                            Download <i class="fa-solid fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="render-${t.id}" class="absolute top-0 left-0 w-[600px] bg-white text-black p-0 hidden pointer-events-none z-[-1]">
+                    <div class="flex border-2 border-black rounded-3xl overflow-hidden">
+                        <div class="bg-black text-white p-8 w-1/3 flex flex-col justify-between">
+                            <h1 class="text-3xl font-black uppercase">${t.eventTitle}</h1>
+                            <div><p class="text-sm opacity-60">PRICE</p><p class="text-2xl font-bold">GHS ${t.price}</p></div>
+                        </div>
+                        <div class="p-8 flex-1 bg-white flex flex-col justify-between relative">
+                             <div class="absolute left-0 top-0 bottom-0 w-px border-l-2 border-dashed border-gray-300"></div>
+                             <div>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Holder</p>
+                                <p class="text-xl font-bold mb-4">${app.data.user.name}</p>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Ticket Code</p>
+                                <p class="text-4xl font-black font-mono tracking-widest">${t.ticketId}</p>
+                             </div>
+                             <div class="flex justify-between items-end">
+                                <p class="text-xs text-gray-400">Purchased: ${dateStr}</p>
+                                <div class="text-right">
+                                    <p class="font-bold text-lg">AZ Learner 🎓</p>
+                                    <p class="text-[10px] uppercase">Official Pass</p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    });
+},
+
+async downloadTicket(ticketId) {
+    const element = document.getElementById(`render-${ticketId}`);
+    if (!element) return;
+    
+    // Temporarily show it off-screen to render
+    element.classList.remove('hidden');
+    element.style.position = 'fixed';
+    element.style.top = '-9999px';
+    element.style.zIndex = '9999';
+
+    try {
+        const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
+        const link = document.createElement('a');
+        link.download = `Ticket-${ticketId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        alert("Ticket saved to photos! 📸");
+    } catch (err) {
+        console.error(err);
+        alert("Could not generate ticket image.");
+    } finally {
+        element.classList.add('hidden');
+        element.style.position = 'absolute';
+    }
+},
+            
+buyTicket(ev) {
+                if(!currentUser) return alert("Please log in first.");
+                
+                const price = ev.price;
+                const email = currentUser.email;
+                const amountKobo = price * 100;
+
+                const handler = PaystackPop.setup({
+                    key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2', // ⚠️ Note: This is a LIVE key. You will be charged real money.
+                    email: email,
+                    amount: amountKobo,
+                    currency: 'GHS',
+                    metadata: {
+                        custom_fields: [
+                            { display_name: "Event", variable_name: "event_title", value: ev.title },
+                            { display_name: "Student", variable_name: "student_name", value: app.data.user.name }
+                        ]
+                    },
+                    // FIX: Removed 'async' keyword here
+                    callback: function(response) {
+                        // FIX: We wrap the async logic inside an Immediately Invoked Function Expression (IIFE)
+                        (async () => {
+                            try {
+                                // Payment Success!
+                                document.getElementById('modal-overlay').classList.add('hidden'); 
+                                
+                                // 1. Generate Unique Ticket ID
+                                const ticketId = 'AZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                                
+                                // 2. Update Database (Reduce Stock)
+                                const newSold = (ev.ticketsSold || 0) + 1;
+                                await updateDoc(doc(db, "events", ev.id), { ticketsSold: newSold });
+                                
+                                // 3. Save Ticket to User's Subcollection
+                                await addDoc(collection(db, `users/${currentUser.uid}/tickets`), {
+                                    eventId: ev.id,
+                                    eventTitle: ev.title,
+                                    ticketId: ticketId,
+                                    price: price,
+                                    purchaseDate: Date.now(),
+                                    status: 'valid',
+                                    userName: app.data.user.name, // <--- MAKE SURE THIS IS ADDED
+    userEmail: app.data.user.email
+                                });
+
+                                // 4. Send Ticket to Chat
+                                const chatRef = doc(db, "print_orders", currentUser.uid);
+                                await setDoc(chatRef, { 
+                                    userId: currentUser.uid, 
+                                    status: 'received', 
+                                    lastUpdated: Date.now(), 
+                                    userName: app.data.user.name,
+                                    hasUnread: true 
+                                }, { merge: true });
+
+                                await addDoc(collection(db, "print_messages"), {
+                                    orderId: currentUser.uid,
+                                    senderId: "system", 
+                                    senderName: "AZ Ticket Bot 🤖",
+                                    text: `🎟️ **TICKET PURCHASED**\n\nEvent: ${ev.title}\nID: ${ticketId}\nPrice: GHS ${price}\n\nShow this ID at the entrance!`,
+                                    timestamp: Date.now()
+                                });
+
+                                // 5. Success Alert
+                                app.sendSystemNotification("Ticket Purchased! 🎟️", "Check your messages for the ticket ID.");
+                                alert(`Payment Successful! Ticket ID: ${ticketId}\n\nWe have sent the ticket to your Chat.`);
+                                history.back();
+                            } catch (error) {
+                                console.error("Ticket processing error:", error);
+                                alert("Payment successful, but there was an error generating the ticket. Please contact Admin.");
+                            }
+                        })(); // End of async wrapper
+                    },
+                    onClose: function() {
+                        alert('Transaction was not completed.');
+                    }
+                });
+                handler.openIframe();
+            },
+
+            async toggleRsvp(eventId, currentRsvps) {
+                let newRsvps = [...currentRsvps];
+                if (newRsvps.includes(currentUser.uid)) {
+                    newRsvps = newRsvps.filter(id => id !== currentUser.uid);
+                } else {
+                    newRsvps.push(currentUser.uid);
+                }
+                await updateDoc(doc(db, "events", eventId), { rsvps: newRsvps });
+                this.closeModals(); // Calls history.back() logic if we modify closeModals to do so, but here we just hide
+                document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById('modal-event-details').classList.add('hidden');
+                history.back(); // Manually pop history here since closeModals is just visual
+            },
+
+
+            // --- EXISTING CHAT & PRINT LOGIC ---
+            async openPrintChat(targetUserId = null) {
+                history.pushState({ view: 'chat' }, null, ""); // Push State
+                activeChatType = 'print';
+                activeChatId = targetUserId || currentUser.uid;
+                const isMe = activeChatId === currentUser.uid;
+                
+                document.getElementById('full-screen-chat').classList.remove('hidden');
+                document.getElementById('print-steps-container').classList.remove('hidden');
+                document.getElementById('chat-header-title').innerText = "Print & Deliver 🖨️";
+                
+                const chatRef = doc(db, "print_orders", activeChatId);
+                const chatSnap = await getDoc(chatRef);
+                if (!chatSnap.exists()) {
+                    await setDoc(chatRef, { userId: activeChatId, status: 'received', lastUpdated: Date.now(), userName: isMe ? (this.data.user.name || 'Student') : 'Unknown' });
+                } else {
+                    if (this.data.user.role === 'admin' && chatSnap.data().hasUnread) await updateDoc(chatRef, { hasUnread: false });
+                    this.updatePrintStatusUI(chatSnap.data().status);
+                }
+                this.loadMessages("print_messages", "orderId", activeChatId);
+            },
+
+            async openCourseChat(courseName) {
+                history.pushState({ view: 'chat' }, null, ""); // Push State
+                const normalizedId = courseName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                activeChatType = 'course';
+                activeChatId = normalizedId;
+
+                document.getElementById('full-screen-chat').classList.remove('hidden');
+                document.getElementById('print-steps-container').classList.add('hidden');
+                document.getElementById('chat-header-title').innerText = courseName;
+                document.getElementById('chat-header-status').innerText = "Course Circle 📚";
+                
+                this.loadMessages("course_messages", "courseId", activeChatId);
+            },
+
+            renderChatList() {
+                const list = document.getElementById('chat-list');
+                if (!list) return;
+                const courseList = document.getElementById('course-chat-list');
+                list.innerHTML = '';
+                courseList.innerHTML = '';
+
+                // --- 0. NEW: RENDER AZ LEARNER CORE (BROADCASTS) ---
+    const lastNotif = this.data.notifications.length > 0 ? this.data.notifications[0] : null;
+    const coreMsg = lastNotif ? lastNotif.title : "No new announcements";
+    const coreTime = lastNotif ? new Date(lastNotif.timestamp).toLocaleDateString() : "";
+    const hasUnreadBroadcast = lastNotif && !this.data.readNotifications.includes(lastNotif.id);
+
+    list.innerHTML += `
+        <div onclick="app.showNotifications()" class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl shadow-sm flex items-center gap-3 cursor-pointer border border-blue-100 dark:border-blue-800 mb-2 relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blueAccent"></div>
+            <div class="relative">
+                <div class="w-12 h-12 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold text-lg shadow-lg">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                ${hasUnreadBroadcast ? '<div class="w-3 h-3 bg-red-500 rounded-full border-2 border-white absolute -top-1 -right-1"></div>' : ''}
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-blueAccent dark:text-blue-300">AZ Learner Core</h3>
+                    <span class="text-[10px] opacity-40 shrink-0">${coreTime}</span>
+                </div>
+                <p class="text-xs opacity-60 truncate font-medium italic">${coreMsg}</p>
+            </div>
+        </div>
+    `;
+
+                // --- 1. RENDER COURSE CIRCLES ---
+                const uniqueCourses = [...new Set(this.data.courses.map(c => c.name))];
+                if (uniqueCourses.length > 0) {
+                    document.getElementById('course-circles-section').classList.remove('hidden');
+                    uniqueCourses.forEach(name => {
+                        const colors = [
+                            'from-blue-400 to-blue-600',
+                            'from-purple-400 to-purple-600', 
+                            'from-pink-400 to-pink-600',
+                            'from-orange-400 to-orange-600',
+                            'from-green-400 to-green-600',
+                            'from-teal-400 to-teal-600'
+                        ];
+                        const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                        const colorClass = colors[charCodeSum % colors.length];
+
+                        courseList.innerHTML += `
+                        <div onclick="app.openCourseChat('${name}')" class="flex flex-col items-center gap-1 cursor-pointer min-w-[70px] group">
+                            <div class="w-[70px] h-[70px] rounded-full bg-gradient-to-br ${colorClass} text-white flex items-center justify-center shadow-lg border-2 border-white dark:border-darkBg group-active:scale-95 transition-transform relative overflow-hidden">
+                                <span class="text-[10px] font-black text-center leading-tight px-1 break-words z-10 drop-shadow-md">${name}</span>
+                                <div class="absolute inset-0 bg-black/10 rounded-full"></div>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    document.getElementById('course-circles-section').classList.add('hidden');
+                }
+
+                // --- 2. RENDER DIRECT MESSAGES ---
+                if(this.data.recentChats.length === 0) {
+                    document.getElementById('empty-chats').classList.remove('hidden');
+                } else {
+                    document.getElementById('empty-chats').classList.add('hidden');
+                    this.data.recentChats.forEach(chat => {
+                         const otherUid = chat.users.find(u => u !== currentUser.uid);
+                         const otherName = chat.userNames[otherUid] || "Unknown";
+                         const otherPic = chat.userProfilePics ? chat.userProfilePics[otherUid] : null;
+                         const initial = otherName[0] || "?";
+                         const isUnread = chat.readBy && !chat.readBy.includes(currentUser.uid);
+                         const redDotHtml = isUnread ? `<div class="w-3 h-3 bg-red-500 rounded-full border-2 border-white absolute -top-1 -right-1"></div>` : '';
+                         
+                         let avatarHtml = '';
+                         if (otherPic) {
+                             avatarHtml = `<img src="${otherPic}" class="w-12 h-12 rounded-full object-cover border border-gray-200">`;
+                         } else {
+                             avatarHtml = `<div class="w-12 h-12 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold text-lg">${initial}</div>`;
+                         }
+                         
+                         list.innerHTML += `
+                            <div class="relative group">
+                                <div onclick="app.startDirectChat('${otherUid}', '${otherName}', '${otherPic || ''}')" class="bg-white dark:bg-darkCard p-4 rounded-xl shadow flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition relative">
+                                    <div class="relative">
+                                        ${avatarHtml}
+                                        ${redDotHtml}
+                                    </div>
+                                    <div class="flex-1 overflow-hidden">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-bold text-lg truncate pr-2">${otherName}</h3>
+                                            <span class="text-[10px] opacity-40 shrink-0">${new Date(chat.lastUpdated).toLocaleDateString()}</span>
+                                        </div>
+                                        <p class="text-xs opacity-60 truncate">Tap to chat</p>
+                                    </div>
+                                </div>
+                                <button onclick="app.deleteChat('${chat.id}')" class="absolute top-4 right-2 text-gray-300 hover:text-red-500 p-2 z-10"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                         `;
+                    });
+                }
+            },
+
+            async deleteChat(chatId) {
+                if(confirm("Delete this conversation permanently?")) {
+                    await deleteDoc(doc(db, "direct_chats", chatId));
+                }
+            },
+
+            async searchUser() {
+                const queryStr = document.getElementById('user-search-input').value.trim();
+                if(!queryStr) return;
+                const list = document.getElementById('chat-list');
+                list.innerHTML = '<div class="text-center opacity-50">Searching...</div>';
+                
+                const qEmail = query(collection(db, "users"), where("email", "==", queryStr));
+                const qPhone = query(collection(db, "users"), where("phone", "==", queryStr));
+                
+                const [snapEmail, snapPhone] = await Promise.all([getDocs(qEmail), getDocs(qPhone)]);
+                let foundUser = null;
+                snapEmail.forEach(d => foundUser = d.data());
+                if(!foundUser) snapPhone.forEach(d => foundUser = d.data());
+
+                if(foundUser && foundUser.userId !== currentUser.uid) {
+                    const pic = foundUser.profilePic || '';
+                    const avatar = pic ? `<img src="${pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold">${foundUser.name[0]}</div>`;
+                    
+                    list.innerHTML = `<div onclick="app.startDirectChat('${foundUser.userId}', '${foundUser.name}', '${pic}')" class="bg-white dark:bg-darkCard p-4 rounded-xl shadow flex items-center gap-3 cursor-pointer">${avatar}<div><h3 class="font-bold">${foundUser.name}</h3><p class="text-xs opacity-60">Tap to chat</p></div></div>`;
+                } else {
+                    list.innerHTML = '<div class="text-center opacity-50 text-red-500">User not found (Try exact email/phone)</div>';
+                }
+            },
+
+            async startDirectChat(otherUserId, otherName, otherPic = null) {
+                history.pushState({ view: 'chat' }, null, ""); // Push State
+                activeChatType = 'direct';
+                const sortedIds = [currentUser.uid, otherUserId].sort();
+                activeChatId = sortedIds.join('_');
+                
+                const chatRef = doc(db, "direct_chats", activeChatId);
+                const chatSnap = await getDoc(chatRef);
+                
+                const myPic = this.data.user.profilePic || null;
+
+                if(chatSnap.exists()) {
+                    const data = chatSnap.data();
+                    let readBy = data.readBy || [];
+                    if(!readBy.includes(currentUser.uid)) {
+                        readBy.push(currentUser.uid);
+                        await updateDoc(chatRef, { 
+                            readBy: readBy,
+                            userNames: { [currentUser.uid]: this.data.user.name, [otherUserId]: otherName },
+                            userProfilePics: { [currentUser.uid]: myPic, [otherUserId]: otherPic }
+                        });
+                    } else {
+                         await updateDoc(chatRef, { 
+                            userNames: { [currentUser.uid]: this.data.user.name, [otherUserId]: otherName },
+                            userProfilePics: { [currentUser.uid]: myPic, [otherUserId]: otherPic }
+                        });
+                    }
+                } else {
+                     await setDoc(chatRef, { 
+                         users: sortedIds, 
+                         userNames: { [currentUser.uid]: this.data.user.name, [otherUserId]: otherName },
+                         userProfilePics: { [currentUser.uid]: myPic, [otherUserId]: otherPic }, 
+                         lastUpdated: Date.now(), 
+                         lastSenderId: currentUser.uid,
+                         readBy: [currentUser.uid] 
+                     });
+                }
+
+                document.getElementById('full-screen-chat').classList.remove('hidden');
+                document.getElementById('print-steps-container').classList.add('hidden');
+                document.getElementById('chat-header-title').innerText = otherName;
+                document.getElementById('chat-header-status').innerText = "";
+                this.loadMessages("direct_messages", "chatId", activeChatId);
+            },
+
+            closeFullScreenChat() {
+                // Deprecated by history.back()
+                document.getElementById('full-screen-chat').classList.add('hidden');
+                if(activeChatListener) { activeChatListener(); activeChatListener = null; }
+            },
+
+            loadMessages(collName, idField, idValue) {
+                const msgDiv = document.getElementById('chat-messages');
+                msgDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-64 opacity-50"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-blueAccent mb-2"></i><p class="text-xs">Connecting vibe...</p></div>`;
+                
+                if(activeChatListener) activeChatListener();
+                const q = query(collection(db, collName), where(idField, "==", idValue));
+                
+                activeChatListener = onSnapshot(q, (snap) => {
+                    try {
+                        if(snap.empty) { 
+                            msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60"><p>No messages yet.</p></div>`; 
+                            return; 
+                        }
+                        
+                        const messages = [];
+                        this.data.activeMsgCache = {}; 
+
+                        snap.forEach(d => {
+                            const m = d.data();
+                            m.id = d.id;
+                            messages.push(m);
+                            if(m.fileData) this.data.activeMsgCache[d.id] = m;
+                        });
+                        
+                        messages.sort((a,b) => a.timestamp - b.timestamp);
+
+                        let html = '';
+                        messages.forEach(msg => {
+                            const isSender = msg.senderId === currentUser.uid;
+                            const align = isSender ? 'items-end' : 'items-start';
+                            const bg = isSender ? 'bg-blueAccent text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-white';
+                            
+                            let senderNameHtml = '';
+                            if (activeChatType === 'course' && !isSender) {
+                                senderNameHtml = `<p class="text-[10px] font-bold opacity-50 mb-1 ml-1">${msg.senderName || 'Student'}</p>`;
+                            }
+
+                            let content = `<p>${msg.text || ''}</p>`;
+
+if (msg.fileData) {
+    // Check if it's an image
+    if (msg.fileType && msg.fileType.startsWith('image/')) {
+        content += `<img src="${msg.fileData}" class="mt-2 rounded-lg max-w-[200px] cursor-pointer hover:opacity-90" onclick="app.viewImage('${msg.fileData}')">`;
+    } 
+    // Check if it's a PDF
+    else if (msg.fileType === 'application/pdf') {
+        content += `
+            <div class="mt-2 flex flex-col gap-1">
+                <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg flex items-center gap-3 border border-red-100 dark:border-red-800">
+                    <i class="fa-solid fa-file-pdf text-2xl text-red-500"></i>
+                    <div class="overflow-hidden">
+                        <p class="font-bold truncate text-xs">${msg.fileName}</p>
+                        <p class="text-[10px] opacity-60">${msg.fileSize || 'PDF'}</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-1">
+                    <button onclick="app.openPdfPreview('${msg.fileData}')" class="flex-1 bg-red-500 text-white text-xs py-2 rounded font-bold hover:bg-red-600">
+                        Preview <i class="fa-regular fa-eye"></i>
+                    </button>
+                    <a href="${msg.fileData}" target="_blank" class="px-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded flex items-center justify-center">
+                        <i class="fa-solid fa-download text-xs"></i>
+                    </a>
+                </div>
+            </div>`;
+    }
+    // Other files
+    else {
+        content += `
+            <a href="${msg.fileData}" target="_blank" class="mt-2 bg-black/10 p-2 rounded text-xs cursor-pointer flex gap-2 items-center hover:bg-black/20 transition">
+                <i class="fa-solid fa-file"></i> 
+                <span>${msg.fileName || 'Attachment'}</span>
+                <i class="fa-solid fa-download ml-auto opacity-50"></i>
+            </a>`;
+    }
+}
+                            
+                            html += `
+                            <div class="flex flex-col ${align} mb-2 w-full msg-enter">
+                                ${senderNameHtml}
+                                <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
+                                <span class="text-[10px] opacity-40 mt-1 mr-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>`;
+                        });
+                        
+                        msgDiv.innerHTML = html;
+                        setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 100);
+                    } catch(err) {
+                        console.error("Error rendering messages:", err);
+                        msgDiv.innerHTML = `<div class="text-center text-red-500 mt-10"><p>Error loading chat.</p></div>`;
+                    }
+                });
+            },
+
+            downloadFile(msgId) {
+                const msg = this.data.activeMsgCache[msgId];
+                if(!msg || !msg.fileData) return alert("File not found locally.");
+                
+                try {
+                    // Mobile-friendly Blob download strategy
+                    const splitData = msg.fileData.split(',');
+                    const byteString = atob(splitData[1]);
+                    const mimeString = splitData[0].split(':')[1].split(';')[0];
+                    
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    
+                    const blob = new Blob([ab], {type: mimeString});
+                    const url = URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = msg.fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                } catch(e) { 
+                    console.log("Blob download failed, trying direct link", e);
+                    // Fallback
+                    const link = document.createElement('a');
+                    link.href = msg.fileData;
+                    link.download = msg.fileName;
+                    link.target = "_blank"; 
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            },
+
+           async sendMessage() {
+    const input = document.getElementById('chat-input');
+    const txt = input.value.trim();
+    const fileInput = document.getElementById('chat-file-input');
+    
+    if(!txt && fileInput.files.length === 0) return;
+
+    let fileUrl = null; 
+    let fileName = null; 
+    let fileType = null;
+    let fileSize = null;
+
+    // HANDLE FILE UPLOAD TO STORAGE
+    if(fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        // 1. Limit set to 25MB (Standard email/upload size)
+        if(file.size > 25 * 1024 * 1024) return alert("File too big! Max 25MB."); 
+        
+        fileName = file.name;
+        fileType = file.type;
+        fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+
+        // 2. Upload to Firebase Storage
+        try {
+            // Show a temporary loading state in the input or button
+            input.placeholder = "Uploading file... 0%";
+            input.disabled = true;
+
+            const storageRef = ref(storage, `chat_uploads/${currentUser.uid}/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            fileUrl = await getDownloadURL(snapshot.ref);
+            
+            input.placeholder = "Type a message...";
+            input.disabled = false;
+        } catch (e) {
+            console.error("Upload failed", e);
+            alert("Upload failed: " + e.message);
+            input.disabled = false;
+            return;
+        }
+    }
+
+    // DETERMINE COLLECTION & ID
+    let coll, idField;
+    if (activeChatType === 'print') { coll = 'print_messages'; idField = 'orderId'; }
+    else if (activeChatType === 'course') { coll = 'course_messages'; idField = 'courseId'; }
+    else { coll = 'direct_messages'; idField = 'chatId'; }
+    
+    const msgData = {
+        [idField]: activeChatId, 
+        senderId: currentUser.uid, 
+        text: txt, 
+        fileData: fileUrl, // Now storing the URL, not the Base64
+        fileName, 
+        fileType,
+        fileSize,
+        timestamp: Date.now()
+    };
+
+    if (activeChatType === 'course') {
+        msgData.senderName = this.data.user.name || 'Anonymous';
+    }
+
+    await addDoc(collection(db, coll), msgData);
+
+    if(activeChatType === 'print') {
+        const isStudentOwner = (currentUser.uid === activeChatId); 
+        const updateData = { lastUpdated: Date.now() };
+        if (isStudentOwner) updateData.hasUnread = true;
+        await updateDoc(doc(db, "print_orders", activeChatId), updateData);
+    } else if(activeChatType === 'direct') {
+        await updateDoc(doc(db, "direct_chats", activeChatId), { 
+            lastUpdated: Date.now(), 
+            lastSenderId: currentUser.uid,
+            readBy: [currentUser.uid] 
+        });
+    }
+
+    input.value = ''; 
+    fileInput.value = ''; 
+},
+            async handleFileUpload(input) { if(input.files.length > 0) { this.sendMessage(); } },
+
+            async updatePrintStatus(newStatus) {
+                if(!currentUser || this.data.user.role !== 'admin') return;
+                if(confirm(`Change status to: ${newStatus}?`)) {
+                    await updateDoc(doc(db, "print_orders", activeChatId), { status: newStatus });
+                    this.updatePrintStatusUI(newStatus);
+                }
+            },
+
+            updatePrintStatusUI(status) {
+                const s1 = document.getElementById('step-1'); 
+                const s2 = document.getElementById('step-2'); 
+                const s3 = document.getElementById('step-3');
+                const s4 = document.getElementById('step-4');
+                const txt = document.getElementById('chat-header-status');
+                const btnNew = document.getElementById('btn-new-print-order');
+
+                [s1, s2, s3, s4].forEach(s => { s.classList.remove('bg-green-500'); s.classList.add('bg-gray-300'); });
+                
+                if(status === 'received') { 
+                    s1.classList.remove('bg-gray-300'); s1.classList.add('bg-green-500'); 
+                    txt.innerText = "Status: Received"; 
+                }
+                else if(status === 'printing') { 
+                    [s1, s2].forEach(s => { s.classList.remove('bg-gray-300'); s.classList.add('bg-green-500'); });
+                    txt.innerText = "Printing..."; 
+                }
+                else if(status === 'delivering') { 
+                    [s1, s2, s3].forEach(s => { s.classList.remove('bg-gray-300'); s.classList.add('bg-green-500'); });
+                    txt.innerText = "Out for Delivery 🚀"; 
+                }
+                else if(status === 'completed') {
+                    [s1, s2, s3, s4].forEach(s => { s.classList.remove('bg-gray-300'); s.classList.add('bg-green-500'); });
+                    txt.innerText = "Delivered ✅";
+                }
+                
+                if(status === 'completed' && activeChatId === currentUser.uid) {
+                    btnNew.classList.remove('hidden');
+                } else {
+                    btnNew.classList.add('hidden');
+                }
+
+                if(this.data.user.role === 'admin') [s1, s2, s3, s4].forEach(s => s.classList.add('cursor-pointer', 'hover:scale-110'));
+            },
+
+            async startNewPrintOrder() {
+                if(!confirm("Start a fresh print request? This will reset the status.")) return;
+                const chatRef = doc(db, "print_orders", activeChatId);
+                
+                await updateDoc(chatRef, { 
+                    status: 'received', 
+                    lastUpdated: Date.now(),
+                    hasUnread: true 
+                });
+                
+                await addDoc(collection(db, "print_messages"), {
+                    orderId: activeChatId,
+                    senderId: "system",
+                    text: "--- 🔄 NEW REQUEST STARTED ---",
+                    timestamp: Date.now()
+                });
+                
+                this.updatePrintStatusUI('received');
+            },
+
+            // FIND THIS AND REPLACE IT
+updateBadge() {
+    const unreadCount = this.data.notifications.filter(n => !this.data.readNotifications.includes(n.id)).length;
+    const badge = document.getElementById('notification-badge');
+    
+    // SAFETY CHECK: If the badge doesn't exist in HTML, stop here to prevent crash
+    if (!badge) return; 
+
+    if(unreadCount > 0) { 
+        badge.classList.remove('hidden'); 
+        badge.innerText = unreadCount; 
+    } else { 
+        badge.classList.add('hidden'); 
+    }
+},
+            sendSystemNotification(title, body) {
+                try {
+                    const audio = document.getElementById('alert-sound');
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.log("Audio play blocked until user interaction:", e));
+                } catch(e) {}
+                if (navigator.vibrate) {
+                    navigator.vibrate([500, 200, 500]); 
+                }
+                if(Notification.permission === "granted") {
+                    try { 
+                        new Notification(title, { 
+                            body: body,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png', 
+                            vibrate: [500, 200, 500],
+                            requireInteraction: true 
+                        }); 
+                    } catch(e){}
+                }
+                const toast = document.createElement('div');
+                toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-4 animate-bounce border-2 border-white";
+                toast.innerHTML = `<i class="fa-solid fa-bell fa-shake text-2xl"></i> <div><p class="font-bold text-lg">${title}</p><p class="text-sm opacity-90">${body}</p></div>`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 6000);
+            },
+            startAlertSystem() {
+                clearInterval(alertInterval);
+                alertInterval = setInterval(() => {
+                    const now = new Date();
+                    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+                    
+                    this.data.courses.forEach(c => {
+                        if(c.day === currentDay && parseInt(c.alertOffset) > 0) {
+                            const [h, m] = c.time.split(':').map(Number);
+                            const classDate = new Date(); classDate.setHours(h, m, 0);
+                            const diffMins = Math.floor((classDate - now) / 60000);
+                            if(diffMins === parseInt(c.alertOffset)) {
+                                this.sendSystemNotification(`Class Reminder 🎓`, `Your ${c.name} class starts in ${diffMins} mins!`);
+                            }
+                        }
+                    });
+
+                    this.data.assignments.forEach(a => {
+                        if(!a.isCompleted && parseInt(a.alertOffset) > 0) {
+                           const due = new Date(a.dueDate);
+                           const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+                           if(diffDays === parseInt(a.alertOffset) && now.getHours() === 8 && now.getMinutes() === 0) {
+                                this.sendSystemNotification(`Assignment Due 📚`, `${a.title} is due in ${diffDays} days!`);
+                           }
+                        }
+                    });
+                }, 60000); 
+            },
+
+            async compressImage(file, maxWidth = 600, quality = 0.6) { 
+                return new Promise((resolve) => {
+                    const reader = new FileReader(); reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        if(file.type.startsWith('image/')) {
+                            const img = new Image(); img.src = e.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                                let w = img.width; let h = img.height;
+                                if (w > maxWidth) { h *= maxWidth / w; w = maxWidth; }
+                                canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
+                                resolve(canvas.toDataURL('image/jpeg', quality));
+                            };
+                        } else { resolve(e.target.result); }
+                    };
+                });
+            },
+
+            updateProfileUI(u) {
+                if(document.activeElement.id !== 'prof-name') document.getElementById('prof-name').value = u.name || '';
+                if(document.activeElement.id !== 'prof-phone') document.getElementById('prof-phone').value = u.phone || '';
+                if(document.activeElement.id !== 'prof-program') document.getElementById('prof-program').value = u.program || '';
+                document.getElementById('profile-display-name').innerText = u.name || 'User';
+                document.getElementById('sidebar-name').innerText = u.name || 'Student';
+                document.getElementById('sidebar-email-display').innerText = u.email;
+                if(u.school) {
+                     document.getElementById('prof-school-input').value = u.school;
+                     document.getElementById('profile-school-display').innerText = u.school;
+                }
+                if(u.profilePic) { ['header-profile-img', 'profile-pic-img'].forEach(id => { document.getElementById(id).src = u.profilePic; document.getElementById(id).classList.remove('hidden'); }); ['header-profile-placeholder', 'profile-pic-placeholder'].forEach(id => document.getElementById(id).classList.add('hidden')); }
+                
+                // Rank Display Update
+                const xp = u.weeklyXp || 0;
+                document.getElementById('profile-xp-display').innerText = `${xp} XP`;
+                document.getElementById('profile-rank-display').innerText = this.getRank(xp);
+            },
+
+            startListeners() {
+                if(!currentUser) return;
+                const collections = ['courses', 'assignments', 'notes'];
+                collections.forEach(col => {
+                    const q = query(collection(db, col), where("userId", "==", currentUser.uid));
+                    listeners.push(onSnapshot(q, (snap) => {
+                        this.data[col] = []; snap.forEach(d => this.data[col].push({id: d.id, ...d.data()}));
+                        if(col === 'courses') this.renderCourses(); if(col === 'assignments') this.renderAssignments(); if(col === 'notes') this.renderNotes();
+                        // Re-render chat list when courses update (render functions guard against missing DOM)
+                        if(col === 'courses') {
+                            this.renderChatList();
+                        }
+                    }));
+                    // Listener for My Tickets
+const qTickets = query(collection(db, `users/${currentUser.uid}/tickets`), orderBy("purchaseDate", "desc"));
+listeners.push(onSnapshot(qTickets, (snap) => {
+    const t = [];
+    snap.forEach(d => t.push({id: d.id, ...d.data()}));
+    this.data.myTickets = t;
+    
+    // Update badge count
+    const badge = document.getElementById('my-ticket-count');
+    if(t.length > 0) {
+        badge.innerText = t.length;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+
+    if(this.data.currentHomeView === 'tickets') this.renderMyTickets();
+}));
+                });
+                
+                const qEvents = query(collection(db, "events"), orderBy("timestamp", "desc"));
+listeners.push(onSnapshot(qEvents, (snap) => {
+    const events = [];
+    
+    snap.forEach(d => {
+        const ev = {id: d.id, ...d.data()};
+        events.push(ev);
+    });
+    this.data.events = events;
+    this.renderHome();
+}));
+
+                const qBroadcast = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"));
+                listeners.push(onSnapshot(qBroadcast, (snap) => {
+                    const newNotifs = []; 
+                    
+                    // Check for new broadcasts to notify
+                    snap.docChanges().forEach(change => {
+                        if (change.type === "added") {
+                            const d = change.doc.data();
+                            // Only notify if it's recent (prevent spam on reload)
+                            if (Date.now() - d.timestamp < 20000) {
+                                this.sendSystemNotification(d.title || "New Announcement", d.body || "Check the app for details.");
+                            }
+                        }
+                    });
+
+                    snap.forEach(d => newNotifs.push({id: d.id, ...d.data()}));
+                    this.data.notifications = newNotifs;
+                    this.renderNotifications(); this.updateBadge();
+                    this.renderChatList();
+                }));
+
+                const qChats = query(collection(db, "direct_chats"), where("users", "array-contains", currentUser.uid));
+                listeners.push(onSnapshot(qChats, (snap) => {
+                    const rawChats = [];
+                    snap.forEach(d => {
+                        const c = d.data();
+                        c.id = d.id;
+                        rawChats.push(c);
+                        
+                        if (c.lastSenderId && c.lastSenderId !== currentUser.uid && c.readBy && !c.readBy.includes(currentUser.uid) && (Date.now() - c.lastUpdated < 10000)) {
+                            const otherUid = c.users.find(u => u !== currentUser.uid);
+                            const senderName = c.userNames[otherUid] || "Someone";
+                            if (activeChatType !== 'direct' || activeChatId !== c.id) {
+                                this.sendSystemNotification("New Message 💬", `${senderName} sent you a message.`);
+                            }
+                        }
+                    });
+                    
+                    rawChats.sort((a,b) => b.lastUpdated - a.lastUpdated);
+                    this.data.recentChats = rawChats;
+                    
+                    const searchInput = document.getElementById('user-search-input');
+                    if (!searchInput.value.trim()) {
+                        this.renderChatList();
+                    }
+                }));
+            },
+
+            stopListeners() { listeners.forEach(u => u()); listeners = []; },
+
+            async openAdmin() {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                this.switchAdminView('dash'); 
+                
+
+                const usersSnap = await getDocs(query(collection(db, "users"), limit(50)));
+                const reqSnap = await getDocs(query(collection(db, "service_requests"), orderBy("timestamp", "desc"), limit(50)));
+                const feedbackSnap = await getDocs(query(collection(db, "feedback"), orderBy("timestamp", "desc"), limit(50)));
+                
+                document.getElementById('adm-count-users').innerText = usersSnap.size + "+";
+                document.getElementById('adm-count-reqs').innerText = reqSnap.size + "+";
+                
+                let feedbackHtml = '';
+                feedbackSnap.forEach(d => {
+                    const f = d.data();
+                    feedbackHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3">${f.userName}</td><td class="px-4 py-3 truncate max-w-xs text-xs">${f.message}</td><td class="px-4 py-3 font-bold text-yellow-400">${f.rating} ★</td></tr>`;
+                });
+                document.getElementById('adm-feedback-list').innerHTML = feedbackHtml || '<tr><td colspan="3" class="p-4 text-center">No feedback yet.</td></tr>';
+
+                let adminHtml = ''; 
+usersSnap.forEach(doc => { 
+    const u = doc.data(); 
+    // User HTML generation removed
+    
+    if(u.role === 'admin') {
+        adminHtml += `<tr class="border-b border-purple-900/20"><td class="px-4 py-3 font-bold text-white">${u.name}</td><td class="px-4 py-3 text-xs text-purple-300">${u.email}</td><td class="px-4 py-3 text-right"><button onclick="app.toggleUserRole('${doc.id}', '${u.role}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Demote</button></td></tr>`; 
+    }
+});
+
+// document.getElementById('adm-user-list').innerHTML line removed
+document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No admins found.</td></tr>';
+                
+                if(activeJobListener) activeJobListener(); 
+                const q = query(collection(db, "print_orders"), orderBy("lastUpdated", "desc"), limit(50));
+                
+                activeJobListener = onSnapshot(q, (snap) => {
+                    let printHtml = '';
+                    if(snap.empty) { document.getElementById('adm-print-list').innerHTML = '<tr><td colspan="3" class="p-4 text-center">No active jobs.</td></tr>'; return; }
+                    snap.forEach(doc => {
+                        const job = doc.data();
+                        const unreadIndicator = job.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse shadow-sm shadow-red-500/50">NEW</span>' : '';
+                        printHtml += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white">${job.userName || 'Student'} ${unreadIndicator}<span class="text-xs text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-xs font-bold text-blue-300">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.openPrintChat('${doc.id}')" class="bg-blueAccent hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">Chat</button></td></tr>`;
+                    });
+                    document.getElementById('adm-print-list').innerHTML = printHtml;
+                });
+            },
+            
+            switchAdminView(viewName) {
+                this.data.currentAdminView = viewName;
+                document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`adm-view-${viewName}`).classList.remove('hidden');
+                
+                ['dash', 'godmode', 'feedback'].forEach(v => {
+                    const btn = document.getElementById(`adm-btn-${v}`);
+                    if (!btn) return; 
+
+                    if(v === viewName) {
+                        btn.classList.remove('bg-gray-800', 'text-gray-400');
+                        if(v === 'godmode') {
+                            btn.classList.add('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-500/50');
+                        } else {
+                            btn.classList.add('bg-blueAccent', 'text-white');
+                        }
+                    } else {
+                        btn.classList.add('bg-gray-800', 'text-gray-400');
+                        btn.classList.remove('bg-blueAccent', 'text-white', 'bg-purple-600', 'shadow-lg', 'shadow-purple-500/50');
+                        if (v === 'godmode') btn.classList.add('border', 'border-purple-400');
+                    }
+                });
+            },
+            
+            injectCapital() {
+                valuation += Math.floor(Math.random() * 50000000) + 1000000;
+                document.getElementById('ceo-valuation').innerText = valuation.toLocaleString();
+                const ticker = document.getElementById('ceo-valuation');
+                ticker.classList.add('text-yellow-400');
+                setTimeout(() => ticker.classList.remove('text-yellow-400'), 200);
+            },
+            
+            async banUser() {
+                const email = document.getElementById('ban-email-input').value.trim();
+                if(!email) return;
+                if(!confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY BAN ${email}?`)) return;
+                
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const snap = await getDocs(q);
+                
+                if(snap.empty) { alert("User not found."); return; }
+                
+                snap.forEach(async (d) => {
+                    await updateDoc(doc(db, "users", d.id), { role: "banned" });
+                });
+                alert(`${email} has been exiled from the kingdom. 🔨`);
+                document.getElementById('ban-email-input').value = '';
+            },
+
+            async flushRequests() {
+                if(!confirm("⚠️ FLUSH SYSTEM?\n\nThis will permanently delete ALL service request logs. This cannot be undone.")) return;
+                const q = query(collection(db, "service_requests"));
+                const snap = await getDocs(q);
+                if(snap.empty) return alert("System is already clean. ✨");
+                const deletePromises = snap.docs.map(d => deleteDoc(doc(db, "service_requests", d.id)));
+                await Promise.all(deletePromises);
+                alert(`System Flushed. ${snap.size} records purged. 🧹`);
+            },
+
+            async sendVIPBroadcast() {
+                const title = document.getElementById('vip-title').value;
+                const body = document.getElementById('vip-body').value;
+                if(!title || !body) return alert("Enter content for the Executive Order.");
+                await addDoc(collection(db, "global_announcements"), { 
+                    title, body, isVIP: true, timestamp: Date.now() 
+                });
+                alert("Executive Order Published. 📜");
+                document.getElementById('vip-title').value = '';
+                document.getElementById('vip-body').value = '';
+            },
+
+            closeAdmin() { document.getElementById('admin-panel').classList.add('hidden'); if(activeJobListener) { activeJobListener(); activeJobListener = null; } },
+            async addAdminByEmail() { const email = document.getElementById('admin-email-input').value.trim(); if(!email) return; const q = query(collection(db, "users"), where("email", "==", email)); const snap = await getDocs(q); if(snap.empty) { alert("User not found!"); return; } snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: "admin" }); }); alert(`Success! ${email} promoted.`); this.openAdmin(); },
+            async toggleUserRole(uid, currentRole) { if(confirm(`Change role from ${currentRole}?`)) { const newRole = currentRole === 'admin' ? 'student' : 'admin'; await updateDoc(doc(db, "users", uid), { role: newRole }); this.openAdmin(); } },
+
+
+            async contactAdmin(adminName, phone) {
+                const safeName = (this.data.user && this.data.user.name) ? this.data.user.name : "Guest";
+                try { await addDoc(collection(db, "service_requests"), { userId: currentUser.uid, userName: safeName, userPhone: this.data.user.phone || '', service: this.data.selectedService, admin: adminName, timestamp: Date.now() }); } catch(e){}
+                window.open(`https://wa.me/${phone}?text=Hello ${adminName}, I am ${safeName}. I need help with ${this.data.selectedService}.`, '_blank');
+            },
+
+            async toggleAssignment(id, currentStatus) { 
+                await updateDoc(doc(db, "assignments", id), { isCompleted: !currentStatus }); 
+                if(!currentStatus) this.addXp(100, "Assignment Complete 📚"); 
+            },
+            async updateProfile(field, value) { if(!currentUser) return; this.data.user[field] = value; await updateDoc(doc(db, "users", currentUser.uid), { [field]: value }); if(field === 'name') this.updateProfileUI(this.data.user); },
+            async handleProfilePic(input) { if (input.files && input.files[0]) { const compressed = await this.compressImage(input.files[0], 200, 0.7); this.updateProfile('profilePic', compressed); } },
+            
+            async saveCourse() { 
+                const name = document.getElementById('new-course-name').value; 
+                const venue = document.getElementById('new-course-venue').value; 
+                const day = document.getElementById('new-course-day').value; 
+                const time = document.getElementById('new-course-time').value;
+                const alertOffset = document.getElementById('new-course-alert').value;
+                if(name) { 
+                    if(this.data.editingCourseId) {
+                         await updateDoc(doc(db, "courses", this.data.editingCourseId), { name, venue, day, time, alertOffset });
+                    } else {
+                         await addDoc(collection(db, "courses"), { userId: currentUser.uid, name, venue, day, time, alertOffset }); 
+                         this.addXp(50, "Added Class 🎓");
+                    }
+                    this.closeModals(); 
+                    // Visual fix handled by CSS classes, but we can pop manually to sync state
+                    history.back();
+                } 
+            },
+            editCourse(c) {
+                this.data.editingCourseId = c.id;
+                document.getElementById('new-course-name').value = c.name;
+                document.getElementById('new-course-venue').value = c.venue;
+                document.getElementById('new-course-day').value = c.day;
+                document.getElementById('new-course-time').value = c.time;
+                document.getElementById('new-course-alert').value = c.alertOffset || "0";
+                document.getElementById('course-modal-title').innerText = "Edit Class";
+                this.openModal('modal-add-course');
+            },
+            async deleteCourse(id) { if(confirm('Delete?')) await deleteDoc(doc(db, "courses", id)); },
+            
+            async saveAssignment() { 
+                const title = document.getElementById('new-assign-title').value; 
+                const course = document.getElementById('new-assign-course').value; 
+                const date = document.getElementById('new-assign-date').value;
+                const alertOffset = document.getElementById('new-assign-alert').value;
+                if(title) { 
+                    await addDoc(collection(db, "assignments"), { userId: currentUser.uid, title, course, dueDate: date, isCompleted: false, alertOffset }); 
+                    this.closeModals(); 
+                    history.back(); // Pop state
+                } 
+            },
+            async deleteAssignment(id) { if(confirm('Delete?')) await deleteDoc(doc(db, "assignments", id)); },
+            
+            async saveNote() { 
+                const title = document.getElementById('note-title').value; 
+                const subtitle = document.getElementById('note-subtitle').value; 
+                const body = document.getElementById('note-body').value; 
+                if(this.data.editingNoteId) { 
+                    await updateDoc(doc(db, "notes", this.data.editingNoteId), { title, subtitle, body }); 
+                } else { 
+                    await addDoc(collection(db, "notes"), { userId: currentUser.uid, title, subtitle, body }); 
+                    this.addXp(30, "Took a Note 📝");
+                } 
+                this.closeModals(); 
+                history.back(); // Pop state
+            },
+            async deleteNote() { if(confirm('Delete?')) { await deleteDoc(doc(db, "notes", this.data.editingNoteId)); this.closeModals(); history.back(); } },
+
+            renderCourses() { 
+                const list = document.getElementById('course-list'); if(!list) return; list.innerHTML = ''; 
+                if(this.data.courses.length === 0) { document.getElementById('empty-courses').classList.remove('hidden'); return; } 
+                document.getElementById('empty-courses').classList.add('hidden'); 
+                const days = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":7}; 
+                const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                this.data.courses.sort((a,b) => days[a.day] - days[b.day]); 
+                this.data.courses.forEach(c => { 
+                    const isToday = c.day === currentDay ? 'today-highlight' : '';
+                    const tCheck = c.time ? c.time : '??:??';
+                    list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex items-center gap-4 ${isToday} relative overflow-hidden"><div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">${c.day.substring(0,3).toUpperCase()}</div><div class="flex-1 min-w-0"><h3 class="font-bold text-lg truncate">${c.name}</h3><p class="text-sm font-medium text-blueAccent dark:text-orangeAccent"><i class="fa-regular fa-clock mr-1"></i>${tCheck}</p><p class="text-xs opacity-60 truncate">${c.venue}</p></div><div class="flex gap-3"><button onclick='app.editCourse(${JSON.stringify(c)})'><i class="fa-solid fa-pen text-gray-400 hover:text-blueAccent"></i></button><button onclick="app.deleteCourse('${c.id}')"><i class="fa-solid fa-trash text-gray-400 hover:text-red-500"></i></button></div></div>`;
+                }); 
+            },
+            renderAssignments() { const list = document.getElementById('assignment-list'); if(!list) return; list.innerHTML = ''; if(this.data.assignments.length === 0) { document.getElementById('empty-assignments').classList.remove('hidden'); return; } document.getElementById('empty-assignments').classList.add('hidden'); this.data.assignments.forEach(a => { const style = a.isCompleted ? 'task-done' : ''; const check = a.isCompleted ? 'checked' : ''; list.innerHTML += `<div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 flex justify-between items-center border-l-4 border-blueAccent"><div class="flex items-center gap-3"><input type="checkbox" ${check} onclick="app.toggleAssignment('${a.id}', ${a.isCompleted})" class="w-5 h-5 cursor-pointer"><div class="${style}"><h3 class="font-bold">${a.title}</h3><p class="text-xs opacity-60">${a.course} • ${a.dueDate}</p></div></div><button onclick="app.deleteAssignment('${a.id}')"><i class="fa-solid fa-trash text-gray-400"></i></button></div>`; }); },
+            renderNotes() { const list = document.getElementById('notes-list'); if(!list) return; list.innerHTML = ''; if(this.data.notes.length === 0) { document.getElementById('empty-notes').classList.remove('hidden'); return; } document.getElementById('empty-notes').classList.add('hidden'); this.data.notes.forEach(n => { const card = document.createElement('div'); card.className = "bg-noteYellow dark:bg-darkCard rounded-xl p-4 shadow-sm h-32 flex flex-col cursor-pointer"; card.onclick = () => { this.data.editingNoteId = n.id; document.getElementById('note-title').value = n.title; document.getElementById('note-subtitle').value = n.subtitle; document.getElementById('note-body').value = n.body; document.getElementById('btn-delete-note').classList.remove('hidden'); app.openModal('modal-note-editor'); }; card.innerHTML = `<h3 class="font-bold line-clamp-1">${n.title}</h3><p class="text-xs opacity-80 line-clamp-2">${n.subtitle}</p>`; list.appendChild(card); }); },
+            
+            renderNotifications() {
+                const list = document.getElementById('notifications-list'); list.innerHTML = '';
+                if(this.data.notifications.length === 0) { document.getElementById('empty-notifications').classList.remove('hidden'); return; }
+                document.getElementById('empty-notifications').classList.add('hidden');
+                this.data.notifications.forEach(n => {
+                   let imgHtml = n.image ? `<img src="${n.image}" onclick="app.viewImage(this.src)" class="w-full h-32 object-cover rounded mt-2 cursor-pointer hover:opacity-90">` : '';
+                    let cardClass = "bg-white dark:bg-darkCard";
+                    let titleClass = "text-blueAccent";
+                    let border = "";
+                    if(n.isVIP) {
+                        cardClass = "vip-gradient text-black";
+                        titleClass = "text-black";
+                        border = "border-2 border-yellow-300";
+                    }
+                    list.innerHTML += `<div class="${cardClass} p-4 rounded-xl shadow mb-2 relative ${border}"><h3 class="font-bold ${titleClass}">${n.title} ${n.isVIP ? '👑' : ''}</h3><p class="text-sm opacity-80">${n.body}</p>${imgHtml}<p class="text-[10px] opacity-40 mt-1">${new Date(n.timestamp).toLocaleDateString()}</p></div>`;
+                });
+            },
+
+            switchTab(index, fromHistory = false) { 
+                const urls = ['./', './timetable.html', './tasks.html', './notes.html', './chat.html'];
+                if (!fromHistory && index >= 0 && index < urls.length) {
+                    window.location.href = urls[index];
+                    return;
+                }
+                // Update nav active state (used when loading a page directly)
+                window.scrollTo(0,0);
+                document.querySelectorAll('.nav-item').forEach(el => { el.classList.toggle('text-blueAccent', parseInt(el.dataset.index) === index); el.classList.toggle('text-gray-400', parseInt(el.dataset.index) !== index); });
+                const fab = document.getElementById('fab');
+                if (fab) fab.classList.toggle('hidden', index === 0);
+                const fabIcon = document.getElementById('fab-icon');
+                const fabLabel = document.getElementById('fab-label');
+                if (fabIcon && fabLabel) {
+                    if (index === 4) { fabIcon.className = "fa-solid fa-message"; fabLabel.innerText = "New Chat"; }
+                    else { fabIcon.className = "fa-solid fa-plus"; fabLabel.innerText = "Add"; }
+                }
+                this.data.currentTabIndex = index;
+            },
+            toggleSidebar() { const d = document.getElementById('sidebar-drawer'); const o = document.getElementById('sidebar-overlay'); if(d.classList.contains('-translate-x-full')) { d.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { d.classList.add('-translate-x-full'); o.classList.add('hidden'); } },
+            toggleTheme() { this.data.theme = this.data.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('az_theme', this.data.theme); this.applyTheme(); },
+            applyTheme() { const isDark = this.data.theme === 'dark'; document.documentElement.classList.toggle('dark', isDark); this.updateToggleUI('theme-toggle-btn', isDark); },
+            
+            toggleSystemNotifications() {
+                if (!this.data.systemNotifications) {
+                    Notification.requestPermission().then(perm => {
+                        if (perm === 'granted') { 
+                            this.data.systemNotifications = true; 
+                            localStorage.setItem('az_sys_notif', true); 
+                            this.updateToggleUI('notif-toggle-btn', true); 
+                            const audio = document.getElementById('alert-sound');
+                            audio.play().then(() => {
+                                audio.pause();
+                                audio.currentTime = 0;
+                            });
+                            this.sendSystemNotification("Alerts Active 🔔", "Sound and Vibration enabled!"); 
+                        } else {
+                            alert("We need permission to send alerts! Please allow them in your browser settings.");
+                        }
+                    });
+                } else { 
+                    this.data.systemNotifications = false; 
+                    localStorage.setItem('az_sys_notif', false); 
+                    this.updateToggleUI('notif-toggle-btn', false); 
+                }
+            },
+
+            updateToggleUI(btnId, isActive) { const btn = document.getElementById(btnId); const knob = btn.firstElementChild; if (isActive) { btn.classList.remove('bg-gray-400'); btn.classList.add('bg-blueAccent'); knob.classList.add('translate-x-5'); } else { btn.classList.add('bg-gray-400'); btn.classList.remove('bg-blueAccent'); knob.classList.remove('translate-x-5'); } },
+            
+            setupSwipeNavigation() {
+                let touchStartX = 0;
+                let touchStartY = 0;
+
+                document.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    // Guard clauses: Don't swipe if overlays are open
+                    const overlays = [
+                        'auth-overlay', 'splash-screen', 'admin-panel', 
+                        'full-screen-leaderboard', 'full-screen-feedback', 
+                        'full-screen-chat', 'full-screen-profile', 
+                        'full-screen-settings', 'modal-overlay'
+                    ];
+                    
+                    const isOverlayOpen = overlays.some(id => !document.getElementById(id).classList.contains('hidden'));
+                    if(isOverlayOpen) return;
+
+                    // Don't swipe if interacting with a horizontal slider (like course circles)
+                    if(e.target.closest('.overflow-x-auto')) return;
+
+                    const touchEndX = e.changedTouches[0].screenX;
+                    const touchEndY = e.changedTouches[0].screenY;
+                    
+                    const diffX = touchEndX - touchStartX;
+                    const diffY = touchEndY - touchStartY;
+
+                    // Threshold: 50px, and horizontal movement must dominate vertical
+                    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                        const currentIndex = this.data.currentTabIndex;
+                        const urls = ['./', './timetable.html', './tasks.html', './notes.html', './chat.html'];
+                        // Swipe Left (finger moves left) -> Go Next (Index + 1)
+                        if (diffX < 0) {
+                            if (currentIndex < 4) window.location.href = urls[currentIndex + 1];
+                        } 
+                        // Swipe Right (finger moves right) -> Go Prev (Index - 1)
+                        else {
+                            if (currentIndex > 0) window.location.href = urls[currentIndex - 1];
+                        }
+                    }
+                }, { passive: true });
+            },
+
+            openModal(id) { 
+                history.pushState({ view: 'modal' }, null, ""); // Push State
+                document.getElementById('modal-overlay').classList.remove('hidden'); 
+                document.getElementById(id).classList.remove('hidden'); 
+            },
+            
+            closeModals() { 
+                // Just visual hiding, but in the new system we should prefer history.back()
+                document.getElementById('modal-overlay').classList.add('hidden'); 
+                document.querySelectorAll('#modal-overlay > div').forEach(d => d.classList.add('hidden')); 
+                document.getElementById('modal-note-editor').classList.add('hidden'); 
+                document.getElementById('modal-notifications').classList.add('hidden'); 
+            },
+            
+            handleFabClick() { 
+    const tabIndex = this.data.currentTabIndex;
+    // 1. Timetable Tab
+    if(tabIndex === 1) {
+        this.data.editingCourseId = null; 
+        document.getElementById('new-course-name').value = ''; 
+        document.getElementById('new-course-venue').value = ''; 
+        document.getElementById('course-modal-title').innerText = "Add Class";
+        this.openModal('modal-add-course');
+
+    // 2. Assignments Tab
+    } else if(tabIndex === 2) {
+        this.openModal('modal-add-assignment');
+
+    // 3. Notes Tab
+    } else if(tabIndex === 3) {
+        this.data.editingNoteId = null;
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-subtitle').value = '';
+        document.getElementById('note-body').value = '';
+        document.getElementById('btn-delete-note').classList.add('hidden');
+        this.openModal('modal-note-editor');
+
+    // 4. Chat Tab
+    } else if(tabIndex === 4) {
+         document.getElementById('contact-sync-prompt').classList.remove('hidden');
+         document.getElementById('contact-results').classList.add('hidden');
+         document.getElementById('modal-contacts').classList.remove('hidden');
+         history.pushState({ view: 'modal-contacts' }, null, "");
+    }
+},
+            // --- NEW: CONTACT SYNC LOGIC ---
+
+    async syncContacts() {
+        // check support
+        if (!('contacts' in navigator && 'ContactsManager' in window)) {
+            return alert("Contact Sync is not supported on this device/browser. Try using the Search bar to find users by email/phone.");
+        }
+
+        try {
+            const props = ['name', 'tel'];
+            const opts = { multiple: true };
+            const contacts = await navigator.contacts.select(props, opts);
+            
+            if (contacts.length === 0) return;
+
+            document.getElementById('contact-sync-prompt').classList.add('hidden');
+            document.getElementById('contact-results').classList.remove('hidden');
+            document.getElementById('list-on-app').innerHTML = '<div class="text-center opacity-50"><i class="fa-solid fa-spinner fa-spin"></i> Checking database...</div>';
+            
+            // 1. Fetch all users (Lightweight for prototype, scalable solution uses Cloud Functions)
+            const usersSnap = await getDocs(collection(db, "users"));
+            const registeredUsers = [];
+            usersSnap.forEach(doc => registeredUsers.push(doc.data()));
+
+            // 2. Process Contacts
+            const onAppList = [];
+            const inviteList = [];
+
+            contacts.forEach(contact => {
+                if (!contact.tel || contact.tel.length === 0) return;
+                
+                const name = contact.name[0];
+                const rawPhone = contact.tel[0];
+                const normalizedPhone = this.normalizePhone(rawPhone);
+
+                // Check match (Last 9 digits to account for country codes)
+                const match = registeredUsers.find(u => {
+                    const uPhone = this.normalizePhone(u.phone || '');
+                    return uPhone.includes(normalizedPhone) || normalizedPhone.includes(uPhone);
+                });
+
+                if (match && match.userId !== currentUser.uid) {
+                    onAppList.push({ ...match, contactName: name });
+                } else {
+                    inviteList.push({ name: name, phone: rawPhone });
+                }
+            });
+
+            this.renderContactResults(onAppList, inviteList);
+
+        } catch (ex) {
+            console.error(ex);
+            alert("Unable to sync contacts. Ensure permissions are granted.");
+        }
+    },
+
+    normalizePhone(phone) {
+        // Remove spaces, dashes, parentheses, + signs
+        const clean = phone.replace(/[^0-9]/g, '');
+        // Return last 9 digits for "fuzzy" matching
+        return clean.length > 9 ? clean.slice(-9) : clean;
+    },
+
+    renderContactResults(onApp, toInvite) {
+        const onAppDiv = document.getElementById('list-on-app');
+        const inviteDiv = document.getElementById('list-invite');
+        const onAppSection = document.getElementById('section-on-app');
+
+        // Render Registered Users
+        if (onApp.length > 0) {
+            onAppSection.classList.remove('hidden');
+            onAppDiv.innerHTML = '';
+            onApp.forEach(u => {
+                const pic = u.profilePic || '';
+                const avatar = pic ? `<img src="${pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-blueAccent text-white flex items-center justify-center font-bold">${u.name[0]}</div>`;
+                
+                onAppDiv.innerHTML += `
+                <div onclick="app.startDirectChat('${u.userId}', '${u.name}', '${pic}'); history.back();" class="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex items-center justify-between cursor-pointer border border-green-500/30">
+                    <div class="flex items-center gap-3">
+                        ${avatar}
+                        <div>
+                            <h4 class="font-bold text-sm">${u.name}</h4>
+                            <p class="text-[10px] opacity-60">Via Contacts: ${u.contactName}</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-message text-blueAccent"></i>
+                </div>`;
+            });
+        } else {
+            onAppSection.classList.add('hidden');
+        }
+
+        // Render Invite List
+        inviteDiv.innerHTML = '';
+        toInvite.forEach(c => {
+             inviteDiv.innerHTML += `
+                <div class="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h4 class="font-bold text-sm">${c.name}</h4>
+                            <p class="text-[10px] opacity-60">${c.phone}</p>
+                        </div>
+                    </div>
+                    <button onclick="app.sendSmsInvite('${c.phone}')" class="bg-gray-100 dark:bg-gray-700 hover:bg-blueAccent hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                        Invite
+                    </button>
+                </div>`;
+        });
+    },
+
+    sendSmsInvite(phone) {
+        const msg = encodeURIComponent("Hey! Join me on AZ Learner to manage classes and assignments easily. Download here: azlearner.me 🎓");
+        // Use generic sms: protocol (works on iOS and Android)
+        // Note: iOS uses separator '&', Android uses '?' usually, but modern behavior varies.
+        // Trying universally compatible approach
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const sep = isIOS ? '&' : '?';
+        window.open(`sms:${phone}${sep}body=${msg}`, '_self');
+    },
+            openServiceModal(name) { this.data.selectedService = name; this.openModal('modal-service'); },
+            setRating(n) {
+                this.data.rating = n;
+                const stars = document.getElementById('star-rating-container').children;
+                for(let i=0; i<5; i++) { stars[i].classList.toggle('text-yellow-400', i < n); stars[i].classList.toggle('text-gray-300', i >= n); }
+            },
+            addTag(tag) { 
+                const area = document.getElementById('fb-experience'); 
+                area.value = (area.value ? area.value + " " : "") + tag; 
+                area.focus(); 
+            },
+            async sendFeedback() { 
+                const msg = document.getElementById('fb-experience').value;
+                if(!msg) return alert("Please type something!");
+                try {
+                    await addDoc(collection(db, "feedback"), {
+                        userId: currentUser.uid,
+                        userName: this.data.user.name || "Anonymous",
+                        message: msg,
+                        rating: this.data.rating || 5,
+                        timestamp: Date.now()
+                    });
+                    document.getElementById('feedback-form-content').classList.add('hidden');
+                    document.getElementById('feedback-success').classList.remove('hidden');
+                    document.getElementById('fb-experience').value = ""; // Clear form
+                } catch(e) {
+                    alert("Error sending feedback: " + e.message);
+                }
+            },
+            
+            // --- FULL SCREEN LEADERBOARD ---
+            openLeaderboard() {
+                history.pushState({ view: 'leaderboard' }, null, ""); // Push State
+                this.renderLeaderboard();
+                document.getElementById('full-screen-leaderboard').classList.remove('hidden');
+            },
+            
+            deleteAccount() { if(confirm('PERMANENTLY DELETE ACCOUNT?')) { deleteUser(currentUser); } }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+        window.mfaManager = {
+    verificationId: null,
+    resolver: null,
+    recaptchaVerifier: null, // We will store the instance here
+
+    initRecaptcha() {
+        // 1. CHECK: If it already exists, DO NOTHING. Reuse it!
+        if (this.recaptchaVerifier) {
+            return; 
+        }
+
+        // 2. Ensure the container exists and is EMPTY
+        const container = document.getElementById('recaptcha-container');
+        if (!container) {
+            const div = document.createElement('div');
+            div.id = 'recaptcha-container';
+            document.body.appendChild(div);
+        } else {
+            // Safety clear: make sure the div is empty before we attach
+            container.innerHTML = ''; 
+        }
+
+        // 3. Create the single instance
+        this.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                console.log("Recaptcha verified");
+            },
+            'expired-callback': () => {
+                console.log("Recaptcha expired - user must retry");
+                // Optional: reset logic here
+            }
+        });
+        
+        // 4. Render it immediately to "warm it up"
+        this.recaptchaVerifier.render();
+    },
+
+    async startEnrollment() {
+        if (!currentUser) return alert("Must be logged in.");
+
+        // Force refresh user status
+        await currentUser.reload();
+
+        if (!currentUser.emailVerified) {
+            const proceed = confirm("Security Check 🛡️\n\nPlease verify your email (" + currentUser.email + ") before adding a phone number.\n\nClick OK to send the link.");
+            if (proceed) {
+                try {
+                    await sendEmailVerification(currentUser);
+                    alert("Link sent! Check your inbox.");
+                } catch (e) { alert(e.message); }
+            }
+            return;
+        }
+
+        // Initialize Recaptcha ONCE here
+        this.initRecaptcha();
+
+        document.getElementById('modal-mfa').classList.remove('hidden');
+        document.getElementById('mfa-step-phone').classList.remove('hidden');
+        document.getElementById('mfa-step-code').classList.add('hidden');
+    },
+
+    // Inside window.mfaManager...
+
+    async sendCode() {
+        const phone = document.getElementById('mfa-phone-input').value;
+        if (!phone) return alert("Enter phone number");
+
+        document.getElementById('mfa-msg').innerText = "Sending code...";
+
+        try {
+            const multiFactorSession = await multiFactor(currentUser).getSession();
+            const phoneOptions = {
+                phoneNumber: phone,
+                session: multiFactorSession
+            };
+            const phoneAuthProvider = new PhoneAuthProvider(auth);
+            
+            this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneOptions, this.recaptchaVerifier);
+            
+            document.getElementById('mfa-step-phone').classList.add('hidden');
+            document.getElementById('mfa-step-code').classList.remove('hidden');
+            document.getElementById('mfa-msg').innerText = "";
+            
+        } catch (err) {
+            console.error("SMS Error:", err);
+            
+            // --- NEW: CATCH RECENT LOGIN ERROR ---
+            if (err.code === 'auth/requires-recent-login') {
+                document.getElementById('modal-reauth').classList.remove('hidden'); // Show password modal
+                document.getElementById('mfa-msg').innerText = "";
+                return;
+            }
+            // -------------------------------------
+
+            document.getElementById('mfa-msg').innerText = err.message;
+            if(err.code === 'auth/captcha-check-failed' && this.recaptchaVerifier) {
+                this.recaptchaVerifier.clear();
+                this.recaptchaVerifier = null;
+            }
+        }
+    },
+
+    // --- NEW FUNCTION ---
+    async confirmReauth() {
+        const pass = document.getElementById('reauth-pass').value;
+        if(!pass) return;
+
+        const cred = EmailAuthProvider.credential(currentUser.email, pass);
+        
+        try {
+            await reauthenticateWithCredential(currentUser, cred);
+            document.getElementById('modal-reauth').classList.add('hidden');
+            document.getElementById('reauth-pass').value = '';
+            alert("Verified! Resending code now...");
+            this.sendCode(); // RETRY the SMS sending automatically
+        } catch(e) {
+            alert("Incorrect password. Please try again.");
+        }
+    },
+    async handleLoginChallenge(error) {
+        // Initialize Recaptcha ONCE here too
+        this.initRecaptcha();
+
+        this.resolver = getMultiFactorResolver(auth, error);
+        
+        // ... (Rest of your handleLoginChallenge logic stays the same)
+        const phoneInfoOptions = {
+            multiFactorHint: this.resolver.hints[0],
+            session: this.resolver.session
+        };
+        const phoneAuthProvider = new PhoneAuthProvider(auth);
+        try {
+            this.verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, this.recaptchaVerifier);
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('modal-mfa').classList.remove('hidden');
+            document.getElementById('mfa-step-phone').classList.add('hidden');
+            document.getElementById('mfa-step-code').classList.remove('hidden');
+        } catch(err) {
+            alert("Login SMS Error: " + err.message);
+        }
+    },
+
+    async verifyCode() {
+        // ... (Your existing verifyCode logic stays the same)
+        const code = document.getElementById('mfa-code-input').value;
+        const cred = PhoneAuthProvider.credential(this.verificationId, code);
+        const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+
+        try {
+            if (this.resolver) {
+                await this.resolver.resolveSignIn(multiFactorAssertion);
+                this.close();
+            } else {
+                await multiFactor(currentUser).enroll(multiFactorAssertion, "My Phone Number");
+                alert("2FA Enabled Successfully! 🛡️");
+                this.close();
+                document.getElementById('btn-enroll-mfa').innerText = "Active ✅";
+                document.getElementById('btn-enroll-mfa').disabled = true;
+            }
+        } catch (err) {
+            document.getElementById('mfa-msg').innerText = err.message;
+        }
+    },
+
+    close() {
+        document.getElementById('modal-mfa').classList.add('hidden');
+        document.getElementById('mfa-phone-input').value = '';
+        document.getElementById('mfa-code-input').value = '';
+        this.resolver = null;
+        this.verificationId = null;
+        
+        // IMPORTANT: We do NOT clear the recaptchaVerifier here. 
+        // We keep it alive for next time.
+    }
+};

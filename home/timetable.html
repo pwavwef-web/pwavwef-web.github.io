@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>My Schedule | AZ Learner 🎓</title>
+    <meta name="description" content="Manage your class timetable and schedule on AZ Learner — the student companion for Ghanaian university students.">
+    <meta name="theme-color" content="#448AFF">
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Playfair+Display:wght@700&family=Dancing+Script:wght@700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://js.paystack.co/v1/inline.js" defer></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF', orangeAccent: '#FFAB40', darkBg: '#212121', darkCard: '#424242', lightBg: '#FAFAFA', noteYellow: '#FFF9C4',
+                        chatUser: '#E3F2FD', chatAdmin: '#F1F8E9', darkChatUser: '#1E293B', darkChatAdmin: '#3F3F46'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-tab-index="1" class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
+
+    <div id="recaptcha-container"></div>
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="none"></audio>
+    <audio id="xp-sound" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="none"></audio>
+
+    <div id="splash-screen" class="fixed inset-0 z-[200] bg-lightBg dark:bg-darkBg flex flex-col items-center justify-center transition-opacity duration-700">
+        <div class="flex flex-col items-center animate-pulse">
+            <div class="w-24 h-24 bg-blueAccent dark:bg-orangeAccent rounded-3xl flex items-center justify-center shadow-2xl mb-6 transform -rotate-6">
+                <i class="fa-solid fa-graduation-cap text-5xl text-white"></i>
+            </div>
+            <h1 class="text-4xl font-black text-blueAccent dark:text-orangeAccent tracking-tighter mb-2">AZ Learner</h1>
+            <p class="text-xs font-bold opacity-40 uppercase tracking-[0.4em]">The Squad Companion</p>
+        </div>
+        <div class="absolute bottom-16">
+            <div class="w-8 h-8 border-4 border-gray-200 border-t-blueAccent dark:border-t-orangeAccent rounded-full animate-spin"></div>
+        </div>
+    </div>
+
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-lightBg dark:bg-darkBg flex flex-col items-center justify-center p-6 overflow-y-auto pt-safe hidden">
+        <div id="view-login" class="w-full max-w-sm bg-white dark:bg-darkCard p-8 rounded-2xl shadow-2xl text-center my-auto transition-all">
+            <h1 class="text-3xl font-bold text-blueAccent dark:text-orangeAccent mb-2">AZ Learner 🎓</h1>
+            <p class="text-sm opacity-60 mb-6">Welcome back, Learner</p>
+            <input type="email" id="login-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors">
+            <div class="relative w-full mb-2">
+    <input type="password" id="login-pass" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent transition-colors pr-10">
+    <button onclick="app.togglePassword('login-pass', 'login-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="login-eye" class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
+<div class="flex justify-end mb-6">
+    <button onclick="authManager.forgotPassword()" class="text-xs text-blueAccent dark:text-orangeAccent font-bold hover:underline">Forgot Password?</button>
+</div>
+
+<button onclick="authManager.login()" class="w-full py-3 bg-blueAccent dark:bg-orangeAccent text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Secure Login 🔐</button>
+            <button onclick="authManager.toggleView('signup')" class="text-blueAccent dark:text-orangeAccent font-bold text-sm mt-1 hover:underline">Create an Account</button>
+            <p id="login-msg" class="text-red-500 text-xs mt-4 h-4"></p>
+        </div>
+        <div id="view-signup" class="hidden w-full max-w-sm bg-white dark:bg-darkCard p-8 rounded-2xl shadow-2xl text-center my-auto transition-all">
+            <h1 class="text-2xl font-bold text-blueAccent dark:text-orangeAccent mb-2">Join the Squad 🚀</h1>
+            <p class="text-sm opacity-60 mb-6">Let's get you set up.</p>
+            <input type="text" id="signup-name" placeholder="Full Name" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            
+            <input type="text" id="signup-school" placeholder="University / High School" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+
+            <input type="text" id="signup-program" placeholder="Program of Study (e.g. Tourism)" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+
+            <input type="tel" id="signup-phone" placeholder="Phone Number" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+            <input type="email" id="signup-email" placeholder="Email Address" class="w-full mb-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent">
+<div class="relative w-full mb-3">
+    <input type="password" id="signup-pass" placeholder="Create Password (6+ chars)" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
+    <button onclick="app.togglePassword('signup-pass', 'signup-eye')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="signup-eye" class="fa-solid fa-eye"></i>
+    </button>
+</div>
+
+<div class="relative w-full mb-6">
+    <input type="password" id="signup-pass-confirm" placeholder="Confirm Password" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 outline-none border border-transparent focus:border-blueAccent pr-10">
+    <button onclick="app.togglePassword('signup-pass-confirm', 'signup-eye-confirm')" class="absolute right-3 top-3 text-gray-400 focus:outline-none">
+        <i id="signup-eye-confirm" class="fa-solid fa-eye"></i>
+    </button>
+</div>            <button onclick="authManager.signup()" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-6">Create Account ✨</button>
+            <button onclick="authManager.toggleView('login')" class="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white">Back to Login</button>
+            <p id="signup-msg" class="text-red-500 text-xs mt-4 h-4"></p>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" class="hidden fixed inset-0 z-[60] bg-gray-900 text-white flex flex-col pt-safe">
+        <div class="sticky top-0 bg-gray-900 z-10 px-6 pb-2">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl font-bold text-orangeAccent">👑 Admin HQ</h1>
+                <button onclick="app.closeAdmin()" class="bg-gray-800 px-4 py-2 rounded-full text-sm font-bold hover:bg-gray-700">Exit</button>
+            </div>
+            <nav class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                <button onclick="app.switchAdminView('dash')" id="adm-btn-dash" class="px-4 py-2 rounded-lg bg-blueAccent text-white font-bold text-sm whitespace-nowrap transition">Dashboard 📊</button>
+                <button onclick="app.switchAdminView('godmode')" id="adm-btn-godmode" class="hidden px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-sm whitespace-nowrap transition animate-pulse border border-purple-400">God Mode ⚡</button>
+                <button onclick="app.switchAdminView('feedback')" id="adm-btn-feedback" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm whitespace-nowrap transition">Reviews ⭐</button>
+            </nav>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-20">
+            <div id="adm-view-dash" class="admin-view space-y-6 pt-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Total Users</h3><p class="text-3xl font-bold" id="adm-count-users">0</p></div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><h3 class="text-gray-400 text-xs uppercase">Requests</h3><p class="text-3xl font-bold" id="adm-count-reqs">0</p></div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2"><i class="fa-solid fa-print"></i> Live Print Queue</h2>
+                    <div class="bg-gray-800 rounded-xl overflow-hidden border border-green-600/30">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">Student</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
+                            <tbody id="adm-print-list" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading jobs...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="adm-view-godmode" class="admin-view hidden space-y-8 pt-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 relative overflow-hidden group cursor-pointer" onclick="app.injectCapital()">
+                        <div class="absolute -right-4 -top-4 text-8xl opacity-10 text-green-500"><i class="fa-solid fa-money-bill-wave"></i></div>
+                        <h3 class="text-lg font-bold text-white mb-2 relative z-10">App Valuation 💰</h3>
+                        <p class="text-4xl font-black text-green-400 relative z-10">$<span id="ceo-valuation">1,000,000,000</span></p>
+                        <p class="text-xs text-gray-400 mt-1 relative z-10 animate-pulse">Tap to inject capital 💉</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold text-white mb-2">US Career Status 🇺🇸</h3>
+                        <div class="w-full bg-gray-700 rounded-full h-4 mt-2">
+                            <div class="bg-blueAccent h-4 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <p class="text-xs text-right text-blue-400 mt-1 font-bold">Manifesting... 85%</p>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-yellow-900/40 to-gray-900 p-6 rounded-xl border border-yellow-600/50 shadow-lg">
+                    <h2 class="text-xl font-black text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Executive Order 📜</h2>
+                    <input id="vip-title" type="text" placeholder="Subject of Order" class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white focus:border-yellow-500 outline-none">
+                    <textarea id="vip-body" placeholder="Your message to the people..." class="w-full mb-3 p-3 rounded bg-gray-900 border border-yellow-600/30 text-white h-20 focus:border-yellow-500 outline-none"></textarea>
+                    <button onclick="app.sendVIPBroadcast()" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition">Publish Gold Alert 🔔</button>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900 to-gray-900 p-6 rounded-xl border border-purple-500 shadow-lg shadow-purple-900/50">
+                    <h2 class="text-xl font-black text-white mb-2 uppercase italic">The Circle ⭕</h2>
+                    <p class="text-purple-300 text-xs mb-6">Manage the inner circle. Only you have this power.</p>
+                    <div class="flex gap-2 mb-4">
+                        <input id="admin-email-input" type="email" placeholder="Enter email to promote..." class="flex-1 p-3 rounded bg-gray-900 border border-purple-500/50 text-white outline-none focus:ring-2 ring-purple-500">
+                        <button onclick="app.addAdminByEmail()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Promote</button>
+                    </div>
+                    <div class="bg-black/20 rounded-lg overflow-hidden border border-purple-500/20">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-purple-900/30 text-xs uppercase text-purple-300"><tr><th class="px-4 py-2">Name</th><th class="px-4 py-2">Role</th><th class="px-4 py-2 text-right">Action</th></tr></thead>
+                            <tbody id="admin-team-list" class="divide-y divide-purple-900/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-red-900/20 border border-red-500/50 p-6 rounded-xl">
+                         <h3 class="text-red-500 font-black mb-2 uppercase flex items-center gap-2"><i class="fa-solid fa-gavel"></i> The Ban Hammer</h3>
+                         <p class="text-xs text-red-300 mb-4">Enter a user's email to permanently ban them.</p>
+                         <div class="flex gap-2">
+                            <input id="ban-email-input" type="email" placeholder="Bad actor's email..." class="flex-1 p-3 rounded bg-gray-900 border border-red-500/30 text-white outline-none focus:border-red-500">
+                            <button onclick="app.banUser()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700">BAN</button>
+                         </div>
+                    </div>
+                    <div class="bg-gray-800 border border-gray-600 p-6 rounded-xl flex flex-col justify-between">
+                         <div>
+                             <h3 class="text-white font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-broom text-blueAccent"></i> System Flush</h3>
+                             <p class="text-xs text-gray-400 mb-4">Clear all service requests logs to keep the dashboard clean. Use with caution.</p>
+                         </div>
+                         <button onclick="app.flushRequests()" class="w-full bg-gray-700 hover:bg-blueAccent hover:text-white text-gray-300 px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">Purge Logs 🧹</button>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div id="adm-view-feedback" class="admin-view hidden pt-4">
+                <h2 class="text-xl font-bold mb-4 text-pink-400">User Reviews</h2>
+                <div class="bg-gray-800 rounded-xl overflow-hidden border border-pink-600/30">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-700 text-gray-200 uppercase text-xs"><tr><th class="px-4 py-3">User</th><th class="px-4 py-3">Message</th><th class="px-4 py-3">Rating</th></tr></thead>
+                        <tbody id="adm-feedback-list" class="divide-y divide-gray-700"><tr><td colspan="3" class="p-4 text-center">Loading feedback...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="fixed top-0 w-full z-40 transition-colors duration-200 bg-blueAccent dark:bg-[#303030] text-white shadow-md flex items-center justify-between px-4 header-safe-area">
+        <div class="flex items-center gap-3">
+            <button onclick="app.toggleSidebar()" class="p-1"><i class="fa-solid fa-ellipsis-vertical text-xl"></i></button>
+            <h1 class="text-xl font-bold">AZ Learner 🎓</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="header-admin-btn" onclick="app.openAdmin()" class="hidden bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">ADMIN</button>
+            <button onclick="app.openBlogs()" class="relative p-2 text-white hover:text-gray-200 transition">
+    <i class="fa-solid fa-newspaper text-xl"></i>
+    <span class="text-[10px] font-bold block leading-none mt-0.5">Blogs</span>
+</button>
+            <div onclick="app.openProfile()" class="w-8 h-8 rounded-full overflow-hidden border-2 border-white/50 cursor-pointer flex-shrink-0 bg-white/20">
+                <img id="header-profile-img" src="" class="hidden w-full h-full object-cover">
+                <div id="header-profile-placeholder" class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
+            </div>
+        </div>
+    </header>
+
+    <div id="sidebar-overlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity"></div>
+    <aside id="sidebar-drawer" class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-[#303030] z-50 shadow-2xl transform -translate-x-full flex flex-col header-safe-area">
+        <div class="h-40 bg-blueAccent dark:bg-orangeAccent flex flex-col justify-end p-4 text-white">
+            <h2 id="sidebar-name" class="text-2xl font-bold">Student</h2>
+            <p id="sidebar-email-display" class="text-sm opacity-80">Guest</p>
+        </div>
+        <div class="flex-1 py-4">
+            <button onclick="app.openSettings(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-gear text-gray-500 w-6"></i><span class="font-medium">Settings</span></button>
+            <button onclick="app.openLeaderboard(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-trophy text-yellow-500 w-6"></i><span class="font-medium">Leaderboard</span></button>
+            <button onclick="app.openFeedback(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-star text-gray-500 w-6"></i><span class="font-medium">Review</span></button>
+            <button onclick="authManager.logout()" class="w-full text-left px-6 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-4 transition-colors mt-auto"><i class="fa-solid fa-right-from-bracket w-6"></i><span class="font-medium">Log Out</span></button>
+        </div>
+    </aside>
+
+    <main class="main-safe-area p-4 max-w-3xl mx-auto min-h-screen">
+        <div id="tab-timetable" class="tab-content">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">My Schedule 📅</h2>
+        <button onclick="app.downloadSchedule()" class="bg-blue-100 dark:bg-blue-900/30 text-blueAccent font-bold text-xs px-4 py-2 rounded-lg active:scale-95 transition flex items-center gap-2">
+            <i class="fa-solid fa-image"></i> Download Schedule
+        </button>
+    </div>
+    
+    <div id="course-list" class="space-y-3"></div>
+    <div id="empty-courses" class="hidden h-[60vh] flex flex-col items-center justify-center text-center opacity-60">
+        <p class="text-lg">No classes yet! Tap + to add.</p>
+    </div>
+</div>
+
+    </main>
+
+
+    <div id="full-screen-leaderboard" class="fixed inset-0 z-[55] bg-lightBg dark:bg-darkBg flex flex-col hidden overflow-y-auto pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center px-4 py-3 sticky top-0 z-10">
+            <button onclick="history.back()" class="text-gray-500 mr-4"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h1 class="text-xl font-bold">Leaderboard 🏆</h1>
+        </header>
+        <div class="p-4 flex-1">
+            <div class="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fa-solid fa-trophy text-3xl text-white drop-shadow-md"></i>
+                    <div>
+                        <h2 class="text-2xl font-black italic uppercase">The Arena</h2>
+                        <p class="text-xs font-bold opacity-80 uppercase tracking-widest">Weekly Reset Enabled</p>
+                    </div>
+                </div>
+                <p class="text-sm opacity-90">Grind hard, earn XP, and become an Academic Weapon. ⚔️</p>
+            </div>
+            
+            <div class="flex justify-between items-center px-2 mb-4">
+                <h3 class="font-bold text-lg">Top Performers</h3>
+                <span class="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 font-bold" id="lb-program-name">Program</span>
+            </div>
+
+            <div class="bg-white dark:bg-darkCard rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                <table class="w-full">
+                    <tbody id="leaderboard-list"></tbody>
+                </table>
+            </div>
+            <p class="text-center text-xs opacity-40 mt-4">XP resets every Monday at 00:00.</p>
+        </div>
+    </div>
+
+    <div id="full-screen-feedback" class="fixed inset-0 z-[60] bg-lightBg dark:bg-darkBg flex flex-col hidden pt-safe overflow-y-auto">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center px-4 py-3 sticky top-0 z-10">
+            <button onclick="history.back()" class="text-gray-500 mr-4"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h1 class="text-xl font-bold">Feedback</h1>
+        </header>
+        <div class="p-6 max-w-2xl mx-auto w-full flex-1 flex flex-col">
+            <div id="feedback-form-content">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-400 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                    <h2 class="text-2xl font-bold mb-1">We ❤️ Feedback</h2>
+                    <p class="opacity-80 text-sm">Help us make AZ Learner better.</p>
+                </div>
+                
+                <form onsubmit="event.preventDefault(); app.sendFeedback();" class="space-y-6">
+                    <div class="flex flex-col items-center gap-2">
+                        <label class="text-xs uppercase tracking-wide opacity-50 font-bold">Rate Experience</label>
+                        <div class="flex gap-2 text-3xl text-gray-300 star-rating" id="star-rating-container">
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(1)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(2)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(3)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(4)"></i>
+                            <i class="fa-solid fa-star cursor-pointer transition-transform" onclick="app.setRating(5)"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 justify-center flex-wrap">
+                        <button type="button" onclick="app.addTag('Bug 🐛')" class="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold hover:bg-red-200">Bug 🐛</button>
+                        <button type="button" onclick="app.addTag('Feature 💡')" class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold hover:bg-yellow-200">Feature 💡</button>
+                        <button type="button" onclick="app.addTag('Love ❤️')" class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-bold hover:bg-pink-200">Love ❤️</button>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkCard rounded-xl p-1 shadow-sm border border-gray-100 dark:border-gray-700 focus-within:ring-2 ring-blueAccent transition-all">
+                        <textarea id="fb-experience" rows="5" class="w-full bg-transparent outline-none resize-none p-3" placeholder="Tell us what's on your mind..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-blueAccent to-blue-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <span>Send Feedback</span> <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <div id="feedback-success" class="hidden flex-1 flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-heart text-6xl text-pink-500 mb-4 heart-beat"></i>
+                <h2 class="text-2xl font-bold mb-2">Thank You!</h2>
+                <p class="opacity-60 max-w-xs mx-auto">Your feedback has been sent directly to the team. You are awesome!</p>
+                <button onclick="history.back()" class="mt-8 text-blueAccent font-bold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="full-screen-chat" class="fixed inset-0 z-[60] bg-gray-100 dark:bg-darkBg flex flex-col hidden pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-md flex flex-col px-4 py-2 sticky top-0 z-10 cursor-pointer">
+            <div class="flex items-center justify-between">
+                <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+                <div class="text-center">
+                    <h1 id="chat-header-title" class="text-lg font-bold">Chat</h1>
+                    <p id="chat-header-status" class="text-xs text-blueAccent font-bold"></p>
+                </div>
+                <div class="w-6"></div> 
+            </div>
+            <div id="print-steps-container" class="hidden flex items-center gap-1 mt-2 justify-center" onclick="event.stopPropagation()">
+                <button onclick="app.updatePrintStatus('received')" id="step-1" class="h-1 w-8 bg-green-500 rounded-full cursor-default" title="Received"></button>
+                <button onclick="app.updatePrintStatus('printing')" id="step-2" class="h-1 w-8 bg-gray-300 rounded-full transition-colors cursor-default" title="Printing"></button>
+                <button onclick="app.updatePrintStatus('delivering')" id="step-3" class="h-1 w-8 bg-gray-300 rounded-full transition-colors cursor-default" title="Delivering"></button>
+                <button onclick="app.updatePrintStatus('completed')" id="step-4" class="h-1 w-8 bg-gray-300 rounded-full transition-colors cursor-default" title="Delivered"></button>
+            </div>
+            <button onclick="app.startNewPrintOrder()" id="btn-new-print-order" class="hidden w-full mt-2 bg-blueAccent text-white text-xs font-bold py-2 rounded-lg shadow animate-pulse">Start New Request 🔄</button>
+        </header>
+        
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24"></div>
+
+        <div class="bg-white dark:bg-[#303030] p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2 fixed bottom-0 w-full max-w-3xl pb-safe">
+            <input type="file" id="chat-file-input" class="hidden" onchange="app.handleFileUpload(this)">
+            <button onclick="document.getElementById('chat-file-input').click()" class="text-gray-500 hover:text-blueAccent p-2"><i class="fa-solid fa-paperclip text-xl"></i></button>
+            <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2 outline-none">
+            <button onclick="app.sendMessage()" class="bg-blueAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="full-screen-blogs" class="fixed inset-0 z-[55] bg-gray-100 dark:bg-darkBg flex flex-col hidden pt-safe">
+    <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h1 class="text-xl font-black italic">AZ Blogs ✍️</h1>
+        <button onclick="app.openWriteBlog()" class="bg-black text-white dark:bg-white dark:text-black w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-pen-nib"></i></button>
+    </header>
+    
+    <div id="blogs-feed" class="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
+        </div>
+</div>
+
+<div id="modal-write-blog" class="fixed inset-0 z-[60] bg-white dark:bg-darkCard hidden flex flex-col pt-safe">
+    <header class="flex justify-between items-center px-4 py-3 border-b dark:border-gray-700">
+        <button onclick="document.getElementById('modal-write-blog').classList.add('hidden')" class="text-red-500 font-bold">Cancel</button>
+        <h3 class="font-bold">New Post</h3>
+        <button onclick="app.saveBlog()" class="bg-blueAccent text-white px-4 py-1 rounded-full font-bold text-sm">Post</button>
+    </header>
+    
+    <div class="p-4 flex-1 overflow-y-auto">
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <button onclick="app.setBlogFont('font-roboto')" class="px-3 py-1 rounded border dark:border-gray-600 font-roboto text-xs hover:bg-blueAccent hover:text-white">Normal</button>
+            <button onclick="app.setBlogFont('font-playfair')" class="px-3 py-1 rounded border dark:border-gray-600 font-playfair text-xs hover:bg-blueAccent hover:text-white">Fancy</button>
+            <button onclick="app.setBlogFont('font-mono')" class="px-3 py-1 rounded border dark:border-gray-600 font-mono text-xs hover:bg-blueAccent hover:text-white">Code</button>
+            <button onclick="app.setBlogFont('font-dancing')" class="px-3 py-1 rounded border dark:border-gray-600 font-dancing text-xs hover:bg-blueAccent hover:text-white">Script</button>
+        </div>
+
+        <textarea id="blog-input-text" class="w-full h-40 bg-transparent outline-none text-lg resize-none font-roboto" placeholder="What's on your mind?"></textarea>
+        
+        <div id="blog-media-preview" class="hidden mb-4 relative rounded-xl overflow-hidden bg-black">
+            <button onclick="app.clearBlogMedia()" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full z-10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <img id="blog-img-prev" class="hidden w-full max-h-60 object-contain">
+            <video id="blog-vid-prev" class="hidden w-full max-h-60" controls></video>
+        </div>
+    </div>
+
+    <div class="p-4 border-t dark:border-gray-700 flex gap-4 bg-gray-50 dark:bg-gray-800">
+        <label class="cursor-pointer text-blueAccent flex items-center gap-2 font-bold text-sm">
+            <i class="fa-solid fa-image text-xl"></i> Add Photo/Video
+            <input type="file" id="blog-media-input" accept="image/*,video/*" class="hidden" onchange="app.handleBlogMedia(this)">
+        </label>
+    </div>
+</div>
+
+    <div id="modal-blog-comments" class="fixed inset-0 z-[70] bg-white dark:bg-darkCard hidden flex flex-col pt-safe">
+    <header class="flex items-center gap-4 px-4 py-3 border-b dark:border-gray-700 shadow-sm">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h3 class="font-bold">Comments 💬</h3>
+    </header>
+    
+    <div id="comments-list" class="flex-1 overflow-y-auto p-4 pb-20">
+        </div>
+
+    <div class="p-3 border-t dark:border-gray-700 bg-white dark:bg-[#303030] pb-safe flex gap-2">
+        <input id="comment-input" type="text" placeholder="Add a comment..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2 outline-none">
+        <button onclick="app.postComment()" class="bg-blueAccent text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+    </div>
+</div>
+
+    <div id="full-screen-profile" class="fixed inset-0 z-[55] bg-gray-50 dark:bg-darkBg flex flex-col hidden overflow-y-auto">
+        <div class="relative w-full h-64 profile-gradient shrink-0 overflow-hidden">
+            <div class="absolute top-0 w-full flex items-center justify-between px-4 pt-safe mt-4 z-30">
+                <div class="flex items-center">
+                    <button onclick="history.back()" class="text-white bg-black/20 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-sm hover:bg-black/30 transition shadow-sm mr-4 flex-shrink-0">
+                        <i class="fa-solid fa-arrow-left text-xl"></i>
+                    </button>
+                    <h1 class="text-white font-bold text-xl drop-shadow-md">My Profile</h1>
+                </div>
+                <button id="btn-edit-profile" onclick="app.toggleProfileEdit()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-bold text-xs backdrop-blur-sm transition">Edit</button>
+                <button id="btn-save-profile" onclick="app.toggleProfileEdit()" class="hidden bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg transition">Done</button>
+            </div>
+
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 flex-col">
+                <h1 id="profile-rank-display" class="text-white font-black text-3xl drop-shadow-lg uppercase tracking-widest mb-1">Rookie 🥚</h1>
+                <p id="profile-xp-display" class="text-white/80 text-sm font-bold bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">0 XP</p>
+            </div>
+        </div>
+        
+        <div class="px-6 relative -mt-20 pb-10 flex-1 z-20">
+            <div class="flex flex-col items-center">
+                <div class="relative group cursor-pointer" onclick="if(!document.getElementById('prof-name').disabled) document.getElementById('profile-pic-input').click()">
+                    <div class="w-32 h-32 rounded-full bg-white dark:bg-gray-800 overflow-hidden border-4 border-white dark:border-darkBg shadow-2xl flex items-center justify-center relative z-10">
+                        <img id="profile-pic-img" src="" class="w-full h-full object-cover hidden">
+                        <i id="profile-pic-placeholder" class="fa-solid fa-user text-5xl text-gray-300"></i>
+                    </div>
+                    <div id="profile-camera-btn" class="absolute bottom-2 right-2 bg-blueAccent text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-darkBg z-20 hidden"><i class="fa-solid fa-camera text-xs"></i></div>
+                    <input type="file" id="profile-pic-input" accept="image/*" class="hidden" onchange="app.handleProfilePic(this)">
+                </div>
+                
+                <h2 id="profile-display-name" class="text-3xl font-bold mt-3 text-center text-gray-800 dark:text-white">User</h2>
+                <p id="profile-school-display" class="text-sm text-blueAccent font-bold uppercase tracking-wide opacity-80 mb-6">Student</p>
+
+                <div class="w-full grid grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white dark:bg-darkCard p-3 rounded-2xl shadow-sm text-center border border-gray-100 dark:border-gray-700">
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white" id="stat-courses">0</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Classes</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard p-3 rounded-2xl shadow-sm text-center border border-gray-100 dark:border-gray-700">
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white" id="stat-assignments">0</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Tasks</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard p-3 rounded-2xl shadow-sm text-center border border-gray-100 dark:border-gray-700">
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white" id="stat-notes">0</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Notes</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-700 flex items-center justify-center text-blueAccent"><i class="fa-regular fa-user"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Full Name</label>
+                        <input type="text" id="prof-name" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50 transition-opacity" disabled oninput="app.updateProfile('name', this.value)">
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-green-50 dark:bg-gray-700 flex items-center justify-center text-green-500"><i class="fa-solid fa-phone"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</label>
+                        <input type="tel" id="prof-phone" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50 transition-opacity" disabled oninput="app.updateProfile('phone', this.value)">
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-gray-700 flex items-center justify-center text-purple-500"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Program</label>
+                        <input type="text" id="prof-program" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50 transition-opacity" disabled oninput="app.updateProfile('program', this.value)">
+                    </div>
+                </div>
+                  
+                 <div class="bg-white dark:bg-darkCard rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 opacity-70">
+                    <div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-gray-700 flex items-center justify-center text-orangeAccent"><i class="fa-solid fa-building-columns"></i></div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Institution (Read Only)</label>
+                        <input type="text" id="prof-school-input" class="w-full bg-transparent outline-none text-base font-medium text-gray-800 dark:text-white disabled:opacity-50" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.deleteAccount()" class="w-full py-4 rounded-xl border border-red-200 text-red-500 font-bold text-sm hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 transition mb-8 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-trash-can"></i> Delete My Account
+            </button>
+        </div>
+    </div>
+
+    <div id="full-screen-settings" class="fixed inset-0 z-[55] bg-lightBg dark:bg-darkBg flex flex-col hidden overflow-y-auto pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center px-4 py-3 sticky top-0 z-10">
+            <button onclick="history.back()" class="text-gray-500 mr-4"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h1 class="text-xl font-bold">Settings</h1>
+        </header>
+        <div class="p-4 space-y-6 max-w-2xl mx-auto w-full">
+            <h2 class="text-sm font-bold opacity-50 uppercase tracking-wider ml-1">App Preferences</h2>
+            <div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 space-y-6">
+                <div class="flex items-center justify-between">
+                    <div><h3 class="font-bold text-lg">Dark Theme</h3><p class="text-xs opacity-60">Easier on the eyes.</p></div>
+                    <button onclick="app.toggleTheme()" id="theme-toggle-btn" class="w-12 h-7 rounded-full bg-gray-400 relative transition-colors duration-200"><div class="w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200"></div></button>
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div><h3 class="font-bold text-lg">Push Notifications</h3><p class="text-xs opacity-60">Get alerts for classes & assignments.</p></div>
+                    <button onclick="app.toggleSystemNotifications()" id="notif-toggle-btn" class="w-12 h-7 rounded-full bg-gray-400 relative transition-colors duration-200"><div class="w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200"></div></button>
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+    <div>
+        <h3 class="font-bold text-lg">Two-Factor Auth (SMS)</h3>
+        <p class="text-xs opacity-60">Secure your account.</p>
+    </div>
+    <button onclick="mfaManager.startEnrollment()" id="btn-enroll-mfa" class="bg-gray-200 dark:bg-gray-700 text-xs font-bold px-4 py-2 rounded-lg">Enable</button>
+</div>
+            <div class="text-center opacity-40 text-xs mt-10">
+                <p>AZ Learner v2.2</p>
+                <p>Built for the Squad 🇬🇭</p>
+            </div>
+        </div>
+    </div>
+
+
+    <button id="fab" onclick="app.handleFabClick()" class="fixed bottom-20 right-4 bg-blueAccent dark:bg-orangeAccent text-white px-5 py-3 rounded-2xl shadow-lg font-bold flex items-center gap-2 z-30"><i id="fab-icon" class="fa-solid fa-plus"></i><span id="fab-label">Add</span></button>
+
+    <nav class="fixed bottom-0 w-full bg-white dark:bg-[#303030] border-t border-gray-200 dark:border-gray-700 h-16 flex justify-around items-center z-40 pb-safe shadow-lg">
+        <button onclick="app.switchTab(0)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="0"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px]">Home</span></button>
+        <button onclick="app.switchTab(1)" class="nav-item flex flex-col items-center justify-center w-full h-full text-blueAccent" data-index="1"><i class="fa-solid fa-calendar-days text-xl"></i><span class="text-[10px]">Timetable</span></button>
+        <button onclick="app.switchTab(2)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="2"><i class="fa-solid fa-list-check text-xl"></i><span class="text-[10px]">Tasks</span></button>
+        <button onclick="app.switchTab(3)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400" data-index="3"><i class="fa-solid fa-pencil text-xl"></i><span class="text-[10px]">Notes</span></button>
+        <button onclick="app.switchTab(4)" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 relative" data-index="4"><i class="fa-solid fa-user-group text-xl"></i><span id="notification-badge" class="hidden absolute top-2 right-6 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-darkBg">0</span><span class="text-[10px]">Chat</span></button>
+    </nav>
+
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="modal-add-course" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl hidden">
+            <h3 class="text-xl font-bold mb-4" id="course-modal-title">Add Class</h3>
+            <input id="new-course-name" type="text" placeholder="Code (e.g., TMG 101)" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <input id="new-course-venue" type="text" placeholder="Venue (e.g., CALC 1)" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <div class="flex gap-2 mb-2">
+                <select id="new-course-day" class="flex-1 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg outline-none"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select>
+                <input id="new-course-time" type="time" class="w-32 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg outline-none">
+            </div>
+            <label class="block text-xs opacity-60 mb-1 ml-1">Reminder</label>
+            <select id="new-course-alert" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none">
+                <option value="15">15 Minutes Before</option>
+                <option value="30">30 Minutes Before</option>
+                <option value="60">1 Hour Before</option>
+                <option value="0">No Alert</option>
+            </select>
+            <div class="flex justify-end gap-2"><button onclick="history.back()" class="px-4 py-2 text-sm font-bold opacity-60">Cancel</button><button onclick="app.saveCourse()" class="bg-blueAccent text-white px-6 py-2 rounded-lg font-bold shadow">Save</button></div>
+        </div>
+
+        <div id="modal-add-assignment" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl hidden">
+            <h3 class="text-xl font-bold mb-4">Add Assignment</h3>
+            <input id="new-assign-title" type="text" placeholder="Title" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <input id="new-assign-course" type="text" placeholder="Course" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none focus:ring-2 focus:ring-blueAccent">
+            <input id="new-assign-date" type="date" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2 outline-none">
+            <label class="block text-xs opacity-60 mb-1 ml-1">Reminder</label>
+            <select id="new-assign-alert" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none">
+                <option value="1">1 Day Before</option>
+                <option value="2">2 Days Before</option>
+                <option value="3">3 Days Before</option>
+                <option value="0">No Alert</option>
+            </select>
+            <div class="flex justify-end gap-2"><button onclick="history.back()" class="px-4 py-2 text-sm font-bold opacity-60">Cancel</button><button onclick="app.saveAssignment()" class="bg-blueAccent text-white px-6 py-2 rounded-lg font-bold shadow">Save</button></div>
+        </div>
+
+        <div id="modal-service" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 hidden text-center">
+            <h3 class="text-xl font-bold mb-4">Contact Admin</h3>
+            <button onclick="app.contactAdmin('Francis', '233557535673')" class="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-xl mb-2 flex items-center justify-between"><span class="font-bold">Chat with Francis</span> <i class="fa-brands fa-whatsapp text-green-500 text-xl"></i></button>
+            <button onclick="app.contactAdmin('Bright', '233208300055')" class="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-xl mb-4 flex items-center justify-between"><span class="font-bold">Chat with Bright</span> <i class="fa-brands fa-whatsapp text-green-500 text-xl"></i></button>
+            <button onclick="history.back()" class="text-sm opacity-60">Close</button>
+        </div>
+
+        <div id="modal-event-details" class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-0 shadow-2xl hidden overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="relative h-48 bg-gray-200">
+                <img id="modal-event-img" class="w-full h-full object-cover">
+                <button onclick="history.back()" class="absolute top-2 right-2 bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto">
+                <h3 id="modal-event-title" class="text-2xl font-black mb-1"></h3>
+                <div class="flex items-center gap-2 text-sm opacity-60 mb-4">
+                    <span id="modal-event-date"></span> • <span id="modal-event-time"></span>
+                </div>
+                <div class="flex items-center gap-2 mb-4 bg-gray-100 dark:bg-gray-700/50 p-2 rounded-lg">
+                    <i class="fa-solid fa-location-dot text-red-500"></i>
+                    <span id="modal-event-venue" class="font-bold text-sm"></span>
+                </div>
+                <p id="modal-event-desc" class="text-sm opacity-80 mb-6 leading-relaxed"></p>
+                
+                <button id="btn-rsvp" class="w-full py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                    <span>Count Me In</span> <i class="fa-solid fa-hand"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-image-view" class="fixed inset-0 z-[70] bg-black bg-opacity-95 hidden flex items-center justify-center p-2" onclick="history.back()">
+        <img id="full-image" class="max-w-full max-h-full object-contain rounded-lg">
+    </div>
+
+    <div id="modal-pdf-view" class="fixed inset-0 z-[70] bg-black/90 hidden flex flex-col pt-safe">
+    <header class="flex justify-between items-center px-4 py-3 bg-gray-900 text-white">
+        <button onclick="document.getElementById('modal-pdf-view').classList.add('hidden')" class="text-gray-300">
+            <i class="fa-solid fa-xmark text-xl"></i> Close
+        </button>
+        <h3 class="font-bold">PDF Preview</h3>
+        <a id="pdf-download-btn" href="#" target="_blank" class="text-blueAccent font-bold text-sm">
+            <i class="fa-solid fa-download"></i> Save
+        </a>
+    </header>
+    <div class="flex-1 bg-gray-800 relative">
+        <iframe id="pdf-frame" class="w-full h-full border-0" src=""></iframe>
+    </div>
+</div>
+
+    <div id="modal-notifications" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
+        <header class="bg-blueAccent dark:bg-[#303030] text-white shadow-md flex items-center justify-between px-4 h-16 shrink-0">
+            <button onclick="history.back()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h1 class="text-xl font-bold">Notifications 🔔</h1>
+        </header>
+        <div id="notifications-list" class="flex-1 p-4 space-y-3 overflow-y-auto"></div>
+        <div id="empty-notifications" class="hidden h-full flex flex-col items-center justify-center opacity-60"><p>All clear!</p></div>
+    </div>
+
+<div id="modal-mfa" class="fixed inset-0 bg-black/80 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center">
+        <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-shield-halved text-2xl text-blueAccent"></i>
+        </div>
+        
+        <div id="mfa-step-phone" class="hidden">
+            <h3 class="text-xl font-bold mb-2">Protect Account</h3>
+            <p class="text-sm opacity-60 mb-6">Enter your number to enable 2-Factor Auth.</p>
+            <input type="tel" id="mfa-phone-input" placeholder="+233 XX XXX XXXX" class="w-full bg-gray-100 dark:bg-gray-700 p-4 rounded-xl mb-4 text-center font-mono text-lg outline-none focus:ring-2 ring-blueAccent">
+            <button onclick="mfaManager.sendCode()" class="w-full py-3 bg-blueAccent text-white font-bold rounded-xl shadow-lg">Send SMS Code 📩</button>
+        </div>
+
+        <div id="mfa-step-code" class="hidden">
+            <h3 class="text-xl font-bold mb-2">Verify It's You</h3>
+            <p class="text-sm opacity-60 mb-6">Enter the 6-digit code sent to your phone.</p>
+            <input type="text" id="mfa-code-input" placeholder="123456" maxlength="6" class="w-full bg-gray-100 dark:bg-gray-700 p-4 rounded-xl mb-4 text-center font-mono text-2xl tracking-widest outline-none focus:ring-2 ring-blueAccent">
+            <button onclick="mfaManager.verifyCode()" class="w-full py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg mb-2">Verify & Login 🔐</button>
+        </div>
+
+        <button onclick="mfaManager.close()" class="mt-4 text-sm text-gray-500 hover:text-red-500">Cancel</button>
+        <p id="mfa-msg" class="text-xs text-red-500 mt-2 h-4"></p>
+    </div>
+</div>
+    <div id="modal-note-editor" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
+        <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3">
+            <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            <div class="flex gap-4"><button onclick="app.deleteNote()" id="btn-delete-note" class="text-red-500 hidden"><i class="fa-solid fa-trash"></i></button><button onclick="app.saveNote()" class="text-blueAccent font-bold">Save</button></div>
+        </header>
+        <div class="flex-1 p-4 flex flex-col space-y-2">
+            <input id="note-title" type="text" placeholder="Title" class="text-2xl font-bold bg-transparent outline-none">
+            <input id="note-subtitle" type="text" placeholder="Subtitle" class="text-sm text-gray-500 bg-transparent outline-none">
+            <div class="h-[1px] bg-gray-200 my-2"></div>
+            <textarea id="note-body" class="flex-1 bg-transparent outline-none resize-none text-lg" placeholder="Start typing..."></textarea>
+        </div>
+    </div>
+
+    <div id="modal-reauth" class="fixed inset-0 bg-black/80 z-[210] hidden flex items-center justify-center p-6 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkCard rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fa-solid fa-lock text-yellow-600 text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Security Check 🔒</h3>
+        <p class="text-sm opacity-60 mb-4">Please verify your password to continue setting up 2FA.</p>
+        
+        <input type="password" id="reauth-pass" placeholder="Enter Password" class="w-full bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-4 outline-none focus:ring-2 ring-yellow-500">
+        
+        <button onclick="mfaManager.confirmReauth()" class="w-full py-3 bg-blueAccent text-white font-bold rounded-xl shadow-lg mb-2">Verify</button>
+        <button onclick="document.getElementById('modal-reauth').classList.add('hidden')" class="py-2 text-sm opacity-60 hover:opacity-100">Cancel</button>
+    </div>
+</div>
+    
+    <div id="modal-contacts" class="bg-lightBg dark:bg-darkBg w-full h-full fixed inset-0 hidden flex flex-col z-[55] pt-safe">
+    <header class="bg-white dark:bg-[#303030] shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-10">
+        <button onclick="history.back()" class="text-gray-500"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <h1 class="text-xl font-bold">New Chat 💬</h1>
+        <div class="w-6"></div>
+    </header>
+    
+    <div class="p-6 flex-1 overflow-y-auto">
+        <div id="contact-sync-prompt" class="flex flex-col items-center justify-center h-64 text-center">
+            <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-solid fa-address-book text-3xl text-blueAccent"></i>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Find Friends</h2>
+            <p class="text-sm opacity-60 mb-6 max-w-xs">Sync your contacts to see who is already on AZ Learner and invite those who aren't.</p>
+            <button onclick="app.syncContacts()" class="bg-blueAccent text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
+                Sync Contacts 🔄
+            </button>
+            <p class="text-[10px] opacity-40 mt-4">Requires supported device (Android/Mobile)</p>
+        </div>
+
+        <div id="contact-results" class="hidden space-y-6">
+            <div id="section-on-app" class="hidden">
+                <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">On AZ Learner ✅</h3>
+                <div id="list-on-app" class="space-y-2"></div>
+            </div>
+
+            <div id="section-invite">
+                <h3 class="text-xs font-bold opacity-50 uppercase tracking-wider mb-2 ml-1">Invite to App 📩</h3>
+                <div id="list-invite" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
