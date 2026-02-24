@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner | GPA Simulator</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; min-height: 100vh; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .nav-link:hover { color: white; }
+        .toast-enter { opacity:0; transform:translateX(100%); }
+        .toast-enter-active { opacity:1; transform:translateX(0); transition:all .3s ease; }
+        .toast-exit-active { opacity:0; transform:translateX(100%); transition:all .3s ease; }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div id="toast-container" class="fixed top-20 right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight text-white hover:text-blue-300 transition">AZ LEARNER</a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="events.html" class="nav-link hover:text-white transition">Events</a>
+                <a href="gpa.html" class="nav-link hover:text-white text-white transition">GPA Calc</a>
+                <a href="leaderboard.html" class="nav-link hover:text-white transition">Arena</a>
+                <a href="blog.html" class="nav-link hover:text-white transition">Blog</a>
+                <a href="past-questions.html" class="nav-link hover:text-white transition">Past Qs</a>
+                <a href="print.html" class="nav-link hover:text-white transition">Print</a>
+                <a href="map.html" class="nav-link hover:text-white transition">Map</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="notifications.html" class="p-2 rounded-full hover:bg-white/10 transition text-gray-300 hover:text-white">
+                    <span class="material-symbols-outlined text-xl">notifications</span>
+                </a>
+                <button id="loginBtn" onclick="toggleLogin()"
+                    class="px-4 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Login
+                </button>
+                <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 grid grid-cols-3 gap-3 text-center text-xs font-semibold text-gray-400">
+            <a href="events.html" class="py-2 hover:text-white transition">Events</a>
+            <a href="gpa.html" class="py-2 text-white transition">GPA Calc</a>
+            <a href="leaderboard.html" class="py-2 hover:text-white transition">Arena</a>
+            <a href="blog.html" class="py-2 hover:text-white transition">Blog</a>
+            <a href="past-questions.html" class="py-2 hover:text-white transition">Past Qs</a>
+            <a href="print.html" class="py-2 hover:text-white transition">Print</a>
+            <a href="map.html" class="col-span-3 py-2 hover:text-white transition">Map</a>
+        </div>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="toggleLogin()"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
+            <button onclick="toggleLogin()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+            <div class="text-center mb-8"><div class="text-4xl mb-3">⚡</div><h2 class="text-2xl font-black">Join the Squad</h2><p class="text-gray-400 text-sm mt-2">Your university companion awaits.</p></div>
+            <div class="space-y-4">
+                <input type="email" id="emailInput" placeholder="Your university email" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                <input type="password" id="passwordInput" placeholder="••••••••" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition" onkeydown="if(event.key==='Enter') handleEmailLogin()">
+                <button id="authSubmitBtn" onclick="handleEmailLogin()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 py-3 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition flex justify-center items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Sign In
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <main class="max-w-2xl mx-auto px-6 py-12">
+        <div class="text-center mb-10">
+            <div class="w-16 h-16 bg-green-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4 border border-green-500/30">
+                <span class="material-symbols-outlined text-3xl text-green-400">calculate</span>
+            </div>
+            <h1 class="text-3xl font-black text-white mb-2">GPA Simulator 🧮</h1>
+            <p class="text-gray-400">Predict your Academic Weapon status.</p>
+        </div>
+
+        <!-- Add Course Form -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 mb-6">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Add a Course</h2>
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <input type="text" id="gpa-course" placeholder="Course Name (optional)"
+                    class="col-span-3 bg-black/30 border border-white/10 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 transition">
+                <input type="number" id="gpa-credit" placeholder="Credit Hours"
+                    class="bg-black/30 border border-white/10 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 transition">
+                <select id="gpa-grade"
+                    class="col-span-2 bg-black/30 border border-white/10 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 transition">
+                    <option value="4.0">A (80–100)</option>
+                    <option value="3.5">B+ (75–79)</option>
+                    <option value="3.0">B (70–74)</option>
+                    <option value="2.5">C+ (65–69)</option>
+                    <option value="2.0">C (60–64)</option>
+                    <option value="1.5">D+ (55–59)</option>
+                    <option value="1.0">D (50–54)</option>
+                    <option value="0.0">E (0–49)</option>
+                </select>
+            </div>
+            <button onclick="addGPACourse()"
+                class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-sm transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-lg">add_circle</span> Add to Calculation
+            </button>
+        </div>
+
+        <!-- Course List -->
+        <div id="gpa-list" class="space-y-2 mb-6 min-h-[40px]">
+            <p class="text-center text-gray-500 text-xs italic">No courses added yet.</p>
+        </div>
+
+        <!-- Result -->
+        <div class="bg-gradient-to-r from-green-500/20 to-blue-500/20 p-6 rounded-2xl border border-white/10 text-center">
+            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Projected GPA</p>
+            <div class="text-6xl font-black text-white mb-2" id="gpa-result">0.00</div>
+            <p id="gpa-rank" class="text-sm text-gray-400 italic">Add courses above to calculate.</p>
+        </div>
+
+        <!-- Reset -->
+        <button onclick="resetGPA()"
+            class="w-full mt-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-semibold text-sm text-gray-400 hover:text-white">
+            Reset Calculator
+        </button>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <a href="index.html" class="text-xl font-black tracking-tight mb-2 block hover:text-blue-300 transition">AZ LEARNER</a>
+            <p class="text-sm text-gray-600">&copy; 2026 Francis Pwavwe Production.</p>
+        </div>
+    </footer>
+
+    <script>
+        let gpaCourses = [];
+
+        function getRankFromGPA(gpa) {
+            if (gpa >= 3.6) return "First Class 🥇";
+            if (gpa >= 3.0) return "Second Class Upper 🎓";
+            if (gpa >= 2.5) return "Second Class Lower 📚";
+            if (gpa >= 2.0) return "Third Class 📝";
+            if (gpa > 0) return "Keep pushing 💪";
+            return "Add courses above to calculate.";
+        }
+
+        function addGPACourse() {
+            const course = document.getElementById('gpa-course').value || `Course ${gpaCourses.length + 1}`;
+            const credits = parseFloat(document.getElementById('gpa-credit').value);
+            const gradeSelect = document.getElementById('gpa-grade');
+            const gradePoints = parseFloat(gradeSelect.value);
+            const gradeText = gradeSelect.options[gradeSelect.selectedIndex].text.split(' ')[0];
+            if (!credits || isNaN(credits) || credits <= 0) { showToast("Enter valid credit hours!", "error"); return; }
+            gpaCourses.push({ course, credits, gradePoints, gradeText });
+            document.getElementById('gpa-course').value = '';
+            document.getElementById('gpa-credit').value = '';
+            updateGPAResults();
+        }
+
+        function updateGPAResults() {
+            const list = document.getElementById('gpa-list');
+            const resultEl = document.getElementById('gpa-result');
+            const rankEl = document.getElementById('gpa-rank');
+            list.innerHTML = '';
+            let totalPoints = 0, totalCredits = 0;
+            if (gpaCourses.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 text-xs italic">No courses added yet.</p>';
+                resultEl.textContent = '0.00';
+                rankEl.textContent = 'Add courses above to calculate.';
+                return;
+            }
+            gpaCourses.forEach((c, i) => {
+                totalPoints += c.credits * c.gradePoints;
+                totalCredits += c.credits;
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl text-sm border border-white/5">
+                        <span class="truncate w-1/2 text-gray-200">${c.course}</span>
+                        <div class="flex gap-3 items-center">
+                            <span class="text-xs text-gray-500">${c.credits} cr</span>
+                            <span class="font-bold text-white w-8 text-center">${c.gradeText}</span>
+                            <button onclick="removeCourse(${i})" class="text-red-400 hover:text-white transition ml-1">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                    </div>`;
+            });
+            const gpa = totalCredits === 0 ? 0 : (totalPoints / totalCredits);
+            resultEl.textContent = gpa.toFixed(2);
+            rankEl.textContent = getRankFromGPA(gpa);
+        }
+
+        function removeCourse(i) { gpaCourses.splice(i, 1); updateGPAResults(); }
+        function resetGPA() { gpaCourses = []; updateGPAResults(); showToast("Calculator reset."); }
+
+        window.showToast = (msg, type = 'success') => {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter`;
+            t.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span><span class="font-bold text-sm">${msg}</span>`;
+            c.appendChild(t);
+            requestAnimationFrame(() => { t.classList.remove('toast-enter'); t.classList.add('toast-enter-active'); });
+            setTimeout(() => { t.classList.add('toast-exit-active'); setTimeout(() => t.remove(), 300); }, 3000);
+        };
+
+        window.toggleLogin = () => {
+            const modal = document.getElementById('loginModal');
+            const content = document.getElementById('loginContent');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { content.classList.remove('scale-95','opacity-0'); content.classList.add('scale-100','opacity-100'); }, 10);
+            } else {
+                content.classList.remove('scale-100','opacity-100');
+                content.classList.add('scale-95','opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        };
+
+        window.handleEmailLogin = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('authSubmitBtn');
+            if (!email || !password) { showToast("Enter email & password", "error"); return; }
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Verifying...`;
+            try {
+                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js");
+                const { getAuth, signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js");
+                const app = initializeApp({ apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" }, 'gpa');
+                await signInWithEmailAndPassword(getAuth(app), email, password);
+                showToast("Welcome back! ⚡"); toggleLogin();
+                btn.innerHTML = orig;
+            } catch(e) { showToast("Login failed: " + e.message, "error"); btn.innerHTML = orig; }
+        };
+    </script>
+</body>
+</html>

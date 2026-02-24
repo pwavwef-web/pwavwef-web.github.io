@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner | Past Questions</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; min-height: 100vh; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .toast-enter { opacity:0; transform:translateX(100%); }
+        .toast-enter-active { opacity:1; transform:translateX(0); transition:all .3s ease; }
+        .toast-exit-active { opacity:0; transform:translateX(100%); transition:all .3s ease; }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div id="toast-container" class="fixed top-20 right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight text-white hover:text-blue-300 transition">AZ LEARNER</a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="events.html" class="hover:text-white transition">Events</a>
+                <a href="gpa.html" class="hover:text-white transition">GPA Calc</a>
+                <a href="leaderboard.html" class="hover:text-white transition">Arena</a>
+                <a href="blog.html" class="hover:text-white transition">Blog</a>
+                <a href="past-questions.html" class="text-white transition">Past Qs</a>
+                <a href="print.html" class="hover:text-white transition">Print</a>
+                <a href="map.html" class="hover:text-white transition">Map</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="notifications.html" class="p-2 rounded-full hover:bg-white/10 transition text-gray-300 hover:text-white">
+                    <span class="material-symbols-outlined text-xl">notifications</span>
+                </a>
+                <button id="loginBtn" onclick="toggleLogin()"
+                    class="px-4 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Login
+                </button>
+                <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 grid grid-cols-3 gap-3 text-center text-xs font-semibold text-gray-400">
+            <a href="events.html" class="py-2 hover:text-white transition">Events</a>
+            <a href="gpa.html" class="py-2 hover:text-white transition">GPA Calc</a>
+            <a href="leaderboard.html" class="py-2 hover:text-white transition">Arena</a>
+            <a href="blog.html" class="py-2 hover:text-white transition">Blog</a>
+            <a href="past-questions.html" class="py-2 text-white">Past Qs</a>
+            <a href="print.html" class="py-2 hover:text-white transition">Print</a>
+            <a href="map.html" class="col-span-3 py-2 hover:text-white transition">Map</a>
+        </div>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="toggleLogin()"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
+            <button onclick="toggleLogin()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+            <div class="text-center mb-8"><div class="text-4xl mb-3">⚡</div><h2 class="text-2xl font-black">Join the Squad</h2><p class="text-gray-400 text-sm mt-2">Log in to access past questions.</p></div>
+            <div class="space-y-4">
+                <input type="email" id="emailInput" placeholder="Your university email" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                <input type="password" id="passwordInput" placeholder="••••••••" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition" onkeydown="if(event.key==='Enter') handleEmailLogin()">
+                <button id="authSubmitBtn" onclick="handleEmailLogin()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 py-3 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition flex justify-center items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Sign In
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course View (hidden by default) -->
+    <div id="course-view" class="hidden max-w-2xl mx-auto px-6 pt-12">
+        <div class="flex items-center gap-3 mb-6">
+            <button onclick="showCourseList()" class="text-gray-400 hover:text-white transition">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h2 id="course-name-title" class="text-xl font-bold text-white truncate"></h2>
+        </div>
+        <div id="pq-file-list" class="space-y-3"></div>
+        <div id="admin-upload" class="hidden mt-6 pt-6 border-t border-white/10">
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Upload Past Question</h3>
+            <div class="flex gap-2">
+                <input type="file" id="pq-file" class="hidden">
+                <input type="text" id="pq-title" placeholder="Paper Title (e.g. Midsem 2024)"
+                    class="flex-1 bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500">
+                <button onclick="document.getElementById('pq-file').click()"
+                    class="bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-blue-500 transition whitespace-nowrap">
+                    Upload PDF/Img
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Course View (hidden by default) -->
+    <div id="add-course-view" class="hidden max-w-2xl mx-auto px-6 pt-12">
+        <div class="flex items-center gap-3 mb-6">
+            <button onclick="showCourseList()" class="text-gray-400 hover:text-white transition">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h2 class="text-xl font-bold text-white">Add New Course 📚</h2>
+        </div>
+        <form onsubmit="event.preventDefault(); saveNewCourse()" class="space-y-4 glass-panel p-6 rounded-2xl border border-white/10">
+            <input type="text" id="new-course-code" placeholder="Course Code (e.g. TMG 101)"
+                class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+            <input type="text" id="new-course-name" placeholder="Course Name (e.g. Intro to Tourism)"
+                class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+            <input type="number" id="new-course-level" placeholder="Level (e.g. 100)"
+                class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition">Create Course</button>
+        </form>
+    </div>
+
+    <!-- Page Content -->
+    <main id="courses-section" class="max-w-2xl mx-auto px-6 py-12">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-pink-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4 border border-pink-500/30">
+                <span class="material-symbols-outlined text-3xl text-pink-400">menu_book</span>
+            </div>
+            <h1 class="text-3xl font-black text-white mb-2">Past Questions 📚</h1>
+            <p class="text-gray-400">The ultimate cheat code. Study smart, not just hard.</p>
+        </div>
+
+        <!-- Auth Prompt -->
+        <div id="auth-prompt-pq" class="glass-panel rounded-2xl p-8 text-center mb-6 hidden">
+            <span class="material-symbols-outlined text-4xl text-red-400 mb-3">lock</span>
+            <h3 class="text-lg font-bold mb-2">Squad Access Only</h3>
+            <p class="text-gray-400 text-sm mb-4">Log in to access past questions.</p>
+            <button onclick="toggleLogin()" class="px-6 py-2 bg-blue-600 rounded-full text-sm font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-500 transition">Log In Now</button>
+        </div>
+
+        <div id="pq-content" class="hidden">
+            <!-- Search & Admin controls -->
+            <div class="flex gap-3 mb-6">
+                <input type="text" id="pq-search" placeholder="Search courses (e.g. TMG 101)..."
+                    oninput="filterCourses()"
+                    class="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500 transition">
+                <button id="add-course-btn" onclick="showAddCourse()"
+                    class="hidden bg-blue-500/20 border border-blue-500/30 text-blue-300 p-3 rounded-xl hover:bg-blue-500 hover:text-white transition">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+            </div>
+            <div id="pq-course-list" class="grid grid-cols-2 gap-3">
+                <div class="animate-pulse col-span-2 flex flex-col gap-4">
+                    <div class="h-24 bg-white/5 rounded-xl"></div>
+                    <div class="h-24 bg-white/5 rounded-xl"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <a href="index.html" class="text-xl font-black tracking-tight mb-2 block hover:text-blue-300 transition">AZ LEARNER</a>
+            <p class="text-sm text-gray-600">&copy; 2026 Francis Pwavwe Production.</p>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, getDocs, addDoc, doc, getDoc, onSnapshot, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const fbConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const fbApp = initializeApp(fbConfig);
+        const auth = getAuth(fbApp);
+        const db = getFirestore(fbApp);
+        let currentUser = null;
+        let allPQCourses = [];
+        let activeListeners = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            const btn = document.getElementById('loginBtn');
+            if (user) {
+                if (btn) {
+                    const name = user.displayName || user.email.split('@')[0];
+                    btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">verified</span> ${name.split(' ')[0]}`;
+                    btn.className = "px-4 py-2 bg-green-500/20 border border-green-500/50 text-green-300 rounded-full font-bold text-sm transition flex items-center gap-2";
+                    btn.onclick = () => { if(confirm('Sign out?')) signOut(auth); };
+                }
+                document.getElementById('auth-prompt-pq').classList.add('hidden');
+                document.getElementById('pq-content').classList.remove('hidden');
+
+                // Check admin
+                let isAdmin = user.email === "pwavwef@gmail.com";
+                try { const d = await getDoc(doc(db, "users", user.uid)); if(d.exists() && d.data().role === 'admin') isAdmin = true; } catch(e) {}
+                if (isAdmin) document.getElementById('add-course-btn').classList.remove('hidden');
+
+                loadCourses();
+            } else {
+                document.getElementById('auth-prompt-pq').classList.remove('hidden');
+                document.getElementById('pq-content').classList.add('hidden');
+            }
+        });
+
+        async function loadCourses() {
+            const list = document.getElementById('pq-course-list');
+            try {
+                const snap = await getDocs(query(collection(db, "pq_courses")));
+                allPQCourses = [];
+                snap.forEach(d => allPQCourses.push({ id: d.id, ...d.data() }));
+                window.filterCourses();
+            } catch(e) {
+                list.innerHTML = `<div class="col-span-2 text-center text-red-400 py-10"><span class="material-symbols-outlined text-4xl">error</span><p>Failed to load courses.</p></div>`;
+            }
+        }
+
+        window.filterCourses = () => {
+            const search = (document.getElementById('pq-search') || {}).value?.toLowerCase() || '';
+            const list = document.getElementById('pq-course-list');
+            if (!list) return;
+            const filtered = allPQCourses.filter(c => (c.name||'').toLowerCase().includes(search) || (c.code||'').toLowerCase().includes(search));
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="col-span-2 text-center opacity-60 py-10"><span class="material-symbols-outlined text-4xl mb-2">folder_off</span><p>No courses found.</p></div>`;
+                return;
+            }
+            list.innerHTML = filtered.map(c => `
+                <div onclick="openCoursePQ('${c.id}','${c.name}')" class="bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 cursor-pointer transition flex flex-col justify-between h-28 group">
+                    <div><h3 class="font-bold text-white truncate">${c.code}</h3><p class="text-xs text-gray-400 truncate">${c.name}</p></div>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">Level ${c.level}</span>
+                        <span class="material-symbols-outlined text-gray-500 group-hover:text-white transition text-lg">folder_open</span>
+                    </div>
+                </div>`).join('');
+        };
+
+        window.openCoursePQ = async (courseId, courseName) => {
+            document.getElementById('courses-section').classList.add('hidden');
+            document.getElementById('add-course-view').classList.add('hidden');
+            document.getElementById('course-view').classList.remove('hidden');
+            document.getElementById('course-name-title').textContent = courseName;
+
+            let isAdmin = currentUser && (currentUser.email === "pwavwef@gmail.com");
+            if (currentUser) {
+                try { const d = await getDoc(doc(db, "users", currentUser.uid)); if(d.exists() && d.data().role === 'admin') isAdmin = true; } catch(e) {}
+            }
+
+            const adminBlock = document.getElementById('admin-upload');
+            if (isAdmin) {
+                adminBlock.classList.remove('hidden');
+                const fileInput = document.getElementById('pq-file');
+                fileInput.onchange = () => handlePQUpload(fileInput, courseId);
+            } else {
+                adminBlock.classList.add('hidden');
+            }
+
+            const fileList = document.getElementById('pq-file-list');
+            fileList.innerHTML = '<div class="animate-pulse h-12 bg-white/5 rounded-lg"></div>';
+            activeListeners.forEach(u => typeof u === 'function' && u());
+            activeListeners = [];
+
+            const q = query(collection(db, "past_questions"), where("courseId", "==", courseId), orderBy("timestamp", "desc"));
+            const unsub = onSnapshot(q, snap => {
+                if (snap.empty) { fileList.innerHTML = '<div class="text-center opacity-40 text-sm mt-10">No past questions yet.</div>'; return; }
+                fileList.innerHTML = '';
+                snap.forEach(d => {
+                    const pq = d.data();
+                    const isPdf = pq.type && pq.type.includes('pdf');
+                    const icon = isPdf ? 'picture_as_pdf' : 'image';
+                    const color = isPdf ? 'text-red-400' : 'text-blue-400';
+                    fileList.innerHTML += `
+                        <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl hover:bg-white/10 transition border border-white/5 group">
+                            <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="window.open('${pq.fileData}','_blank')">
+                                <span class="material-symbols-outlined ${color}">${icon}</span>
+                                <span class="text-sm text-gray-200 truncate hover:underline">${pq.title}</span>
+                            </div>
+                            <button onclick="downloadFile('${pq.fileData}','${pq.title}')" class="text-gray-500 hover:text-white transition ml-2 shrink-0">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                            </button>
+                        </div>`;
+                });
+            });
+            activeListeners.push(unsub);
+        };
+
+        window.handlePQUpload = (input, courseId) => {
+            const titleInput = document.getElementById('pq-title');
+            const title = titleInput.value.trim() || 'Untitled PQ';
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            if (file.size > 1024 * 1024) { showToast("File too large! Max 1MB.", "error"); input.value = ''; return; }
+            const reader = new FileReader();
+            showToast(`Uploading ${file.name}...`);
+            reader.onload = async (e) => {
+                let base64 = e.target.result;
+                if (file.type.startsWith('image/')) {
+                    try { base64 = await compressImage(base64); } catch(e) {}
+                }
+                try {
+                    await addDoc(collection(db, "past_questions"), { courseId, title, fileData: base64, type: file.type, timestamp: Date.now() });
+                    showToast("Uploaded! ✅");
+                    titleInput.value = '';
+                    input.value = '';
+                } catch(err) { showToast("Upload failed.", "error"); }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function compressImage(base64Str) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    let w = img.width, h = img.height;
+                    const MAX = 800;
+                    if (w > h) { if (w > MAX) { h *= MAX/w; w = MAX; } } else { if (h > MAX) { w *= MAX/h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+            });
+        }
+
+        window.downloadFile = (base64, name) => {
+            const a = document.createElement('a'); a.href = base64; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        };
+
+        window.saveNewCourse = async () => {
+            const code = document.getElementById('new-course-code').value.toUpperCase();
+            const name = document.getElementById('new-course-name').value;
+            const level = document.getElementById('new-course-level').value;
+            if (!code || !name) { showToast("Fill all fields", "error"); return; }
+            try {
+                await addDoc(collection(db, "pq_courses"), { code, name, level });
+                showToast("Course Added! ✅");
+                showCourseList();
+            } catch(e) { showToast("Error adding course", "error"); }
+        };
+
+        window.handleEmailLogin = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('authSubmitBtn');
+            if (!email || !password) { showToast("Enter email & password", "error"); return; }
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Verifying...`;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast("Welcome back! ⚡"); window.toggleLogin(); btn.innerHTML = orig;
+            } catch(e) { showToast("Login failed: " + e.message, "error"); btn.innerHTML = orig; }
+        };
+    </script>
+    <script>
+        window.showToast = (msg, type = 'success') => {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter`;
+            t.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span><span class="font-bold text-sm">${msg}</span>`;
+            c.appendChild(t);
+            requestAnimationFrame(() => { t.classList.remove('toast-enter'); t.classList.add('toast-enter-active'); });
+            setTimeout(() => { t.classList.add('toast-exit-active'); setTimeout(() => t.remove(), 300); }, 3000);
+        };
+        window.toggleLogin = () => {
+            const modal = document.getElementById('loginModal');
+            const content = document.getElementById('loginContent');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { content.classList.remove('scale-95','opacity-0'); content.classList.add('scale-100','opacity-100'); }, 10);
+            } else {
+                content.classList.remove('scale-100','opacity-100');
+                content.classList.add('scale-95','opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        };
+        window.showCourseList = () => {
+            document.getElementById('course-view').classList.add('hidden');
+            document.getElementById('add-course-view').classList.add('hidden');
+            document.getElementById('courses-section').classList.remove('hidden');
+        };
+        window.showAddCourse = () => {
+            document.getElementById('courses-section').classList.add('hidden');
+            document.getElementById('course-view').classList.add('hidden');
+            document.getElementById('add-course-view').classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>

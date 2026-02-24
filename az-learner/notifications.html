@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner | Notifications</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; min-height: 100vh; }
+        .bg-animated { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+        @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .toast-enter { opacity:0; transform:translateX(100%); }
+        .toast-enter-active { opacity:1; transform:translateX(0); transition:all .3s ease; }
+        .toast-exit-active { opacity:0; transform:translateX(100%); transition:all .3s ease; }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div id="toast-container" class="fixed top-20 right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-black tracking-tight text-white hover:text-blue-300 transition">AZ LEARNER</a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-gray-400">
+                <a href="events.html" class="hover:text-white transition">Events</a>
+                <a href="gpa.html" class="hover:text-white transition">GPA Calc</a>
+                <a href="leaderboard.html" class="hover:text-white transition">Arena</a>
+                <a href="blog.html" class="hover:text-white transition">Blog</a>
+                <a href="past-questions.html" class="hover:text-white transition">Past Qs</a>
+                <a href="print.html" class="hover:text-white transition">Print</a>
+                <a href="map.html" class="hover:text-white transition">Map</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button id="loginBtn" onclick="toggleLogin()"
+                    class="px-4 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-full font-bold text-sm transition hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Login
+                </button>
+                <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 px-6 py-4 grid grid-cols-3 gap-3 text-center text-xs font-semibold text-gray-400">
+            <a href="events.html" class="py-2 hover:text-white transition">Events</a>
+            <a href="gpa.html" class="py-2 hover:text-white transition">GPA Calc</a>
+            <a href="leaderboard.html" class="py-2 hover:text-white transition">Arena</a>
+            <a href="blog.html" class="py-2 hover:text-white transition">Blog</a>
+            <a href="past-questions.html" class="py-2 hover:text-white transition">Past Qs</a>
+            <a href="print.html" class="py-2 hover:text-white transition">Print</a>
+            <a href="map.html" class="col-span-3 py-2 hover:text-white transition">Map</a>
+        </div>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="toggleLogin()"></div>
+        <div class="relative glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.2)] transform scale-95 opacity-0 transition-all duration-300" id="loginContent">
+            <button onclick="toggleLogin()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+            <div class="text-center mb-8"><div class="text-4xl mb-3">⚡</div><h2 class="text-2xl font-black">Join the Squad</h2><p class="text-gray-400 text-sm mt-2">Log in to see your notifications.</p></div>
+            <div class="space-y-4">
+                <input type="email" id="emailInput" placeholder="Your university email" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                <input type="password" id="passwordInput" placeholder="••••••••" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition" onkeydown="if(event.key==='Enter') handleEmailLogin()">
+                <button id="authSubmitBtn" onclick="handleEmailLogin()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 py-3 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition flex justify-center items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">login</span> Sign In
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <main class="max-w-2xl mx-auto px-6 py-12">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-blue-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4 border border-blue-500/30">
+                <span class="material-symbols-outlined text-3xl text-blue-400">notifications</span>
+            </div>
+            <h1 class="text-3xl font-black text-white mb-2">Notifications 🔔</h1>
+            <p class="text-gray-400">Stay in the loop.</p>
+        </div>
+
+        <!-- Auth Prompt -->
+        <div id="auth-prompt" class="glass-panel rounded-2xl p-8 text-center hidden">
+            <span class="material-symbols-outlined text-4xl text-blue-400 mb-3">lock</span>
+            <h3 class="text-lg font-bold mb-2">Squad Access Only</h3>
+            <p class="text-gray-400 text-sm mb-4">Log in to see your notifications.</p>
+            <button onclick="toggleLogin()" class="px-6 py-2 bg-blue-600 rounded-full text-sm font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-500 transition">Log In Now</button>
+        </div>
+
+        <!-- Notifications List -->
+        <div id="notif-list" class="space-y-4">
+            <div class="animate-pulse flex flex-col gap-4">
+                <div class="h-20 bg-white/5 rounded-2xl"></div>
+                <div class="h-20 bg-white/5 rounded-2xl"></div>
+                <div class="h-20 bg-white/5 rounded-2xl"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-black/20 backdrop-blur-md py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <a href="index.html" class="text-xl font-black tracking-tight mb-2 block hover:text-blue-300 transition">AZ LEARNER</a>
+            <p class="text-sm text-gray-600">&copy; 2026 Francis Pwavwe Production.</p>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        const fbConfig = { apiKey:"AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y", authDomain:"az-learner.firebaseapp.com", projectId:"az-learner", storageBucket:"az-learner.firebasestorage.app", messagingSenderId:"12958795950", appId:"1:12958795950:web:326411293864571040453f" };
+        const fbApp = initializeApp(fbConfig);
+        const auth = getAuth(fbApp);
+        const db = getFirestore(fbApp);
+
+        onAuthStateChanged(auth, (user) => {
+            const btn = document.getElementById('loginBtn');
+            if (user) {
+                if (btn) {
+                    const name = user.displayName || user.email.split('@')[0];
+                    btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">verified</span> ${name.split(' ')[0]}`;
+                    btn.className = "px-4 py-2 bg-green-500/20 border border-green-500/50 text-green-300 rounded-full font-bold text-sm transition flex items-center gap-2";
+                    btn.onclick = () => { if(confirm('Sign out?')) signOut(auth); };
+                }
+                document.getElementById('auth-prompt').classList.add('hidden');
+                loadNotifications(user);
+            } else {
+                document.getElementById('notif-list').innerHTML = '';
+                document.getElementById('auth-prompt').classList.remove('hidden');
+            }
+        });
+
+        async function loadNotifications(user) {
+            const list = document.getElementById('notif-list');
+            list.innerHTML = '<div class="animate-pulse flex flex-col gap-4"><div class="h-20 bg-white/5 rounded-2xl"></div><div class="h-20 bg-white/5 rounded-2xl"></div></div>';
+            try {
+                const globalQ = query(collection(db, "global_announcements"), orderBy("timestamp", "desc"), limit(10));
+                const globalSnap = await getDocs(globalQ);
+                const userQ = query(collection(db, "user_notifications"), where("userId","==",user.uid));
+                const userSnap = await getDocs(userQ);
+                let all = [];
+                globalSnap.forEach(d => all.push({ ...d.data(), type: 'broadcast' }));
+                userSnap.forEach(d => all.push(d.data()));
+                all.sort((a, b) => b.timestamp - a.timestamp);
+                list.innerHTML = '';
+                if (all.length === 0) {
+                    list.innerHTML = `<div class="text-center py-20 opacity-50"><span class="material-symbols-outlined text-6xl mb-3">notifications_paused</span><p class="text-lg">All caught up!</p><p class="text-sm text-gray-500 mt-1">No new notifications.</p></div>`;
+                    return;
+                }
+                all.forEach(n => {
+                    const icon = n.type === 'broadcast' ? 'campaign' : 'chat_bubble';
+                    const bg = n.type === 'broadcast' ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/5 border-white/10';
+                    const iconColor = n.type === 'broadcast' ? 'text-orange-400' : 'text-blue-400';
+                    list.innerHTML += `
+                        <div class="${bg} border p-4 rounded-2xl flex gap-3 items-start">
+                            <div class="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined ${iconColor} text-lg">${icon}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-sm text-white">${n.title || 'Notification'}</h4>
+                                <p class="text-xs text-gray-300 mt-1">${n.body || ''}</p>
+                                <p class="text-[10px] text-gray-500 mt-2">${new Date(n.timestamp).toLocaleString()}</p>
+                            </div>
+                        </div>`;
+                });
+                localStorage.setItem('last_notif_check', Date.now());
+            } catch(e) {
+                list.innerHTML = `<div class="text-center py-10 text-red-400"><span class="material-symbols-outlined text-4xl">error</span><p>Failed to load.</p></div>`;
+            }
+        }
+
+        window.handleEmailLogin = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('authSubmitBtn');
+            if (!email || !password) { showToast("Enter email & password", "error"); return; }
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Verifying...`;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast("Welcome back! ⚡"); window.toggleLogin(); btn.innerHTML = orig;
+            } catch(e) { showToast("Login failed: " + e.message, "error"); btn.innerHTML = orig; }
+        };
+    </script>
+    <script>
+        window.showToast = (msg, type = 'success') => {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 min-w-[250px] toast-enter`;
+            t.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span><span class="font-bold text-sm">${msg}</span>`;
+            c.appendChild(t);
+            requestAnimationFrame(() => { t.classList.remove('toast-enter'); t.classList.add('toast-enter-active'); });
+            setTimeout(() => { t.classList.add('toast-exit-active'); setTimeout(() => t.remove(), 300); }, 3000);
+        };
+        window.toggleLogin = () => {
+            const modal = document.getElementById('loginModal');
+            const content = document.getElementById('loginContent');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { content.classList.remove('scale-95','opacity-0'); content.classList.add('scale-100','opacity-100'); }, 10);
+            } else {
+                content.classList.remove('scale-100','opacity-100');
+                content.classList.add('scale-95','opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        };
+    </script>
+</body>
+</html>
