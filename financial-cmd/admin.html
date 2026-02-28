@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AZ Learner | Financial Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
+
+  <!-- ========================================== -->
+  <!-- UNAUTHORIZED VIEW (The Gate) -->
+  <!-- ========================================== -->
+  <div id="login-view" class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full border border-slate-800 bg-slate-950 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600"></div>
+      
+      <div class="flex flex-col items-center text-center mb-8">
+        <div class="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-2 tracking-tight">System Locked</h1>
+        <p class="text-slate-400 text-sm">AZ Learner Administrative Vault. Please authenticate your identity.</p>
+      </div>
+
+      <form id="login-form" class="space-y-4">
+        <div>
+          <input type="email" id="access-email" placeholder="Enter Admin Email" class="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-600 outline-none text-center transition-all" required />
+        </div>
+        <p id="auth-error" class="text-red-400 text-sm text-center font-medium animate-pulse hidden"></p>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg px-4 py-3 flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20">
+          Authenticate 
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- AUTHORIZED VIEW (The Dashboard) -->
+  <!-- ========================================== -->
+  <div id="dashboard-view" class="hidden min-h-screen p-4 md:p-8 fade-in">
+    <div class="max-w-6xl mx-auto">
+      
+      <!-- Header -->
+      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-800">
+        <div>
+          <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            Financial Command Center
+          </h1>
+          <p class="text-slate-400 mt-1 font-medium">Welcome back, Francis. Oversee AZ Learner team disbursements.</p>
+        </div>
+        <button id="logout-btn" class="self-start md:self-auto flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-sm text-slate-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Lock System
+        </button>
+      </header>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex items-center gap-4">
+          <div class="bg-blue-500/10 p-3 rounded-lg text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <p class="text-sm text-slate-400 font-medium">Total Profiles</p>
+            <p id="stat-total" class="text-2xl font-bold text-white">0</p>
+          </div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex items-center gap-4">
+          <div class="bg-indigo-500/10 p-3 rounded-lg text-indigo-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div>
+            <p class="text-sm text-slate-400 font-medium">Pending Payouts</p>
+            <p id="stat-pending" class="text-2xl font-bold text-white">0</p>
+          </div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex items-center gap-4">
+          <div class="bg-purple-500/10 p-3 rounded-lg text-purple-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div>
+            <p class="text-sm text-slate-400 font-medium">System Status</p>
+            <p class="text-2xl font-bold text-emerald-400">Secure</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-white">Payment Roster</h2>
+          <div class="bg-slate-950 px-3 py-1.5 rounded-full text-xs font-medium text-slate-400 border border-slate-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Live Sync
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-950/50 text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                <th class="p-4 pl-6">Team Member</th>
+                <th class="p-4">Role</th>
+                <th class="p-4">Network</th>
+                <th class="p-4">Account Number</th>
+                <th class="p-4 text-right pr-6">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-800/50">
+              <!-- JS Injected Rows Go Here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FIREBASE LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ============================================================================
+    // 🛑 FRANCIS: PASTE YOUR FIREBASE CONFIG OBJECT HERE 🛑
+    // ============================================================================
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const AZ_APP_ID = 'az-learner-core';
+    const TARGET_ADMIN = 'pwavwef@gmail.com';
+    
+    let currentUser = null;
+    let unsubSnapshot = null;
+
+    // DOM Elements
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const loginForm = document.getElementById('login-form');
+    const accessEmailInput = document.getElementById('access-email');
+    const authError = document.getElementById('auth-error');
+    const logoutBtn = document.getElementById('logout-btn');
+    const tableBody = document.getElementById('table-body');
+    const statTotal = document.getElementById('stat-total');
+    const statPending = document.getElementById('stat-pending');
+
+    // Initialize Auth
+    signInAnonymously(auth).catch(console.error);
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
+
+    // Handle Login Authorization
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = accessEmailInput.value.trim().toLowerCase();
+      
+      if (email === TARGET_ADMIN) {
+        authError.classList.add('hidden');
+        loginView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        dashboardView.classList.add('block');
+        fetchData(); // Trigger Live Data Fetch
+      } else {
+        authError.textContent = "Access Denied. You are not Francis Pwavwe.";
+        authError.classList.remove('hidden');
+        accessEmailInput.value = '';
+      }
+    });
+
+    // Handle Logout / Lock System
+    logoutBtn.addEventListener('click', () => {
+      dashboardView.classList.add('hidden');
+      dashboardView.classList.remove('block');
+      loginView.classList.remove('hidden');
+      accessEmailInput.value = '';
+      if (unsubSnapshot) unsubSnapshot(); // Stop listening to db when locked
+    });
+
+    // Fetch and Render Data Matrix
+    function fetchData() {
+      if (!currentUser) return;
+      
+      tableBody.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-slate-500">Syncing matrices...</td></tr>`;
+
+      const paymentsRef = collection(db, 'artifacts', AZ_APP_ID, 'public', 'data', 'az_team_payments');
+      
+      unsubSnapshot = onSnapshot(paymentsRef, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort newest first
+        data.sort((a, b) => {
+          const timeA = a.timestamp?.toMillis() || 0;
+          const timeB = b.timestamp?.toMillis() || 0;
+          return timeB - timeA;
+        });
+
+        // Update Stats
+        statTotal.textContent = data.length;
+        statPending.textContent = data.length;
+
+        // Render Table
+        if (data.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colSpan="5" class="p-12 text-center text-slate-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <p>No payment profiles registered yet.</p>
+              </td>
+            </tr>`;
+          return;
+        }
+
+        tableBody.innerHTML = data.map(p => {
+          const date = p.timestamp ? new Date(p.timestamp.toMillis()).toLocaleDateString() : 'Just now';
+          
+          let networkClass = 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+          if(p.network === 'MTN') networkClass = 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+          if(p.network === 'Telecel') networkClass = 'bg-red-500/10 text-red-500 border-red-500/20';
+
+          return `
+            <tr class="hover:bg-slate-800/20 transition-colors group">
+              <td class="p-4 pl-6 font-medium text-slate-200">${p.name || 'Unknown'}</td>
+              <td class="p-4 text-slate-400 text-sm">${p.role || 'N/A'}</td>
+              <td class="p-4">
+                <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${networkClass}">
+                  ${p.network}
+                </span>
+              </td>
+              <td class="p-4 font-mono text-slate-300">${p.phone || 'N/A'}</td>
+              <td class="p-4 text-right pr-6 text-sm text-slate-500 flex items-center justify-end gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                ${date}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      }, (error) => {
+        console.error("Data Fetch Error:", error);
+        tableBody.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-red-400">Error connecting to database.</td></tr>`;
+      });
+    }
+  </script>
+</body>
+</html>
