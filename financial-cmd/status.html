@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AZ Learner | Financial Command Vault V2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* Custom scrollbar for the matrix */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
+
+  <!-- ========================================== -->
+  <!-- AUTHENTICATION GATE (Email/Password) -->
+  <!-- ========================================== -->
+  <div id="auth-view" class="min-h-screen flex items-center justify-center p-4 fade-in">
+    <div class="max-w-md w-full border border-slate-800 bg-slate-900 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+      <!-- Glow effect -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/20 blur-3xl rounded-full"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600/20 blur-3xl rounded-full"></div>
+      
+      <div class="relative z-10 flex flex-col items-center text-center mb-8">
+        <div class="w-16 h-16 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        </div>
+        <h1 class="text-2xl font-extrabold text-white mb-2 tracking-tight">Admin Vault V2</h1>
+        <p class="text-slate-400 text-sm">Authenticated access strictly required. Drop your credentials to interface with the matrix.</p>
+      </div>
+
+      <form id="login-form" class="relative z-10 space-y-5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Admin Email</label>
+          <input type="email" id="email" placeholder="commander@azlearner.me" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-600 outline-none transition-all" required />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Passcode</label>
+          <input type="password" id="password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-600 outline-none transition-all" required />
+        </div>
+        
+        <p id="auth-error" class="text-red-400 text-sm text-center font-medium hidden"></p>
+        
+        <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg px-4 py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20">
+          <span id="login-text">Breach Firewall</span>
+          <svg id="login-spinner" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 animate-spin hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- COMMAND DASHBOARD (Authorized Matrix) -->
+  <!-- ========================================== -->
+  <div id="dashboard-view" class="hidden min-h-screen p-4 md:p-8 fade-in">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Header -->
+      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-800">
+        <div>
+          <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            Financial Command <span class="text-blue-500">V2</span>
+          </h1>
+          <p class="text-slate-400 mt-1 font-medium">Logged in as: <span id="user-display" class="text-blue-400 font-bold"></span></p>
+        </div>
+        <button id="logout-btn" class="self-start md:self-auto flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 border border-slate-800 rounded-xl text-sm font-bold text-slate-300 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Terminate Session
+        </button>
+      </header>
+
+      <!-- Dynamic Notice for Francis -->
+      <div id="francis-badge" class="hidden mb-6 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-4 flex items-center gap-3">
+        <div class="bg-blue-500/20 p-2 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg></div>
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Commander Privileges Active</h3>
+          <p class="text-xs text-blue-200">You have absolute write access to modify team payment statuses.</p>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+        <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 backdrop-blur-sm z-10 relative">
+          <h2 class="text-lg font-bold text-white">Disbursement Logistics</h2>
+          <div class="bg-slate-950 px-3 py-1.5 rounded-full text-xs font-bold text-slate-400 border border-slate-800 flex items-center gap-2 shadow-inner">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></span>
+            Live Database Sync
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse whitespace-nowrap">
+            <thead>
+              <tr class="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 font-bold">
+                <th class="p-5 pl-6">Operative</th>
+                <th class="p-5">Network Matrix</th>
+                <th class="p-5">Account Digits</th>
+                <th class="p-5">Timestamp</th>
+                <th class="p-5 text-right pr-6">Payout Status</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-800/50">
+              <!-- JS Injected Rows Go Here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FIREBASE LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ============================================================================
+    // 🛑 FRANCIS: PASTE YOUR FIREBASE CONFIG OBJECT HERE 🛑
+    // ============================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    // Constants
+    const AZ_APP_ID = 'az-learner-core';
+    const SUPREME_COMMANDER = 'pwavwef@gmail.com';
+    
+    // State
+    let currentUser = null;
+    let unsubSnapshot = null;
+    let isCommander = false;
+
+    // DOM Elements
+    const authView = document.getElementById('auth-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const loginForm = document.getElementById('login-form');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const authError = document.getElementById('auth-error');
+    const loginBtn = document.getElementById('login-btn');
+    const loginText = document.getElementById('login-text');
+    const loginSpinner = document.getElementById('login-spinner');
+    
+    const userDisplay = document.getElementById('user-display');
+    const logoutBtn = document.getElementById('logout-btn');
+    const tableBody = document.getElementById('table-body');
+    const francisBadge = document.getElementById('francis-badge');
+
+    // --------------------------------------------------------------------------
+    // Authentication State Observer
+    // --------------------------------------------------------------------------
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in
+        currentUser = user;
+        isCommander = (user.email.toLowerCase() === SUPREME_COMMANDER);
+        
+        userDisplay.textContent = user.email;
+        if (isCommander) francisBadge.classList.remove('hidden');
+        else francisBadge.classList.add('hidden');
+
+        authView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        dashboardView.classList.add('block');
+        
+        fetchData();
+      } else {
+        // User is signed out
+        currentUser = null;
+        isCommander = false;
+        if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
+        
+        dashboardView.classList.add('hidden');
+        dashboardView.classList.remove('block');
+        authView.classList.remove('hidden');
+      }
+    });
+
+    // --------------------------------------------------------------------------
+    // Login Handler
+    // --------------------------------------------------------------------------
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      // UI Loading state
+      loginText.classList.add('hidden');
+      loginSpinner.classList.remove('hidden');
+      loginBtn.disabled = true;
+      authError.classList.add('hidden');
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged handles the view switch
+        emailInput.value = '';
+        passwordInput.value = '';
+      } catch (error) {
+        console.error("Auth Error:", error);
+        authError.textContent = "Access Denied. Invalid credentials or no clearance.";
+        authError.classList.remove('hidden');
+      } finally {
+        loginText.classList.remove('hidden');
+        loginSpinner.classList.add('hidden');
+        loginBtn.disabled = false;
+      }
+    });
+
+    // --------------------------------------------------------------------------
+    // Logout Handler
+    // --------------------------------------------------------------------------
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).catch(console.error);
+    });
+
+    // --------------------------------------------------------------------------
+    // Data Matrix & Update Logic
+    // --------------------------------------------------------------------------
+    function fetchData() {
+      if (!currentUser) return;
+      
+      tableBody.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-slate-500 font-mono animate-pulse">Syncing mainframe...</td></tr>`;
+
+      const paymentsRef = collection(db, 'artifacts', AZ_APP_ID, 'public', 'data', 'az_team_payments');
+      
+      unsubSnapshot = onSnapshot(paymentsRef, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort newest first
+        data.sort((a, b) => {
+          const timeA = a.timestamp?.toMillis() || 0;
+          const timeB = b.timestamp?.toMillis() || 0;
+          return timeB - timeA;
+        });
+
+        if (data.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colSpan="5" class="p-16 text-center text-slate-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-4 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p class="font-medium">Database is empty. Waiting for squad inputs.</p>
+              </td>
+            </tr>`;
+          return;
+        }
+
+        tableBody.innerHTML = data.map(p => {
+          const date = p.timestamp ? new Date(p.timestamp.toMillis()).toLocaleString() : 'Just now';
+          const currentStatus = p.status || 'Pending';
+          
+          let networkColor = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+          if(p.network === 'MTN') networkColor = 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
+          if(p.network === 'Telecel') networkColor = 'text-red-400 bg-red-500/10 border-red-500/20';
+
+          // Status Badge Logic (If not Francis, they just see the badge)
+          let statusUI = '';
+          if (isCommander) {
+            // Francis gets the interactive dropdown matrix
+            statusUI = `
+              <select 
+                onchange="window.updatePaymentStatus('${p.id}', this.value)" 
+                class="bg-slate-950 border ${currentStatus === 'Paid' ? 'border-emerald-500/50 text-emerald-400' : currentStatus === 'Processing' ? 'border-blue-500/50 text-blue-400' : 'border-yellow-500/50 text-yellow-400'} rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer hover:bg-slate-900 transition-colors"
+              >
+                <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>Processing</option>
+                <option value="Paid" ${currentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+              </select>
+            `;
+          } else {
+            // Other admins just see the static badge
+            const badgeClass = currentStatus === 'Paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                               currentStatus === 'Processing' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
+                               'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+            statusUI = `<span class="px-3 py-1.5 rounded-lg border text-xs font-bold ${badgeClass}">${currentStatus}</span>`;
+          }
+
+          return `
+            <tr class="hover:bg-slate-800/30 transition-colors group">
+              <td class="p-5 pl-6">
+                <p class="font-bold text-slate-100">${p.name || 'Unknown'}</p>
+                <p class="text-xs text-slate-500 mt-0.5">${p.role || 'Operative'}</p>
+              </td>
+              <td class="p-5">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-widest border ${networkColor}">
+                  ${p.network}
+                </span>
+              </td>
+              <td class="p-5 font-mono text-slate-300 tracking-wider">
+                ${p.phone || 'N/A'}
+              </td>
+              <td class="p-5 text-sm text-slate-400">
+                ${date}
+              </td>
+              <td class="p-5 text-right pr-6">
+                ${statusUI}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      }, (error) => {
+        console.error("Data Fetch Error:", error);
+        tableBody.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-red-400 font-bold">Mainframe connection severed.</td></tr>`;
+      });
+    }
+
+    // Attach update function to window so the inline HTML onchange can call it
+    window.updatePaymentStatus = async (docId, newStatus) => {
+      if (!isCommander) return; // Double-check security
+      
+      try {
+        const docRef = doc(db, 'artifacts', AZ_APP_ID, 'public', 'data', 'az_team_payments', docId);
+        await updateDoc(docRef, {
+          status: newStatus
+        });
+        // Note: No need to manually update UI, the onSnapshot listener will catch the DB change instantly
+      } catch (error) {
+        console.error("Update failed:", error);
+        alert("System Error: Could not update status.");
+      }
+    };
+
+  </script>
+</body>
+</html>
