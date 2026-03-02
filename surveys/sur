@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | AZ Learner</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen antialiased">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginView" class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-100">
+            <div>
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 mb-4">
+                    <span class="text-3xl">🛡️</span>
+                </div>
+                <h2 class="text-center text-3xl font-extrabold text-gray-900">AZ Learner Admin</h2>
+                <p class="mt-2 text-center text-sm text-gray-600">Enter your credentials to access telemetry</p>
+            </div>
+            <form id="loginForm" class="mt-8 space-y-6">
+                <div class="space-y-4 rounded-md shadow-sm">
+                    <div>
+                        <input id="adminEmail" name="email" type="email" required class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Admin Email">
+                    </div>
+                    <div>
+                        <input id="adminPassword" name="password" type="password" required class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Password">
+                    </div>
+                </div>
+                <div id="loginError" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 text-center font-medium"></div>
+                <div>
+                    <button type="submit" id="loginBtn" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                        <span id="loginBtnText">Sign In</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboardView" class="hidden min-h-screen flex flex-col">
+        <header class="bg-indigo-600 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-white text-2xl">📊</span>
+                    <h1 class="font-bold text-xl text-white tracking-tight">AZ Learner Data Center</h1>
+                </div>
+                <button id="logoutBtn" class="bg-indigo-800 hover:bg-indigo-900 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors border border-indigo-700">
+                    Sign Out
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Responses</dt>
+                    <dd id="statTotal" class="mt-1 text-3xl font-extrabold text-indigo-600">--</dd>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Would Use App (Definitely/Maybe)</dt>
+                    <dd id="statDemand" class="mt-1 text-3xl font-extrabold text-green-600">--%</dd>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Willing to Pay</dt>
+                    <dd id="statPay" class="mt-1 text-3xl font-extrabold text-blue-600">--%</dd>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-xl rounded-2xl border border-gray-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                    <h3 class="text-lg leading-6 font-bold text-gray-900">Survey Responses</h3>
+                    <button id="refreshBtn" class="text-sm bg-white border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 text-gray-700 font-medium transition-colors shadow-sm">
+                        Refresh Data
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date/Email</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Methodology</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pain Points</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Validation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="bg-white divide-y divide-gray-200 text-sm">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDK (v11) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const loginView = document.getElementById('loginView');
+        const dashboardView = document.getElementById('dashboardView');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const loginBtnText = document.getElementById('loginBtnText');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const tableBody = document.getElementById('tableBody');
+
+        const statTotal = document.getElementById('statTotal');
+        const statDemand = document.getElementById('statDemand');
+        const statPay = document.getElementById('statPay');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+                fetchData();
+            } else {
+                loginView.classList.remove('hidden');
+                dashboardView.classList.add('hidden');
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            loginBtnText.textContent = "Authenticating...";
+            loginError.classList.add('hidden');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                loginError.textContent = "Invalid credentials. Ensure you are an authorized AZ Learner admin.";
+                loginError.classList.remove('hidden');
+            } finally {
+                loginBtnText.textContent = "Sign In";
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+        });
+
+        refreshBtn.addEventListener('click', () => {
+            fetchData();
+        });
+
+        async function fetchData() {
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">Fetching latest datasets...</td></tr>`;
+            
+            try {
+                const q = query(collection(db, "surveyResponses"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                let html = '';
+                let totalResponses = 0;
+                let potentialUsers = 0;
+                let potentialPayers = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    
+                    // 🕵🏾‍♂️ DEBUG LOG: Check your browser console!
+                    console.log("Raw Firebase Doc Fetch:", doc.id, data);
+
+                    totalResponses++;
+                    
+                    if(data.q6_app_usage === 'Definitely' || data.q6_app_usage === 'Maybe') potentialUsers++;
+                    if(data.q7_monetization === 'Yes' || data.q7_monetization === 'Maybe') potentialPayers++;
+
+                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                    
+                    // Fallback logic added here just in case the key is missing from old tests
+                    const payValue = data.q7_monetization ? data.q7_monetization : '<span class="text-red-400 italic">No Data Sent</span>';
+
+                    html += `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-bold text-gray-900">${data.email || 'Anonymous'}</div>
+                                <div class="text-xs text-gray-500">${date}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900"><span class="font-medium">Freq:</span> ${data.q1_calculate_freq || '-'}</div>
+                                <div class="text-sm text-gray-900"><span class="font-medium">Via:</span> ${data.q2_current_method || '-'}</div>
+                                <div class="text-xs text-gray-500 mt-1">Confidence: ${data.q3_confidence || '-'}/5</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900"><span class="font-medium">Surprised:</span> <span class="${data.q4_surprised === 'Yes' ? 'text-red-600 font-bold' : ''}">${data.q4_surprised || '-'}</span></div>
+                                <div class="text-sm text-gray-900"><span class="font-medium">Know Target:</span> <span class="${data.q5_target_score_known === 'No' ? 'text-red-600 font-bold' : ''}">${data.q5_target_score_known || '-'}</span></div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${data.q6_app_usage === 'Definitely' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                  Use: ${data.q6_app_usage || '-'}
+                                </span>
+                                <div class="mt-2 text-sm text-gray-900 font-medium">Pay: ${payValue}</div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                if (totalResponses === 0) {
+                    html = `<tr><td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">No responses yet.</td></tr>`;
+                }
+
+                tableBody.innerHTML = html;
+
+                statTotal.textContent = totalResponses;
+                statDemand.textContent = totalResponses > 0 ? Math.round((potentialUsers / totalResponses) * 100) + '%' : '0%';
+                statPay.textContent = totalResponses > 0 ? Math.round((potentialPayers / totalResponses) * 100) + '%' : '0%';
+
+            } catch (error) {
+                console.error("Data Fetch Error:", error);
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-sm text-red-500 bg-red-50">Error pulling data. Verify Firestore permissions.</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>
