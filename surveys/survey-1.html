@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner | GPA Calculator Research</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .form-radio { appearance: none; border-radius: 50%; width: 1.25rem; height: 1.25rem; border: 2px solid #d1d5db; transition: all 0.2s ease-in-out; }
+        .form-radio:checked { border-color: #4f46e5; border-width: 4px; background-color: white; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="text-indigo-600 text-2xl">🎓</span>
+                <h1 class="font-bold text-xl tracking-tight text-gray-900">AZ Learner</h1>
+            </div>
+            <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Phase 1 Research</span>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-3xl mx-auto w-full px-4 py-8 sm:py-12">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="bg-indigo-600 px-6 py-8 text-center sm:px-10">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">GPA Tracking & Forecasting</h2>
+                <p class="mt-3 text-indigo-100 max-w-xl mx-auto">Quick 1-minute survey for university students about GPA tracking. Help us build something useful for you!</p>
+            </div>
+
+            <div class="px-6 py-8 sm:px-10">
+                <form id="surveyForm" class="space-y-8">
+                    
+                    <!-- Email Capture -->
+                    <div class="space-y-3">
+                        <label for="email" class="block text-sm font-semibold text-gray-900">Email Address <span class="text-red-500">*</span></label>
+                        <input type="email" id="email" name="email" required placeholder="you@university.edu" 
+                            class="block w-full rounded-lg border-gray-300 border px-4 py-3 focus:border-indigo-500 focus:ring-indigo-500 transition-colors shadow-sm text-sm">
+                    </div>
+
+                    <div class="w-full h-px bg-gray-200 my-8"></div>
+
+                    <!-- Question 1 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">1. Do you calculate your GPA every semester? <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q1_calculate_freq" value="Yes" required class="form-radio text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-3 text-gray-700">Yes</span>
+                            </label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q1_calculate_freq" value="Sometimes" class="form-radio text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-3 text-gray-700">Sometimes</span>
+                            </label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q1_calculate_freq" value="No" class="form-radio text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-3 text-gray-700">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">2. How do you currently calculate your GPA? <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q2_current_method" value="Manually" required class="form-radio"><span class="ml-3 text-gray-700">Manually</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q2_current_method" value="Calculator" class="form-radio"><span class="ml-3 text-gray-700">Calculator</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q2_current_method" value="Website" class="form-radio"><span class="ml-3 text-gray-700">Website</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q2_current_method" value="I don't calculate it" class="form-radio"><span class="ml-3 text-gray-700">I don't calculate it</span></label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">3. On a scale of 1-5, how confident are you that your GPA calculations are accurate? <span class="text-red-500">*</span></label>
+                        <div class="flex justify-between items-center space-x-2 sm:space-x-4">
+                            <label class="flex flex-col items-center flex-1 p-2 sm:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q3_confidence" value="1" required class="form-radio mb-2"><span class="text-sm font-medium">1</span><span class="text-xs text-gray-400 mt-1">Not at all</span>
+                            </label>
+                            <label class="flex flex-col items-center flex-1 p-2 sm:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q3_confidence" value="2" class="form-radio mb-2"><span class="text-sm font-medium">2</span>
+                            </label>
+                            <label class="flex flex-col items-center flex-1 p-2 sm:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q3_confidence" value="3" class="form-radio mb-2"><span class="text-sm font-medium">3</span>
+                            </label>
+                            <label class="flex flex-col items-center flex-1 p-2 sm:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q3_confidence" value="4" class="form-radio mb-2"><span class="text-sm font-medium">4</span>
+                            </label>
+                            <label class="flex flex-col items-center flex-1 p-2 sm:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q3_confidence" value="5" class="form-radio mb-2"><span class="text-sm font-medium">5</span><span class="text-xs text-gray-400 mt-1">Very</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">4. Have you ever been surprised about your final GPA? <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q4_surprised" value="Yes" required class="form-radio"><span class="ml-3 text-gray-700">Yes</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q4_surprised" value="No" class="form-radio"><span class="ml-3 text-gray-700">No</span></label>
+                        </div>
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">5. Do you know the exact score you need in your next exams to reach your target GPA? <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q5_target_score_known" value="Yes" required class="form-radio"><span class="ml-3 text-gray-700">Yes</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q5_target_score_known" value="No" class="form-radio"><span class="ml-3 text-gray-700">No</span></label>
+                        </div>
+                    </div>
+
+                    <div class="w-full h-px bg-gray-200 my-8"></div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Solution Validation</h3>
+
+                    <!-- Question 6 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">6. If there’s an app that stores your academic records, forecasts your GPA, and tells you the exact score needed in upcoming exams would you use it? <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q6_app_usage" value="Definitely" required class="form-radio"><span class="ml-3 text-gray-700 font-medium">Definitely 🚀</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q6_app_usage" value="Maybe" class="form-radio"><span class="ml-3 text-gray-700">Maybe</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q6_app_usage" value="No" class="form-radio"><span class="ml-3 text-gray-700">No</span></label>
+                        </div>
+                    </div>
+
+                    <!-- Question 7 -->
+                    <div class="space-y-3">
+                        <label class="block text-base font-semibold text-gray-900">7. Would you pay ¢5-¢10 for advanced features? <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q7_monetization" value="Yes" required class="form-radio"><span class="ml-3 text-gray-700">Yes 💰</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q7_monetization" value="Maybe" class="form-radio"><span class="ml-3 text-gray-700">Maybe</span></label>
+                            <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"><input type="radio" name="q7_monetization" value="No" class="form-radio"><span class="ml-3 text-gray-700">No</span></label>
+                        </div>
+                    </div>
+
+                    <!-- Error / Loading / Success States -->
+                    <div id="statusMessage" class="hidden rounded-lg p-4 text-sm font-medium"></div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-indigo-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all active:scale-95 flex justify-center items-center">
+                        <span id="btnText">Submit Response</span>
+                        <svg id="btnSpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-6 text-gray-400 text-sm">
+        &copy; 2026 AZ Learner. All rights reserved.
+    </footer>
+
+    <!-- Firebase SDK (v11) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your provided Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById('surveyForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const statusMessage = document.getElementById('statusMessage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Set Loading State
+            submitBtn.disabled = true;
+            btnText.textContent = "Processing...";
+            btnSpinner.classList.remove('hidden');
+            statusMessage.className = "hidden"; // reset status
+            
+            // Gather Data
+            const formData = new FormData(form);
+            const surveyData = {
+                email: formData.get('email'),
+                q1_calculate_freq: formData.get('q1_calculate_freq'),
+                q2_current_method: formData.get('q2_current_method'),
+                q3_confidence: formData.get('q3_confidence'),
+                q4_surprised: formData.get('q4_surprised'),
+                q5_target_score_known: formData.get('q5_target_score_known'),
+                q6_app_usage: formData.get('q6_app_usage'),
+                q7_monetization: formData.get('q7_monetization'),
+                timestamp: serverTimestamp(),
+                userAgent: navigator.userAgent
+            };
+
+            try {
+                // Save to standard Firestore root collection for GitHub pages deployment
+                await addDoc(collection(db, "surveyResponses"), surveyData);
+                
+                // Show Success Message
+                form.reset();
+                statusMessage.textContent = "Boom! 🎉 Response recorded. Thanks for shaping the future with AZ Learner.";
+                statusMessage.className = "rounded-lg p-4 text-sm font-medium bg-green-50 text-green-800 border border-green-200 block";
+                
+                // Keep button disabled after success to prevent double submission easily
+                btnText.textContent = "Submitted";
+                btnSpinner.classList.add('hidden');
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                statusMessage.textContent = "Yikes! Something went wrong connecting to the database. Try again.";
+                statusMessage.className = "rounded-lg p-4 text-sm font-medium bg-red-50 text-red-800 border border-red-200 block";
+                
+                // Reset Button
+                submitBtn.disabled = false;
+                btnText.textContent = "Submit Response";
+                btnSpinner.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
