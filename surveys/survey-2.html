@@ -139,6 +139,13 @@
                         </div>
                     </div>
 
+                    <!-- Question 8 (Open-ended) -->
+                    <div class="space-y-3">
+                        <label for="q8_feedback" class="block text-base font-semibold text-gray-900">8. What is the biggest challenge you face when trying to track or improve your GPA? <span class="text-gray-400 text-sm font-normal">(Optional)</span></label>
+                        <textarea id="q8_feedback" name="q8_feedback" rows="4" placeholder="Share your thoughts here..." 
+                            class="block w-full rounded-lg border-gray-300 border px-4 py-3 focus:border-indigo-500 focus:ring-indigo-500 transition-colors shadow-sm text-sm resize-none"></textarea>
+                    </div>
+
                     <!-- Error / Loading / Success States -->
                     <div id="statusMessage" class="hidden rounded-lg p-4 text-sm font-medium"></div>
 
@@ -217,7 +224,7 @@
             
             const formData = new FormData(form);
             
-            // Explicitly gathering all 7 points of telemetry
+            // Explicitly gathering all 8 points of telemetry
             const surveyData = {
                 email: formData.get('email'),
                 q1_calculate_freq: formData.get('q1_calculate_freq'),
@@ -227,6 +234,7 @@
                 q5_target_score_known: formData.get('q5_target_score_known'),
                 q6_app_usage: formData.get('q6_app_usage'),
                 q7_monetization: formData.get('q7_monetization'), // This captures Q7 correctly
+                q8_feedback: formData.get('q8_feedback'),
                 timestamp: serverTimestamp(),
                 userAgent: navigator.userAgent,
                 userId: auth.currentUser.uid 
