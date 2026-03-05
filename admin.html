@@ -117,8 +117,11 @@
             <button onclick="app.switchView('petitions')" id="nav-petitions"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
                     class="fa-solid fa-vote-yea mr-2"></i>Petitions</button>
+            <button onclick="app.switchView('portals')" id="nav-portals"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-border-all mr-2"></i>Portals</button>
             <a href="database.html" id="nav-database"
-                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition flex items-center"><i
+                class="hidden nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition flex items-center"><i
                     class="fa-solid fa-database mr-2"></i>DB</a>
             <a href="ceo.html" id="nav-ceo-link"
                 class="hidden px-4 py-2 rounded-lg bg-yellow-700/40 text-yellow-300 font-bold text-sm whitespace-nowrap transition border border-yellow-600/40 flex items-center"><i
@@ -507,6 +510,158 @@
                 </div>
             </div>
 
+            <div id="view-portals" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700">
+                    <h2 class="text-xl font-black text-white mb-1 flex items-center gap-2"><i class="fa-solid fa-border-all text-blueAccent"></i> Admin Portals</h2>
+                    <p class="text-xs text-gray-400">Quick access to all admin-only platforms and portals.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <a href="admin/ceo/" class="group block bg-gray-800/80 border border-yellow-700/30 hover:border-yellow-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-yellow-900/40 flex items-center justify-center"><i class="fa-solid fa-crown text-yellow-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-yellow-300 transition">CEO Portal</p>
+                                <p class="text-[11px] text-gray-500">Executive · CEO only</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Full access control, admin management, and executive oversight.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-yellow-400 transition"></i></div>
+                    </a>
+                    <a href="admin/finance/" class="group block bg-gray-800/80 border border-yellow-700/30 hover:border-yellow-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-yellow-900/40 flex items-center justify-center"><i class="fa-solid fa-coins text-yellow-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-yellow-300 transition">Head of Finance</p>
+                                <p class="text-[11px] text-gray-500">Role: finance_lead</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Budget tracking, journal entries, financial reports and team management.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-yellow-400 transition"></i></div>
+                    </a>
+                    <a href="admin/ambassadors/" class="group block bg-gray-800/80 border border-orange-700/30 hover:border-orange-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-900/40 flex items-center justify-center"><i class="fa-solid fa-user-tie text-orange-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-orange-300 transition">Chief of Ambassadors</p>
+                                <p class="text-[11px] text-gray-500">Role: chief_ambassador</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Ambassador roster, campaigns, performance tracking and approvals.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-orange-400 transition"></i></div>
+                    </a>
+                    <a href="admin/marketing/" class="group block bg-gray-800/80 border border-pink-700/30 hover:border-pink-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-pink-900/40 flex items-center justify-center"><i class="fa-solid fa-bullhorn text-pink-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-pink-300 transition">Marketing Lead</p>
+                                <p class="text-[11px] text-gray-500">Role: marketing_lead</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Campaigns, social media, growth metrics and marketing strategy.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-pink-400 transition"></i></div>
+                    </a>
+                    <a href="admin/developer/" class="group block bg-gray-800/80 border border-blue-700/30 hover:border-blue-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-900/40 flex items-center justify-center"><i class="fa-solid fa-code text-blue-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-blue-300 transition">Developer</p>
+                                <p class="text-[11px] text-gray-500">Role: developer</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Technical tools, deployments, bug tracking and platform development.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-blue-400 transition"></i></div>
+                    </a>
+                    <a href="admin/podcast/" class="group block bg-gray-800/80 border border-purple-700/30 hover:border-purple-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-900/40 flex items-center justify-center"><i class="fa-solid fa-microphone text-purple-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-purple-300 transition">Podcast Lead</p>
+                                <p class="text-[11px] text-gray-500">Role: podcast_lead</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Episode management, uploads, analytics and audience engagement.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-purple-400 transition"></i></div>
+                    </a>
+                    <a href="admin/assistant/" class="group block bg-gray-800/80 border border-teal-700/30 hover:border-teal-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-900/40 flex items-center justify-center"><i class="fa-solid fa-clipboard-list text-teal-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-teal-300 transition">Admin Assistant</p>
+                                <p class="text-[11px] text-gray-500">Role: admin_assistant</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Tasks, scheduling, announcements and document management.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-teal-400 transition"></i></div>
+                    </a>
+                    <a href="database.html" id="portals-database-link" class="hidden group block bg-gray-800/80 border border-red-700/30 hover:border-red-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-900/40 flex items-center justify-center"><i class="fa-solid fa-database text-red-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-red-300 transition">Database</p>
+                                <p class="text-[11px] text-gray-500">CEO only · Raw data access</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Direct Firestore database viewer and management tool.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-red-400 transition"></i></div>
+                    </a>
+                    <a href="ceo.html" class="group block bg-gray-800/80 border border-orange-700/30 hover:border-orange-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-900/40 flex items-center justify-center"><i class="fa-solid fa-star text-orangeAccent"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-orange-300 transition">CEO Command</p>
+                                <p class="text-[11px] text-gray-500">Public CEO Dashboard</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Public-facing CEO dashboard and project overview.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-orangeAccent transition"></i></div>
+                    </a>
+                    <a href="financial.html" class="group block bg-gray-800/80 border border-green-700/30 hover:border-green-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-green-900/40 flex items-center justify-center"><i class="fa-solid fa-chart-line text-green-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-green-300 transition">Financial Dashboard</p>
+                                <p class="text-[11px] text-gray-500">Public financial overview</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Revenue, expenses, and financial performance metrics.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-green-400 transition"></i></div>
+                    </a>
+                    <a href="cvadmin.html" class="group block bg-gray-800/80 border border-indigo-700/30 hover:border-indigo-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-900/40 flex items-center justify-center"><i class="fa-solid fa-file-user text-indigo-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-indigo-300 transition">CV Admin</p>
+                                <p class="text-[11px] text-gray-500">CV review panel</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Manage and review submitted CVs and applications.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-indigo-400 transition"></i></div>
+                    </a>
+                    <a href="podcast/admin/" class="group block bg-gray-800/80 border border-violet-700/30 hover:border-violet-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-violet-900/40 flex items-center justify-center"><i class="fa-solid fa-podcast text-violet-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-violet-300 transition">Podcast Admin</p>
+                                <p class="text-[11px] text-gray-500">Podcast management panel</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Upload episodes, manage settings and view podcast analytics.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-violet-400 transition"></i></div>
+                    </a>
+                    <a href="advice/" class="group block bg-gray-800/80 border border-amber-700/30 hover:border-amber-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-900/40 flex items-center justify-center"><i class="fa-solid fa-book-open text-amber-400"></i></div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-amber-300 transition">CEO Advice Hub</p>
+                                <p class="text-[11px] text-gray-500">Strategic guidance library</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">Growth, leadership, revenue, community and more — curated strategy for your success.</p>
+                        <div class="mt-3 flex justify-end"><i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-amber-400 transition"></i></div>
+                    </a>
+                </div>
+            </div>
+
             <div id="view-tickets" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
                 <h2 class="text-xl font-bold mb-4 text-green-400 flex items-center gap-2">
                     <i class="fa-solid fa-money-bill-wave"></i> Revenue Streams
@@ -751,6 +906,8 @@
 
                             if (user.email === "pwavwef@gmail.com") {
                                 document.getElementById('nav-ceo-link').classList.remove('hidden');
+                                document.getElementById('nav-database').classList.remove('hidden');
+                                document.getElementById('portals-database-link').classList.remove('hidden');
                             }
                             this.startListeners();
                             this.switchView('dash');

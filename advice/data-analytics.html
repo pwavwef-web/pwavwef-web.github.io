@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data & Analytics – AZ Learner CEO Advice</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: white; font-family: 'Roboto', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .prose-dark p { color: #cbd5e1; line-height: 1.8; margin-bottom: 1rem; }
+        .prose-dark h3 { color: #f1f5f9; font-weight: 800; font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+        .prose-dark ul { list-style: none; padding: 0; }
+        .prose-dark ul li { color: #94a3b8; padding: 0.35rem 0; padding-left: 1.5rem; position: relative; }
+        .prose-dark ul li::before { content: "→"; position: absolute; left: 0; color: #f43f5e; }
+        .tip { background: rgba(244,63,94,0.1); border-left: 3px solid #f43f5e; padding: 1rem 1.25rem; border-radius: 0 0.5rem 0.5rem 0; margin: 1rem 0; }
+        .tip p { color: #fda4af; margin: 0; }
+        .warn { background: rgba(245,158,11,0.1); border-left: 3px solid #f59e0b; padding: 1rem 1.25rem; border-radius: 0 0.5rem 0.5rem 0; margin: 1rem 0; }
+        .warn p { color: #fcd34d; margin: 0; }
+        .metric { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; }
+        .metric .label { font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+        .metric .value { font-size: 1.4rem; font-weight: 900; color: #f1f5f9; }
+        .metric .desc { font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center gap-4 sticky top-0 z-10 shadow-lg">
+        <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-arrow-left"></i></a>
+        <div>
+            <h1 class="text-lg font-black text-white">📊 Data & Analytics</h1>
+            <p class="text-xs text-gray-500">Making decisions based on evidence, not guesses</p>
+        </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-6 py-10 prose-dark">
+
+        <div class="bg-rose-900/20 border border-rose-700/30 rounded-2xl p-6 mb-8">
+            <h2 class="text-2xl font-black text-rose-300 mb-2">What Gets Measured Gets Managed</h2>
+            <p>Most startups fail not because of a lack of effort, but because of a lack of clarity on what's actually working. Data turns guesses into decisions and feelings into facts. Build a data habit from day one.</p>
+        </div>
+
+        <h3>1. The Metrics That Actually Matter</h3>
+        <p>Don't drown in data. Track the 5–7 metrics that directly reflect the health of your platform.</p>
+
+        <div class="metric">
+            <div class="label">Monthly Active Users (MAU)</div>
+            <div class="value">Target: +20% MoM</div>
+            <div class="desc">How many unique students use the platform in a given month. This is your core health metric.</div>
+        </div>
+        <div class="metric">
+            <div class="label">Course Completion Rate</div>
+            <div class="value">Target: ≥ 40%</div>
+            <div class="desc">% of students who start a course and finish it. Low rate = content isn't engaging or valuable enough.</div>
+        </div>
+        <div class="metric">
+            <div class="label">7-Day Retention</div>
+            <div class="value">Target: ≥ 30%</div>
+            <div class="desc">% of new users still active 7 days after sign-up. The most important early signal of long-term retention.</div>
+        </div>
+        <div class="metric">
+            <div class="label">Ambassador Conversion Rate</div>
+            <div class="value">Target: 5% of active users</div>
+            <div class="desc">% of active students who apply to become ambassadors. Measures depth of community engagement.</div>
+        </div>
+        <div class="metric">
+            <div class="label">Revenue Per User (RPU)</div>
+            <div class="value">Track monthly</div>
+            <div class="desc">Total monthly revenue divided by MAU. Tells you how much each active user is worth to the platform.</div>
+        </div>
+
+        <h3>2. Setting Up Your Data Tracking System</h3>
+        <p>You don't need expensive analytics tools. Start simple and scale.</p>
+        <ul>
+            <li>Use Google Analytics (free) to track page visits, user flow and drop-off points</li>
+            <li>Firebase Analytics (already in your stack) gives you app event tracking out of the box</li>
+            <li>Build a simple monthly dashboard in Google Sheets — 7 metrics, tracked weekly</li>
+            <li>Review your dashboard every Monday morning before starting any other work</li>
+        </ul>
+
+        <div class="tip"><p>💡 <strong>Data Discipline:</strong> Don't just collect data — review it on a schedule. A monthly data review meeting with your admin team where you ask "What does this tell us? What should we do differently?" is worth more than any analytics tool.</p></div>
+
+        <h3>3. Using Data to Improve the Product</h3>
+        <p>Your analytics should drive your product roadmap, not your personal opinions.</p>
+        <ul>
+            <li>If a course has a 10% completion rate, find out why — interview students who dropped off</li>
+            <li>If sign-ups spike after a specific social post, create more content like that</li>
+            <li>Track which features are most used (and which are ignored) — drop ignored features</li>
+            <li>A/B test important decisions when possible — try two versions of a page and see which performs better</li>
+        </ul>
+
+        <h3>4. Data Ethics and Student Privacy</h3>
+        <p>Students' data is a responsibility, not a resource to exploit. Protecting it builds trust.</p>
+        <ul>
+            <li>Only collect data you actually use — don't gather information "just in case"</li>
+            <li>Be transparent with students about what data you collect and why (privacy policy)</li>
+            <li>Never sell student data to third parties — ever. Even if someone offers you money for it.</li>
+            <li>Ensure your Firebase security rules are correctly configured to protect user data</li>
+            <li>Store the minimum necessary personal information — email and name is usually enough</li>
+        </ul>
+
+        <h3>5. Making Data-Driven Decisions as CEO</h3>
+        <p>The goal is not to be enslaved by data but to use it as one strong input alongside your judgment.</p>
+        <ul>
+            <li>When making a significant decision, ask: "What does the data say? What does my gut say? Where do they agree?"</li>
+            <li>Be willing to act against data when you have a strong hypothesis worth testing</li>
+            <li>Share data openly with your team — everyone makes better decisions when they understand context</li>
+            <li>Track the outcomes of your decisions — this builds your intuition over time</li>
+        </ul>
+
+        <div class="warn"><p>⚠️ <strong>Data Trap:</strong> Analysis paralysis. Waiting for more data before making a decision. Data should inform, not paralyse. When you have enough to reduce the biggest risk, decide and act.</p></div>
+
+        <div class="mt-10 bg-gray-800 rounded-xl p-5 border border-gray-700">
+            <p class="text-gray-300 font-bold mb-1">🎯 Data Challenge This Week</p>
+            <p class="text-gray-400 text-sm">Open your Firebase dashboard and look at your user data. Answer these 3 questions: (1) How many unique users have been active this month? (2) What's the most visited page? (3) How many users signed up this week? Write down the numbers. That's your baseline. Next month, compare. That's data-driven leadership.</p>
+        </div>
+    </div>
+</body>
+</html>

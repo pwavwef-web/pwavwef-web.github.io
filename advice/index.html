@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEO Advice Hub – AZ Learner</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { brand: '#FFAB40', dark: '#0f172a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f172a; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .card:hover { transform: translateY(-2px); }
+        .card { transition: transform 0.2s, box-shadow 0.2s; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+    <!-- Header -->
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-5 flex justify-between items-center sticky top-0 z-10 shadow-lg">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📚</span>
+            <div>
+                <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-300">CEO Advice Hub</h1>
+                <p class="text-xs text-gray-500">Strategic guidance for AZ Learner's success</p>
+            </div>
+        </div>
+        <a href="../admin/ceo/" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-crown text-yellow-400"></i> CEO Portal
+        </a>
+    </div>
+
+    <!-- Hero -->
+    <div class="max-w-5xl mx-auto px-6 pt-12 pb-6">
+        <div class="bg-gradient-to-br from-yellow-900/30 to-orange-900/10 border border-yellow-700/30 rounded-2xl p-8 text-center mb-10">
+            <div class="text-5xl mb-4">👑</div>
+            <h2 class="text-3xl font-black text-yellow-400 mb-3">Your Success Playbook</h2>
+            <p class="text-gray-300 max-w-2xl mx-auto text-sm leading-relaxed">
+                Every great project needs a clear vision and actionable strategy. These pages contain 
+                curated advice across every critical area of building and scaling AZ Learner into 
+                something truly impactful.
+            </p>
+        </div>
+
+        <!-- Advice Pages Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+            <a href="growth-strategy.html" class="card bg-gray-800/80 border border-blue-700/30 hover:border-blue-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-blue-900/40 flex items-center justify-center mb-4 text-2xl">🚀</div>
+                <h3 class="font-black text-white mb-2">Growth Strategy</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">How to grow your user base, retention tactics, referral programs and scaling from 0 to 10,000+ students.</p>
+                <div class="mt-4 text-xs text-blue-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="team-management.html" class="card bg-gray-800/80 border border-green-700/30 hover:border-green-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-green-900/40 flex items-center justify-center mb-4 text-2xl">🤝</div>
+                <h3 class="font-black text-white mb-2">Team Management</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Building a high-performance admin team, delegation, accountability systems and conflict resolution.</p>
+                <div class="mt-4 text-xs text-green-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="revenue-monetisation.html" class="card bg-gray-800/80 border border-yellow-700/30 hover:border-yellow-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-yellow-900/40 flex items-center justify-center mb-4 text-2xl">💰</div>
+                <h3 class="font-black text-white mb-2">Revenue & Monetisation</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Sustainable income models for an ed-tech platform — subscriptions, events, partnerships and more.</p>
+                <div class="mt-4 text-xs text-yellow-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="marketing-branding.html" class="card bg-gray-800/80 border border-pink-700/30 hover:border-pink-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-pink-900/40 flex items-center justify-center mb-4 text-2xl">📣</div>
+                <h3 class="font-black text-white mb-2">Marketing & Branding</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Building the AZ Learner brand, social media strategy, content marketing and word-of-mouth growth.</p>
+                <div class="mt-4 text-xs text-pink-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="product-development.html" class="card bg-gray-800/80 border border-purple-700/30 hover:border-purple-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-purple-900/40 flex items-center justify-center mb-4 text-2xl">🛠️</div>
+                <h3 class="font-black text-white mb-2">Product Development</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Feature prioritisation, user feedback loops, MVP thinking and building a product students love.</p>
+                <div class="mt-4 text-xs text-purple-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="community-building.html" class="card bg-gray-800/80 border border-orange-700/30 hover:border-orange-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-orange-900/40 flex items-center justify-center mb-4 text-2xl">🌍</div>
+                <h3 class="font-black text-white mb-2">Community Building</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Creating a loyal student community, ambassador programs, gamification and culture-building strategies.</p>
+                <div class="mt-4 text-xs text-orange-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="leadership-mindset.html" class="card bg-gray-800/80 border border-teal-700/30 hover:border-teal-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-teal-900/40 flex items-center justify-center mb-4 text-2xl">🧠</div>
+                <h3 class="font-black text-white mb-2">Leadership & Mindset</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">The CEO mindset, decision-making frameworks, resilience, dealing with failure and staying motivated.</p>
+                <div class="mt-4 text-xs text-teal-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="partnerships-funding.html" class="card bg-gray-800/80 border border-indigo-700/30 hover:border-indigo-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-indigo-900/40 flex items-center justify-center mb-4 text-2xl">🤲</div>
+                <h3 class="font-black text-white mb-2">Partnerships & Funding</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">How to attract sponsors, apply for grants, form strategic partnerships and get institutional backing.</p>
+                <div class="mt-4 text-xs text-indigo-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="content-curriculum.html" class="card bg-gray-800/80 border border-cyan-700/30 hover:border-cyan-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-cyan-900/40 flex items-center justify-center mb-4 text-2xl">📖</div>
+                <h3 class="font-black text-white mb-2">Content & Curriculum</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Building high-quality course content, working with tutors, quality control and keeping content fresh.</p>
+                <div class="mt-4 text-xs text-cyan-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="data-analytics.html" class="card bg-gray-800/80 border border-rose-700/30 hover:border-rose-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-rose-900/40 flex items-center justify-center mb-4 text-2xl">📊</div>
+                <h3 class="font-black text-white mb-2">Data & Analytics</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Key metrics to track, understanding your data, making data-driven decisions and spotting trends early.</p>
+                <div class="mt-4 text-xs text-rose-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="trust-transparency.html" class="card bg-gray-800/80 border border-emerald-700/30 hover:border-emerald-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-emerald-900/40 flex items-center justify-center mb-4 text-2xl">🔍</div>
+                <h3 class="font-black text-white mb-2">Trust & Transparency</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Building trust with students, parents and partners — accountability, transparency reports and reputation management.</p>
+                <div class="mt-4 text-xs text-emerald-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+            <a href="tech-infrastructure.html" class="card bg-gray-800/80 border border-sky-700/30 hover:border-sky-500/60 p-5 rounded-xl block">
+                <div class="w-12 h-12 rounded-xl bg-sky-900/40 flex items-center justify-center mb-4 text-2xl">⚡</div>
+                <h3 class="font-black text-white mb-2">Tech & Infrastructure</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">Scalable tech stack decisions, security, uptime, mobile performance and future-proofing your platform.</p>
+                <div class="mt-4 text-xs text-sky-400 font-bold flex items-center gap-1">Read more <i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+            </a>
+
+        </div>
+
+        <div class="mt-12 text-center text-gray-600 text-xs pb-10">
+            AZ Learner CEO Advice Hub · Confidential · For CEO Use Only
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech & Infrastructure – AZ Learner CEO Advice</title>
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: white; font-family: 'Roboto', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .prose-dark p { color: #cbd5e1; line-height: 1.8; margin-bottom: 1rem; }
+        .prose-dark h3 { color: #f1f5f9; font-weight: 800; font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+        .prose-dark ul { list-style: none; padding: 0; }
+        .prose-dark ul li { color: #94a3b8; padding: 0.35rem 0; padding-left: 1.5rem; position: relative; }
+        .prose-dark ul li::before { content: "→"; position: absolute; left: 0; color: #0ea5e9; }
+        .tip { background: rgba(14,165,233,0.1); border-left: 3px solid #0ea5e9; padding: 1rem 1.25rem; border-radius: 0 0.5rem 0.5rem 0; margin: 1rem 0; }
+        .tip p { color: #7dd3fc; margin: 0; }
+        .warn { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; padding: 1rem 1.25rem; border-radius: 0 0.5rem 0.5rem 0; margin: 1rem 0; }
+        .warn p { color: #fca5a5; margin: 0; }
+        .code { background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem; color: #7dd3fc; margin: 0.5rem 0; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center gap-4 sticky top-0 z-10 shadow-lg">
+        <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-arrow-left"></i></a>
+        <div>
+            <h1 class="text-lg font-black text-white">⚡ Tech & Infrastructure</h1>
+            <p class="text-xs text-gray-500">Building a platform that scales, stays up and stays secure</p>
+        </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-6 py-10 prose-dark">
+
+        <div class="bg-sky-900/20 border border-sky-700/30 rounded-2xl p-6 mb-8">
+            <h2 class="text-2xl font-black text-sky-300 mb-2">Your Tech Stack Is Your Foundation</h2>
+            <p>AZ Learner is currently built on a solid foundation — Tailwind CSS, vanilla JavaScript, Firebase/Firestore. As you scale, you'll need to make deliberate tech decisions that keep the platform fast, secure and maintainable. Good tech choices now save you enormous pain later.</p>
+        </div>
+
+        <h3>1. Your Current Stack — Strengths and Honest Limitations</h3>
+        <p>Understanding what your current tech does well (and where it will struggle) helps you plan ahead.</p>
+        <ul>
+            <li><strong>Firebase Firestore:</strong> Excellent for real-time data, scales automatically, generous free tier. Watch out for Firestore costs as you scale reads/writes with many users.</li>
+            <li><strong>GitHub Pages hosting:</strong> Free, reliable for static sites. Cannot run server-side code, but Firebase Functions can fill that gap.</li>
+            <li><strong>Vanilla JS + Tailwind:</strong> Fast, no build system needed, easy for contributors. As the codebase grows, consider organising code into clear modules.</li>
+            <li><strong>No native app yet:</strong> Your current web app is mobile-friendly but not installable. Adding PWA capabilities (Service Worker + Manifest) is a high-impact, low-effort upgrade.</li>
+        </ul>
+
+        <h3>2. The Progressive Web App (PWA) Upgrade</h3>
+        <p>A PWA allows students to "install" AZ Learner on their phone home screen, access certain features offline, and receive push notifications — without going through an app store.</p>
+        <ul>
+            <li>Add a Web App Manifest file — tells browsers what the "app" looks like when installed</li>
+            <li>Register a Service Worker — enables offline caching and push notifications</li>
+            <li>Add an "Install AZ Learner" prompt for mobile users — improves retention significantly</li>
+            <li>This can be implemented in a weekend and dramatically improves the student experience</li>
+        </ul>
+
+        <div class="tip"><p>💡 <strong>PWA Impact:</strong> Platforms that add PWA capabilities typically see a 30–50% increase in session length and return visits. Students who "install" your app are 3x more likely to stay active than those who only visit via browser.</p></div>
+
+        <h3>3. Performance Is a Feature</h3>
+        <p>Many of your students are on affordable smartphones with slow internet connections. A slow platform is a failing platform.</p>
+        <ul>
+            <li>Target a Lighthouse Performance Score above 80 on mobile (test at PageSpeed Insights)</li>
+            <li>Compress all images — most images on the platform are probably 5–10x larger than they need to be</li>
+            <li>Lazy-load content below the fold — don't load what the student can't see yet</li>
+            <li>Minimise the number of external scripts loaded on each page</li>
+            <li>Test the platform on a real budget Android phone on a 3G connection once a month</li>
+        </ul>
+
+        <h3>4. Security Essentials</h3>
+        <p>A security breach — especially involving student data — can end your platform overnight. Get the basics right.</p>
+        <ul>
+            <li>Review your Firebase Security Rules today — ensure students can only read/write their own data</li>
+            <li>Never expose API keys in client-side code beyond what Firebase requires (your current Firebase config in HTML is standard and acceptable)</li>
+            <li>Enforce role-based access at the database level, not just the UI level — UI-only protection is not real security</li>
+            <li>Enable 2-Factor Authentication (2FA) on your Firebase console and all admin accounts</li>
+            <li>Regularly audit who has admin access — remove access for team members who leave</li>
+        </ul>
+
+        <div class="warn"><p>⚠️ <strong>Security Rule:</strong> The database button being hidden from regular admins in the UI is good, but also ensure your Firestore Security Rules prevent non-CEO users from accessing that data directly via the API. UI-only protection can be bypassed.</p></div>
+
+        <h3>5. Scalability Planning</h3>
+        <p>Firebase scales automatically, but your code and data structure need to be designed for growth.</p>
+        <ul>
+            <li>Design Firestore collections and documents with query performance in mind from the start</li>
+            <li>Avoid large documents — Firestore reads the entire document even if you only need one field</li>
+            <li>Use Firebase indexes for queries that filter or sort — unindexed queries get slow fast</li>
+            <li>Monitor your Firebase usage dashboard monthly — set budget alerts to avoid surprise bills</li>
+        </ul>
+
+        <h3>6. The Native App Question</h3>
+        <p>You've already published an APK (app.apk, appv2.0.apk). This is great. As you grow, consider:</p>
+        <ul>
+            <li>Publishing on the Google Play Store — massive credibility boost and discovery channel</li>
+            <li>Using a framework like Capacitor to wrap your existing web app in a native shell — fast path to a real app</li>
+            <li>iOS is a secondary priority given your audience, but worth planning for year 2</li>
+        </ul>
+
+        <h3>7. Developer Sustainability</h3>
+        <p>If you're the only developer, you're a single point of failure. Plan for this.</p>
+        <ul>
+            <li>Document all key systems, data structures and processes in a developer README</li>
+            <li>Use GitHub for all code — never work only on a local machine without pushing changes</li>
+            <li>Recruit and train a backup developer or admin who understands the technical basics</li>
+            <li>Consider using Firebase Extensions and no-code/low-code tools where possible to reduce custom code burden</li>
+        </ul>
+
+        <div class="mt-10 bg-gray-800 rounded-xl p-5 border border-gray-700">
+            <p class="text-gray-300 font-bold mb-1">🎯 Tech Priority This Month</p>
+            <p class="text-gray-400 text-sm">Run your top 3 pages through Google PageSpeed Insights (pagespeed.web.dev) and record the mobile scores. Fix the top 3 recommended improvements. Then review your Firebase Security Rules and confirm that the rules match your intended access policy. These two steps dramatically improve quality, security and user experience.</p>
+        </div>
+    </div>
+</body>
+</html>
