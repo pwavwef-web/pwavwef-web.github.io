@@ -3,41 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | AZ Learner</title>
+    <title>Survey Data Center | AZ Learner Admin</title>
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            -webkit-text-size-adjust: 100%;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { overflow-x: hidden; }
+        .bg-animated {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 18s ease infinite;
+        }
+        @keyframes gradientBG {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bg-animated { animation: none; background: #0f172a; }
+        }
+        .glass-panel {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.10);
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-900 min-h-screen antialiased">
+<body class="min-h-screen antialiased selection:bg-blue-500 selection:text-white">
+
+    <div class="bg-animated"></div>
 
     <!-- LOGIN SCREEN -->
-    <div id="loginView" class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-100">
+    <div id="loginView" class="min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 glass-panel p-8 sm:p-10 rounded-2xl shadow-2xl">
             <div>
-                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 mb-4">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-blue-500/20 border border-blue-500/30 mb-4">
                     <span class="text-3xl">🛡️</span>
                 </div>
-                <h2 class="text-center text-3xl font-extrabold text-gray-900">AZ Learner Admin</h2>
-                <p class="mt-2 text-center text-sm text-gray-600">Enter your credentials to access telemetry</p>
+                <div class="text-center">
+                    <span class="bg-white text-blue-900 font-extrabold text-sm px-2 py-1 rounded mr-1">AZ</span>
+                    <span class="font-bold text-lg text-white">LEARNER</span>
+                </div>
+                <h2 class="text-center text-2xl font-extrabold text-white mt-2">Survey Data Center</h2>
+                <p class="mt-2 text-center text-sm text-gray-400">Authorised access only</p>
             </div>
             <form id="loginForm" class="mt-8 space-y-6">
-                <div class="space-y-4 rounded-md shadow-sm">
+                <div class="space-y-4">
                     <div>
-                        <input id="adminEmail" name="email" type="email" required class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Admin Email">
+                        <input id="adminEmail" name="email" type="email" required
+                            class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-white/5 border border-white/15 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors"
+                            placeholder="Admin Email">
                     </div>
                     <div>
-                        <input id="adminPassword" name="password" type="password" required class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Password">
+                        <input id="adminPassword" name="password" type="password" required
+                            class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-white/5 border border-white/15 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors"
+                            placeholder="Password">
                     </div>
                 </div>
-                <div id="loginError" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 text-center font-medium"></div>
+                <div id="loginError" class="hidden text-sm text-red-300 bg-red-500/10 p-3 rounded-xl border border-red-500/30 text-center font-medium"></div>
                 <div>
-                    <button type="submit" id="loginBtn" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                        <span id="loginBtnText">Sign In</span>
+                    <button type="submit" id="loginBtn" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-lg shadow-blue-500/20">
+                        <span id="loginBtnText">Sign In 🔐</span>
                     </button>
                 </div>
             </form>
@@ -46,62 +93,71 @@
 
     <!-- DASHBOARD SCREEN -->
     <div id="dashboardView" class="hidden min-h-screen flex flex-col">
-        <header class="bg-indigo-600 shadow-lg">
+        <header class="glass-panel border-b border-white/10 sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                 <div class="flex items-center gap-3">
-                    <span class="text-white text-2xl">📊</span>
-                    <h1 class="font-bold text-xl text-white tracking-tight">AZ Learner Data Center</h1>
+                    <span class="text-2xl">📊</span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-white text-blue-900 font-extrabold text-xs px-1.5 py-0.5 rounded">AZ</span>
+                            <h1 class="font-bold text-base text-white tracking-tight">Survey Data Center</h1>
+                        </div>
+                        <p class="text-xs text-gray-400">GPA Calculator Research &bull; Phase 1</p>
+                    </div>
                 </div>
-                <button id="logoutBtn" class="bg-indigo-800 hover:bg-indigo-900 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors border border-indigo-700">
+                <button id="logoutBtn" class="bg-white/5 hover:bg-red-500/20 text-gray-300 hover:text-red-300 px-4 py-2 rounded-lg text-sm font-semibold transition-colors border border-white/10 hover:border-red-500/30">
                     Sign Out
                 </button>
             </div>
         </header>
 
         <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Stat Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Total Responses</dt>
-                    <dd id="statTotal" class="mt-1 text-3xl font-extrabold text-indigo-600">--</dd>
+                <div class="glass-panel rounded-2xl p-6 flex flex-col items-center border border-white/10">
+                    <dt class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Responses</dt>
+                    <dd id="statTotal" class="mt-2 text-4xl font-extrabold text-blue-400">--</dd>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Would Use App (Definitely/Maybe)</dt>
-                    <dd id="statDemand" class="mt-1 text-3xl font-extrabold text-green-600">--%</dd>
+                <div class="glass-panel rounded-2xl p-6 flex flex-col items-center border border-white/10">
+                    <dt class="text-xs font-bold text-gray-400 uppercase tracking-widest">Would Use App</dt>
+                    <dd id="statDemand" class="mt-2 text-4xl font-extrabold text-green-400">--%</dd>
+                    <span class="text-xs text-gray-500 mt-1">Definitely / Maybe</span>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center">
-                    <dt class="text-sm font-medium text-gray-500 truncate">Willing to Pay</dt>
-                    <dd id="statPay" class="mt-1 text-3xl font-extrabold text-blue-600">--%</dd>
+                <div class="glass-panel rounded-2xl p-6 flex flex-col items-center border border-white/10">
+                    <dt class="text-xs font-bold text-gray-400 uppercase tracking-widest">Willing to Pay</dt>
+                    <dd id="statPay" class="mt-2 text-4xl font-extrabold text-orange-400">--%</dd>
                 </div>
             </div>
 
-            <div class="bg-white shadow-xl rounded-2xl border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h3 class="text-lg leading-6 font-bold text-gray-900">Survey Responses</h3>
+            <!-- Table -->
+            <div class="glass-panel rounded-2xl border border-white/10 overflow-hidden">
+                <div class="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h3 class="text-base font-bold text-white">Survey Responses</h3>
                     <div class="flex gap-2">
-                        <button id="refreshBtn" class="text-sm bg-white border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 text-gray-700 font-medium transition-colors shadow-sm">
-                            Refresh Data
+                        <button id="refreshBtn" class="text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 text-gray-300 font-medium transition-colors">
+                            Refresh
                         </button>
-                        <button id="csvBtn" class="text-sm bg-indigo-600 border border-indigo-600 px-3 py-1.5 rounded-md hover:bg-indigo-700 text-white font-medium transition-colors shadow-sm">
-                            Save as CSV
+                        <button id="csvBtn" class="text-sm bg-blue-600 border border-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-500 text-white font-medium transition-colors shadow-sm shadow-blue-500/20">
+                            Export CSV
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-100">
+                    <table class="min-w-full divide-y divide-white/5">
+                        <thead class="bg-white/5">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date/Email</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Profile</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Methodology</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pain Points</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Validation</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Features (Q7)</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Open-Ended Response (Q9)</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Referral Source (Q10)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date / Email</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Profile</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Methodology</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Pain Points</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Validation</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Features (Q7)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Open Feedback (Q9)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Referral (Q10)</th>
                             </tr>
                         </thead>
-                        <tbody id="tableBody" class="bg-white divide-y divide-gray-200 text-sm">
+                        <tbody id="tableBody" class="divide-y divide-white/5 text-sm">
                         </tbody>
                     </table>
                 </div>
@@ -206,7 +262,7 @@
         let allSurveyData = [];
 
         async function fetchData() {
-            tableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">Fetching latest datasets...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">Fetching latest datasets…</td></tr>`;
             
             try {
                 const q = query(collection(db, "surveyResponses"), orderBy("timestamp", "desc"));
@@ -239,39 +295,39 @@
                     const q9Text = (data.q9_feedback || data.q8_feedback) ? escapeHtml(data.q9_feedback || data.q8_feedback) : '<span class="text-gray-400 italic">No response</span>';
 
                     html += `
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-white/5 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-bold text-gray-900">${escapeHtml(data.email) || 'Anonymous'}</div>
+                                <div class="text-sm font-bold text-white">${escapeHtml(data.email) || 'Anonymous'}</div>
                                 <div class="text-xs text-gray-500">${escapeHtml(date)}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900"><span class="font-medium">University:</span> ${escapeHtml(data.university) || '-'}</div>
-                                <div class="text-sm text-gray-900"><span class="font-medium">Year:</span> ${escapeHtml(data.year_of_study) || '-'}</div>
+                                <div class="text-sm text-gray-300"><span class="font-medium text-gray-400">University:</span> ${escapeHtml(data.university) || '-'}</div>
+                                <div class="text-sm text-gray-300"><span class="font-medium text-gray-400">Year:</span> ${escapeHtml(data.year_of_study) || '-'}</div>
                                 <div class="text-xs text-gray-500 mt-1">${escapeHtml(data.major) || '-'} · ${escapeHtml(data.grade_system) || '-'}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900"><span class="font-medium">Freq:</span> ${escapeHtml(data.q1_calculate_freq) || '-'}</div>
-                                <div class="text-sm text-gray-900"><span class="font-medium">Via:</span> ${escapeHtml(data.q2_current_method) || '-'}</div>
+                                <div class="text-sm text-gray-300"><span class="font-medium text-gray-400">Freq:</span> ${escapeHtml(data.q1_calculate_freq) || '-'}</div>
+                                <div class="text-sm text-gray-300"><span class="font-medium text-gray-400">Via:</span> ${escapeHtml(data.q2_current_method) || '-'}</div>
                                 <div class="text-xs text-gray-500 mt-1">Confidence: ${escapeHtml(data.q3_confidence) || '-'}/5</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900"><span class="font-medium">Surprised:</span> <span class="${data.q4_surprised === 'Yes' ? 'text-red-600 font-bold' : ''}">${escapeHtml(data.q4_surprised) || '-'}</span></div>
-                                <div class="text-sm text-gray-900"><span class="font-medium">Know Target:</span> <span class="${data.q5_target_score_known === 'No' ? 'text-red-600 font-bold' : ''}">${escapeHtml(data.q5_target_score_known) || '-'}</span></div>
+                                <div class="text-sm text-gray-300"><span class="font-medium text-gray-400">Surprised:</span> <span class="${data.q4_surprised === 'Yes' ? 'text-red-400 font-bold' : ''}">${escapeHtml(data.q4_surprised) || '-'}</span></div>
+                                <div class="text-sm text-gray-300"><span class="font-medium text-gray-400">Know Target:</span> <span class="${data.q5_target_score_known === 'No' ? 'text-red-400 font-bold' : ''}">${escapeHtml(data.q5_target_score_known) || '-'}</span></div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${data.q6_app_usage === 'Definitely' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${data.q6_app_usage === 'Definitely' ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-400'}">
                                   Use: ${escapeHtml(data.q6_app_usage) || '-'}
                                 </span>
-                                <div class="mt-2 text-sm text-gray-900 font-medium">Pay: ${payValue}</div>
+                                <div class="mt-2 text-sm text-gray-300 font-medium">Pay: ${payValue}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-xs text-gray-700 max-w-xs break-words">${escapeHtml(data.q7_features) || '<span class="text-gray-400 italic">N/A</span>'}</div>
+                                <div class="text-xs text-gray-400 max-w-xs break-words">${escapeHtml(data.q7_features) || '<span class="text-gray-600 italic">N/A</span>'}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-700 max-w-xs break-words">${q9Text}</div>
+                                <div class="text-sm text-gray-400 max-w-xs break-words">${q9Text}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-700">${escapeHtml(data.q10_referral) || '<span class="text-gray-400 italic">No response</span>'}</div>
+                                <div class="text-sm text-gray-400">${escapeHtml(data.q10_referral) || '<span class="text-gray-600 italic">No response</span>'}</div>
                             </td>
                         </tr>
                     `;
@@ -289,7 +345,7 @@
 
             } catch (error) {
                 console.error("Data Fetch Error:", error);
-                tableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-sm text-red-500 bg-red-50">Error pulling data. Verify Firestore permissions.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-sm text-red-400 bg-red-500/10">Error pulling data. Verify Firestore permissions.</td></tr>`;
             }
         }
 
