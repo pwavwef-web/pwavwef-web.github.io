@@ -1,0 +1,30 @@
+{
+  "team": [
+    {
+      "name": "Francis Pwavwe",
+      "role": "Founder & Product Lead",
+      "image": "assets/images/placeholder.svg",
+      "bio": "Tourism student and founder of AZ Learner building digital tools for students.",
+      "profile": "profiles/francis-pwavwe.html",
+      "skills": ["Product Design", "Web Development", "Research"],
+      "socials": {
+        "github": "",
+        "linkedin": "",
+        "twitter": ""
+      }
+    },
+    {
+      "name": "Admin Name",
+      "role": "Backend Developer",
+      "image": "assets/images/placeholder.svg",
+      "bio": "Focused on building reliable systems for AZ Learner.",
+      "profile": "profiles/admin-name.html",
+      "skills": ["APIs", "Databases", "Security"],
+      "socials": {
+        "github": "",
+        "linkedin": "",
+        "twitter": ""
+      }
+    }
+  ]
+}

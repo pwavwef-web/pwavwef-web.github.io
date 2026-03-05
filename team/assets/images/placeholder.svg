@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#1e3a8a"/>
+  <circle cx="150" cy="110" r="55" fill="#3b82f6" opacity="0.7"/>
+  <ellipse cx="150" cy="240" rx="90" ry="60" fill="#3b82f6" opacity="0.5"/>
+  <text x="150" y="290" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#93c5fd">AZ Learner</text>
+</svg>
