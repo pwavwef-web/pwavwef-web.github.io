@@ -114,6 +114,9 @@
             <button onclick="app.switchView('broadcast')" id="nav-broadcast"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
                     class="fa-solid fa-bullhorn mr-2"></i>Comms</button>
+            <button onclick="app.switchView('petitions')" id="nav-petitions"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition"><i
+                    class="fa-solid fa-vote-yea mr-2"></i>Petitions</button>
             <a href="database.html" id="nav-database"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition flex items-center"><i
                     class="fa-solid fa-database mr-2"></i>DB</a>
@@ -578,6 +581,49 @@
                 <div id="list-broadcasts" class="space-y-2"></div>
             </div>
 
+            <!-- Petitions View -->
+            <div id="view-petitions" class="admin-view hidden space-y-6 overflow-y-auto p-4 md:p-6 h-full">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Admin Petitions 🗳️</h2>
+                        <p class="text-xs text-gray-500 mt-1">Vote on ideas before development. Each admin gets one vote per petition.</p>
+                    </div>
+                    <button onclick="app.openNewPetitionModal()"
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> New Petition
+                    </button>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="flex gap-2 bg-gray-800 p-1.5 rounded-lg w-fit border border-gray-700">
+                    <button onclick="app.filterPetitions('open')" id="filter-open"
+                        class="petition-filter px-4 py-1.5 rounded text-xs font-bold transition bg-purple-600 text-white whitespace-nowrap">Open</button>
+                    <button onclick="app.filterPetitions('closed')" id="filter-closed"
+                        class="petition-filter px-4 py-1.5 rounded text-xs font-bold transition text-gray-400 hover:text-white whitespace-nowrap">Closed</button>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-purple-500/20 text-center">
+                        <p class="text-2xl font-black text-purple-400" id="petition-stat-open">0</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Open</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center">
+                        <p class="text-2xl font-black text-gray-400" id="petition-stat-closed">0</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Closed</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-green-500/20 text-center">
+                        <p class="text-2xl font-black text-green-400" id="petition-stat-voted">0</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">I Voted</p>
+                    </div>
+                </div>
+
+                <!-- Petitions List -->
+                <div id="petitions-list" class="space-y-4">
+                    <div class="text-center text-gray-500 py-12 text-sm">Loading petitions...</div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -595,6 +641,41 @@
                     class="flex-1 bg-blueAccent text-white py-2 rounded font-bold">Deploy</button>
                 <button onclick="document.getElementById('new-task-modal').classList.add('hidden')"
                     class="px-4 py-2 rounded text-gray-400 font-bold">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Petition Modal -->
+    <div id="new-petition-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-lg rounded-2xl border border-purple-500/30 p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
+                    <i class="fa-solid fa-vote-yea text-purple-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white">New Petition</h3>
+                    <p class="text-xs text-gray-500">Propose an idea for admin vote</p>
+                </div>
+            </div>
+            <input id="petition-title" type="text" placeholder="Petition title (e.g. Add dark mode to student portal)"
+                class="w-full mb-3 p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-purple-500 transition-colors">
+            <textarea id="petition-description" placeholder="Describe the idea, problem it solves, or feature to build..."
+                class="w-full mb-3 p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-purple-500 transition-colors h-28 resize-none"></textarea>
+            <select id="petition-category"
+                class="w-full mb-5 p-3 rounded-lg bg-gray-900 border border-gray-700 text-white outline-none focus:border-purple-500 transition-colors">
+                <option value="Feature">✨ Feature Request</option>
+                <option value="Bug Fix">🐛 Bug Fix</option>
+                <option value="Process">⚙️ Process Improvement</option>
+                <option value="Infrastructure">🏗️ Infrastructure</option>
+                <option value="Other">💡 Other</option>
+            </select>
+            <div class="flex gap-3">
+                <button onclick="app.createPetition()"
+                    class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-3 rounded-xl font-black transition shadow-lg">
+                    <i class="fa-solid fa-paper-plane mr-2"></i>Launch Petition
+                </button>
+                <button onclick="document.getElementById('new-petition-modal').classList.add('hidden')"
+                    class="px-5 py-3 rounded-xl bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition">Cancel</button>
             </div>
         </div>
     </div>
@@ -989,6 +1070,9 @@
                 // Store task and link data for stats
                 let tasksData = [];
                 let linksData = [];
+
+                // Start petitions listener
+                this.startPetitionsListener();
 
                 // 1. Personal Tasks Listener
                 onSnapshot(query(collection(db, `users/${currentUser.uid}/private_tasks`), orderBy('createdAt', 'desc')), (snap) => {
@@ -1741,6 +1825,203 @@
                 }
                 await deleteDoc(doc(db, 'ambassador_resources', id));
                 await this.logAction('RESOURCE_DELETED', `Deleted resource id: ${id}`);
+            },
+
+            // ── PETITIONS ──────────────────────────────────────────────────────
+            _petitionsFilter: 'open',
+            _allPetitions: [],
+
+            openNewPetitionModal() {
+                document.getElementById('petition-title').value = '';
+                document.getElementById('petition-description').value = '';
+                document.getElementById('petition-category').value = 'Feature';
+                document.getElementById('new-petition-modal').classList.remove('hidden');
+            },
+
+            async createPetition() {
+                const title = document.getElementById('petition-title').value.trim();
+                const description = document.getElementById('petition-description').value.trim();
+                const category = document.getElementById('petition-category').value;
+
+                if (!title) { alert('Please enter a petition title.'); return; }
+
+                await addDoc(collection(db, 'admin_petitions'), {
+                    title,
+                    description,
+                    category,
+                    createdBy: currentUser.name,
+                    createdById: currentUser.uid,
+                    createdAt: serverTimestamp(),
+                    status: 'open',
+                    votes: {}
+                });
+
+                await this.logAction('PETITION_CREATED', `Created petition: "${title}"`);
+                document.getElementById('new-petition-modal').classList.add('hidden');
+            },
+
+            async votePetition(id, voteType) {
+                const petition = this._allPetitions.find(p => p.id === id);
+                if (!petition) return;
+                if (petition.status === 'closed') { alert('This petition is closed.'); return; }
+
+                const existingVote = petition.votes[currentUser.uid];
+                // Toggle off if same vote, otherwise set new vote
+                const newVote = existingVote === voteType ? null : voteType;
+
+                const votes = { ...petition.votes };
+                if (newVote === null) {
+                    delete votes[currentUser.uid];
+                } else {
+                    votes[currentUser.uid] = newVote;
+                }
+
+                await updateDoc(doc(db, 'admin_petitions', id), { votes });
+                await this.logAction('PETITION_VOTE', `Voted "${newVote || 'withdrawn'}" on petition: "${petition.title}"`);
+            },
+
+            async closePetition(id) {
+                const petition = this._allPetitions.find(p => p.id === id);
+                if (!petition) return;
+                const newStatus = petition.status === 'open' ? 'closed' : 'open';
+                if (!confirm(`${newStatus === 'closed' ? 'Close' : 'Reopen'} this petition?`)) return;
+                await updateDoc(doc(db, 'admin_petitions', id), { status: newStatus });
+                await this.logAction('PETITION_STATUS', `${newStatus === 'closed' ? 'Closed' : 'Reopened'} petition: "${petition.title}"`);
+            },
+
+            async deletePetition(id) {
+                if (currentUser.email !== 'pwavwef@gmail.com') {
+                    alert('⛔ Only the CEO can delete petitions.');
+                    return;
+                }
+                if (!confirm('Permanently delete this petition?')) return;
+                await deleteDoc(doc(db, 'admin_petitions', id));
+                await this.logAction('PETITION_DELETED', `Deleted petition id: ${id}`);
+            },
+
+            filterPetitions(filter) {
+                this._petitionsFilter = filter;
+                document.querySelectorAll('.petition-filter').forEach(btn => {
+                    btn.classList.remove('bg-purple-600', 'text-white', 'text-gray-400');
+                    if (btn.id === `filter-${filter}`) btn.classList.add('bg-purple-600', 'text-white');
+                    else btn.classList.add('text-gray-400');
+                });
+                this.renderPetitions();
+            },
+
+            renderPetitions() {
+                const list = document.getElementById('petitions-list');
+                const filtered = this._allPetitions.filter(p => p.status === this._petitionsFilter);
+
+                if (filtered.length === 0) {
+                    list.innerHTML = `<div class="text-center text-gray-500 py-16 text-sm">No ${this._petitionsFilter} petitions yet${this._petitionsFilter === 'open' ? ' — start one!' : '.'}</div>`;
+                    return;
+                }
+
+                list.innerHTML = filtered.map(p => {
+                    const forVotes = Object.values(p.votes).filter(v => v === 'for').length;
+                    const againstVotes = Object.values(p.votes).filter(v => v === 'against').length;
+                    const totalVotes = forVotes + againstVotes;
+                    const forPct = totalVotes > 0 ? Math.round((forVotes / totalVotes) * 100) : 0;
+                    const myVote = p.votes[currentUser.uid] || null;
+                    const isCreator = p.createdById === currentUser.uid;
+                    const isCEO = currentUser.email === 'pwavwef@gmail.com';
+                    const dateStr = p.createdAt ? new Date(p.createdAt.toDate()).toLocaleDateString() : 'Just now';
+
+                    const categoryColors = {
+                        'Feature': 'bg-blue-900/40 text-blue-300 border-blue-500/30',
+                        'Bug Fix': 'bg-red-900/40 text-red-300 border-red-500/30',
+                        'Process': 'bg-yellow-900/40 text-yellow-300 border-yellow-500/30',
+                        'Infrastructure': 'bg-orange-900/40 text-orange-300 border-orange-500/30',
+                        'Other': 'bg-gray-700 text-gray-300 border-gray-600'
+                    };
+                    const catClass = categoryColors[p.category] || categoryColors['Other'];
+
+                    const voterNames = Object.entries(p.votes).map(([uid, v]) => {
+                        const admin = (this._adminMap && this._adminMap[uid]) ? this._adminMap[uid] : 'Unknown Admin';
+                        return `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${v === 'for' ? 'bg-green-900/40 text-green-300' : 'bg-red-900/40 text-red-300'} border ${v === 'for' ? 'border-green-500/30' : 'border-red-500/30'}"><i class="fa-solid ${v === 'for' ? 'fa-thumbs-up' : 'fa-thumbs-down'} text-[8px]"></i>${admin}</span>`;
+                    }).join('');
+
+                    return `
+                    <div class="bg-gray-800 rounded-2xl border ${p.status === 'open' ? 'border-purple-500/20' : 'border-gray-700'} p-5 shadow-lg hover:shadow-purple-500/5 transition-shadow">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold ${catClass}">${p.category}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${p.status === 'open' ? 'bg-green-900/30 text-green-400 border border-green-500/30' : 'bg-gray-700 text-gray-400 border border-gray-600'}">${p.status === 'open' ? '🟢 Open' : '🔴 Closed'}</span>
+                                </div>
+                                <h3 class="text-lg font-black text-white leading-tight">${p.title}</h3>
+                                ${p.description ? `<p class="text-sm text-gray-400 mt-1 leading-relaxed">${p.description}</p>` : ''}
+                            </div>
+                            <div class="flex gap-1.5 shrink-0">
+                                ${(isCreator || isCEO) ? `<button onclick="app.closePetition('${p.id}')" title="${p.status === 'open' ? 'Close petition' : 'Reopen petition'}" class="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 transition flex items-center justify-center text-xs"><i class="fa-solid ${p.status === 'open' ? 'fa-lock' : 'fa-lock-open'}"></i></button>` : ''}
+                                ${isCEO ? `<button onclick="app.deletePetition('${p.id}')" title="Delete petition" class="w-8 h-8 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-red-400 transition flex items-center justify-center text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Vote Bar -->
+                        <div class="mb-3">
+                            <div class="flex justify-between text-[10px] text-gray-500 mb-1">
+                                <span class="text-green-400 font-bold">FOR ${forVotes}</span>
+                                <span class="font-bold">${totalVotes} vote${totalVotes !== 1 ? 's' : ''}</span>
+                                <span class="text-red-400 font-bold">AGAINST ${againstVotes}</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                ${totalVotes > 0 ? `<div class="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-500" style="width:${forPct}%"></div>` : '<div class="h-full bg-gray-600 rounded-full w-full opacity-30"></div>'}
+                            </div>
+                        </div>
+
+                        <!-- Vote Buttons -->
+                        ${p.status === 'open' ? `
+                        <div class="flex gap-2 mb-3">
+                            <button onclick="app.votePetition('${p.id}', 'for')"
+                                class="flex-1 py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${myVote === 'for' ? 'bg-green-600 text-white shadow-lg shadow-green-500/20' : 'bg-gray-700 hover:bg-green-900/40 text-gray-300 hover:text-green-300'}">
+                                <i class="fa-solid fa-thumbs-up"></i> For ${myVote === 'for' ? '✓' : ''}
+                            </button>
+                            <button onclick="app.votePetition('${p.id}', 'against')"
+                                class="flex-1 py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${myVote === 'against' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-gray-700 hover:bg-red-900/40 text-gray-300 hover:text-red-300'}">
+                                <i class="fa-solid fa-thumbs-down"></i> Against ${myVote === 'against' ? '✓' : ''}
+                            </button>
+                        </div>` : ''}
+
+                        <!-- Footer -->
+                        <div class="flex items-center justify-between text-[10px] text-gray-600">
+                            <span>By <span class="text-gray-400 font-bold">${p.createdBy}</span> · ${dateStr}</span>
+                        </div>
+                        ${totalVotes > 0 ? `<div class="mt-2 flex flex-wrap gap-1">${voterNames}</div>` : ''}
+                    </div>`;
+                }).join('');
+            },
+
+            startPetitionsListener() {
+                // Build a uid → name map from admin users for vote display
+                this._adminMap = {};
+                getDocs(query(collection(db, 'users'), where('role', '==', 'admin'))).then(snap => {
+                    snap.forEach(d => { this._adminMap[d.id] = d.data().name; });
+                    this._adminMap[currentUser.uid] = currentUser.name; // ensure self is mapped
+                });
+
+                const unsubPetitions = onSnapshot(query(collection(db, 'admin_petitions'), orderBy('createdAt', 'desc')), (snap) => {
+                    this._allPetitions = [];
+                    let openCount = 0, closedCount = 0, votedCount = 0;
+
+                    snap.forEach(d => {
+                        const p = { id: d.id, ...d.data() };
+                        if (!p.votes) p.votes = {};
+                        this._allPetitions.push(p);
+
+                        if (p.status === 'open') openCount++;
+                        else closedCount++;
+                        if (p.votes[currentUser.uid]) votedCount++;
+                    });
+
+                    document.getElementById('petition-stat-open').textContent = openCount;
+                    document.getElementById('petition-stat-closed').textContent = closedCount;
+                    document.getElementById('petition-stat-voted').textContent = votedCount;
+
+                    this.renderPetitions();
+                });
+                this._unsubPetitions = unsubPetitions;
             }
         };
 
