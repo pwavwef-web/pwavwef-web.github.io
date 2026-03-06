@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Submit your team profile – AZ Learner Team." />
+  <meta name="author" content="AZ Learner" />
+  <title>Team Profile Form | AZ Learner</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../favicon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Team Styles (shared) -->
+  <link rel="stylesheet" href="css/team.css" />
+</head>
+<body>
+
+  <!-- Animated gradient background -->
+  <div class="bg-animated" aria-hidden="true"></div>
+
+  <!-- ===== SITE HEADER ===== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="site-logo" href="../index.html">AZ LEARNER</a>
+      <nav class="header-nav" aria-label="Site navigation">
+        <a class="nav-back" href="../index.html" aria-label="Back to AZ Learner home">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+          </svg>
+          Home
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== PAGE HERO ===== -->
+  <section class="page-hero" aria-labelledby="form-hero-heading">
+    <div class="container">
+      <div class="hero-badge" aria-hidden="true">
+        <span></span>
+        Team Profiles
+      </div>
+      <h1 id="form-hero-heading">
+        Submit Your <span class="text-gradient">Profile</span>
+      </h1>
+      <p>Fill in the form below so we can add you to the team page.</p>
+    </div>
+  </section>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="pf-main">
+    <div class="container pf-layout">
+
+      <!-- ===== FORM COLUMN ===== -->
+      <section class="pf-form-col" aria-labelledby="form-section-heading">
+        <h2 id="form-section-heading" class="pf-section-title">Your Details</h2>
+
+        <form id="profile-form" class="pf-form" novalidate>
+
+          <!-- Full Name -->
+          <div class="pf-field">
+            <label class="pf-label" for="pf-name">Full Name <span class="pf-required" aria-hidden="true">*</span></label>
+            <input
+              class="pf-input"
+              type="text"
+              id="pf-name"
+              name="name"
+              placeholder="e.g. Francis Pwavwe"
+              required
+              autocomplete="name"
+            />
+            <span class="pf-error" id="pf-name-error" role="alert"></span>
+          </div>
+
+          <!-- Role -->
+          <div class="pf-field">
+            <label class="pf-label" for="pf-role">Role / Position <span class="pf-required" aria-hidden="true">*</span></label>
+            <input
+              class="pf-input"
+              type="text"
+              id="pf-role"
+              name="role"
+              placeholder="e.g. Backend Developer"
+              required
+            />
+            <span class="pf-error" id="pf-role-error" role="alert"></span>
+          </div>
+
+          <!-- Short Bio -->
+          <div class="pf-field">
+            <label class="pf-label" for="pf-bio">Short Bio <span class="pf-required" aria-hidden="true">*</span></label>
+            <textarea
+              class="pf-input pf-textarea"
+              id="pf-bio"
+              name="bio"
+              rows="4"
+              placeholder="A brief description about yourself and your contribution to AZ Learner…"
+              required
+            ></textarea>
+            <span class="pf-error" id="pf-bio-error" role="alert"></span>
+          </div>
+
+          <!-- Skills -->
+          <div class="pf-field">
+            <label class="pf-label" for="pf-skills">Skills</label>
+            <input
+              class="pf-input"
+              type="text"
+              id="pf-skills"
+              name="skills"
+              placeholder="e.g. React, Node.js, UI Design  (comma-separated)"
+            />
+            <span class="pf-hint">Separate skills with commas.</span>
+          </div>
+
+          <!-- Photo URL -->
+          <div class="pf-field">
+            <label class="pf-label" for="pf-image">Profile Photo URL</label>
+            <input
+              class="pf-input"
+              type="url"
+              id="pf-image"
+              name="image"
+              placeholder="https://example.com/your-photo.jpg"
+            />
+            <span class="pf-hint">Paste a direct link to your photo. Leave blank to use the default placeholder.</span>
+          </div>
+
+          <hr class="pf-divider" />
+          <p class="pf-section-subtitle">Social Links <span class="pf-optional">(optional)</span></p>
+
+          <!-- GitHub -->
+          <div class="pf-field pf-field-social">
+            <label class="pf-label" for="pf-github">
+              <!-- GitHub icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="pf-social-icon" aria-hidden="true">
+                <path d="M12 0C5.374 0 0 5.373 0 12c0 5.303 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+              </svg>
+              GitHub
+            </label>
+            <input
+              class="pf-input"
+              type="url"
+              id="pf-github"
+              name="github"
+              placeholder="https://github.com/username"
+            />
+          </div>
+
+          <!-- LinkedIn -->
+          <div class="pf-field pf-field-social">
+            <label class="pf-label" for="pf-linkedin">
+              <!-- LinkedIn icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="pf-social-icon" aria-hidden="true">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+              LinkedIn
+            </label>
+            <input
+              class="pf-input"
+              type="url"
+              id="pf-linkedin"
+              name="linkedin"
+              placeholder="https://linkedin.com/in/username"
+            />
+          </div>
+
+          <!-- Twitter / X -->
+          <div class="pf-field pf-field-social">
+            <label class="pf-label" for="pf-twitter">
+              <!-- X icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="pf-social-icon" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+              Twitter / X
+            </label>
+            <input
+              class="pf-input"
+              type="url"
+              id="pf-twitter"
+              name="twitter"
+              placeholder="https://twitter.com/username"
+            />
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="pf-btn-submit">
+            Generate My Profile
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+
+        </form>
+      </section><!-- /.pf-form-col -->
+
+      <!-- ===== PREVIEW COLUMN ===== -->
+      <section class="pf-preview-col" aria-labelledby="preview-heading">
+        <h2 id="preview-heading" class="pf-section-title">Live Preview</h2>
+
+        <!-- Card Preview -->
+        <div class="pf-preview-label" aria-hidden="true">Team card</div>
+        <div id="preview-card-wrap" class="team-grid pf-preview-grid" role="presentation">
+          <article class="profile-card" aria-label="Preview profile card" id="preview-card">
+            <div class="card-accent"></div>
+            <div class="card-image-wrap">
+              <img
+                class="card-image"
+                id="preview-img"
+                src="assets/images/placeholder.svg"
+                alt="Preview photo"
+                loading="lazy"
+              />
+            </div>
+            <div class="card-body">
+              <h2 class="card-name" id="preview-name">Your Name</h2>
+              <p class="card-role" id="preview-role">Your Role</p>
+              <p class="card-bio" id="preview-bio">Your bio will appear here once you start filling in the form.</p>
+              <span class="btn-view-profile pf-preview-btn-placeholder">View Profile</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Generated Output (shown after submit) -->
+        <div id="pf-output" class="pf-output" aria-live="polite">
+
+          <div class="pf-output-success">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            Profile generated! Share the outputs below with the site admin to get added to the team page.
+          </div>
+
+          <!-- JSON entry -->
+          <div class="pf-output-block">
+            <div class="pf-output-header">
+              <span class="pf-output-label">team-data.json entry</span>
+              <button type="button" class="pf-copy-btn" id="copy-json-btn" aria-label="Copy JSON entry">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"/>
+                  <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre class="pf-code" id="output-json" tabindex="0"></pre>
+          </div>
+
+          <!-- Profile page HTML -->
+          <div class="pf-output-block">
+            <div class="pf-output-header">
+              <span class="pf-output-label">Profile page HTML</span>
+              <button type="button" class="pf-copy-btn" id="copy-html-btn" aria-label="Copy profile page HTML">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"/>
+                  <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre class="pf-code" id="output-html" tabindex="0"></pre>
+          </div>
+
+          <!-- Instructions -->
+          <div class="pf-instructions section-card">
+            <h2>Next steps</h2>
+            <ol class="pf-steps">
+              <li>Copy the <strong>JSON entry</strong> and send it to the site admin to add to <code>team-data.json</code>.</li>
+              <li>Copy the <strong>Profile page HTML</strong>, save it as <code>profiles/your-name.html</code>, and send that file to the admin too.</li>
+              <li>The admin will add your photo and publish your profile.</li>
+            </ol>
+          </div>
+
+        </div><!-- /#pf-output -->
+      </section><!-- /.pf-preview-col -->
+
+    </div><!-- /.pf-layout -->
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <p>Built by the <a href="../index.html">AZ Learner Team</a> &mdash; helping students learn smarter.</p>
+  </footer>
+
+  <script src="js/profile-form.js"></script>
+
+</body>
+</html>
