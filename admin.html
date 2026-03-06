@@ -835,6 +835,34 @@
         </div>
     </div>
 
+    <!-- Admin-User Chat Panel -->
+    <div id="admin-chat-panel" class="fixed inset-0 z-[80] bg-gray-900 flex flex-col hidden">
+        <header class="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center gap-3 shrink-0">
+            <button onclick="app.closeUserChat()" class="text-gray-400 hover:text-white transition p-1">
+                <i class="fa-solid fa-arrow-left text-xl"></i>
+            </button>
+            <div class="flex-1 min-w-0">
+                <h2 id="chat-panel-title" class="text-base font-bold text-white truncate">Chat</h2>
+                <p id="chat-panel-status" class="text-xs text-blueAccent font-bold"></p>
+            </div>
+            <div class="flex items-center gap-1" title="Tap to update status">
+                <button onclick="app.setChatOrderStatus('received')" id="chat-step-1" class="h-2 w-8 bg-gray-600 rounded-full transition-colors hover:opacity-80" title="Received"></button>
+                <button onclick="app.setChatOrderStatus('printing')" id="chat-step-2" class="h-2 w-8 bg-gray-600 rounded-full transition-colors hover:opacity-80" title="Printing"></button>
+                <button onclick="app.setChatOrderStatus('delivering')" id="chat-step-3" class="h-2 w-8 bg-gray-600 rounded-full transition-colors hover:opacity-80" title="Delivering"></button>
+                <button onclick="app.setChatOrderStatus('completed')" id="chat-step-4" class="h-2 w-8 bg-gray-600 rounded-full transition-colors hover:opacity-80" title="Completed"></button>
+            </div>
+        </header>
+        <div id="admin-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-900"></div>
+        <div class="bg-gray-800 border-t border-gray-700 p-3 flex items-center gap-2 shrink-0">
+            <input id="admin-chat-input" type="text" placeholder="Type a message to the student..."
+                class="flex-1 bg-gray-700 border border-gray-600 rounded-full px-4 py-2 text-sm text-white outline-none focus:border-blueAccent transition-colors"
+                onkeydown="if(event.key==='Enter') app.sendChatMsg()">
+            <button onclick="app.sendChatMsg()" class="bg-blueAccent hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition shrink-0">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, addDoc, deleteDoc, updateDoc, setDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
@@ -856,6 +884,8 @@
         const storage = getStorage(appInstance);
         let currentUser = null;
         let adminList = [];
+        let activeChatOrderId = null;
+        let activeChatOrderListener = null;
 
         window.authManager = {
             async login() {
@@ -1388,7 +1418,9 @@
                     snap.forEach(doc => {
                         const job = doc.data();
                         const isNew = job.hasUnread ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 animate-pulse">NEW</span>' : '';
-                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white text-sm">${job.userName || 'Student'} ${isNew}<span class="text-[10px] text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-[10px] font-bold text-blue-300 tracking-wide">${job.status}</td><td class="px-4 py-3 text-right"><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded font-bold transition">UPDATE</button></td></tr>`;
+                        const safeName = (job.userName || 'Student').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const safeNameAttr = (job.userName || 'Student').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        list.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-3 font-bold text-white text-sm">${safeName} ${isNew}<span class="text-[10px] text-gray-500 block">${new Date(job.lastUpdated).toLocaleDateString()}</span></td><td class="px-4 py-3 uppercase text-[10px] font-bold text-blue-300 tracking-wide">${job.status}</td><td class="px-4 py-3 text-right flex gap-2 justify-end"><button onclick="app.openUserChat('${doc.id}', '${safeNameAttr}')" class="bg-green-600 hover:bg-green-500 text-white text-[10px] px-3 py-1.5 rounded font-bold transition flex items-center gap-1"><i class="fa-solid fa-comments"></i> CHAT</button><button onclick="app.manageJob('${doc.id}', '${job.status}')" class="bg-blueAccent hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded font-bold transition">UPDATE</button></td></tr>`;
                     });
                 });
 
@@ -1737,6 +1769,126 @@
                 if (newStatus && newStatus !== currentStatus) {
                     await updateDoc(doc(db, "print_orders", id), { status: newStatus.toLowerCase(), lastUpdated: Date.now() });
                 }
+            },
+
+            // --- USER CHAT FUNCTIONS ---
+            async openUserChat(userId, userName) {
+                activeChatOrderId = userId;
+                document.getElementById('chat-panel-title').innerText = `Chat — ${userName}`;
+                document.getElementById('chat-panel-status').innerText = '';
+                document.getElementById('admin-chat-panel').classList.remove('hidden');
+
+                // Load current order status for the progress bar
+                try {
+                    const orderSnap = await getDoc(doc(db, "print_orders", userId));
+                    if (orderSnap.exists()) {
+                        this.updateChatStatusUI(orderSnap.data().status);
+                        // Clear unread flag
+                        if (orderSnap.data().hasUnread) {
+                            await updateDoc(doc(db, "print_orders", userId), { hasUnread: false });
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+
+                this.loadChatMessages(userId);
+            },
+
+            closeUserChat() {
+                document.getElementById('admin-chat-panel').classList.add('hidden');
+                if (activeChatOrderListener) {
+                    activeChatOrderListener();
+                    activeChatOrderListener = null;
+                }
+                activeChatOrderId = null;
+            },
+
+            loadChatMessages(userId) {
+                const msgDiv = document.getElementById('admin-chat-messages');
+                msgDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-64 opacity-50"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-blueAccent mb-2"></i><p class="text-xs text-gray-400">Connecting...</p></div>`;
+
+                if (activeChatOrderListener) activeChatOrderListener();
+
+                const q = query(collection(db, "print_messages"), where("orderId", "==", userId), orderBy("timestamp", "asc"));
+                activeChatOrderListener = onSnapshot(q, (snap) => {
+                    if (snap.empty) {
+                        msgDiv.innerHTML = `<div class="text-center mt-10 opacity-60 text-gray-400 text-sm"><i class="fa-solid fa-comment-slash text-2xl mb-2 block"></i><p>No messages yet.<br>Start the conversation!</p></div>`;
+                        return;
+                    }
+
+                    const esc = s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+                    const safeSrc = url => (url && /^https?:\/\//.test(url)) ? url : '';
+
+                    let html = '';
+                    snap.forEach(d => {
+                        const msg = d.data();
+                        const isAdmin = msg.senderId === currentUser.uid;
+                        const align = isAdmin ? 'items-end' : 'items-start';
+                        const bg = isAdmin ? 'bg-blueAccent text-white' : 'bg-gray-700 text-gray-100';
+                        const senderLabel = isAdmin ? `You (${esc(currentUser.name || 'Admin')})` : 'Student';
+
+                        let content = `<p class="break-words">${this.formatMessageText(msg.text || '')}</p>`;
+                        if (msg.fileData) {
+                            const fileUrl = safeSrc(msg.fileData);
+                            const fileName = esc(msg.fileName || 'Attachment');
+                            if (fileUrl && msg.fileType && msg.fileType.startsWith('image/')) {
+                                content += `<img src="${fileUrl}" class="mt-2 rounded-lg max-w-[200px] cursor-pointer hover:opacity-90" onclick="window.open(this.src)">`;
+                            } else if (fileUrl) {
+                                content += `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="mt-2 bg-black/20 p-2 rounded text-xs flex gap-2 items-center hover:bg-black/30 transition"><i class="fa-solid fa-file"></i> ${fileName}</a>`;
+                            }
+                        }
+
+                        html += `
+                        <div class="flex flex-col ${align} w-full">
+                            <p class="text-[10px] text-gray-500 mb-0.5 mx-1">${senderLabel}</p>
+                            <div class="${bg} px-4 py-2 rounded-2xl max-w-[80%] shadow-sm text-sm">${content}</div>
+                            <span class="text-[10px] opacity-40 mt-1 mx-1">${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>`;
+                    });
+
+                    msgDiv.innerHTML = html;
+                    setTimeout(() => { msgDiv.scrollTop = msgDiv.scrollHeight; }, 50);
+                });
+            },
+
+            async sendChatMsg() {
+                const input = document.getElementById('admin-chat-input');
+                const txt = input.value.trim();
+                if (!txt || !activeChatOrderId) return;
+
+                input.value = '';
+                await addDoc(collection(db, "print_messages"), {
+                    orderId: activeChatOrderId,
+                    senderId: currentUser.uid,
+                    senderName: currentUser.name || 'Admin',
+                    text: txt,
+                    timestamp: Date.now()
+                });
+
+                await updateDoc(doc(db, "print_orders", activeChatOrderId), { lastUpdated: Date.now() });
+            },
+
+            async setChatOrderStatus(newStatus) {
+                if (!activeChatOrderId) return;
+                if (confirm(`Change order status to: ${newStatus}?`)) {
+                    await updateDoc(doc(db, "print_orders", activeChatOrderId), { status: newStatus, lastUpdated: Date.now() });
+                    this.updateChatStatusUI(newStatus);
+                }
+            },
+
+            updateChatStatusUI(status) {
+                const s1 = document.getElementById('chat-step-1');
+                const s2 = document.getElementById('chat-step-2');
+                const s3 = document.getElementById('chat-step-3');
+                const s4 = document.getElementById('chat-step-4');
+                const txt = document.getElementById('chat-panel-status');
+                if (!s1) return;
+
+                [s1, s2, s3, s4].forEach(s => { s.classList.remove('bg-green-500'); s.classList.add('bg-gray-600'); });
+
+                if (status === 'received') { s1.classList.remove('bg-gray-600'); s1.classList.add('bg-green-500'); txt.innerText = 'Status: Received'; }
+                else if (status === 'printing') { [s1, s2].forEach(s => { s.classList.remove('bg-gray-600'); s.classList.add('bg-green-500'); }); txt.innerText = 'Printing...'; }
+                else if (status === 'delivering') { [s1, s2, s3].forEach(s => { s.classList.remove('bg-gray-600'); s.classList.add('bg-green-500'); }); txt.innerText = 'Out for Delivery 🚀'; }
+                else if (status === 'completed') { [s1, s2, s3, s4].forEach(s => { s.classList.remove('bg-gray-600'); s.classList.add('bg-green-500'); }); txt.innerText = 'Delivered ✅'; }
             },
 
             async saveEvent() {
