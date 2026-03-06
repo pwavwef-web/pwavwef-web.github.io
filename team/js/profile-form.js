@@ -173,6 +173,11 @@
     var slug = slugify(d.name);
     var descriptionMeta = d.name + ' \u2013 ' + d.role + ' at AZ Learner.';
 
+    // Profile pages live in team/profiles/, so placeholder path needs ../
+    var imgSrc = (d.image === 'assets/images/placeholder.svg')
+      ? '../assets/images/placeholder.svg'
+      : d.image;
+
     var skillsHtml = d.skills.length
       ? d.skills.map(function (s) { return '            <li class="skill-tag">' + esc(s) + '</li>'; }).join('\n')
       : '            <li class="skill-tag">Coming soon</li>';
@@ -181,14 +186,13 @@
       var disabled = url ? '' : ' disabled';
       var href = url || '#';
       var ariaDisabled = url ? '' : ' aria-disabled="true"';
+      var targetAttr = url ? '\n                target="_blank"\n                rel="noopener noreferrer"' : '';
       return (
         '<li>\n' +
         '              <a\n' +
         '                class="social-link ' + type + disabled + '"\n' +
-        '                href="' + esc(href) + '"\n' +
-        '                target="_blank"\n' +
-        '                rel="noopener noreferrer"\n' +
-        '                aria-label="' + label + '"' + ariaDisabled + '\n' +
+        '                href="' + esc(href) + '"' + targetAttr + '\n' +
+        '                aria-label="' + label + ' profile"' + ariaDisabled + '\n' +
         '              >\n' +
         '                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + iconPath + '"/></svg>\n' +
         '                ' + label.split(' ')[0] + '\n' +
@@ -244,7 +248,7 @@
       '        <div class="profile-avatar-wrap">',
       '          <img',
       '            class="profile-avatar"',
-      '            src="' + esc(d.image) + '"',
+      '            src="' + esc(imgSrc) + '"',
       '            alt="Photo of ' + esc(d.name) + '"',
       '            onerror="this.src=\'../assets/images/placeholder.svg\'"',
       '          />',
