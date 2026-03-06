@@ -3421,7 +3421,11 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
 
             openModal(id) { 
                 history.pushState({ view: 'modal' }, null, ""); // Push State
-                document.getElementById('modal-overlay').classList.remove('hidden'); 
+                const overlayEl = document.getElementById('modal-overlay');
+                // Only show the backdrop overlay for modals that are direct children of it
+                if (overlayEl.contains(document.getElementById(id))) {
+                    overlayEl.classList.remove('hidden');
+                }
                 document.getElementById(id).classList.remove('hidden'); 
             },
             
