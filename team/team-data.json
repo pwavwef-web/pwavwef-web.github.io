@@ -2,15 +2,15 @@
   "team": [
     {
       "name": "Francis Pwavwe",
-      "role": "Founder & Product Lead",
-      "image": "assets/images/placeholder.svg",
-      "bio": "Tourism student and founder of AZ Learner building digital tools for students.",
+      "role": "Founder & CEO",
+      "image": "https://www.facebook.com/photo/?fbid=644369398429186&set=a.640405535492239&__cft__[0]=AZb0VEgsq28keW7WQ94mzY7VlvWLDA-Cff8ci5XQyHoc0knIT6LzEp7wXjoDIsZsxGe9rEaF-C2iMfx8fpNXNBJSiq5s467TUcSxcNX1RuEOSmR9UtUWZKQZW2hMA4G5Kj81ncLrAlR2xtoOpDIc19MEqWDQZgy1UowC0eOvD1UHSAd4RM4etEzbGlWvO6kWQNU&__tn__=EH-R",
+      "bio": "As a dedicated tourism management student at the esteemed University of Cape Coast, I possess a strong enthusiasm for the development of educational technology. My primary focus lies in creating innovative ed tech solutions that effectively address and resolve the various challenges encountered by students. I am deeply committed to tackling these problems in a systematic and methodical manner, one step at a time. This involves a careful analysis of the issues faced by students and the design of targeted technological interventions to improve their academic experience and overall well-being. Ultimately, my aim is to leverage the power of technology to make a positive and lasting impact on the lives of students, empowering them to succeed in their educational pursuits.",
       "profile": "profiles/francis-pwavwe.html",
-      "skills": ["Product Design", "Web Development", "Research"],
+      "skills": ["Communication Skills", "Teamwork", "Problem Solving"],
       "socials": {
-        "github": "",
-        "linkedin": "",
-        "twitter": ""
+        "github": "https://github.com/pwavwef-web/pwavwef-web",
+        "linkedin": "https://www.linkedin.com/in/francis-pwavwe/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3Btn4mlkQuQ4in3lQ7I%2FpU9Q%3D%3D",
+        "twitter": "https://twitter.com/az_learner"
       }
     },
     {
