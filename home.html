@@ -294,7 +294,7 @@
             <h1 class="text-xl font-bold">AZ Learner 🎓</h1>
         </div>
         <div class="flex items-center gap-4">
-            <button id="header-admin-btn" onclick="app.openAdmin()" class="hidden bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">ADMIN</button>
+            <a id="header-admin-btn" href="admin.html" class="hidden bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">ADMIN</a>
             <button onclick="app.openBlogs()" class="relative p-2 text-white hover:text-gray-200 transition">
     <i class="fa-solid fa-newspaper text-xl"></i>
     <span class="text-[10px] font-bold block leading-none mt-0.5">Blogs</span>
@@ -315,7 +315,7 @@
         <div class="flex-1 py-4">
             <button onclick="app.openSettings(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-gear text-gray-500 w-6"></i><span class="font-medium">Settings</span></button>
             <button onclick="app.openLeaderboard(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-trophy text-yellow-500 w-6"></i><span class="font-medium">Leaderboard</span></button>
-            <button onclick="app.openFeedback(); app.toggleSidebar()" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-star text-gray-500 w-6"></i><span class="font-medium">Review</span></button>
+            <a href="reviews.html" class="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-4 transition-colors"><i class="fa-solid fa-star text-gray-500 w-6"></i><span class="font-medium">Reviews</span></a>
             <button onclick="authManager.logout()" class="w-full text-left px-6 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-4 transition-colors mt-auto"><i class="fa-solid fa-right-from-bracket w-6"></i><span class="font-medium">Log Out</span></button>
         </div>
     </aside>
