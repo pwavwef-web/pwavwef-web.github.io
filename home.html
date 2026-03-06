@@ -20,7 +20,8 @@
                     fontFamily: { sans: ['Roboto', 'sans-serif'] },
                     colors: {
                         blueAccent: '#448AFF', orangeAccent: '#FFAB40', darkBg: '#212121', darkCard: '#424242', lightBg: '#FAFAFA', noteYellow: '#FFF9C4',
-                        chatUser: '#E3F2FD', chatAdmin: '#F1F8E9', darkChatUser: '#1E293B', darkChatAdmin: '#3F3F46'
+                        chatUser: '#E3F2FD', chatAdmin: '#F1F8E9', darkChatUser: '#1E293B', darkChatAdmin: '#3F3F46',
+                        mainBg: '#0f172a', mainCard: '#1e293b'
                     }
                 }
             }
@@ -103,6 +104,22 @@
     transition: opacity 0.2s;
 }
 .play-overlay:hover { background: rgba(0,0,0,0.6); }
+
+/* === MAIN THEME (Navy Blue — matches landing page) === */
+.dark.main-theme body,
+.dark.main-theme .dark\:bg-darkBg,
+.dark.main-theme .bg-darkBg {
+    background-color: #0f172a !important;
+}
+.dark.main-theme .dark\:bg-darkCard {
+    background-color: #1e293b !important;
+}
+.dark.main-theme .dark\:bg-\[\#303030\] {
+    background-color: #1e293b !important;
+}
+.dark.main-theme .ticket-stub {
+    background-image: radial-gradient(circle at 0 50%, transparent 10px, #1e293b 11px);
+}
     </style>
 </head>
 <body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
@@ -673,9 +690,19 @@
         <div class="p-4 space-y-6 max-w-2xl mx-auto w-full">
             <h2 class="text-sm font-bold opacity-50 uppercase tracking-wider ml-1">App Preferences</h2>
             <div class="bg-white dark:bg-darkCard rounded-xl shadow p-4 space-y-6">
-                <div class="flex items-center justify-between">
-                    <div><h3 class="font-bold text-lg">Dark Theme</h3><p class="text-xs opacity-60">Easier on the eyes.</p></div>
-                    <button onclick="app.toggleTheme()" id="theme-toggle-btn" class="w-12 h-7 rounded-full bg-gray-400 relative transition-colors duration-200"><div class="w-5 h-5 bg-white rounded-full absolute top-1 left-1 transition-transform duration-200"></div></button>
+                <div>
+                    <div class="mb-3"><h3 class="font-bold text-lg">Theme</h3><p class="text-xs opacity-60">Choose your preferred look.</p></div>
+                    <div class="flex gap-2" role="radiogroup" aria-label="Theme selection">
+                        <button onclick="app.setTheme('main')" id="theme-btn-main" role="radio" aria-checked="true" aria-label="Select main theme" class="flex-1 py-3 rounded-xl text-xs font-bold border-2 transition-all flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-layer-group text-base"></i>Main
+                        </button>
+                        <button onclick="app.setTheme('light')" id="theme-btn-light" role="radio" aria-checked="false" aria-label="Select light theme" class="flex-1 py-3 rounded-xl text-xs font-bold border-2 transition-all flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-sun text-base"></i>Light
+                        </button>
+                        <button onclick="app.setTheme('dark')" id="theme-btn-dark" role="radio" aria-checked="false" aria-label="Select dark theme" class="flex-1 py-3 rounded-xl text-xs font-bold border-2 transition-all flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-moon text-base"></i>Dark
+                        </button>
+                    </div>
                 </div>
                 <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
                     <div><h3 class="font-bold text-lg">Push Notifications</h3><p class="text-xs opacity-60">Get alerts for classes & assignments.</p></div>
@@ -1003,7 +1030,7 @@
 
         window.app = {
             data: { 
-                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], blogs: [], currentBlogFont: 'font-roboto', theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
+                courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], blogs: [], currentBlogFont: 'font-roboto', theme: 'main', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
                 badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
                 currentTabIndex: 0, lbMode: 'program'
             },
@@ -3344,8 +3371,34 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
                 this.data.currentTabIndex = index;
             },
             toggleSidebar() { const d = document.getElementById('sidebar-drawer'); const o = document.getElementById('sidebar-overlay'); if(d.classList.contains('-translate-x-full')) { d.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { d.classList.add('-translate-x-full'); o.classList.add('hidden'); } },
-            toggleTheme() { this.data.theme = this.data.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('az_theme', this.data.theme); this.applyTheme(); },
-            applyTheme() { const isDark = this.data.theme === 'dark'; document.documentElement.classList.toggle('dark', isDark); this.updateToggleUI('theme-toggle-btn', isDark); },
+            setTheme(name) { this.data.theme = name; localStorage.setItem('az_theme', name); this.applyTheme(); },
+            toggleTheme() { const next = this.themeOrder[(this.themeOrder.indexOf(this.data.theme) + 1) % this.themeOrder.length]; this.setTheme(next); },
+            themeOrder: ['main', 'light', 'dark'],
+            applyTheme() {
+                const theme = this.data.theme;
+                const root = document.documentElement;
+                if (theme === 'dark') {
+                    root.classList.add('dark'); root.classList.remove('main-theme');
+                } else if (theme === 'main') {
+                    root.classList.add('dark'); root.classList.add('main-theme');
+                } else {
+                    root.classList.remove('dark'); root.classList.remove('main-theme');
+                }
+                this.updateThemeButtons();
+            },
+            updateThemeButtons() {
+                this.themeOrder.forEach(t => {
+                    const btn = document.getElementById('theme-btn-' + t);
+                    if (!btn) return;
+                    const active = this.data.theme === t;
+                    btn.setAttribute('aria-checked', String(active));
+                    btn.classList.toggle('bg-blueAccent', active);
+                    btn.classList.toggle('border-blueAccent', active);
+                    btn.classList.toggle('text-white', active);
+                    btn.classList.toggle('border-gray-200', !active);
+                    btn.classList.toggle('text-gray-500', !active);
+                });
+            },
             
             toggleSystemNotifications() {
                 if (!this.data.systemNotifications) {
