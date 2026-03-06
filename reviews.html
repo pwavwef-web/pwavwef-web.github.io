@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Reviews – AZ Learner 🎓</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: {
+                        blueAccent: '#448AFF',
+                        orangeAccent: '#FFAB40',
+                        darkBg: '#212121',
+                        darkCard: '#424242',
+                        lightBg: '#FAFAFA'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .header-safe-area { padding-top: env(safe-area-inset-top); height: calc(4rem + env(safe-area-inset-top)); }
+        .main-safe-area { margin-top: calc(4rem + env(safe-area-inset-top)); }
+
+        /* Star Rating */
+        .star-rating i { transition: transform 0.15s, color 0.15s; cursor: pointer; }
+        .star-rating i:hover, .star-rating i.active { color: #FFAB40; transform: scale(1.25); }
+
+        /* Heartbeat */
+        @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .heart-beat { animation: heartbeat 1.4s ease-in-out infinite; }
+
+        /* Slide-up entry for review cards */
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .review-card { animation: slideUp 0.3s ease-out both; }
+
+        /* Rating bar fill */
+        .bar-fill { transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+
+        /* Shimmer skeleton */
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton {
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 0.5rem;
+        }
+        .dark .skeleton {
+            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+            background-size: 200% 100%;
+        }
+
+        /* Floating write button */
+        #fab-write { box-shadow: 0 8px 24px rgba(68,138,255,0.45); }
+    </style>
+</head>
+<body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-24">
+
+    <!-- Header -->
+    <header class="fixed top-0 w-full z-40 bg-blueAccent dark:bg-[#303030] text-white shadow-md flex items-center justify-between px-4 header-safe-area">
+        <div class="flex items-center gap-3">
+            <button onclick="history.back()" class="p-2 -ml-1 rounded-full hover:bg-white/10 transition" aria-label="Go back">
+                <i class="fa-solid fa-arrow-left text-xl"></i>
+            </button>
+            <h1 class="text-xl font-bold">Reviews ⭐</h1>
+        </div>
+        <button id="theme-toggle-btn" onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/10 transition" aria-label="Toggle theme">
+            <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+        </button>
+    </header>
+
+    <main class="main-safe-area max-w-2xl mx-auto px-4 pt-6 space-y-6">
+
+        <!-- ── LOADING STATE ── -->
+        <div id="loading-skeleton" class="space-y-4">
+            <div class="skeleton h-44 w-full"></div>
+            <div class="skeleton h-28 w-full"></div>
+            <div class="skeleton h-32 w-full"></div>
+            <div class="skeleton h-32 w-full"></div>
+        </div>
+
+        <!-- ── RATING HERO ── -->
+        <section id="rating-hero" class="hidden bg-gradient-to-br from-blueAccent to-blue-700 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 text-white shadow-xl">
+            <div class="flex items-center gap-6">
+                <div class="text-center">
+                    <p id="avg-score" class="text-6xl font-black leading-none">–</p>
+                    <div id="avg-stars" class="flex justify-center gap-0.5 mt-1 text-yellow-400 text-lg"></div>
+                    <p id="total-count" class="text-xs opacity-70 mt-1">0 reviews</p>
+                </div>
+                <div class="flex-1 space-y-1.5" id="bar-breakdown">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ── WRITE REVIEW (logged-in) ── -->
+        <section id="write-form-section" class="hidden bg-white dark:bg-darkCard rounded-2xl shadow-md overflow-hidden">
+            <button onclick="toggleWriteForm()" class="w-full flex items-center justify-between px-5 py-4 font-bold text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-blueAccent"></i> Write a Review</span>
+                <i id="write-chevron" class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+            </button>
+            <div id="write-form-body" class="hidden px-5 pb-6 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                <!-- Star picker -->
+                <div class="flex flex-col items-center gap-2">
+                    <label class="text-xs uppercase tracking-widest opacity-50 font-bold">Your Rating</label>
+                    <div class="flex gap-3 text-4xl text-gray-300 dark:text-gray-600 star-rating" id="star-picker">
+                        <i class="fa-solid fa-star" onclick="setRating(1)"></i>
+                        <i class="fa-solid fa-star" onclick="setRating(2)"></i>
+                        <i class="fa-solid fa-star" onclick="setRating(3)"></i>
+                        <i class="fa-solid fa-star" onclick="setRating(4)"></i>
+                        <i class="fa-solid fa-star" onclick="setRating(5)"></i>
+                    </div>
+                    <p id="rating-label" class="text-sm font-semibold opacity-60 h-5"></p>
+                </div>
+                <!-- Quick tags -->
+                <div class="flex gap-2 flex-wrap justify-center">
+                    <button type="button" onclick="addTag('Bug 🐛')" class="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold hover:bg-red-200 transition">Bug 🐛</button>
+                    <button type="button" onclick="addTag('Feature 💡')" class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold hover:bg-yellow-200 transition">Feature 💡</button>
+                    <button type="button" onclick="addTag('Love ❤️')" class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-bold hover:bg-pink-200 transition">Love ❤️</button>
+                    <button type="button" onclick="addTag('Suggestion 🗣️')" class="px-3 py-1 rounded-full bg-purple-100 text-purple-600 text-xs font-bold hover:bg-purple-200 transition">Suggestion 🗣️</button>
+                    <button type="button" onclick="addTag('Performance ⚡')" class="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-bold hover:bg-blue-200 transition">Performance ⚡</button>
+                </div>
+                <!-- Message -->
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus-within:ring-2 ring-blueAccent transition-all">
+                    <textarea id="review-msg" rows="4" class="w-full bg-transparent outline-none resize-none p-3 text-sm" placeholder="Share your experience with AZ Learner…"></textarea>
+                </div>
+                <!-- Submit -->
+                <button onclick="submitReview()" id="submit-btn" class="w-full py-3 bg-gradient-to-r from-blueAccent to-blue-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <span>Submit Review</span><i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ── GUEST PROMPT ── -->
+        <section id="guest-prompt" class="hidden bg-white dark:bg-darkCard rounded-2xl shadow-md p-6 text-center space-y-3">
+            <i class="fa-regular fa-star text-4xl text-yellow-400"></i>
+            <h2 class="font-bold text-lg">Share Your Experience</h2>
+            <p class="text-sm opacity-60">Log in to leave a review and help other students discover AZ Learner.</p>
+            <a href="home.html" class="inline-block mt-2 px-6 py-2 bg-blueAccent text-white font-bold rounded-xl shadow hover:bg-blue-600 transition">Log In to Review</a>
+        </section>
+
+        <!-- ── SUCCESS BANNER ── -->
+        <div id="success-banner" class="hidden bg-green-50 dark:bg-green-900/30 border border-green-400 rounded-2xl p-5 flex items-center gap-4">
+            <i class="fa-solid fa-heart text-3xl text-pink-500 heart-beat"></i>
+            <div>
+                <h3 class="font-bold text-green-700 dark:text-green-400">Thank You! 🎉</h3>
+                <p class="text-sm opacity-70">Your review has been submitted successfully.</p>
+            </div>
+        </div>
+
+        <!-- ── SORT + FILTER BAR ── -->
+        <div id="sort-bar" class="hidden flex items-center justify-between">
+            <h2 class="font-bold text-lg">All Reviews</h2>
+            <div class="flex items-center gap-2">
+                <label class="text-xs opacity-50 font-medium">Sort:</label>
+                <select id="sort-select" onchange="applySort()" class="text-xs bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 outline-none">
+                    <option value="newest">Newest First</option>
+                    <option value="highest">Highest Rating</option>
+                    <option value="lowest">Lowest Rating</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ── FILTER TABS ── -->
+        <div id="filter-tabs" class="hidden flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button onclick="setFilter(0)" id="filter-btn-0" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-blueAccent text-white transition">All ✨</button>
+            <button onclick="setFilter(5)" id="filter-btn-5" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition">⭐⭐⭐⭐⭐</button>
+            <button onclick="setFilter(4)" id="filter-btn-4" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition">⭐⭐⭐⭐</button>
+            <button onclick="setFilter(3)" id="filter-btn-3" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition">⭐⭐⭐</button>
+            <button onclick="setFilter(2)" id="filter-btn-2" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition">⭐⭐</button>
+            <button onclick="setFilter(1)" id="filter-btn-1" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition">⭐</button>
+        </div>
+
+        <!-- ── REVIEWS LIST ── -->
+        <div id="reviews-list" class="space-y-4"></div>
+
+        <!-- ── EMPTY STATE ── -->
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 text-center opacity-50 space-y-3">
+            <i class="fa-regular fa-comment-dots text-5xl"></i>
+            <p class="font-bold text-lg">No reviews yet</p>
+            <p class="text-sm">Be the first to share your experience!</p>
+        </div>
+
+    </main>
+
+    <!-- FAB: scroll-to-write (mobile convenience) -->
+    <button id="fab-write" onclick="scrollToWriteForm()" class="fixed bottom-6 right-5 z-30 w-14 h-14 rounded-full bg-blueAccent text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform hidden" aria-label="Write review">
+        <i class="fa-solid fa-pen text-xl"></i>
+    </button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getFirestore(appInstance);
+        const auth = getAuth(appInstance);
+
+        // ── STATE ──────────────────────────────────────────────
+        let currentUser = null;
+        let currentUserName = 'Anonymous';
+        let allReviews = [];
+        let selectedRating = 5;
+        let activeFilter = 0; // 0 = all
+
+        // ── RATING LABELS ──────────────────────────────────────
+        const ratingLabels = { 1: 'Poor 😞', 2: 'Fair 😐', 3: 'Good 😊', 4: 'Great 😄', 5: 'Excellent 🤩' };
+
+        // ── AUTH CHECK ─────────────────────────────────────────
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                // Try to get name from Firestore
+                try {
+                    const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js");
+                    const snap = await getDoc(doc(db, "users", user.uid));
+                    if (snap.exists()) currentUserName = snap.data().name || user.displayName || 'Anonymous';
+                    else currentUserName = user.displayName || 'Anonymous';
+                } catch (_) { currentUserName = user.displayName || 'Anonymous'; }
+
+                document.getElementById('write-form-section').classList.remove('hidden');
+                document.getElementById('guest-prompt').classList.add('hidden');
+                document.getElementById('fab-write').classList.remove('hidden');
+            } else {
+                document.getElementById('guest-prompt').classList.remove('hidden');
+                document.getElementById('write-form-section').classList.add('hidden');
+                document.getElementById('fab-write').classList.add('hidden');
+            }
+        });
+
+        // ── LOAD REVIEWS ───────────────────────────────────────
+        async function loadReviews() {
+            try {
+                const snap = await getDocs(query(collection(db, "feedback"), orderBy("timestamp", "desc")));
+                allReviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch (e) {
+                allReviews = [];
+            }
+            document.getElementById('loading-skeleton').classList.add('hidden');
+            renderHero();
+            renderReviews();
+            document.getElementById('sort-bar').classList.remove('hidden');
+            document.getElementById('filter-tabs').classList.remove('hidden');
+            document.getElementById('rating-hero').classList.remove('hidden');
+        }
+
+        // ── RENDER HERO ────────────────────────────────────────
+        function renderHero() {
+            if (!allReviews.length) { document.getElementById('rating-hero').classList.add('hidden'); return; }
+
+            const total = allReviews.length;
+            const sum = allReviews.reduce((a, r) => a + (r.rating || 0), 0);
+            const avg = (sum / total).toFixed(1);
+
+            document.getElementById('avg-score').textContent = avg;
+            document.getElementById('total-count').textContent = `${total} review${total !== 1 ? 's' : ''}`;
+
+            // Average stars
+            const avgNum = parseFloat(avg);
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= Math.floor(avgNum)) starsHtml += '<i class="fa-solid fa-star"></i>';
+                else if (i - avgNum < 1 && i - avgNum > 0) starsHtml += '<i class="fa-solid fa-star-half-stroke"></i>';
+                else starsHtml += '<i class="fa-regular fa-star"></i>';
+            }
+            document.getElementById('avg-stars').innerHTML = starsHtml;
+
+            // Bar breakdown
+            const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+            allReviews.forEach(r => { const s = Math.round(r.rating || 0); if (counts[s] !== undefined) counts[s]++; });
+            let barsHtml = '';
+            for (let s = 5; s >= 1; s--) {
+                const pct = total ? Math.round((counts[s] / total) * 100) : 0;
+                barsHtml += `
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="w-5 text-right font-bold opacity-80">${s}</span>
+                        <i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>
+                        <div class="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                            <div class="bar-fill h-full bg-yellow-400 rounded-full" style="width:0%" data-pct="${pct}"></div>
+                        </div>
+                        <span class="w-8 text-right opacity-70">${pct}%</span>
+                    </div>`;
+            }
+            document.getElementById('bar-breakdown').innerHTML = barsHtml;
+            // Animate bars after paint
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+            });
+        }
+
+        // ── RENDER REVIEWS ─────────────────────────────────────
+        function renderReviews() {
+            const sortVal = document.getElementById('sort-select').value;
+            let filtered = activeFilter === 0 ? [...allReviews] : allReviews.filter(r => Math.round(r.rating || 0) === activeFilter);
+
+            if (sortVal === 'newest') filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            else if (sortVal === 'highest') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            else if (sortVal === 'lowest') filtered.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+
+            const list = document.getElementById('reviews-list');
+            const empty = document.getElementById('empty-state');
+
+            if (!filtered.length) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            list.innerHTML = filtered.map((r, i) => {
+                const stars = starsHtml(r.rating || 0);
+                const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                const initials = (r.userName || 'A').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                const avatarColor = avatarBg(r.userName || '');
+                const safeMsg = escapeHtml(r.message || '');
+                const safeUser = escapeHtml(r.userName || 'Anonymous');
+                return `
+                <div class="review-card bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 space-y-3" style="animation-delay:${i * 0.04}s">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-black text-white ${avatarColor}">${initials}</div>
+                            <div class="min-w-0">
+                                <p class="font-bold truncate">${safeUser}</p>
+                                <p class="text-xs opacity-50">${date}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-0.5 text-yellow-400 text-sm flex-shrink-0">${stars}</div>
+                    </div>
+                    <p class="text-sm leading-relaxed opacity-80">${safeMsg}</p>
+                </div>`;
+            }).join('');
+        }
+
+        // ── HELPERS ────────────────────────────────────────────
+        function starsHtml(n) {
+            let h = '';
+            for (let i = 1; i <= 5; i++) h += i <= n ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star opacity-30"></i>';
+            return h;
+        }
+
+        function avatarBg(name) {
+            const colors = ['bg-blue-500','bg-purple-500','bg-pink-500','bg-green-500','bg-orange-500','bg-teal-500','bg-red-500','bg-indigo-500'];
+            let hash = 0;
+            for (let c of name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+            return colors[hash % colors.length];
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        // ── SUBMIT REVIEW ──────────────────────────────────────
+        window.submitReview = async function () {
+            if (!currentUser) { alert('Please log in to submit a review.'); return; }
+            const msg = document.getElementById('review-msg').value.trim();
+            if (!msg) { alert('Please write something before submitting!'); return; }
+            if (selectedRating < 1) { alert('Please select a star rating.'); return; }
+
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+
+            try {
+                const newReview = {
+                    userId: currentUser.uid,
+                    userName: currentUserName,
+                    message: msg,
+                    rating: selectedRating,
+                    timestamp: Date.now()
+                };
+                await addDoc(collection(db, "feedback"), newReview);
+
+                // Optimistically prepend
+                allReviews.unshift({ id: 'new-' + Date.now(), ...newReview });
+
+                document.getElementById('write-form-body').classList.add('hidden');
+                document.getElementById('write-chevron').style.transform = '';
+                document.getElementById('review-msg').value = '';
+                setRating(5);
+
+                document.getElementById('success-banner').classList.remove('hidden');
+                setTimeout(() => document.getElementById('success-banner').classList.add('hidden'), 4000);
+
+                renderHero();
+                renderReviews();
+            } catch (e) {
+                alert('Error submitting review: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Submit Review</span><i class="fa-solid fa-paper-plane text-xs"></i>';
+            }
+        };
+
+        // ── EXPOSED FUNCTIONS ──────────────────────────────────
+        window.setRating = function (n) {
+            selectedRating = n;
+            const stars = document.getElementById('star-picker').children;
+            for (let i = 0; i < 5; i++) {
+                stars[i].classList.toggle('text-yellow-400', i < n);
+                stars[i].classList.toggle('text-gray-300', i >= n);
+                stars[i].classList.toggle('dark:text-gray-600', i >= n);
+            }
+            document.getElementById('rating-label').textContent = ratingLabels[n] || '';
+        };
+
+        window.addTag = function (tag) {
+            const area = document.getElementById('review-msg');
+            area.value = (area.value ? area.value + ' ' : '') + tag;
+            area.focus();
+        };
+
+        window.toggleWriteForm = function () {
+            const body = document.getElementById('write-form-body');
+            const chevron = document.getElementById('write-chevron');
+            body.classList.toggle('hidden');
+            chevron.style.transform = body.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        };
+
+        window.scrollToWriteForm = function () {
+            const section = document.getElementById('write-form-section');
+            if (!section.classList.contains('hidden')) {
+                const body = document.getElementById('write-form-body');
+                if (body.classList.contains('hidden')) window.toggleWriteForm();
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+
+        window.applySort = function () { renderReviews(); };
+
+        window.setFilter = function (star) {
+            activeFilter = star;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blueAccent', 'text-white');
+                btn.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-300');
+            });
+            const active = document.getElementById('filter-btn-' + star);
+            if (active) {
+                active.classList.add('bg-blueAccent', 'text-white');
+                active.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-300');
+            }
+            renderReviews();
+        };
+
+        // ── THEME ──────────────────────────────────────────────
+        window.toggleTheme = function () {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('az-theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun text-lg' : 'fa-solid fa-moon text-lg';
+        };
+
+        // Apply saved theme
+        const savedTheme = localStorage.getItem('az-theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').className = 'fa-solid fa-sun text-lg';
+        }
+
+        // ── INIT ───────────────────────────────────────────────
+        setRating(5); // Default 5-star selection
+        loadReviews();
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</body>
+</html>
