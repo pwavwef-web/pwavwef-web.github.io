@@ -337,6 +337,15 @@
                             </label>
                             <span id="vault-status" class="text-xs text-gray-500 animate-pulse"></span>
                         </div>
+                        <div id="vault-progress-wrap" class="hidden mb-4">
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span>Uploading…</span>
+                                <span id="vault-progress-pct">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div id="vault-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-200" style="width:0%"></div>
+                            </div>
+                        </div>
                         <div class="space-y-1">
                             <div class="grid grid-cols-4 text-xs font-bold text-gray-500 uppercase px-4 pb-2 border-b border-gray-700">
                                 <div class="col-span-2">Filename</div>
@@ -867,7 +876,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, addDoc, deleteDoc, updateDoc, setDoc, doc, query, where, onSnapshot, getDoc, getDocs, orderBy, limit, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+        import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -1228,19 +1237,39 @@
                 const file = input.files[0];
                 if (!file) return;
                 const status = document.getElementById('vault-status');
-                status.innerText = "Encrypting & Uploading...";
+                const progressWrap = document.getElementById('vault-progress-wrap');
+                const progressBar = document.getElementById('vault-progress-bar');
+                const progressPct = document.getElementById('vault-progress-pct');
+
+                progressWrap.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                progressPct.textContent = '0%';
+                status.innerText = "";
 
                 try {
                     const storageRef = ref(storage, `admin_vault/${Date.now()}_${file.name}`);
-                    await uploadBytes(storageRef, file);
-                    const url = await getDownloadURL(storageRef);
+                    const uploadTask = uploadBytesResumable(storageRef, file);
 
+                    await new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                                progressBar.style.width = pct + '%';
+                                progressPct.textContent = pct + '%';
+                            },
+                            (error) => reject(error),
+                            () => resolve()
+                        );
+                    });
+
+                    const url = await getDownloadURL(storageRef);
                     await addDoc(collection(db, "admin_vault_files"), {
                         name: file.name, url, uploader: currentUser.name, size: file.size, timestamp: serverTimestamp(), path: storageRef.fullPath
                     });
-                    status.innerText = "";
+                    progressWrap.classList.add('hidden');
                     input.value = "";
                 } catch (e) {
+                    progressWrap.classList.add('hidden');
                     status.innerText = "Upload Failed.";
                     console.error(e);
                 }
@@ -1378,14 +1407,16 @@
                     snap.forEach(d => {
                         const f = d.data();
                         list.innerHTML += `
-                            <div class="grid grid-cols-4 items-center bg-gray-900/50 p-3 rounded border border-gray-700/50 hover:bg-gray-800 transition">
+                            <div class="vault-file-row grid grid-cols-4 items-center bg-gray-900/50 p-3 rounded border border-gray-700/50 hover:bg-gray-800 transition select-none"
+                                data-id="${d.id}" data-path="${f.path}"
+                                onpointerdown="vaultHoldStart(this)" onpointerup="vaultHoldEnd()" onpointerleave="vaultHoldEnd()">
                                 <div class="col-span-2 flex items-center gap-2 overflow-hidden">
                                     <i class="fa-solid fa-file text-blue-400"></i>
                                     <a href="${f.url}" target="_blank" class="text-sm text-white truncate hover:underline">${f.name}</a>
                                 </div>
                                 <div class="text-xs text-gray-500">${f.uploader}</div>
                                 <div class="text-right">
-                                    <button onclick="app.deleteVaultFile('${d.id}', '${f.path}')" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                                    <button onclick="app.deleteVaultFile('${d.id}', '${f.path}')" class="vault-delete-btn hidden text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>`;
                     });
@@ -2335,6 +2366,29 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => app.init());
+
+        // Press-and-hold to reveal vault delete buttons
+        const VAULT_HOLD_DURATION = 600;
+        let vaultHoldTimer = null;
+        let vaultActiveRow = null;
+        function vaultHoldStart(row) {
+            vaultHoldTimer = setTimeout(() => {
+                vaultActiveRow = row;
+                row.querySelector('.vault-delete-btn').classList.remove('hidden');
+                row.classList.add('border-red-500/40');
+            }, VAULT_HOLD_DURATION);
+        }
+        function vaultHoldEnd() {
+            clearTimeout(vaultHoldTimer);
+            vaultHoldTimer = null;
+        }
+        document.addEventListener('pointerdown', (e) => {
+            if (vaultActiveRow && document.contains(vaultActiveRow) && !vaultActiveRow.contains(e.target)) {
+                vaultActiveRow.querySelector('.vault-delete-btn').classList.add('hidden');
+                vaultActiveRow.classList.remove('border-red-500/40');
+                vaultActiveRow = null;
+            }
+        });
     </script>
 </body>
 
