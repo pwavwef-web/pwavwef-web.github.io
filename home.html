@@ -330,7 +330,7 @@
                         <h3 class="font-bold text-sm">Project Support</h3>
                         <p class="text-[10px] opacity-60">Code & Tech</p>
                     </div>
-                    <div onclick="app.openServiceModal('CV Writing')" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
+                    <div onclick="window.location.href='/cv/'" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
                         <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2"><i class="fa-solid fa-briefcase text-green-500 text-lg"></i></div>
                         <h3 class="font-bold text-sm">CV/Resume Revamp</h3>
                         <p class="text-[10px] opacity-60">Professional CVs that'll get you hired</p>
@@ -418,7 +418,7 @@
                     <tbody id="leaderboard-list"></tbody>
                 </table>
             </div>
-            <p class="text-center text-xs opacity-40 mt-4">XP resets every Monday at 00:00.</p>
+            <p class="text-center text-xs opacity-40 mt-4">XP resets every Sunday. 🔄</p>
         </div>
     </div>
 
@@ -993,9 +993,12 @@
                         if(userDoc.exists()) {
                             this.data.user = userDoc.data();
                             
-                            // XP RESET LOGIC (Weekly)
+                            // XP RESET LOGIC (Weekly — resets every Sunday)
                             const now = new Date();
-                            const currentWeekId = `${now.getFullYear()}-W${Math.ceil((now - new Date(now.getFullYear(),0,1)) / 86400000 / 7)}`;
+                            const lastSunday = new Date(now);
+                            lastSunday.setDate(now.getDate() - now.getDay()); // rewind to most recent Sunday
+                            lastSunday.setHours(0, 0, 0, 0);
+                            const currentWeekId = `${lastSunday.getFullYear()}-${String(lastSunday.getMonth() + 1).padStart(2, '0')}-${String(lastSunday.getDate()).padStart(2, '0')}`;
                             
                             if (this.data.user.weekId !== currentWeekId) {
                                 // New week, reset XP
