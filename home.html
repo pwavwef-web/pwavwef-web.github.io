@@ -311,6 +311,15 @@
                 </div>
             </div>
 
+            <!-- Streak Card -->
+            <div id="home-streak-card" class="hidden bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-4 text-white flex items-center gap-4 shadow-lg">
+                <div class="text-4xl">🔥</div>
+                <div class="flex-1">
+                    <p class="font-black text-lg"><span id="streak-count-display">0</span> <span id="streak-day-label">Day</span> Streak</p>
+                    <p class="text-xs opacity-80">Log in daily to keep your streak alive!</p>
+                </div>
+            </div>
+
             <!-- Premium Services Grid -->
             <div>
                 <h3 class="text-sm font-bold opacity-50 uppercase tracking-wider mb-3 ml-1">Quick Access ⚡</h3>
@@ -408,6 +417,12 @@
                 <p class="text-sm opacity-90">Grind hard, earn XP, and become an Academic Weapon. ⚔️</p>
             </div>
             
+            <!-- Leaderboard Mode Toggle -->
+            <div class="bg-gray-200 dark:bg-gray-700 p-1 rounded-xl flex text-xs font-bold mb-4">
+                <button onclick="app.setLbMode('program')" id="btn-lb-program" class="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-darkCard shadow text-blueAccent transition-all">My Program</button>
+                <button onclick="app.setLbMode('universal')" id="btn-lb-universal" class="flex-1 px-3 py-2 rounded-lg text-gray-500 transition-all">🌍 Universal</button>
+            </div>
+
             <div class="flex justify-between items-center px-2 mb-4">
                 <h3 class="font-bold text-lg">Top Performers</h3>
                 <span class="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 font-bold" id="lb-program-name">Program</span>
@@ -948,7 +963,9 @@
                         school: school,
                         program: program, 
                         role: "student",
-                        weeklyXp: 50 // Signup Bonus
+                        weeklyXp: 50, // Signup Bonus
+                        userRank: "Rookie 🥚",
+                        streak: 0
                     });
                 } catch (err) { document.getElementById('signup-msg').innerText = err.message; }
             },
@@ -963,7 +980,7 @@
             data: { 
                 courses: [], assignments: [], notes: [], notifications: [], events: [], user: {}, myTickets: [], blogs: [], currentBlogFont: 'font-roboto', theme: 'light', systemNotifications: false, editingNoteId: null, selectedService: '', readNotifications: [], editingBroadcastId: null, editingCourseId: null, activeMsgCache: {}, recentChats: [], rating: 5, currentAdminView: 'dash', currentHomeView: 'events',
                 badges: ['Certified Champion 🏆', 'Academic Weapon ⚔️', 'Main Character ✨', 'Future CEO 💼', 'Campus Legend 🚀', 'Vibe Curator 🌊', 'Top G Scholar 🧠'],
-                currentTabIndex: 0
+                currentTabIndex: 0, lbMode: 'program'
             },
             togglePassword(inputId, iconId) {
         const input = document.getElementById(inputId);
@@ -1001,11 +1018,22 @@
                             const currentWeekId = `${lastSunday.getFullYear()}-${String(lastSunday.getMonth() + 1).padStart(2, '0')}-${String(lastSunday.getDate()).padStart(2, '0')}`;
                             
                             if (this.data.user.weekId !== currentWeekId) {
-                                // New week, reset XP
-                                await updateDoc(doc(db, "users", user.uid), { weeklyXp: 0, weekId: currentWeekId });
+                                // New week: check for rank advancement, then reset XP
+                                const oldRank = this.data.user.userRank || "Rookie 🥚";
+                                const newRank = this.getNextRank(oldRank, this.data.user.weeklyXp || 0);
+                                const weekResetData = { weeklyXp: 0, weekId: currentWeekId };
+                                if (newRank !== oldRank) {
+                                    weekResetData.userRank = newRank;
+                                    this.data.user.userRank = newRank;
+                                }
+                                await updateDoc(doc(db, "users", user.uid), weekResetData);
                                 this.data.user.weeklyXp = 0;
                                 this.data.user.weekId = currentWeekId;
-                                this.sendSystemNotification("New Week! 🔄", "XP has been reset. Time to grind!");
+                                if (newRank !== oldRank) {
+                                    this.sendSystemNotification("Rank Up! 🎉", `You've been promoted to ${newRank}!`);
+                                } else {
+                                    this.sendSystemNotification("New Week! 🔄", "XP has been reset. Time to grind!");
+                                }
                             } else {
                                 // Same week, check for daily login bonus
                                 const lastLogin = this.data.user.lastLogin ? new Date(this.data.user.lastLogin).getDate() : 0;
@@ -1013,6 +1041,19 @@
                                     this.addXp(50, "Daily Login ☀️");
                                     await updateDoc(doc(db, "users", user.uid), { lastLogin: Date.now() });
                                 }
+                            }
+
+                            // Streak Logic — runs regardless of week change
+                            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                            const yesterday = new Date(now);
+                            yesterday.setDate(now.getDate() - 1);
+                            const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+                            const lastStreakDate = this.data.user.lastStreakDate || '';
+                            if (lastStreakDate !== todayStr) {
+                                let newStreak = lastStreakDate === yesterdayStr ? (this.data.user.streak || 0) + 1 : 1;
+                                this.data.user.streak = newStreak;
+                                this.data.user.lastStreakDate = todayStr;
+                                await updateDoc(doc(db, "users", user.uid), { streak: newStreak, lastStreakDate: todayStr });
                             }
                             
                             if(this.data.user.role === 'banned') {
@@ -1139,24 +1180,35 @@
                 return "Rookie 🥚";
             },
 
+            // Returns the next rank if weekly XP threshold is met; otherwise returns the current rank.
+            // Rank ladder: Rookie(100 XP/wk) → Scholar(250) → Main Character(500) → Academic Weapon(800) → God Tier
+            getNextRank(currentRank, weeklyXp) {
+                const ranks = ["Rookie 🥚", "Scholar 📚", "Main Character ✨", "Academic Weapon ⚔️", "God Tier ⚡"];
+                const thresholds = [100, 250, 500, 800]; // Weekly XP needed to advance each level
+                const idx = ranks.indexOf(currentRank);
+                if (idx === -1) return "Rookie 🥚"; // Unrecognized rank — reset to base
+                if (idx >= ranks.length - 1) return currentRank; // Already max rank
+                return weeklyXp >= thresholds[idx] ? ranks[idx + 1] : currentRank;
+            },
+
             async renderLeaderboard() {
                 const list = document.getElementById('leaderboard-list');
                 const progName = document.getElementById('lb-program-name');
                 list.innerHTML = '<tr><td class="p-4 text-center opacity-50">Loading rankings...</td></tr>';
                 
+                const isUniversal = (this.data.lbMode || 'program') === 'universal';
                 const userProg = this.data.user.program || "General";
-                progName.innerText = userProg;
+                progName.innerText = isUniversal ? 'All Users 🌍' : userProg;
 
-                // Simple query: get all users (filtering locally for prototype simplicity as compound queries require index)
-                // In production: query(collection(db, "users"), where("program", "==", userProg), orderBy("weeklyXp", "desc"), limit(50))
-                const q = query(collection(db, "users"), limit(100)); // Fetch top 100 mostly
+                const q = query(collection(db, "users"), limit(100));
                 const snap = await getDocs(q);
                 
                 let users = [];
                 snap.forEach(d => users.push(d.data()));
                 
-                // Filter by program and sort by XP locally
-                users = users.filter(u => u.program && u.program.toLowerCase() === userProg.toLowerCase());
+                if (!isUniversal) {
+                    users = users.filter(u => u.program && u.program.toLowerCase() === userProg.toLowerCase());
+                }
                 users.sort((a,b) => (b.weeklyXp || 0) - (a.weeklyXp || 0));
                 
                 list.innerHTML = '';
@@ -1169,7 +1221,7 @@
                     const rank = index + 1;
                     const isMe = u.userId === currentUser.uid;
                     const xp = u.weeklyXp || 0;
-                    const rankTitle = this.getRank(xp);
+                    const rankTitle = u.userRank || this.getRank(xp);
                     
                     let rankClass = "bg-white dark:bg-darkCard";
                     let rankIcon = `<span class="font-bold text-gray-400">#${rank}</span>`;
@@ -1235,8 +1287,19 @@
             // --- FULL SCREEN LEADERBOARD ---
             openLeaderboard() {
                 history.pushState({ view: 'leaderboard' }, null, ""); // Push State
-                this.renderLeaderboard();
+                this.setLbMode(this.data.lbMode || 'program');
                 document.getElementById('full-screen-leaderboard').classList.remove('hidden');
+            },
+
+            setLbMode(mode) {
+                this.data.lbMode = mode;
+                const progBtn = document.getElementById('btn-lb-program');
+                const uniBtn = document.getElementById('btn-lb-universal');
+                const active = "flex-1 px-3 py-2 rounded-lg bg-white dark:bg-darkCard shadow text-blueAccent transition-all";
+                const inactive = "flex-1 px-3 py-2 rounded-lg text-gray-500 transition-all";
+                if (mode === 'program') { progBtn.className = active; uniBtn.className = inactive; }
+                else { uniBtn.className = active; progBtn.className = inactive; }
+                this.renderLeaderboard();
             },
             
             openSettings() { 
@@ -1299,6 +1362,17 @@ showNotifications() {
                 const hour = new Date().getHours();
                 const greeting = hour < 12 ? "Good Morning! ☀️" : hour < 18 ? "Good Afternoon! 🌤️" : "Good Evening! 🌙";
                 document.getElementById('home-greeting').innerText = greeting;
+
+                // Streak Display
+                const streak = this.data.user.streak || 0;
+                const streakCard = document.getElementById('home-streak-card');
+                if (streak > 0) {
+                    document.getElementById('streak-count-display').innerText = streak;
+                    document.getElementById('streak-day-label').innerText = streak === 1 ? 'Day' : 'Days';
+                    streakCard.classList.remove('hidden');
+                } else {
+                    streakCard.classList.add('hidden');
+                }
 
                 // Render Events
                 const feed = document.getElementById('home-events-feed');
@@ -2859,7 +2933,7 @@ updateBadge() {
                 // Rank Display Update
                 const xp = u.weeklyXp || 0;
                 document.getElementById('profile-xp-display').innerText = `${xp} XP`;
-                document.getElementById('profile-rank-display').innerText = this.getRank(xp);
+                document.getElementById('profile-rank-display').innerText = u.userRank || this.getRank(xp);
             },
 
             startListeners() {
