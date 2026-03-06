@@ -64,7 +64,7 @@
     <!-- Header -->
     <header class="text-center px-6 py-12 no-print">
         <div class="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-            <i class="fas fa-tag"></i> 15 Campus Stickers
+            <i class="fas fa-tag"></i> 16 Campus Stickers
         </div>
         <h1 class="text-4xl md:text-5xl font-black mb-3">Stick. Spread. Shine. 🎉</h1>
         <p class="text-white/60 text-lg max-w-xl mx-auto">Download and print these stickers, then paste them around campus to boost AZ Learner awareness. Click any sticker to download it as an image.</p>
@@ -289,6 +289,24 @@
                 </div>
             </div>
 
+            <!-- Sticker 16 — GPA Calculator Survey -->
+            <div class="sticker-card rounded-3xl overflow-hidden cursor-pointer" onclick="downloadSticker('sticker16')" title="Click to download">
+                <div id="sticker16" class="h-64 flex flex-col items-center justify-center p-6 text-center"
+                     style="background: linear-gradient(135deg, #065f46, #10b981);">
+                    <div class="text-5xl mb-2">📊</div>
+                    <div class="text-xl font-black text-white leading-tight">Take the Survey!</div>
+                    <div class="text-emerald-100 font-medium mt-1 text-xs">Help shape the AZ GPA Calculator.<br>10 questions · 3–5 mins · anonymous.</div>
+                    <div class="mt-3 bg-white/20 rounded-full px-3 py-1 text-white text-[10px] font-bold">azlearner.me/surveys/survey-2.html</div>
+                </div>
+                <div class="no-print bg-slate-800/80 text-center py-2 text-xs text-white/50 flex items-center justify-center gap-2">
+                    <button onclick="event.stopPropagation(); copySurveyLink(this)" aria-label="Share survey link" class="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold transition">
+                        <i class="fas fa-share-nodes"></i> Share Link
+                    </button>
+                    <span class="opacity-50">|</span>
+                    <span class="flex items-center gap-1"><i class="fas fa-download"></i> Download</span>
+                </div>
+            </div>
+
         </div>
 
         <!-- Instructions -->
@@ -308,6 +326,26 @@
             link.download = id + '.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
+        }
+
+        function copySurveyLink(btn) {
+            const url = 'https://azlearner.me/surveys/survey-2.html';
+            if (navigator.share) {
+                navigator.share({ title: 'AZ GPA Calculator Survey', text: 'Help shape the AZ GPA Calculator — 10 questions, 3–5 mins, 100% anonymous.', url });
+            } else {
+                if (btn.dataset.copying) return;
+                btn.dataset.copying = '1';
+                const orig = btn.innerHTML;
+                navigator.clipboard.writeText(url).then(() => {
+                    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    btn.classList.replace('bg-emerald-600', 'bg-green-500');
+                    setTimeout(() => {
+                        btn.innerHTML = orig;
+                        btn.classList.replace('bg-green-500', 'bg-emerald-600');
+                        delete btn.dataset.copying;
+                    }, 2000);
+                }).catch(() => { delete btn.dataset.copying; alert('Survey link: ' + url); });
+            }
         }
     </script>
 </body>

@@ -46,6 +46,7 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
         .msg-enter { animation: popIn 0.2s ease-out; }
         @keyframes popIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: translateY(0); } }
         .today-highlight { background-color: rgba(72,187,120,0.1) !important; border: 1px solid #48bb78 !important; }
         
         /* Star Rating Hover Effect */
@@ -795,6 +796,30 @@
         </header>
         <div id="notifications-list" class="flex-1 p-4 space-y-3 overflow-y-auto"></div>
         <div id="empty-notifications" class="hidden h-full flex flex-col items-center justify-center opacity-60"><p>All clear!</p></div>
+    </div>
+
+    <!-- In-App Message Overlay (Firebase-style) -->
+    <div id="in-app-msg-overlay" class="hidden fixed inset-0 bg-black/60 z-[150] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="in-app-msg-title">
+        <div id="in-app-msg-card" class="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-[slideUp_0.3s_ease]" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);">
+            <div id="in-app-msg-img-wrap" class="hidden">
+                <img id="in-app-msg-img" src="" alt="" class="w-full h-48 object-cover">
+            </div>
+            <div class="p-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-bullhorn text-white text-xs"></i>
+                    </div>
+                    <span class="text-blue-200 text-xs font-semibold uppercase tracking-widest">AZ Learner Core</span>
+                </div>
+                <h2 id="in-app-msg-title" class="text-xl font-black text-white mb-2"></h2>
+                <p id="in-app-msg-body" class="text-blue-100 text-sm leading-relaxed"></p>
+            </div>
+            <div class="flex border-t border-white/20">
+                <button onclick="app.dismissInAppMessage()" aria-label="Dismiss announcement" class="flex-1 py-3 text-blue-200 font-semibold text-sm hover:bg-white/10 transition">Dismiss</button>
+                <div class="w-px bg-white/20"></div>
+                <button onclick="app.openInAppMessageNotifications()" aria-label="View all announcements" class="flex-1 py-3 text-white font-bold text-sm hover:bg-white/10 transition">View All</button>
+            </div>
+        </div>
     </div>
 
 <div id="modal-mfa" class="fixed inset-0 bg-black/80 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-sm">
@@ -2845,6 +2870,34 @@ updateBadge() {
         badge.classList.add('hidden'); 
     }
 },
+            showInAppMessage(d) {
+                const overlay = document.getElementById('in-app-msg-overlay');
+                document.getElementById('in-app-msg-title').textContent = d.title || '';
+                document.getElementById('in-app-msg-body').textContent = d.body || '';
+                const imgWrap = document.getElementById('in-app-msg-img-wrap');
+                const img = document.getElementById('in-app-msg-img');
+                const trustedImageSrc = (d.image && (
+                    d.image.startsWith('data:image/') ||
+                    d.image.startsWith('https://firebasestorage.googleapis.com/') ||
+                    d.image.startsWith('https://storage.googleapis.com/')
+                )) ? d.image : null;
+                if (trustedImageSrc) {
+                    img.src = trustedImageSrc;
+                    img.alt = d.title || 'Announcement image';
+                    imgWrap.classList.remove('hidden');
+                } else {
+                    imgWrap.classList.add('hidden');
+                    img.src = '';
+                }
+                overlay.classList.remove('hidden');
+            },
+            dismissInAppMessage() {
+                document.getElementById('in-app-msg-overlay').classList.add('hidden');
+            },
+            openInAppMessageNotifications() {
+                document.getElementById('in-app-msg-overlay').classList.add('hidden');
+                this.showNotifications();
+            },
             sendSystemNotification(title, body) {
                 try {
                     const audio = document.getElementById('alert-sound');
@@ -2991,6 +3044,7 @@ listeners.push(onSnapshot(qEvents, (snap) => {
                             const d = change.doc.data();
                             // Only notify if it's recent (prevent spam on reload)
                             if (Date.now() - d.timestamp < 20000) {
+                                this.showInAppMessage(d);
                                 this.sendSystemNotification(d.title || "New Announcement", d.body || "Check the app for details.");
                             }
                         }
