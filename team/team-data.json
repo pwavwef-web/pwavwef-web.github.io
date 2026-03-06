@@ -25,6 +25,19 @@
         "linkedin": "",
         "twitter": ""
       }
+    },
+    {
+      "name": "Bright Tetteh",
+      "role": "Lead Strategic Designer",
+      "image": "https://www.facebook.com/photo/?fbid=640405722158887&set=a.640405535492239",
+      "bio": "As a finance student at the University of Cape Coast, I find myself deeply involved in an exciting and rewarding project. Specifically, I am providing support to AZ learners, assisting them in both the development and subsequent deployment of the AZ podcast.",
+      "profile": "profiles/bright-tetteh.html",
+      "skills": ["Teamwork", "Problem Solving", "Communication Skills", "Detail Oriented"],
+      "socials": {
+        "github": "",
+        "linkedin": "",
+        "twitter": "https://twitter.com/Finalboss"
+      }
     }
   ]
 }
