@@ -64,7 +64,15 @@
     .scroll-track {
       width: min(620px, 92vw);
       padding: 100vh 0 100vh;   /* start below fold, end above fold */
+      animation: lyricsScroll var(--scroll-duration) linear forwards;
+      animation-delay: 2s;      /* 2-second pause before scrolling starts */
       will-change: transform;
+    }
+
+    /* Translate from bottom to position where last line is visible at viewport centre */
+    @keyframes lyricsScroll {
+      from { transform: translateY(0); }
+      to   { transform: translateY(calc(-100% + 100vh)); }
     }
 
     /* ── Title block ──────────────────────────────────────────── */
@@ -414,14 +422,12 @@
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   Playback controls, timer & step scroller
+   Playback controls & timer
 ═══════════════════════════════════════════════════════════════ */
 (function () {
   const track   = document.getElementById('lyricsTrack');
   const display = document.getElementById('timer-display');
-
-  /* ── Timer ──────────────────────────────────────────────────── */
-  let startTs = null;
+  let   startTs = null;
 
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
@@ -429,102 +435,57 @@
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  function timerTick(ts) {
+  function tick(ts) {
     if (!startTs) startTs = ts;
-    display.textContent = formatTime((ts - startTs) / 1000);
-    requestAnimationFrame(timerTick);
+    const elapsed = (ts - startTs) / 1000;
+    display.textContent = formatTime(elapsed);
+    requestAnimationFrame(tick);
   }
-  requestAnimationFrame(timerTick);
+  requestAnimationFrame(tick);
 
-  /* ── Step Scroller ──────────────────────────────────────────── */
-  /* Remove CSS animation — driven by JS instead */
-  track.style.animation = 'none';
+  /* ── Freeze on last two lines ────────────────────────────────── */
+  /* Watch the final lyric line.  The moment it enters the viewport
+     both "AZ Learner…" and "Learn your way." are visible, so we
+     pause the CSS animation permanently at that position.          */
+  let freezeObserver = null;
 
-  let posY      = 0;   /* current translateY in px */
-  let scrollRaf = null;
-  let stepTimer = null;
-
-  function easeInOutQuad(t) { return t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t; }
-
-  function animateTo(target, dur, done) {
-    if (scrollRaf) cancelAnimationFrame(scrollRaf);
-    const from = posY;
-    const t0   = performance.now();
-    function frame(now) {
-      const progress = Math.min((now - t0) / dur, 1);
-      posY = from + (target - from) * easeInOutQuad(progress);
-      track.style.transform = `translateY(${posY}px)`;
-      if (progress < 1) { scrollRaf = requestAnimationFrame(frame); }
-      else        { posY = target; scrollRaf = null; done && done(); }
-    }
-    scrollRaf = requestAnimationFrame(frame);
+  function observeLastLine() {
+    const lastLine = document.getElementById('lastLine');
+    if (!lastLine) return;
+    freezeObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          track.style.animationPlayState = 'paused';
+          obs.disconnect();
+          freezeObserver = null;
+        }
+      });
+    }, { threshold: 0 });
+    freezeObserver.observe(lastLine);
   }
 
-  /* Target translateY to centre an element in the viewport */
-  function centerOf(el) {
-    const mid = el.offsetTop + el.offsetHeight / 2;
-    const max = -(track.offsetHeight - window.innerHeight);
-    return Math.max(max, Math.min(0, -(mid - window.innerHeight / 2)));
-  }
+  observeLastLine();
 
-  /* Build ordered list of scroll steps */
-  function buildSteps() {
-    const steps = [];
-    const title = track.querySelector('.song-title');
-    if (title) steps.push({ el: title, hold: 4000 });
-
-    track.querySelectorAll('.verse, .prechorus, .chorus, .bridge, .outro').forEach(block => {
-      const lines = block.querySelectorAll('.lyric-line');
-      if (lines.length <= 4) {
-        /* Short sections (≤4 lines): show whole block — extra hold for 2-line sections */
-        steps.push({ el: block, hold: lines.length <= 2 ? 4500 : 6000 });
-      } else {
-        /* Long sections (>4 lines): scroll in two halves */
-        const halfwayIndex = Math.ceil(lines.length / 2);
-        steps.push({ el: lines[halfwayIndex - 1], hold: 5000 });
-        steps.push({ el: lines[lines.length - 1], hold: 5000 });
-      }
-    });
-    return steps;
-  }
-
-  let steps = [];
-
-  function runStep(idx) {
-    if (idx >= steps.length) return;
-    const { el, hold } = steps[idx];
-    const target = centerOf(el);
-    const dist   = Math.abs(target - posY);
-    const dur    = Math.max(400, Math.min(2500, dist * 2.5));
-    animateTo(target, dur, () => {
-      stepTimer = setTimeout(() => runStep(idx + 1), hold);
-    });
-  }
-
-  function startScroller() {
-    steps = buildSteps();
-    stepTimer = setTimeout(() => runStep(0), 2000);
-  }
-
-  function restart() {
-    if (scrollRaf) cancelAnimationFrame(scrollRaf);
-    if (stepTimer) clearTimeout(stepTimer);
-    scrollRaf = stepTimer = null;
-    posY = 0;
-    track.style.transform = 'translateY(0)';
+  /* Restart */
+  document.getElementById('btnRestart').addEventListener('click', () => {
+    /* Disconnect any active observer so it does not double-fire */
+    if (freezeObserver) { freezeObserver.disconnect(); freezeObserver = null; }
+    /* Clear paused state and restart CSS animation */
+    track.style.animationPlayState = '';
+    track.style.animation = 'none';
+    void track.offsetHeight;   /* force reflow to restart CSS animation */
+    track.style.animation = '';
     startTs = null;
     display.textContent = '0:00';
-    startScroller();
-  }
+    /* Re-arm the freeze observer for the new playthrough */
+    observeLastLine();
+  });
 
-  /* ── Buttons ───────────────────────────────────────────────── */
-  document.getElementById('btnRestart').addEventListener('click', restart);
+  /* Hide UI for clean screen-record */
   document.getElementById('btnHideUI').addEventListener('click', () => {
     document.getElementById('uiBar').style.display = 'none';
     document.getElementById('logoWatermark').style.opacity = '0.18';
   });
-
-  startScroller();
 })();
 
 /* ═══════════════════════════════════════════════════════════════
