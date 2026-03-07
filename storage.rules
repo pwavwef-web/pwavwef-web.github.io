@@ -1,0 +1,135 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ──────────────────────────────────────────────────────────────
+    // Helper functions
+    // ──────────────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Mirrors the CEO email hard-coded throughout the app.  See comment in
+    // firestore.rules for the full rationale.
+    function isCEO() {
+      return isAuthenticated() && request.auth.token.email == 'pwavwef@gmail.com';
+    }
+
+    function isAdmin() {
+      return isCEO() || request.auth.token.role == 'admin';
+    }
+
+    function isAdminOrRole(role) {
+      return isAdmin() || request.auth.token.role == role;
+    }
+
+    // Allow common image/video/audio/document MIME types.
+    function isAllowedImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isAllowedAudioType() {
+      return request.resource.contentType.matches('audio/.*');
+    }
+
+    function isAllowedDocType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('video/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/.*word.*') ||
+             request.resource.contentType.matches('text/.*');
+    }
+
+    // 20 MB upload cap for general files
+    function under20MB() {
+      return request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // 100 MB cap for audio uploads
+    function under100MB() {
+      return request.resource.size < 100 * 1024 * 1024;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Blog media uploads  (home.html, pwa/index.html)
+    // Path: blog_uploads/{uid}/{filename}
+    // ──────────────────────────────────────────────────────────────
+    match /blog_uploads/{uid}/{filename} {
+      // Any authenticated user may read blog media.
+      allow read: if isAuthenticated();
+
+      // Only the owner of the path segment may upload to their folder.
+      allow write: if isAuthenticated() &&
+        request.auth.uid == uid &&
+        under20MB();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Chat / print-order attachments  (home.html, pwa/index.html)
+    // Path: chat_uploads/{uid}/{filename}
+    // ──────────────────────────────────────────────────────────────
+    match /chat_uploads/{uid}/{filename} {
+      allow read: if isAuthenticated();
+
+      allow write: if isAuthenticated() &&
+        request.auth.uid == uid &&
+        under20MB();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Admin vault files  (admin.html)
+    // Path: admin_vault/{filename}
+    // ──────────────────────────────────────────────────────────────
+    match /admin_vault/{filename} {
+      allow read, write: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Admin documents  (form.html)
+    // Path: admin_docs/{filename}
+    // ──────────────────────────────────────────────────────────────
+    match /admin_docs/{filename} {
+      allow read, write: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Ambassador resources  (admin.html)
+    // Path: ambassador_resources/{filename}
+    // ──────────────────────────────────────────────────────────────
+    match /ambassador_resources/{filename} {
+      allow read: if isAuthenticated();
+
+      allow write: if isAdminOrRole('chief_ambassador') &&
+        under20MB();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Podcast audio & cover art  (podcast/admin/upload.html)
+    // Path: podcast/audio/{filename}
+    // Path: podcast/covers/{filename}
+    // ──────────────────────────────────────────────────────────────
+    match /podcast/audio/{filename} {
+      allow read: if isAuthenticated();
+
+      allow write: if isAdminOrRole('podcast_lead') &&
+        isAllowedAudioType() &&
+        under100MB();
+    }
+
+    match /podcast/covers/{filename} {
+      allow read: if isAuthenticated();
+
+      allow write: if isAdminOrRole('podcast_lead') &&
+        isAllowedImageType() &&
+        under20MB();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Deny all other paths by default.
+    // ──────────────────────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
