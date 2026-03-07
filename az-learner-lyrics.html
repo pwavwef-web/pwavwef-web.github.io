@@ -558,21 +558,25 @@
     highlightLine(audio.currentTime);
   });
 
-  /* ── Sync animation delay so it tracks audio.currentTime ──────
-   * The CSS animation has animation-delay: 2s, so at audio t=0
-   * the effective delay is 2 s.  At audio t=T, delay = (2 - T).  */
-  function syncAnimToAudio() {
-    track.style.animationDelay = `${2 - audio.currentTime}s`;
-  }
-
   /* ── Play / Pause ───────────────────────────────────────────── */
+  let animStarted = false;
+
   btnPlay.addEventListener('click', () => {
     if (audio.paused) {
-      syncAnimToAudio();
+      if (!animStarted) {
+        /* First play: fully reset the CSS animation (same technique as Restart)
+           so it starts cleanly with the natural 2 s CSS delay regardless of
+           how long the page has been open.  Mutating animation-delay on an
+           already-paused animation is unreliable across browsers. */
+        track.style.animation = 'none';
+        void track.offsetHeight;          /* force reflow */
+        track.style.animation = '';
+        animStarted = true;
+      }
       track.style.animationPlayState = 'running';
       audio.play().catch(() => {
-        /* Autoplay blocked – reset to paused state so the button stays correct */
-        track.style.animationPlayState = 'paused';
+        /* Audio unavailable – reset button so the user can retry.
+           Do NOT pause the animation; the lyrics video keeps scrolling. */
         btnPlay.textContent = '▶ Play';
       });
       btnPlay.textContent = '⏸ Pause';
@@ -615,6 +619,7 @@
     btnPlay.textContent = '▶ Play';
 
     /* Reset animation */
+    animStarted = false;
     track.style.animationPlayState = '';
     track.style.animation = 'none';
     void track.offsetHeight;  /* force reflow */
