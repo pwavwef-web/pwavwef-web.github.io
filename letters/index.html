@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter Generator – AZ Learner Admin</title>
+    <meta name="description" content="Generate professional letters with AI-powered letterhead for AZ Learner team management and external correspondence.">
+    <link rel="icon" type="image/png" href="../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        /* ---- Letter preview (screen) ---- */
+        #letter-preview {
+            background: white;
+            color: #1a1a1a;
+            font-family: 'EB Garamond', Georgia, serif;
+            min-height: 297mm;
+            width: 210mm;
+            margin: 0 auto;
+            padding: 18mm 20mm 20mm;
+            box-sizing: border-box;
+            font-size: 11.5pt;
+            line-height: 1.7;
+            position: relative;
+        }
+
+        /* ---- Letterhead ---- */
+        .lh-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid #1e3a5f;
+            padding-bottom: 10px;
+            margin-bottom: 6px;
+        }
+        .lh-logo-area { display: flex; align-items: center; gap: 12px; }
+        .lh-logo-box {
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .lh-logo-box span { color: white; font-weight: 900; font-size: 18px; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -1px; }
+        .lh-org-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18pt; font-weight: 800; color: #1e3a5f; letter-spacing: -0.5px; line-height: 1.1; }
+        .lh-org-tagline { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 7.5pt; color: #555; letter-spacing: 1.5px; text-transform: uppercase; }
+        .lh-contact-col { text-align: right; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 7.5pt; color: #555; line-height: 1.7; }
+        .lh-contact-col a { color: #1e3a5f; text-decoration: none; }
+        .lh-ribbon { height: 4px; background: linear-gradient(to right, #1e3a5f, #3b82f6, #60a5fa); border-radius: 2px; margin-bottom: 18px; }
+        .lh-footer {
+            margin-top: 28px;
+            border-top: 2px solid #1e3a5f;
+            padding-top: 7px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 7.5pt;
+            color: #666;
+        }
+        .lh-footer-brand { font-weight: 700; color: #1e3a5f; }
+
+        /* letter body */
+        .letter-body { white-space: pre-wrap; word-break: break-word; }
+        .letter-ref-date { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9pt; color: #444; margin-bottom: 16px; }
+        .letter-ref-date strong { color: #1e3a5f; }
+        .letter-subject { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11pt; font-weight: 700; text-decoration: underline; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 14px; color: #1a1a1a; }
+
+        /* ---- Print styles ---- */
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body > *:not(#print-target) { display: none !important; }
+            #print-target { display: block !important; position: static !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+            #letter-preview { box-shadow: none !important; page-break-inside: avoid; }
+        }
+
+        /* misc UI */
+        .section-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+        .form-input {
+            width: 100%; padding: 10px 14px;
+            background: #1e293b; border: 1px solid #334155;
+            border-radius: 10px; color: white; outline: none;
+            font-size: 13px; transition: border-color 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .form-input:focus { border-color: #3b82f6; }
+        .form-input option { background: #1e293b; color: white; }
+        label { font-size: 12px; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; }
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+            color: white; font-weight: 700; padding: 12px 24px;
+            border-radius: 12px; border: none; cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            background: #1e293b; border: 1px solid #334155;
+            color: #94a3b8; font-weight: 600; padding: 10px 20px;
+            border-radius: 10px; cursor: pointer; font-size: 13px;
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background 0.2s;
+        }
+        .btn-secondary:hover { background: #273549; color: white; }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            padding: 12px 24px; border-radius: 12px; font-weight: 600;
+            font-size: 13px; z-index: 9999; transition: opacity 0.3s;
+            pointer-events: none; font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .toast-success { background: #166534; color: #bbf7d0; border: 1px solid #15803d; }
+        .toast-error { background: #7f1d1d; color: #fecaca; border: 1px solid #991b1b; }
+        .ai-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* tab styles */
+        .tab-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .tab-btn.active { background: #3b82f6; color: white; }
+        .tab-btn:not(.active) { color: #94a3b8; }
+        .tab-btn:not(.active):hover { color: white; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- ===================== AUTH OVERLAY ===================== -->
+<div id="auth-overlay" class="fixed inset-0 z-[200] bg-[#0f172a] flex flex-col items-center justify-center p-6">
+    <div class="w-full max-w-sm bg-slate-800 p-8 rounded-2xl shadow-2xl text-center border border-slate-700">
+        <div class="w-14 h-14 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="material-symbols-outlined text-blue-400 text-2xl">description</span>
+        </div>
+        <h1 class="text-2xl font-black text-white mb-1">Letter Generator</h1>
+        <p class="text-sm text-gray-400 mb-6">Admin &amp; CEO access only</p>
+        <input type="email" id="login-email" placeholder="Admin Email"
+            class="w-full mb-3 p-3 rounded-lg bg-slate-700 outline-none text-white border border-slate-600 focus:border-blue-500 transition-colors text-sm"
+            autocomplete="email">
+        <input type="password" id="login-pass" placeholder="Password"
+            class="w-full mb-5 p-3 rounded-lg bg-slate-700 outline-none text-white border border-slate-600 focus:border-blue-500 transition-colors text-sm"
+            autocomplete="current-password">
+        <button onclick="doLogin()"
+            class="w-full py-3 bg-gradient-to-r from-blue-700 to-indigo-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform mb-3 text-sm">
+            <span class="material-symbols-outlined text-sm align-middle mr-1">lock_open</span>Sign In
+        </button>
+        <p id="login-msg" class="text-red-400 text-xs min-h-[16px]"></p>
+    </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="app" class="hidden">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-[#0f172a]/95 backdrop-blur border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../home.html" class="text-gray-400 hover:text-white transition" aria-label="Back to home">
+                    <span class="material-symbols-outlined text-xl">arrow_back</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-gradient-to-br from-blue-700 to-indigo-600 rounded-md flex items-center justify-center">
+                        <span class="text-white font-black text-xs">AZ</span>
+                    </div>
+                    <span class="font-bold text-white text-sm">Letter Generator</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="user-badge" class="hidden text-xs font-semibold px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30"></span>
+                <button onclick="doSignOut()" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition">
+                    <span class="material-symbols-outlined text-sm">logout</span>
+                    <span class="hidden sm:inline">Sign out</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-[420px_1fr] gap-8 items-start">
+
+        <!-- ---- LEFT: Form Panel ---- -->
+        <aside class="space-y-5">
+
+            <!-- Letter Type Tabs -->
+            <div class="section-card p-5">
+                <h2 class="font-bold text-white text-base mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400 text-lg">category</span>
+                    Letter Category
+                </h2>
+                <div class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Letter category">
+                    <button class="tab-btn active" onclick="switchCategory('team', this)" data-cat="team">Team Member</button>
+                    <button class="tab-btn" onclick="switchCategory('authority', this)" data-cat="authority">Authority / External</button>
+                </div>
+
+                <div id="letter-type-group">
+                    <label for="letter-type">Letter Type</label>
+                    <select id="letter-type" class="form-input" onchange="onTypeChange()">
+                        <!-- populated by JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Recipient -->
+            <div class="section-card p-5" id="team-recipient-section">
+                <h2 class="font-bold text-white text-base mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400 text-lg">person</span>
+                    Recipient
+                </h2>
+                <div id="team-member-field">
+                    <label for="team-select">Select Team Member</label>
+                    <select id="team-select" class="form-input" onchange="onTeamMemberChange()">
+                        <option value="">— Choose a team member —</option>
+                    </select>
+                </div>
+                <div id="authority-fields" class="hidden space-y-3">
+                    <div>
+                        <label for="auth-name">Recipient Full Name / Title</label>
+                        <input type="text" id="auth-name" class="form-input" placeholder="e.g. The SRC President, University of Cape Coast">
+                    </div>
+                    <div>
+                        <label for="auth-org">Organisation / Office</label>
+                        <input type="text" id="auth-org" class="form-input" placeholder="e.g. Student Representative Council">
+                    </div>
+                    <div>
+                        <label for="auth-address">Address (optional)</label>
+                        <input type="text" id="auth-address" class="form-input" placeholder="e.g. UCC Campus, Cape Coast">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Letter Details -->
+            <div class="section-card p-5">
+                <h2 class="font-bold text-white text-base mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400 text-lg">edit_note</span>
+                    Letter Details
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="letter-date">Date of Letter</label>
+                        <input type="date" id="letter-date" class="form-input">
+                    </div>
+                    <div>
+                        <label for="letter-ref">Reference Number (optional)</label>
+                        <input type="text" id="letter-ref" class="form-input" placeholder="e.g. AZL/HR/2025/001">
+                    </div>
+                    <div id="offense-group">
+                        <label for="letter-offense">
+                            <span id="offense-label">Offence / Reason</span>
+                        </label>
+                        <textarea id="letter-offense" class="form-input" rows="3"
+                            placeholder="Describe the offence, issue or reason for this letter…"></textarea>
+                    </div>
+                    <div>
+                        <label for="letter-context">Additional Context (optional)</label>
+                        <textarea id="letter-context" class="form-input" rows="2"
+                            placeholder="Any extra details, prior warnings, mitigating factors…"></textarea>
+                    </div>
+                    <div>
+                        <label for="letter-signed-by">Signed By (Name &amp; Title)</label>
+                        <input type="text" id="letter-signed-by" class="form-input"
+                            placeholder="e.g. Francis Pwavwe, Founder &amp; CEO – AZ Learner">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button id="generate-btn" class="btn-primary w-full justify-center" onclick="generateLetter()">
+                <span class="material-symbols-outlined text-lg">auto_awesome</span>
+                Generate Letter with AI
+            </button>
+        </aside>
+
+        <!-- ---- RIGHT: Preview Panel ---- -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <h2 class="font-bold text-white text-lg flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400">preview</span>
+                    Letter Preview
+                </h2>
+                <div class="flex gap-2 flex-wrap">
+                    <button class="btn-secondary" onclick="editBody()" id="edit-btn" aria-label="Edit letter body">
+                        <span class="material-symbols-outlined text-sm">edit</span> Edit
+                    </button>
+                    <button class="btn-primary" onclick="downloadPDF()" id="download-btn">
+                        <span class="material-symbols-outlined text-sm">picture_as_pdf</span> Download PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI loading state -->
+            <div id="ai-loading" class="hidden section-card p-8 text-center text-gray-400">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="ai-spinner" style="width:32px;height:32px;border-width:3px;"></div>
+                    <p class="font-semibold text-white">Generating letter…</p>
+                    <p class="text-sm">AZ Learner AI is drafting your letter.</p>
+                </div>
+            </div>
+
+            <!-- Blank state -->
+            <div id="blank-state" class="section-card p-10 text-center text-gray-500">
+                <span class="material-symbols-outlined text-5xl text-slate-600 mb-3 block">description</span>
+                <p class="font-semibold text-gray-400">No letter yet</p>
+                <p class="text-sm mt-1">Fill in the form and click <strong class="text-white">Generate Letter with AI</strong>.</p>
+            </div>
+
+            <!-- The printable letter -->
+            <div id="print-target" class="hidden overflow-auto">
+                <div id="letter-preview" class="shadow-2xl rounded-lg overflow-hidden">
+
+                    <!-- ── LETTERHEAD ── -->
+                    <div class="lh-header">
+                        <div class="lh-logo-area">
+                            <div class="lh-logo-box">
+                                <span>AZ</span>
+                            </div>
+                            <div>
+                                <div class="lh-org-name">AZ Learner</div>
+                                <div class="lh-org-tagline">Empowering Students · Ghana</div>
+                            </div>
+                        </div>
+                        <div class="lh-contact-col">
+                            <div><a href="https://azlearner.me">azlearner.me</a></div>
+                            <div>University of Cape Coast</div>
+                            <div>Cape Coast, Ghana</div>
+                            <div><a href="mailto:azlgh@outlook.com">azlgh@outlook.com</a></div>
+                        </div>
+                    </div>
+                    <div class="lh-ribbon"></div>
+
+                    <!-- ── LETTER METADATA ── -->
+                    <div class="letter-ref-date">
+                        <div id="lp-ref"></div>
+                        <div id="lp-date"></div>
+                    </div>
+
+                    <!-- ── RECIPIENT ADDRESS ── -->
+                    <div id="lp-recipient" style="font-size:10.5pt; margin-bottom:14px; font-family:'Plus Jakarta Sans',sans-serif; line-height:1.55;"></div>
+
+                    <!-- ── SUBJECT ── -->
+                    <div id="lp-subject" class="letter-subject"></div>
+
+                    <!-- ── BODY ── -->
+                    <div id="lp-body" class="letter-body" contenteditable="false" spellcheck="true"
+                        style="outline:none; min-height:200px; border-radius:4px; padding:2px 4px;"></div>
+
+                    <!-- ── SIGNATURE ── -->
+                    <div id="lp-signature" style="margin-top:28px; font-family:'Plus Jakarta Sans',sans-serif; font-size:10pt;"></div>
+
+                    <!-- ── FOOTER ── -->
+                    <div class="lh-footer">
+                        <span class="lh-footer-brand">AZ Learner</span>
+                        <span>Confidential · <span id="lp-footer-type"></span></span>
+                        <span>azlearner.me</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden" role="alert" aria-live="polite"></div>
+
+<!-- ===================== SCRIPT ===================== -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+        authDomain: "az-learner.firebaseapp.com",
+        projectId: "az-learner",
+        storageBucket: "az-learner.firebasestorage.app",
+        messagingSenderId: "12958795950",
+        appId: "1:12958795950:web:326411293864571040453f"
+    };
+
+    const appInstance = initializeApp(firebaseConfig);
+    const db = getFirestore(appInstance);
+    const auth = getAuth(appInstance);
+
+    // ---- Auth ----
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            document.getElementById('auth-overlay').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+            return;
+        }
+        try {
+            const snap = await getDoc(doc(db, "users", user.uid));
+            const role = snap.exists() ? snap.data().role : null;
+            if (role !== 'admin' && role !== 'ceo') {
+                document.getElementById('login-msg').textContent = 'Access denied: admin or CEO role required.';
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app').classList.add('hidden');
+                await signOut(auth);
+                return;
+            }
+            window._letterUserRole = role;
+            window._letterUserEmail = user.email;
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('user-badge').textContent = role.toUpperCase() + ' · ' + user.email;
+            document.getElementById('user-badge').classList.remove('hidden');
+        } catch (e) {
+            console.error("Role check error:", e);
+            document.getElementById('login-msg').textContent = 'Error verifying role. Please try again.';
+        }
+    });
+
+    window.doLogin = async function() {
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-pass').value;
+        const msg = document.getElementById('login-msg');
+        msg.textContent = '';
+        if (!email || !pass) { msg.textContent = 'Enter email and password.'; return; }
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (e) {
+            msg.textContent = e.message || 'Sign in failed.';
+        }
+    };
+
+    window.doSignOut = async function() {
+        await signOut(auth);
+    };
+
+    // ---- Vertex AI ----
+    let aiModel = null;
+    (async () => {
+        try {
+            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+            const vertexAI = getVertexAI(appInstance);
+            aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+            window._aiModel = aiModel;
+        } catch (e) {
+            console.warn("Vertex AI unavailable:", e);
+            window._aiModel = null;
+        }
+    })();
+
+    window._callAI = async function(prompt) {
+        const model = window._aiModel;
+        if (!model) throw new Error("AI model not initialised. Ensure Vertex AI is enabled for this Firebase project.");
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    };
+</script>
+
+<script>
+    // ---- Team data ----
+    const TEAM_DATA_URL = '../team/team-data.json';
+    let teamMembers = [];
+
+    // ---- Constants ----
+    const DEFAULT_SIGNATORY = 'Francis Pwavwe, Founder & CEO – AZ Learner';
+
+    // ---- Letter type definitions ----
+    const LETTER_TYPES = {
+        team: [
+            { value: 'query',       label: 'Query Letter',              offenseLabel: 'Offence / Reason for Query' },
+            { value: 'warning',     label: 'Warning Letter',            offenseLabel: 'Specific Misconduct / Concern' },
+            { value: 'suspension',  label: 'Suspension Letter',         offenseLabel: 'Grounds for Suspension' },
+            { value: 'commendation',label: 'Commendation Letter',       offenseLabel: 'Achievement / Reason for Commendation' },
+            { value: 'termination', label: 'Termination Letter',        offenseLabel: 'Reason for Termination' },
+        ],
+        authority: [
+            { value: 'src',         label: 'Letter to SRC',             offenseLabel: 'Purpose / Subject of Letter' },
+            { value: 'university',  label: 'Letter to University',      offenseLabel: 'Purpose / Subject of Letter' },
+            { value: 'sponsor',     label: 'Letter to Sponsor/Partner', offenseLabel: 'Purpose of Partnership / Request' },
+            { value: 'complaint',   label: 'Formal Complaint Letter',   offenseLabel: 'Nature of Complaint' },
+            { value: 'request',     label: 'General Request Letter',    offenseLabel: 'Nature of Request' },
+            { value: 'introduction',label: 'Introduction / Referral',   offenseLabel: 'Purpose of Introduction' },
+        ]
+    };
+
+    let currentCategory = 'team'; // 'team' | 'authority'
+
+    // ---- Initialise ----
+    (async function init() {
+        // Set today's date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('letter-date').value = today;
+
+        // Load team data
+        try {
+            const res = await fetch(TEAM_DATA_URL);
+            const json = await res.json();
+            teamMembers = json.team || [];
+            const sel = document.getElementById('team-select');
+            teamMembers.forEach((m, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = m.name + ' — ' + m.role;
+                sel.appendChild(opt);
+            });
+        } catch (e) {
+            console.warn('Could not load team data:', e);
+        }
+
+        populateLetterTypes();
+    })();
+
+    function populateLetterTypes() {
+        const sel = document.getElementById('letter-type');
+        sel.innerHTML = '';
+        LETTER_TYPES[currentCategory].forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.value;
+            opt.textContent = t.label;
+            sel.appendChild(opt);
+        });
+        onTypeChange();
+    }
+
+    window.switchCategory = function(cat, btn) {
+        currentCategory = cat;
+        // Update tab styles
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Toggle recipient section
+        if (cat === 'team') {
+            document.getElementById('team-member-field').classList.remove('hidden');
+            document.getElementById('authority-fields').classList.add('hidden');
+        } else {
+            document.getElementById('team-member-field').classList.add('hidden');
+            document.getElementById('authority-fields').classList.remove('hidden');
+        }
+        populateLetterTypes();
+    };
+
+    window.onTypeChange = function() {
+        const type = document.getElementById('letter-type').value;
+        const types = LETTER_TYPES[currentCategory];
+        const def = types.find(t => t.value === type) || types[0];
+        if (def) {
+            document.getElementById('offense-label').textContent = def.offenseLabel;
+        }
+    };
+
+    window.onTeamMemberChange = function() {
+        // Auto-fill signed-by if empty
+        const idx = document.getElementById('team-select').value;
+        if (!document.getElementById('letter-signed-by').value) {
+            document.getElementById('letter-signed-by').value = DEFAULT_SIGNATORY;
+        }
+    };
+
+    // ---- Generate ----
+    window.generateLetter = async function() {
+        const btn = document.getElementById('generate-btn');
+        const loadingEl = document.getElementById('ai-loading');
+        const blankEl = document.getElementById('blank-state');
+        const printTarget = document.getElementById('print-target');
+
+        // Gather inputs
+        const letterTypeVal = document.getElementById('letter-type').value;
+        const letterTypes = LETTER_TYPES[currentCategory];
+        const letterTypeDef = letterTypes.find(t => t.value === letterTypeVal);
+        const letterTypeLabel = letterTypeDef ? letterTypeDef.label : letterTypeVal;
+
+        const dateVal = document.getElementById('letter-date').value;
+        const refVal = document.getElementById('letter-ref').value.trim();
+        const offenseVal = document.getElementById('letter-offense').value.trim();
+        const contextVal = document.getElementById('letter-context').value.trim();
+        const signedBy = document.getElementById('letter-signed-by').value.trim();
+
+        let recipientName = '', recipientTitle = '', recipientOrg = '', recipientAddress = '';
+
+        if (currentCategory === 'team') {
+            const idx = document.getElementById('team-select').value;
+            if (idx === '') { showToast('Please select a team member.', 'error'); return; }
+            const m = teamMembers[idx];
+            if (!m) { showToast('Team member not found.', 'error'); return; }
+            recipientName = m.name;
+            recipientTitle = m.role;
+            recipientOrg = 'AZ Learner';
+        } else {
+            recipientName = document.getElementById('auth-name').value.trim();
+            recipientOrg = document.getElementById('auth-org').value.trim();
+            recipientAddress = document.getElementById('auth-address').value.trim();
+            if (!recipientName) { showToast('Please enter the recipient name.', 'error'); return; }
+        }
+
+        if (!offenseVal) { showToast('Please describe the reason / offence.', 'error'); return; }
+
+        // Format date
+        const dateParts = dateVal ? dateVal.split('-') : [];
+        const formattedDate = dateParts.length === 3
+            ? new Date(+dateParts[0], +dateParts[1] - 1, +dateParts[2]).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            : new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        // Build AI prompt
+        const prompt = buildPrompt({
+            letterTypeLabel, recipientName, recipientTitle, recipientOrg,
+            recipientAddress, offenseVal, contextVal, signedBy, formattedDate
+        });
+
+        // UI loading
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-spinner"></span> Generating…';
+        blankEl.classList.add('hidden');
+        printTarget.classList.add('hidden');
+        loadingEl.classList.remove('hidden');
+
+        try {
+            const body = await window._callAI(prompt);
+
+            // Render preview
+            renderPreview({
+                letterTypeLabel, recipientName, recipientTitle, recipientOrg,
+                recipientAddress, offenseVal, body: body.trim(),
+                signedBy, formattedDate, refVal
+            });
+
+            loadingEl.classList.add('hidden');
+            printTarget.classList.remove('hidden');
+            showToast('Letter generated! Review and download as PDF.', 'success');
+        } catch (e) {
+            console.error('AI error:', e);
+            loadingEl.classList.add('hidden');
+            blankEl.classList.remove('hidden');
+            showToast('AI generation failed: ' + (e.message || 'Please try again.'), 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined text-lg">auto_awesome</span> Generate Letter with AI';
+        }
+    };
+
+    function buildPrompt({ letterTypeLabel, recipientName, recipientTitle, recipientOrg, recipientAddress, offenseVal, contextVal, signedBy, formattedDate }) {
+        const sender = signedBy || DEFAULT_SIGNATORY;
+        const rcptLine = recipientTitle ? `${recipientName} (${recipientTitle})` : recipientName;
+
+        return `You are a professional letter writer for AZ Learner, a student platform based in Ghana at the University of Cape Coast.
+Write a complete, formal and professional ${letterTypeLabel} in British English.
+
+LETTER DETAILS:
+- Date: ${formattedDate}
+- Recipient: ${rcptLine}${recipientOrg ? ', ' + recipientOrg : ''}
+- Sender/Signatory: ${sender}
+- Reason / Offence: ${offenseVal}${contextVal ? '\n- Additional context: ' + contextVal : ''}
+
+INSTRUCTIONS:
+1. Start with "Dear ${recipientTitle ? recipientTitle + ' ' : ''}${recipientName},"
+2. Write 2-4 formal paragraphs appropriate for a ${letterTypeLabel}.
+3. Be firm, professional, empathetic where appropriate, and legally sound.
+4. End with "Yours sincerely," then two blank lines, then the signatory name and title on a new line.
+5. Do NOT include any letterhead, date, reference number, or recipient address — those are added separately.
+6. Return ONLY the letter body text starting from "Dear…" and ending after the signatory line.
+7. Use British English spelling and formal register throughout.`;
+    }
+
+    function renderPreview({ letterTypeLabel, recipientName, recipientTitle, recipientOrg, recipientAddress, body, signedBy, formattedDate, refVal }) {
+        // Date & ref
+        document.getElementById('lp-ref').innerHTML = refVal ? `<strong>Ref:</strong> ${escHtml(refVal)}` : '';
+        document.getElementById('lp-date').innerHTML = `<strong>Date:</strong> ${escHtml(formattedDate)}`;
+
+        // Recipient block
+        let rcptLines = [];
+        if (recipientTitle) rcptLines.push(`<strong>${escHtml(recipientTitle)}</strong>`);
+        rcptLines.push(escHtml(recipientName));
+        if (recipientOrg) rcptLines.push(escHtml(recipientOrg));
+        if (recipientAddress) rcptLines.push(escHtml(recipientAddress));
+        document.getElementById('lp-recipient').innerHTML = rcptLines.join('<br>');
+
+        // Subject: always show letter type and recipient name
+        document.getElementById('lp-subject').textContent = letterTypeLabel.toUpperCase() + ' – ' + recipientName.toUpperCase();
+        document.getElementById('lp-footer-type').textContent = letterTypeLabel;
+
+        // Body (set as text, preserving AI newlines)
+        document.getElementById('lp-body').textContent = body;
+
+        // Signature
+        const sigParts = (signedBy || DEFAULT_SIGNATORY).split(/[,–-]+/).map(s => s.trim());
+        const sigHtml = `<div style="margin-bottom:32px; color:#bbb; font-size:9pt; font-style:italic; font-family:'Plus Jakarta Sans',sans-serif;">____________________________________________</div>
+<div style="font-weight:700; font-size:10.5pt; color:#1a1a1a;">${escHtml(sigParts[0] || signedBy || DEFAULT_SIGNATORY)}</div>
+${sigParts.slice(1).map(p => `<div style="font-size:9.5pt; color:#444;">${escHtml(p)}</div>`).join('')}
+<div style="font-size:9pt; color:#555; margin-top:3px;">AZ Learner · <a href="https://azlearner.me" style="color:#1e3a5f;">azlearner.me</a></div>`;
+        document.getElementById('lp-signature').innerHTML = sigHtml;
+    }
+
+    // ---- Edit body ----
+    window.editBody = function() {
+        const body = document.getElementById('lp-body');
+        const btn = document.getElementById('edit-btn');
+        if (body.contentEditable === 'true') {
+            body.contentEditable = 'false';
+            body.style.border = '';
+            body.style.padding = '2px 4px';
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">edit</span> Edit';
+            showToast('Changes saved.', 'success');
+        } else {
+            body.contentEditable = 'true';
+            body.style.border = '1.5px solid #3b82f6';
+            body.style.padding = '8px 10px';
+            body.style.borderRadius = '6px';
+            body.focus();
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Done';
+        }
+    };
+
+    // ---- Download PDF ----
+    window.downloadPDF = function() {
+        const print = document.getElementById('print-target');
+        if (print.classList.contains('hidden')) {
+            showToast('Generate a letter first.', 'error');
+            return;
+        }
+        window.print();
+    };
+
+    // ---- Helpers ----
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    let _toastTimer = null;
+    window.showToast = function(msg, type) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = 'toast ' + (type === 'error' ? 'toast-error' : 'toast-success');
+        el.classList.remove('hidden');
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+    };
+</script>
+</body>
+</html>
