@@ -14,19 +14,6 @@
       }
     },
     {
-      "name": "Admin Name",
-      "role": "Backend Developer",
-      "image": "assets/images/placeholder.svg",
-      "bio": "Focused on building reliable systems for AZ Learner.",
-      "profile": "profiles/admin-name.html",
-      "skills": ["APIs", "Databases", "Security"],
-      "socials": {
-        "github": "",
-        "linkedin": "",
-        "twitter": ""
-      }
-    },
-    {
       "name": "Andy Anim",
       "role": "Chief of Ambassadors",
       "image": "https://www.canva.com/design/DAHDOEzbgeM/OFMWBFIkz7FNEdbaEYTz6A/view?utm_content=DAHDOEzbgeM&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3ce963cc1a",
