@@ -501,6 +501,7 @@
         document.getElementById('loading-screen').classList.add('hidden');
 
         if (!user) {
+            document.getElementById('app').classList.add('hidden');
             document.getElementById('gate-signout-btn').classList.add('hidden');
             document.getElementById('auth-gate').classList.remove('hidden');
             return;
@@ -572,6 +573,7 @@
                 msg = 'Network error. Please check your connection and try again.';
             }
             errEl.textContent = msg;
+        } finally {
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
             btn.innerHTML = origHTML;
