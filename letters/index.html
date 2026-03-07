@@ -23,6 +23,8 @@
             box-shadow: 0 8px 40px rgba(0,0,0,0.45);
             box-sizing: border-box;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ── Letterhead ── */
@@ -44,7 +46,7 @@
         .lh-divider { height: 1px; background: #d1d5db; margin: 0 32px; }
 
         /* ── Letter body ── */
-        .letter-body { padding: 28px 36px 36px; }
+        .letter-body { padding: 28px 36px 36px; flex: 1; }
         .letter-meta { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5pt; color: #374151; margin-bottom: 20px; }
         .letter-ref { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9pt; font-weight: 700; color: #1e3a5f; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.8px; }
         .letter-subject { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11pt; font-weight: 700; color: #1a1a1a; text-decoration: underline; margin-bottom: 18px; }
