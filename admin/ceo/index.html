@@ -87,6 +87,9 @@
             <button onclick="switchView('activity')" id="nav-activity"
                 class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
                 <i class="fa-solid fa-clock-rotate-left mr-1.5 text-blue-400"></i>Activity Log</button>
+            <button onclick="switchView('letters')" id="nav-letters"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-transparent text-gray-400">
+                <i class="fa-solid fa-envelope-open-text mr-1.5 text-indigo-400"></i>Letters</button>
             <a href="../../advice/" class="px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition border border-amber-700/40 text-amber-400 bg-amber-900/20 hover:bg-amber-900/40 flex items-center">
                 <i class="fa-solid fa-book-open mr-1.5"></i>Advice Hub</a>
         </div>
@@ -381,6 +384,11 @@
                 </div>
             </div>
 
+            <!-- LETTERS VIEW -->
+            <div id="view-letters" class="view" style="height:calc(100vh - 112px);"> <!-- 112px = header (72px) + nav bar (40px) -->
+                <iframe src="../../letters/" class="w-full h-full border-0" title="Letter Generator" allowfullscreen></iframe>
+            </div>
+
         </div>
     </div>
 
@@ -507,7 +515,7 @@
             }
         };
 
-        const VIEWS = ['overview','access','activity'];
+        const VIEWS = ['overview','access','activity','letters'];
         window.switchView = function(view) {
             if(!VIEWS.includes(view)) view = 'overview';
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));

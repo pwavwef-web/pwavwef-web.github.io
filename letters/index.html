@@ -150,44 +150,8 @@
 </head>
 <body>
 
-<!-- Auth Gate (hidden once signed-in CEO) -->
-<div id="auth-gate" class="hidden">
-    <div class="w-full max-w-sm mx-auto px-6 py-10">
-        <div class="card text-center">
-            <div class="material-symbols-outlined text-5xl text-blue-400 mb-3" style="font-size:3rem;">lock</div>
-            <h2 class="text-xl font-bold mb-1">CEO Access Required</h2>
-            <p class="text-slate-400 text-sm mb-6">Sign in with your CEO account to use the Letter Generator.</p>
-            <div class="text-left space-y-4">
-                <div>
-                    <label class="form-label" for="gate-email">Email</label>
-                    <input id="gate-email" class="form-input" type="email" placeholder="pwavwef@gmail.com" value="pwavwef@gmail.com" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('gate-pass').focus()">
-                </div>
-                <div>
-                    <label class="form-label" for="gate-pass">Password</label>
-                    <input id="gate-pass" class="form-input" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')window.signInWithEmail()">
-                </div>
-                <p id="gate-error" class="text-red-400 text-xs min-h-[1rem]"></p>
-                <button class="btn-primary w-full justify-center" onclick="window.signInWithEmail()">
-                    <span class="material-symbols-outlined text-sm">login</span> Sign In
-                </button>
-                <button id="gate-signout-btn" class="hidden w-full text-slate-400 hover:text-white text-xs font-semibold py-2 transition" onclick="window.signOutAndReset()">
-                    <span class="material-symbols-outlined text-sm align-middle">logout</span> Sign out and use a different account
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Loading screen -->
-<div id="loading-screen" class="min-h-screen flex items-center justify-center">
-    <div class="text-center">
-        <div class="spinner" style="width:36px;height:36px;border-width:3px;margin:0 auto 16px;"></div>
-        <p class="text-slate-400 text-sm">Loading…</p>
-    </div>
-</div>
-
 <!-- Main app -->
-<div id="app" class="hidden">
+<div id="app">
 
     <!-- Top nav -->
     <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-slate-800">
@@ -480,7 +444,6 @@
 <!-- Firebase + Vertex AI -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -492,105 +455,20 @@
     };
 
     const appInstance = initializeApp(firebaseConfig);
-    const auth = getAuth(appInstance);
 
-    const CEO_EMAIL = "pwavwef@gmail.com";
+    const adminRoleEl = document.getElementById('admin-role');
+    if (adminRoleEl && !adminRoleEl.value) adminRoleEl.value = 'Founder & CEO';
 
-    // Auth gate: only CEO can access
-    onAuthStateChanged(auth, async (user) => {
-        document.getElementById('loading-screen').classList.add('hidden');
-
-        if (!user) {
-            document.getElementById('gate-signout-btn').classList.add('hidden');
-            document.getElementById('auth-gate').classList.remove('hidden');
-            return;
-        }
-
-        if (user.email !== CEO_EMAIL) {
-            const errEl = document.getElementById('gate-error');
-            if (errEl) errEl.textContent = 'Access restricted to the CEO account only.';
-            document.getElementById('gate-signout-btn').classList.remove('hidden');
-            document.getElementById('auth-gate').classList.remove('hidden');
-            return;
-        }
-
-        // Hide auth gate and show app
-        document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('gate-signout-btn').classList.add('hidden');
-
-        // Pre-fill signatory name from display name
-        if (user.displayName) {
-            const adminNameEl = document.getElementById('admin-name');
-            if (adminNameEl && !adminNameEl.value) adminNameEl.value = user.displayName;
-        }
-        // Only CEOs reach this point, so always pre-fill the signatory role if not already set
-        const adminRoleEl = document.getElementById('admin-role');
-        if (adminRoleEl && !adminRoleEl.value) adminRoleEl.value = 'Founder & CEO';
-
-        document.getElementById('app').classList.remove('hidden');
-
-        // Initialise Vertex AI only after successful auth to avoid
-        // ERR_NAME_NOT_RESOLVED errors on page load for unauthenticated users
-        try {
-            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
-            const vertexAI = getVertexAI(appInstance);
-            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
-            window._aiModel = aiModel;
-        } catch (e) {
-            console.warn("Vertex AI unavailable:", e);
-            window._aiModel = null;
-        }
-    });
-
-    // ── Email/password sign-in for auth gate ───────────────────────────
-    window.signInWithEmail = async function () {
-        const email = document.getElementById('gate-email').value.trim();
-        const password = document.getElementById('gate-pass').value;
-        const errEl = document.getElementById('gate-error');
-        errEl.textContent = '';
-        if (!email || !password) {
-            errEl.textContent = 'Please enter your email and password.';
-            return;
-        }
-        const btn = document.querySelector('#auth-gate .btn-primary');
-        const origHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.setAttribute('aria-busy', 'true');
-        btn.innerHTML = '<span class="spinner"></span> Signing in…';
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            // onAuthStateChanged will handle showing the app
-        } catch (e) {
-            let msg = 'Sign-in failed. Please try again.';
-            if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
-                msg = 'Incorrect email or password.';
-            } else if (e.code === 'auth/invalid-email') {
-                msg = 'Invalid email address.';
-            } else if (e.code === 'auth/too-many-requests') {
-                msg = 'Too many attempts. Please try again later.';
-            } else if (e.code === 'auth/network-request-failed') {
-                msg = 'Network error. Please check your connection and try again.';
-            }
-            errEl.textContent = msg;
-            btn.disabled = false;
-            btn.removeAttribute('aria-busy');
-            btn.innerHTML = origHTML;
-        }
-    };
-
-    // ── Sign out and reset auth gate ───────────────────────────────────
-    window.signOutAndReset = async function () {
-        try {
-            await signOut(auth);
-        } catch (e) {
-            console.warn("Sign-out error:", e);
-        }
-        const errEl = document.getElementById('gate-error');
-        if (errEl) errEl.textContent = '';
-        document.getElementById('gate-email').value = '';
-        document.getElementById('gate-pass').value = '';
-        document.getElementById('gate-signout-btn').classList.add('hidden');
-    };
+    // Initialise Vertex AI
+    try {
+        const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+        const vertexAI = getVertexAI(appInstance);
+        const aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+        window._aiModel = aiModel;
+    } catch (e) {
+        console.warn("Vertex AI unavailable:", e);
+        window._aiModel = null;
+    }
 
     window._callAI = async function(prompt) {
         const model = window._aiModel;
