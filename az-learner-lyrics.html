@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learn Your Way – AZ Learner Lyrics Video</title>
+  <style>
+    /* ── Reset & root ─────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --gold:    #f5c518;
+      --blue:    #4fc3f7;
+      --white:   #ffffff;
+      --gray:    #b0bec5;
+      --accent:  #80cbc4;
+      --chorus:  #ffd54f;
+      --bridge:  #ce93d8;
+      --outro:   #80deea;
+
+      /* Total scroll duration = 195 s so last line is visible at 3:15 */
+      --scroll-duration: 195s;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Georgia', 'Times New Roman', serif;
+    }
+
+    /* ── Starfield canvas ─────────────────────────────────────── */
+    #stars-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* ── Radial glow overlay ──────────────────────────────────── */
+    .glow-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: radial-gradient(
+        ellipse 60% 50% at 50% 50%,
+        rgba(79, 195, 247, 0.08) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+
+    /* ── Stage: visible window ────────────────────────────────── */
+    .stage {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── Scroll track ─────────────────────────────────────────── */
+    .scroll-track {
+      width: min(620px, 92vw);
+      padding: 100vh 0 100vh;   /* start below fold, end above fold */
+      animation: lyricsScroll var(--scroll-duration) linear forwards;
+      animation-delay: 2s;      /* 2-second pause before scrolling starts */
+      will-change: transform;
+    }
+
+    /* Translate from bottom to position where last line is visible at viewport centre */
+    @keyframes lyricsScroll {
+      from { transform: translateY(0); }
+      to   { transform: translateY(calc(-100% + 100vh)); }
+    }
+
+    /* ── Title block ──────────────────────────────────────────── */
+    .song-title {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    .song-title h1 {
+      font-size: clamp(2rem, 7vw, 3.4rem);
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-shadow:
+        0 0 18px rgba(245,197,24,0.9),
+        0 0 40px rgba(245,197,24,0.5);
+      line-height: 1.2;
+    }
+    .song-title p {
+      margin-top: 10px;
+      font-size: clamp(0.95rem, 2.5vw, 1.2rem);
+      color: var(--blue);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(79,195,247,0.7);
+    }
+
+    /* ── Section labels ───────────────────────────────────────── */
+    .section-label {
+      text-align: center;
+      font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gray);
+      margin: 48px 0 14px;
+      opacity: 0.6;
+    }
+
+    /* ── Lyric lines ──────────────────────────────────────────── */
+    .lyric-line {
+      text-align: center;
+      line-height: 1.75;
+      font-size: clamp(1.05rem, 3.2vw, 1.5rem);
+      color: var(--white);
+      text-shadow: 0 0 12px rgba(255,255,255,0.35);
+      padding: 4px 0;
+    }
+
+    /* Section colour variants */
+    .chorus   .lyric-line { color: var(--chorus);  text-shadow: 0 0 14px rgba(255,213,79,0.55); }
+    .bridge   .lyric-line { color: var(--bridge);  text-shadow: 0 0 14px rgba(206,147,216,0.55); }
+    .outro    .lyric-line { color: var(--outro);   text-shadow: 0 0 14px rgba(128,222,234,0.55); }
+    .prechorus .lyric-line { color: var(--accent); text-shadow: 0 0 12px rgba(128,203,196,0.5); }
+
+    /* ── Divider dots ─────────────────────────────────────────── */
+    .divider {
+      text-align: center;
+      color: var(--gray);
+      font-size: 0.7rem;
+      letter-spacing: 0.4em;
+      margin: 32px 0;
+      opacity: 0.4;
+    }
+
+    /* ── Pulse shimmer on title ───────────────────────────────── */
+    @keyframes titlePulse {
+      0%, 100% { text-shadow: 0 0 18px rgba(245,197,24,0.9), 0 0 40px rgba(245,197,24,0.5); }
+      50%       { text-shadow: 0 0 32px rgba(245,197,24,1),   0 0 70px rgba(245,197,24,0.8); }
+    }
+    .song-title h1 { animation: titlePulse 3s ease-in-out infinite; }
+
+    /* ── Top & bottom fade masks ──────────────────────────────── */
+    .mask-top, .mask-bottom {
+      position: fixed;
+      left: 0; right: 0;
+      height: 160px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .mask-top    { top: 0;    background: linear-gradient(to bottom, #000 0%, transparent 100%); }
+    .mask-bottom { bottom: 0; background: linear-gradient(to top,   #000 0%, transparent 100%); }
+
+    /* ── Playback UI (hidden during capture) ─────────────────── */
+    .ui-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .ui-bar button {
+      background: rgba(79,195,247,0.15);
+      border: 1px solid rgba(79,195,247,0.4);
+      color: var(--blue);
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: background 0.2s;
+    }
+    .ui-bar button:hover { background: rgba(79,195,247,0.28); }
+    #timer-display {
+      color: var(--gray);
+      font-size: 0.85rem;
+      min-width: 60px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Animated star background -->
+<canvas id="stars-canvas"></canvas>
+<div class="glow-overlay"></div>
+
+<!-- Fade masks -->
+<div class="mask-top"></div>
+<div class="mask-bottom"></div>
+
+<!-- Scrolling lyrics stage -->
+<div class="stage">
+  <div class="scroll-track" id="lyricsTrack">
+
+    <!-- ── Song title ─────────────────────────────────────────── -->
+    <div class="song-title">
+      <h1>Learn Your Way</h1>
+      <p>AZ Learner</p>
+    </div>
+
+    <!-- ── Verse 1 ─────────────────────────────────────────────── -->
+    <div class="section-label">Verse 1</div>
+    <div class="verse">
+      <div class="lyric-line">Late night lights, books on the floor</div>
+      <div class="lyric-line">Deadlines knocking on your door</div>
+      <div class="lyric-line">Dreams feel heavy, mind feels tight</div>
+      <div class="lyric-line">But you're still fighting through the night</div>
+      <div class="lyric-line">Every answer, every page</div>
+      <div class="lyric-line">Feels like walking on a stage</div>
+      <div class="lyric-line">Step by step you're getting near</div>
+      <div class="lyric-line">All the knowledge you need is here</div>
+    </div>
+
+    <!-- ── Pre-Chorus ──────────────────────────────────────────── -->
+    <div class="section-label">Pre-Chorus</div>
+    <div class="prechorus">
+      <div class="lyric-line">You don't have to walk alone</div>
+      <div class="lyric-line">There's a place that feels like home</div>
+    </div>
+
+    <!-- ── Chorus ──────────────────────────────────────────────── -->
+    <div class="section-label">Chorus</div>
+    <div class="chorus">
+      <div class="lyric-line">AZ Learner, light the way</div>
+      <div class="lyric-line">Helping students every day</div>
+      <div class="lyric-line">From A to Z we guide the climb</div>
+      <div class="lyric-line">One smart step at a time</div>
+      <div class="lyric-line">Study smarter, feel the flow</div>
+      <div class="lyric-line">Watch your confidence grow</div>
+      <div class="lyric-line">Every goal is closer now</div>
+      <div class="lyric-line">AZ Learner shows you how</div>
+    </div>
+
+    <div class="divider">· · ·</div>
+
+    <!-- ── Verse 2 ─────────────────────────────────────────────── -->
+    <div class="section-label">Verse 2</div>
+    <div class="verse">
+      <div class="lyric-line">Past questions, tools that care</div>
+      <div class="lyric-line">Everything you need is there</div>
+      <div class="lyric-line">From the first note to the test</div>
+      <div class="lyric-line">Helping you become your best</div>
+      <div class="lyric-line">No more guessing where to start</div>
+      <div class="lyric-line">Just one app, one steady heart</div>
+      <div class="lyric-line">Knowledge waiting at your side</div>
+      <div class="lyric-line">Let your future be your guide</div>
+    </div>
+
+    <!-- ── Pre-Chorus ──────────────────────────────────────────── -->
+    <div class="section-label">Pre-Chorus</div>
+    <div class="prechorus">
+      <div class="lyric-line">Every dream begins to rise</div>
+      <div class="lyric-line">When the answers are in sight</div>
+    </div>
+
+    <!-- ── Chorus ──────────────────────────────────────────────── -->
+    <div class="section-label">Chorus</div>
+    <div class="chorus">
+      <div class="lyric-line">AZ Learner, light the way</div>
+      <div class="lyric-line">Helping students every day</div>
+      <div class="lyric-line">From A to Z we guide the climb</div>
+      <div class="lyric-line">One smart step at a time</div>
+      <div class="lyric-line">Study smarter, feel the flow</div>
+      <div class="lyric-line">Watch your confidence grow</div>
+      <div class="lyric-line">Every goal is closer now</div>
+      <div class="lyric-line">AZ Learner shows you how</div>
+    </div>
+
+    <div class="divider">· · ·</div>
+
+    <!-- ── Bridge ─────────────────────────────────────────────── -->
+    <div class="section-label">Bridge</div>
+    <div class="bridge">
+      <div class="lyric-line">Big dreams start with small steps</div>
+      <div class="lyric-line">Every lesson builds what's next</div>
+      <div class="lyric-line">Your future's calling, take the lead</div>
+      <div class="lyric-line">Everything you need is here indeed</div>
+    </div>
+
+    <div class="divider">· · ·</div>
+
+    <!-- ── Final Chorus ───────────────────────────────────────── -->
+    <div class="section-label">Final Chorus</div>
+    <div class="chorus">
+      <div class="lyric-line">AZ Learner, take the chance</div>
+      <div class="lyric-line">Let your knowledge lead the dance</div>
+      <div class="lyric-line">From A to Z your path is clear</div>
+      <div class="lyric-line">The future's waiting here</div>
+      <div class="lyric-line">Study smarter, feel the flow</div>
+      <div class="lyric-line">Watch your confidence grow</div>
+      <div class="lyric-line">Every goal is closer now</div>
+      <div class="lyric-line">AZ Learner shows you how</div>
+    </div>
+
+    <div class="divider">· · · · ·</div>
+
+    <!-- ── Outro ──────────────────────────────────────────────── -->
+    <div class="section-label">Outro</div>
+    <div class="outro">
+      <div class="lyric-line">One small step today</div>
+      <div class="lyric-line">One bright mind tomorrow</div>
+      <div class="lyric-line">AZ Learner…</div>
+      <div class="lyric-line" id="lastLine">Learn your way.</div>
+    </div>
+
+    <!-- Extra breathing room after last line -->
+    <div style="height: 60px;"></div>
+
+  </div><!-- /.scroll-track -->
+</div><!-- /.stage -->
+
+<!-- Playback controls (hide before screen-recording for CapCut) -->
+<div class="ui-bar" id="uiBar">
+  <button id="btnRestart">↺ Restart</button>
+  <span id="timer-display">0:00</span>
+  <button id="btnHideUI">Hide UI</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   Starfield Canvas
+═══════════════════════════════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('stars-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, stars = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function initStars(n) {
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      stars.push({
+        x:       Math.random() * W,
+        y:       Math.random() * H,
+        r:       Math.random() * 1.4 + 0.3,
+        alpha:   Math.random(),
+        speed:   Math.random() * 0.003 + 0.001,
+        twinkle: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function drawStars(ts) {
+    ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => {
+      s.twinkle += s.speed * 60;
+      const a = 0.3 + 0.7 * Math.abs(Math.sin(s.twinkle));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,220,255,${a})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(drawStars);
+  }
+
+  window.addEventListener('resize', () => { resize(); initStars(220); });
+  resize();
+  initStars(220);
+  requestAnimationFrame(drawStars);
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   Playback controls & timer
+═══════════════════════════════════════════════════════════════ */
+(function () {
+  const track   = document.getElementById('lyricsTrack');
+  const display = document.getElementById('timer-display');
+  const DELAY   = 2;    // seconds before scroll starts (matches CSS animation-delay)
+  let   startTs = null;
+  let   paused  = false;
+  let   elapsed = 0;
+  let   rafId;
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function tick(ts) {
+    if (!startTs) startTs = ts;
+    elapsed = (ts - startTs) / 1000;
+    display.textContent = formatTime(elapsed);
+    rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+
+  /* Restart */
+  document.getElementById('btnRestart').addEventListener('click', () => {
+    track.style.animation = 'none';
+    track.offsetHeight;   // force reflow to restart CSS animation
+    track.style.animation = '';
+    startTs = null;
+    elapsed = 0;
+    display.textContent = '0:00';
+  });
+
+  /* Hide UI for clean screen-record */
+  document.getElementById('btnHideUI').addEventListener('click', () => {
+    document.getElementById('uiBar').style.display = 'none';
+  });
+})();
+</script>
+</body>
+</html>
