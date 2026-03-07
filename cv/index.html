@@ -102,6 +102,45 @@
         .cv-skills { display: flex; flex-wrap: wrap; gap: 6px; }
         .cv-skill-tag { background: #f0f4ff; color: #1e3a5f; padding: 3px 10px; border-radius: 12px; font-size: 9.5pt; }
         .step-indicator div { transition: all 0.3s; }
+        /* Template 6 – Executive Navy */
+        .cv-t6 { position: relative; }
+        .cv-t6 .cv-header { background: linear-gradient(135deg, #0f2d52, #1a4a7a); color: white; padding: 22px 24px; margin: -20mm -20mm 0 -20mm; display: flex; align-items: center; gap: 16px; }
+        .cv-t6 .cv-header h1 { font-size: 22pt; font-weight: bold; margin: 0; letter-spacing: 0.5px; }
+        .cv-t6 .cv-header p { font-size: 10pt; margin: 4px 0 0; color: #06b6d4; font-weight: 600; }
+        .cv-t6 .cv-teal-bar { background: #06b6d4; height: 4px; margin: 0 -20mm 0 -20mm; }
+        .cv-t6 .cv-contact-bar { background: #f0f9ff; color: #0c4a6e; padding: 7px 24px; margin: 0 -20mm 16px -20mm; font-size: 9pt; border-bottom: 1px solid #bae6fd; }
+        .cv-t6 .cv-body { display: flex; gap: 20px; }
+        .cv-t6 .cv-left { width: 38%; flex-shrink: 0; }
+        .cv-t6 .cv-right { flex: 1; }
+        .cv-t6 .cv-section-title { color: #06b6d4; font-size: 10.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; margin-top: 14px; padding-bottom: 3px; border-bottom: 2px solid #06b6d4; }
+        .cv-t6 .cv-main-section-title { color: #0f2d52; font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 14px; padding-bottom: 4px; border-bottom: 2px solid #0f2d52; }
+        .cv-t6 .cv-footer { margin: 20px -20mm -20mm -20mm; padding: 8px 24px; background: linear-gradient(135deg, #0f2d52, #1a4a7a); color: rgba(255,255,255,0.6); font-size: 8pt; display: flex; justify-content: space-between; }
+        /* Template 7 – Luxury Gold */
+        .cv-t7 { background: white; }
+        .cv-t7 .cv-header { background: #1a1a1a; color: white; padding: 30px 24px; margin: -20mm -20mm 0 -20mm; text-align: center; }
+        .cv-t7 .cv-header h1 { font-size: 26pt; font-weight: 800; letter-spacing: 2px; margin: 0; color: white; }
+        .cv-t7 .cv-header p { font-size: 10pt; color: #d4af37; margin: 8px 0 0; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
+        .cv-t7 .cv-gold-divider { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 -20mm; padding: 10px 24px; background: #111; }
+        .cv-t7 .cv-gold-divider span { color: #d4af37; font-size: 8pt; letter-spacing: 2px; }
+        .cv-t7 .cv-gold-divider::before, .cv-t7 .cv-gold-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, #d4af37, transparent); }
+        .cv-t7 .cv-contact-bar { background: #fffbeb; color: #78350f; padding: 8px 24px; margin: 0 -20mm 16px -20mm; font-size: 9pt; text-align: center; border-bottom: 1px solid #fde68a; }
+        .cv-t7 .cv-section-title { color: #92400e; font-size: 11pt; font-weight: bold; margin-bottom: 8px; margin-top: 16px; display: flex; align-items: center; gap: 10px; }
+        .cv-t7 .cv-section-title::before { content: ''; width: 30px; height: 2px; background: linear-gradient(to right, #d4af37, #f59e0b); flex-shrink: 0; }
+        .cv-t7 .cv-section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, #fde68a, transparent); }
+        .cv-t7 .cv-footer { margin: 24px -20mm -20mm -20mm; padding: 10px 24px; background: #1a1a1a; color: #d4af37; font-size: 8pt; text-align: center; letter-spacing: 2px; }
+        /* Template 8 – Premium Gradient */
+        .cv-t8 { background: #fafafa; }
+        .cv-t8 .cv-header { background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed, #a855f7); color: white; padding: 32px 24px 24px; margin: -20mm -20mm 0 -20mm; position: relative; overflow: hidden; }
+        .cv-t8 .cv-header::before { content: ''; position: absolute; top: -30px; right: -30px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.07); }
+        .cv-t8 .cv-header::after { content: ''; position: absolute; bottom: -40px; left: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+        .cv-t8 .cv-header h1 { font-size: 24pt; font-weight: 800; margin: 0; letter-spacing: 1px; position: relative; z-index: 1; }
+        .cv-t8 .cv-header p { font-size: 11pt; margin: 6px 0 0; opacity: 0.85; position: relative; z-index: 1; font-weight: 500; letter-spacing: 1px; }
+        .cv-t8 .cv-contact-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 24px; margin: 0 -20mm 16px -20mm; background: #ede9fe; border-bottom: 2px solid #c4b5fd; }
+        .cv-t8 .cv-chip { background: white; color: #4338ca; padding: 3px 12px; border-radius: 20px; font-size: 8.5pt; font-weight: 600; border: 1px solid #c4b5fd; }
+        .cv-t8 .cv-section-title { font-size: 11pt; font-weight: 800; margin-bottom: 10px; margin-top: 18px; padding: 6px 12px; background: linear-gradient(135deg, #eef2ff, #f5f3ff); border-left: 4px solid; border-image: linear-gradient(to bottom, #4338ca, #7c3aed) 1; color: #312e81; border-radius: 0 6px 6px 0; }
+        .cv-t8 .cv-card { background: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; border: 1px solid #e0e7ff; box-shadow: 0 1px 3px rgba(67,56,202,0.08); }
+        .cv-t8 .cv-footer { margin: 24px -20mm -20mm -20mm; padding: 12px 24px; background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed); color: rgba(255,255,255,0.75); font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
+        .cv-t8-badge { display: inline-block; background: linear-gradient(135deg, #4338ca, #7c3aed); color: white; padding: 2px 10px; border-radius: 12px; font-size: 8pt; margin: 2px 2px 2px 0; font-weight: 600; }
         @media (max-width: 768px) {
             .cv-preview { width: 100%; min-height: auto; padding: 12mm; font-size: 9pt; }
             .cv-t1 .cv-header, .cv-t3 .cv-header, .cv-t4 .cv-header { margin: -12mm -12mm 0 -12mm; }
@@ -109,6 +148,8 @@
             .cv-t1 .cv-footer, .cv-t3 .cv-footer, .cv-t4 .cv-footer { margin: 16px -12mm -12mm -12mm; }
             .cv-t5-wrap { flex-direction: column; }
             .cv-t5-sidebar { width: 100%; min-height: auto; }
+            .cv-t6 .cv-body { flex-direction: column; }
+            .cv-t6 .cv-left { width: 100%; }
         }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         input, textarea, select { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px; padding: 10px 14px; width: 100%; outline: none; transition: border-color 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -122,13 +163,50 @@
         .add-btn { background: rgba(59,130,246,0.15); border: 1px dashed rgba(59,130,246,0.4); color: #93c5fd; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; transition: background 0.2s; }
         .add-btn:hover { background: rgba(59,130,246,0.25); }
         .remove-btn { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-        #toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; transform: translateY(-80px); opacity: 0; transition: all 0.3s; }
-        #toast.show { transform: translateY(0); opacity: 1; }
+        .ai-suggest-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; }
+        .ai-suggest-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+        .ai-suggest-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        #ai-modal { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
+        #ai-modal.open { display: flex; }
+        #ai-modal-box { background: #1e293b; border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; padding: 24px; max-width: 560px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .price-badge { display: inline-block; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 8px; }
+        .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
+        .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
     </style>
 </head>
 <body>
 
 <div id="toast"></div>
+
+<!-- AI Suggestion Modal -->
+<div id="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+    <div id="ai-modal-box">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">✨</span>
+                <h3 id="ai-modal-title" class="text-lg font-bold text-white">AI Suggestion</h3>
+            </div>
+            <button onclick="closeAiModal()" class="text-gray-400 hover:text-white text-xl font-bold leading-none" aria-label="Close">&times;</button>
+        </div>
+        <div id="ai-modal-loading" class="text-center py-8 hidden">
+            <div class="inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p class="text-gray-400 text-sm">AI is crafting your suggestion…</p>
+        </div>
+        <div id="ai-modal-content" class="hidden">
+            <p class="text-xs text-gray-400 mb-2">Here's what our AI suggests. Feel free to edit before accepting:</p>
+            <textarea id="ai-suggestion-text" rows="8" style="background:rgba(255,255,255,0.07);border:1px solid rgba(99,102,241,0.4);color:white;border-radius:10px;padding:12px;width:100%;font-size:13px;line-height:1.6;resize:vertical;font-family:inherit;"></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="acceptAiSuggestion()" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-2.5 rounded-xl hover:from-indigo-500 hover:to-purple-500 transition text-sm">✓ Use This</button>
+                <button onclick="regenerateAiSuggestion()" class="btn-secondary text-sm py-2.5 px-4">↺ Regenerate</button>
+                <button onclick="closeAiModal()" class="btn-secondary text-sm py-2.5 px-4">✕ Dismiss</button>
+            </div>
+        </div>
+        <div id="ai-modal-error" class="hidden">
+            <p class="text-red-400 text-sm mb-4" id="ai-error-msg">AI suggestion failed. Please try again.</p>
+            <button onclick="closeAiModal()" class="btn-secondary text-sm py-2 px-6">Close</button>
+        </div>
+    </div>
+</div>
 
 <!-- Header -->
 <header class="sticky top-0 z-50 glass px-4 py-3 flex items-center gap-3">
@@ -222,7 +300,10 @@
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Professional Summary *</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-gray-400">Professional Summary *</label>
+                    <button type="button" onclick="aiSuggestSummary()" class="ai-suggest-btn" id="ai-summary-btn" title="Let AI write your summary">✨ AI Suggest</button>
+                </div>
                 <textarea id="cv-summary" rows="4" placeholder="A brief 2-3 sentence overview of your professional background, key skills, and career goals..."></textarea>
             </div>
             <div>
@@ -275,7 +356,10 @@
         <p class="text-gray-400 text-sm mb-6">What are you good at?</p>
         <div class="space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Skills (comma-separated) *</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-gray-400">Skills (comma-separated) *</label>
+                    <button type="button" onclick="aiSuggestSkills()" class="ai-suggest-btn" id="ai-skills-btn" title="Let AI suggest relevant skills">✨ AI Suggest</button>
+                </div>
                 <input type="text" id="cv-skills" placeholder="e.g. Python, Communication, Project Management, Excel">
             </div>
             <div>
@@ -301,7 +385,7 @@
     <div class="step mt-4" id="step-4">
         <div class="glass rounded-2xl p-6 mb-4">
             <h2 class="text-xl font-bold mb-1">Choose Your Template 🎨</h2>
-            <p class="text-gray-400 text-sm">Select a design that reflects your style.</p>
+            <p class="text-gray-400 text-sm">Select a design that reflects your style. Premium templates unlock advanced layouts.</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-1" onclick="selectTemplate(1)">
@@ -316,9 +400,12 @@
                         <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
-                    <span class="text-xs font-bold text-blue-300">Classic Blue</span>
-                    <p class="text-xs text-gray-400">Clean & professional</p>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-blue-300">Classic Blue</span>
+                        <p class="text-xs text-gray-400">Clean &amp; professional</p>
+                    </div>
+                    <span class="price-badge">GHS 5</span>
                 </div>
             </div>
 
@@ -334,9 +421,12 @@
                         <div class="bg-gray-600 rounded h-1.5 w-3/4"></div>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
-                    <span class="text-xs font-bold text-green-300">Modern Green</span>
-                    <p class="text-xs text-gray-400">Fresh & dynamic</p>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-green-300">Modern Green</span>
+                        <p class="text-xs text-gray-400">Fresh &amp; dynamic</p>
+                    </div>
+                    <span class="price-badge">GHS 5</span>
                 </div>
             </div>
 
@@ -352,9 +442,12 @@
                         <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
-                    <span class="text-xs font-bold text-gray-300">Elegant Dark</span>
-                    <p class="text-xs text-gray-400">Sophisticated & bold</p>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-gray-300">Elegant Dark</span>
+                        <p class="text-xs text-gray-400">Sophisticated &amp; bold</p>
+                    </div>
+                    <span class="price-badge">GHS 8</span>
                 </div>
             </div>
 
@@ -372,9 +465,12 @@
                         <div class="bg-gray-600 rounded h-1.5 w-3/4"></div>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
-                    <span class="text-xs font-bold text-orange-300">Creative Orange</span>
-                    <p class="text-xs text-gray-400">Energetic & eye-catching</p>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-orange-300">Creative Orange</span>
+                        <p class="text-xs text-gray-400">Energetic &amp; eye-catching</p>
+                    </div>
+                    <span class="price-badge">GHS 8</span>
                 </div>
             </div>
 
@@ -398,9 +494,93 @@
                         </div>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
-                    <span class="text-xs font-bold text-purple-300">Minimalist Purple</span>
-                    <p class="text-xs text-gray-400">Clean, modern & elegant</p>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-purple-300">Minimalist Purple</span>
+                        <p class="text-xs text-gray-400">Clean, modern &amp; elegant</p>
+                    </div>
+                    <span class="price-badge">GHS 12</span>
+                </div>
+            </div>
+
+            <!-- Premium Templates -->
+            <div class="sm:col-span-2"><p class="text-xs font-bold text-yellow-400 uppercase tracking-widest my-2 flex items-center gap-2"><span>⭐</span> Premium Templates</p></div>
+
+            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-6" onclick="selectTemplate(6)">
+                <div class="bg-gradient-to-r from-[#0f2d52] to-[#1a4a7a] px-4 pt-4 pb-2">
+                    <div class="bg-white rounded h-2 mb-1 w-3/4"></div>
+                    <div class="bg-cyan-400/70 rounded h-1.5 w-1/2"></div>
+                </div>
+                <div class="h-0.5 bg-cyan-400"></div>
+                <div class="p-4 flex gap-3">
+                    <div class="w-1/3 space-y-1">
+                        <div class="bg-cyan-500/70 h-1.5 rounded w-12 mb-2"></div>
+                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
+                        <div class="bg-gray-600 rounded h-1.5 w-3/4"></div>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <div class="border-b border-[#0f2d52] pb-1 w-16"><div class="bg-[#0f2d52] h-1.5 rounded w-full"></div></div>
+                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
+                        <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
+                    </div>
+                </div>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-cyan-300">Executive Navy</span>
+                        <p class="text-xs text-gray-400">Corporate &amp; authoritative</p>
+                    </div>
+                    <span class="price-badge premium">GHS 15</span>
+                </div>
+            </div>
+
+            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-7" onclick="selectTemplate(7)">
+                <div class="bg-[#1a1a1a] text-center px-4 pt-4 pb-2">
+                    <div class="bg-yellow-400 rounded h-2 mb-1 w-1/2 mx-auto"></div>
+                    <div class="bg-yellow-600/40 rounded h-1.5 w-1/3 mx-auto"></div>
+                </div>
+                <div class="p-4 space-y-2">
+                    <div class="flex items-center gap-2">
+                        <div class="h-0.5 w-6 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+                        <div class="bg-yellow-600/70 h-1.5 rounded w-16"></div>
+                        <div class="flex-1 h-px bg-gradient-to-r from-yellow-200 to-transparent"></div>
+                    </div>
+                    <div class="bg-gray-600 rounded h-1.5 w-full"></div>
+                    <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
+                </div>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-yellow-300">Luxury Gold</span>
+                        <p class="text-xs text-gray-400">Prestigious &amp; exclusive</p>
+                    </div>
+                    <span class="price-badge premium">GHS 20</span>
+                </div>
+            </div>
+
+            <div class="template-card glass rounded-2xl overflow-hidden sm:col-span-2" id="tcard-8" onclick="selectTemplate(8)">
+                <div class="p-5 bg-gradient-to-r from-indigo-900 via-purple-900 to-fuchsia-900">
+                    <div class="bg-white/90 rounded h-2.5 mb-1.5 w-2/3"></div>
+                    <div class="bg-white/40 rounded h-2 w-1/3"></div>
+                </div>
+                <div class="p-4 flex gap-4 items-start bg-slate-900/40">
+                    <div class="flex-1 space-y-1.5">
+                        <div class="h-5 rounded w-20 bg-gradient-to-r from-indigo-900 to-purple-900 border-l-4 border-indigo-400"></div>
+                        <div class="bg-white/10 rounded-lg h-8 w-full border border-indigo-900/40"></div>
+                    </div>
+                    <div class="flex-1 space-y-1.5">
+                        <div class="h-5 rounded w-16 bg-gradient-to-r from-indigo-900 to-purple-900 border-l-4 border-purple-400"></div>
+                        <div class="flex flex-wrap gap-1">
+                            <div class="rounded-full h-4 w-14 bg-gradient-to-r from-indigo-700 to-purple-700"></div>
+                            <div class="rounded-full h-4 w-16 bg-gradient-to-r from-purple-700 to-fuchsia-700"></div>
+                            <div class="rounded-full h-4 w-10 bg-gradient-to-r from-indigo-700 to-purple-700"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 pb-4 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-fuchsia-300">Premium Gradient ✨</span>
+                        <p class="text-xs text-gray-400">Most striking • Maximum impact</p>
+                    </div>
+                    <span class="price-badge luxury">GHS 25</span>
                 </div>
             </div>
         </div>
@@ -414,7 +594,7 @@
     <div class="step mt-4" id="step-5">
         <div class="glass rounded-2xl p-5 mb-4">
             <h2 class="text-xl font-bold mb-1">Preview & Download 🚀</h2>
-            <p class="text-gray-400 text-sm">Your CV looks great! Pay GHS 5 to download.</p>
+            <p class="text-gray-400 text-sm" id="preview-subtitle">Your CV looks great! Pay to download your selected template.</p>
         </div>
 
         <!-- CV Preview -->
@@ -515,20 +695,22 @@
             }
             if (paystackBadge) paystackBadge.classList.add('hidden');
         } else {
-            priceEl.textContent = 'GHS 5';
+            const price = window._cvTemplatePrice || 5;
+            priceEl.textContent = 'GHS ' + price;
             priceEl.className = 'text-2xl font-black text-green-400';
             labelEl.textContent = 'One-time fee \u2022 Instant download';
-            methodEl.textContent = 'Mobile Money';
+            methodEl.textContent = 'Mobile Money / Card';
             iconEl.textContent = 'lock';
             iconEl.className = 'material-symbols-outlined text-green-400';
             iconEl.setAttribute('aria-label', 'Payment required');
             if (btnEl) {
-                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download';
+                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
                 btnEl.className = 'w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2';
             }
             if (paystackBadge) paystackBadge.classList.remove('hidden');
         }
     }
+    window._updatePaymentUI = updatePaymentUI;
 
     window.saveCV = async function(cvData, payRef) {
         try {
@@ -541,6 +723,28 @@
         } catch (e) {
             console.error("CV save error:", e);
         }
+    };
+
+    // ---- Vertex AI / Gemini Integration ----
+    let aiModel = null;
+    (async () => {
+        try {
+            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+            const vertexAI = getVertexAI(appInstance);
+            aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+            window._aiModel = aiModel;
+        } catch (e) {
+            console.warn("Vertex AI not available:", e);
+            window._aiModel = null;
+        }
+    })();
+
+    window._callAI = async function(prompt) {
+        const model = window._aiModel;
+        if (!model) throw new Error("AI model not initialized. Ensure Vertex AI is enabled for this Firebase project.");
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        return response.text();
     };
 
 </script>
@@ -732,12 +936,27 @@
         document.getElementById('photo-remove-btn').style.display = 'none';
     };
 
-    // ---- Template Selection ----
+    // ---- Template Selection (with pricing) ----
+    const TEMPLATE_PRICES = { 1: 5, 2: 5, 3: 8, 4: 8, 5: 12, 6: 15, 7: 20, 8: 25 };
+    const TEMPLATE_NAMES = { 1: 'Classic Blue', 2: 'Modern Green', 3: 'Elegant Dark', 4: 'Creative Orange', 5: 'Minimalist Purple', 6: 'Executive Navy', 7: 'Luxury Gold', 8: 'Premium Gradient' };
+
     window.selectTemplate = function(n) {
         selectedTemplate = n;
         document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
         document.getElementById('tcard-' + n).classList.add('selected');
-        showToast('Template ' + n + ' selected!', 'success');
+        const price = TEMPLATE_PRICES[n] || 5;
+        window._cvTemplatePrice = price;
+        // Update price display directly so it works even if Firebase module is delayed
+        const priceEl = document.getElementById('cv-price-display');
+        const btnEl = document.getElementById('pay-btn');
+        const methodEl = document.getElementById('cv-payment-method');
+        if (!(window._cvUserRole === 'admin' || window._cvUserRole === 'ceo')) {
+            if (priceEl) priceEl.textContent = 'GHS ' + price;
+            if (methodEl) methodEl.textContent = 'Mobile Money / Card';
+            if (btnEl) btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
+        }
+        if (window._updatePaymentUI) window._updatePaymentUI();
+        showToast(TEMPLATE_NAMES[n] + ' selected — GHS ' + price, 'success');
     };
 
     // ---- Collect Data ----
@@ -919,6 +1138,68 @@
                             ${d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : ''}
                         </div>
                     </div>
+                </div>`,
+            6: `<div class="cv-preview cv-t6">
+                    <div class="cv-header">
+                        ${mkPhoto(80, 'rgba(6,182,212,0.7)')}
+                        <div style="flex:1;">
+                            <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
+                            <p>${escHtml(d.title)}</p>
+                        </div>
+                    </div>
+                    <div class="cv-teal-bar"></div>
+                    <div class="cv-contact-bar">${contactStr}</div>
+                    <div class="cv-body">
+                        <div class="cv-left">
+                            ${d.skills ? `<div class="cv-section-title">Skills</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${d.skills.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span style="background:#e0f7fa;color:#0e7490;padding:2px 8px;border-radius:10px;font-size:8.5pt;margin-bottom:3px;display:inline-block;">${escHtml(s)}</span>`).join('')}</div>` : ''}
+                            ${d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-body-text">${escHtml(d.languages)}</div>` : ''}
+                            ${d.certs ? `<div class="cv-section-title">Certifications</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : ''}
+                            ${d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-body-text">${escHtml(d.interests)}</div>` : ''}
+                        </div>
+                        <div class="cv-right">
+                            <div class="cv-main-section-title" style="margin-top:0;">Profile</div>
+                            <div class="cv-body-text">${escHtml(d.summary)}</div>
+                            ${d.experience.length ? `<div class="cv-main-section-title">Work Experience</div>${renderExperience(d.experience)}` : ''}
+                            ${d.education.length ? `<div class="cv-main-section-title">Education</div>${renderEducation(d.education)}` : ''}
+                        </div>
+                    </div>
+                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae</span></div>
+                </div>`,
+            7: `<div class="cv-preview cv-t7">
+                    <div class="cv-header">
+                        ${safeUrl ? `<img src="${safeUrl}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #d4af37;margin:0 auto 12px;display:block;" alt="Profile">` : ''}
+                        <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
+                        <p>${escHtml(d.title)}</p>
+                    </div>
+                    <div class="cv-gold-divider"></div>
+                    <div class="cv-contact-bar">${contactStr}</div>
+                    <div class="cv-section-title">Professional Profile</div>
+                    <div class="cv-body-text">${escHtml(d.summary)}</div>
+                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;·&nbsp; ${escHtml(d.title)} &nbsp;·&nbsp; ${new Date().getFullYear()}</div>
+                </div>`,
+            8: `<div class="cv-preview cv-t8">
+                    <div class="cv-header">
+                        <div style="display:flex;align-items:center;gap:20px;position:relative;z-index:1;">
+                            ${safeUrl ? `<img src="${safeUrl}" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.5);flex-shrink:0;" alt="Profile">` : ''}
+                            <div>
+                                <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
+                                <p>${escHtml(d.title)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cv-contact-chips">
+                        ${[d.phone, d.email, d.location, d.website].filter(Boolean).map(c=>`<span class="cv-chip">${escHtml(c)}</span>`).join('')}
+                    </div>
+                    <div class="cv-section-title">Professional Profile</div>
+                    <div class="cv-card cv-body-text">${escHtml(d.summary)}</div>
+                    ${d.experience.length ? `<div class="cv-section-title">Work Experience</div>${d.experience.map(e=>`<div class="cv-card cv-item"><div class="cv-item-title">${escHtml(e.role)}</div><div class="cv-item-sub">${escHtml(e.company)}${e.duration?' &nbsp;|&nbsp; '+escHtml(e.duration):''}${e.location?' &nbsp;|&nbsp; '+escHtml(e.location):''}</div>${e.desc?'<div class="cv-body-text" style="margin-top:4px;">'+escHtml(e.desc)+'</div>':''}</div>`).join('')}` : ''}
+                    ${d.education.length ? `<div class="cv-section-title">Education</div>${d.education.map(e=>`<div class="cv-card cv-item"><div class="cv-item-title">${escHtml(e.degree)}</div><div class="cv-item-sub">${escHtml(e.school)}${e.year?' &nbsp;|&nbsp; '+escHtml(e.year):''}${e.grade?' &nbsp;|&nbsp; GPA: '+escHtml(e.grade):''}</div></div>`).join('')}` : ''}
+                    ${d.skills ? `<div class="cv-section-title">Skills</div><div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;">${d.skills.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="cv-t8-badge">${escHtml(s)}</span>`).join('')}</div>` : ''}
+                    ${d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-card cv-body-text">${escHtml(d.languages)}</div>` : ''}
+                    ${d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-card cv-body-text">${escHtml(d.certs)}</div>` : ''}
+                    ${d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-card cv-body-text">${escHtml(d.interests)}</div>` : ''}
+                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>✦ Curriculum Vitae ${new Date().getFullYear()} ✦</span></div>
                 </div>`
         };
 
@@ -932,6 +1213,8 @@
 
         const btn = document.getElementById('pay-btn');
         const cvData = collectData();
+        const price = window._cvTemplatePrice || 5;
+        const amountPesewas = price * 100;
 
         // Free download for admin and CEO
         if (window._cvUserRole === 'admin' || window._cvUserRole === 'ceo') {
@@ -957,17 +1240,18 @@
             const handler = PaystackPop.setup({
                 key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2',
                 email: email,
-                amount: 500, // 5 GHS in pesewas
+                amount: amountPesewas,
                 currency: 'GHS',
                 channels: ['mobile_money', 'card'],
                 metadata: {
                     custom_fields: [
-                        { display_name: "Service", variable_name: "service", value: "CV Builder" }
+                        { display_name: "Service", variable_name: "service", value: "CV Builder" },
+                        { display_name: "Template", variable_name: "template", value: (TEMPLATE_NAMES[selectedTemplate] || 'CV') }
                     ]
                 },
                 callback: function(response) {
                     btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download';
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
                     if (window.saveCV) {
                         window.saveCV({ ...cvData, email }, response.reference);
                     }
@@ -976,7 +1260,7 @@
                 },
                 onClose: function() {
                     btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download';
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
                     showToast('Payment cancelled.', 'error');
                 }
             });
@@ -984,26 +1268,130 @@
         } catch (err) {
             console.error('Paystack error:', err);
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download';
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
             showToast('Payment failed. Check your connection.', 'error');
         }
     };
 
-    // ---- Download PDF ----
+    // ---- Download PDF (fixed blank PDF) ----
     function downloadCV(d) {
         const cvEl = document.getElementById('cv-output');
         const filename = (d.firstName + '_' + d.lastName + '_CV').replace(/\s+/g, '_') + '.pdf';
+
+        // Clone the CV element into a temporary off-screen container so html2canvas
+        // captures it free from any overflow/scroll constraints on the preview wrapper.
+        const temp = document.createElement('div');
+        temp.id = 'cv-pdf-temp';
+        temp.style.cssText = 'position:absolute;top:0;left:-9999px;width:794px;background:white;z-index:-1;';
+        temp.innerHTML = cvEl.innerHTML;
+        document.body.appendChild(temp);
+
         const opt = {
             margin: 0,
             filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: 794,
+                onclone: function(clonedDoc) {
+                    const el = clonedDoc.getElementById('cv-pdf-temp');
+                    if (el) { el.style.left = '0'; el.style.position = 'relative'; }
+                }
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        html2pdf().set(opt).from(cvEl).save().then(() => {
+
+        html2pdf().set(opt).from(temp).save().then(() => {
+            document.body.removeChild(temp);
             showToast('CV downloaded successfully! 🎉', 'success');
+        }).catch(function(err) {
+            console.error('PDF error:', err);
+            if (document.body.contains(temp)) document.body.removeChild(temp);
+            showToast('Download failed. Please try again.', 'error');
         });
     }
+
+    // ---- AI Suggestion Helpers ----
+    let _aiCurrentTarget = null;
+    let _aiCurrentPrompt = null;
+
+    window.aiSuggestSummary = async function() {
+        const btn = document.getElementById('ai-summary-btn');
+        const name = (document.getElementById('cv-firstname').value + ' ' + document.getElementById('cv-lastname').value).trim();
+        const title = document.getElementById('cv-title').value.trim();
+        const existing = document.getElementById('cv-summary').value.trim();
+        if (!title) { showToast('Enter your Professional Title first!', 'error'); return; }
+        _aiCurrentTarget = 'cv-summary';
+        _aiCurrentPrompt = `Write a compelling 3-sentence professional CV summary for a person named "${name || 'the candidate'}" applying as a "${title}". Be specific, confident, and results-oriented. Return ONLY the summary text, no preamble.${existing ? ' Improve this draft: ' + existing : ''}`;
+        openAiModal('Professional Summary Suggestion', _aiCurrentPrompt, btn);
+    };
+
+    window.aiSuggestSkills = async function() {
+        const btn = document.getElementById('ai-skills-btn');
+        const title = document.getElementById('cv-title').value.trim();
+        const existing = document.getElementById('cv-skills').value.trim();
+        if (!title) { showToast('Enter your Professional Title first (Step 1)!', 'error'); return; }
+        _aiCurrentTarget = 'cv-skills';
+        _aiCurrentPrompt = `List 10-14 relevant professional skills for a "${title}" role as a comma-separated list (e.g. Skill1, Skill2, Skill3). Include both hard and soft skills. Return ONLY the comma-separated list.${existing ? ' Existing skills to consider keeping: ' + existing : ''}`;
+        openAiModal('Skills Suggestion', _aiCurrentPrompt, btn);
+    };
+
+    async function openAiModal(title, prompt, btn) {
+        document.getElementById('ai-modal-title').textContent = title;
+        document.getElementById('ai-modal-loading').classList.remove('hidden');
+        document.getElementById('ai-modal-content').classList.add('hidden');
+        document.getElementById('ai-modal-error').classList.add('hidden');
+        document.getElementById('ai-modal').classList.add('open');
+        if (btn) { btn.disabled = true; }
+        try {
+            const text = await window._callAI(prompt);
+            document.getElementById('ai-suggestion-text').value = text.trim();
+            document.getElementById('ai-modal-loading').classList.add('hidden');
+            document.getElementById('ai-modal-content').classList.remove('hidden');
+        } catch (e) {
+            console.error('AI error:', e);
+            document.getElementById('ai-modal-loading').classList.add('hidden');
+            document.getElementById('ai-modal-error').classList.remove('hidden');
+            document.getElementById('ai-error-msg').textContent = 'AI suggestion failed: ' + (e.message || 'Please try again.');
+        } finally {
+            if (btn) { btn.disabled = false; }
+        }
+    }
+
+    window.acceptAiSuggestion = function() {
+        const text = document.getElementById('ai-suggestion-text').value.trim();
+        if (_aiCurrentTarget && text) {
+            document.getElementById(_aiCurrentTarget).value = text;
+            showToast('AI suggestion applied! ✨', 'success');
+        }
+        closeAiModal();
+    };
+
+    window.regenerateAiSuggestion = async function() {
+        if (!_aiCurrentPrompt) return;
+        document.getElementById('ai-modal-loading').classList.remove('hidden');
+        document.getElementById('ai-modal-content').classList.add('hidden');
+        document.getElementById('ai-modal-error').classList.add('hidden');
+        try {
+            const text = await window._callAI(_aiCurrentPrompt);
+            document.getElementById('ai-suggestion-text').value = text.trim();
+            document.getElementById('ai-modal-loading').classList.add('hidden');
+            document.getElementById('ai-modal-content').classList.remove('hidden');
+        } catch (e) {
+            document.getElementById('ai-modal-loading').classList.add('hidden');
+            document.getElementById('ai-modal-error').classList.remove('hidden');
+            document.getElementById('ai-error-msg').textContent = 'AI suggestion failed: ' + (e.message || 'Please try again.');
+        }
+    };
+
+    window.closeAiModal = function() {
+        document.getElementById('ai-modal').classList.remove('open');
+    };
 
     // ---- Toast ----
     window.showToast = function(msg, type) {
