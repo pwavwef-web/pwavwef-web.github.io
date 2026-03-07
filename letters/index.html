@@ -480,7 +480,6 @@
 <!-- Firebase + Vertex AI -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -493,8 +492,9 @@
     };
 
     const appInstance = initializeApp(firebaseConfig);
-    const db = getFirestore(appInstance);
     const auth = getAuth(appInstance);
+
+    const CEO_EMAIL = "pwavwef@gmail.com";
 
     // Auth gate: only CEO can access
     onAuthStateChanged(auth, async (user) => {
@@ -506,20 +506,7 @@
             return;
         }
 
-        let role = null;
-        try {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) role = userDoc.data().role;
-        } catch (e) {
-            console.error("Role fetch error:", e);
-            const errEl = document.getElementById('gate-error');
-            if (errEl) errEl.textContent = 'Unable to verify account permissions. Please check your connection and try again.';
-            document.getElementById('gate-signout-btn').classList.remove('hidden');
-            document.getElementById('auth-gate').classList.remove('hidden');
-            return;
-        }
-
-        if (role !== 'ceo') {
+        if (user.email !== CEO_EMAIL) {
             const errEl = document.getElementById('gate-error');
             if (errEl) errEl.textContent = 'Access restricted to the CEO account only.';
             document.getElementById('gate-signout-btn').classList.remove('hidden');
