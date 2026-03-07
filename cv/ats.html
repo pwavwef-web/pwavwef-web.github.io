@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Score Checker – AZ Learner</title>
+    <meta name="description" content="Upload your CV and get an instant ATS compatibility score with AI-powered improvement suggestions.">
+    <link rel="icon" href="../favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #0a0f1e; color: #e2e8f0; min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+        .upload-zone { border: 2px dashed rgba(99,102,241,0.4); border-radius: 16px; transition: all 0.3s; cursor: pointer; background: rgba(99,102,241,0.04); }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: #6366f1; background: rgba(99,102,241,0.1); }
+        .score-ring { transform: rotate(-90deg); }
+        .score-ring-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 8; }
+        .score-ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
+        .bar-fill { transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+        .suggestion-item { border-left: 3px solid; padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 8px; }
+        .suggestion-critical { border-color: #ef4444; background: rgba(239,68,68,0.08); }
+        .suggestion-warning  { border-color: #f59e0b; background: rgba(245,158,11,0.08); }
+        .suggestion-tip      { border-color: #10b981; background: rgba(16,185,129,0.08); }
+        .badge-free { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+        .badge-paid { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(99,102,241,0.3); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast-item { padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #fff; max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideIn 0.3s ease; }
+        .toast-success { background: #059669; }
+        .toast-error   { background: #dc2626; }
+        .toast-info    { background: #2563eb; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        #payment-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        #payment-modal.open { display: flex; }
+    </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Payment Gate Modal -->
+<div id="payment-modal" role="dialog" aria-modal="true" aria-labelledby="pm-title">
+    <div class="card p-8 max-w-sm w-full mx-4 text-center">
+        <div class="text-5xl mb-4">🔒</div>
+        <h2 id="pm-title" class="text-xl font-bold mb-2">Free Checks Used Up</h2>
+        <p class="text-gray-400 text-sm mb-6">You have used your <strong class="text-white">2 free ATS checks</strong>. Unlock unlimited checks for a one-time payment.</p>
+        <div class="text-3xl font-black text-indigo-400 mb-1">GHS 15</div>
+        <p class="text-xs text-gray-500 mb-5">One-time · Unlimited checks on this device</p>
+        <div id="pm-email-wrap" style="display:none" class="mb-4 text-left">
+            <label class="block text-xs text-gray-400 font-semibold mb-1" for="pm-email">Email for receipt</label>
+            <input id="pm-email" type="email" placeholder="you@example.com"
+                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500">
+        </div>
+        <button id="pay-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition mb-3 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-sm">payments</span> Pay GHS 15 &amp; Unlock
+        </button>
+        <button id="pm-cancel-btn" class="w-full text-gray-400 hover:text-white text-sm py-2 transition">Cancel</button>
+    </div>
+</div>
+
+<!-- Header -->
+<header class="sticky top-0 z-50 glass px-4 py-3 flex items-center gap-3">
+    <a href="index.html" class="text-blue-400 hover:text-blue-300 transition">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
+    </a>
+    <div>
+        <h1 class="font-bold text-base sm:text-lg leading-tight">ATS Score Checker</h1>
+        <p class="text-xs text-gray-400">AI-powered CV analysis &amp; improvement tips</p>
+    </div>
+    <div class="ml-auto flex items-center gap-3">
+        <span id="tries-badge" class="text-xs px-3 py-1 rounded-full font-semibold badge-free" style="display:none">2 free checks left</span>
+        <span class="text-orange-400 font-bold text-sm">AZ Learner</span>
+    </div>
+</header>
+
+<!-- Main -->
+<main class="max-w-2xl mx-auto px-4 py-10 pb-24">
+
+    <!-- Hero -->
+    <div class="text-center mb-10">
+        <div class="inline-flex items-center gap-2 bg-indigo-900/40 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs text-indigo-300 font-semibold mb-4">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span> Powered by Gemini 2.0 Flash
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black mb-3">Is Your CV ATS-Friendly?</h2>
+        <p class="text-gray-400 max-w-md mx-auto text-sm">Upload your CV and get an instant score with detailed AI feedback on how to pass Applicant Tracking Systems.</p>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card p-6 mb-6" id="upload-section">
+        <h3 class="font-bold text-sm text-gray-300 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-400 text-base">upload_file</span> Upload Your CV
+        </h3>
+        <div class="upload-zone p-10 text-center" id="drop-zone" onclick="document.getElementById('cv-file').click()">
+            <span class="material-symbols-outlined text-4xl text-indigo-400 mb-3 block">description</span>
+            <p class="font-semibold text-sm mb-1">Click to upload or drag &amp; drop</p>
+            <p class="text-xs text-gray-500">PDF, JPG or PNG · max 10 MB</p>
+        </div>
+        <input type="file" id="cv-file" accept=".pdf,image/jpeg,image/png,image/webp" style="display:none">
+        <div id="file-info" style="display:none" class="mt-4 flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/20 rounded-xl px-4 py-3">
+            <span class="material-symbols-outlined text-indigo-400">attach_file</span>
+            <div class="flex-1 min-w-0">
+                <p id="file-name" class="text-sm font-medium truncate"></p>
+                <p id="file-size" class="text-xs text-gray-500"></p>
+            </div>
+            <button onclick="clearFile()" class="text-gray-400 hover:text-red-400 transition ml-2">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <!-- Optional job description -->
+        <div class="mt-5">
+            <label class="block text-xs text-gray-400 font-semibold mb-2">Job Description <span class="text-gray-600 font-normal">(optional – improves score relevance)</span></label>
+            <textarea id="job-desc" rows="3" placeholder="Paste the job description here…" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+        </div>
+
+        <button id="analyse-btn" onclick="analyseCV()" class="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+            <span class="material-symbols-outlined text-base">insights</span> Analyse My CV
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-section" style="display:none" class="card p-10 text-center mb-6">
+        <div class="spinner mx-auto mb-4"></div>
+        <p class="font-semibold text-sm">Analysing your CV with AI…</p>
+        <p class="text-xs text-gray-500 mt-1">This usually takes 10–20 seconds</p>
+    </div>
+
+    <!-- Results -->
+    <div id="results-section" style="display:none" class="space-y-5">
+
+        <!-- Overall score -->
+        <div class="card p-6 text-center">
+            <p class="text-xs text-gray-400 uppercase tracking-widest mb-4">ATS Compatibility Score</p>
+            <div class="relative inline-block">
+                <svg viewBox="0 0 120 120" width="160" height="160">
+                    <circle class="score-ring-track" cx="60" cy="60" r="52"/>
+                    <circle id="score-arc" class="score-ring-fill" cx="60" cy="60" r="52"
+                        stroke-dasharray="326.73"
+                        stroke-dashoffset="326.73"
+                        stroke="#6366f1"
+                        transform="rotate(-90 60 60)"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="score-number" class="text-5xl font-black">0</span>
+                    <span class="text-xs text-gray-400">/100</span>
+                </div>
+            </div>
+            <p id="score-label" class="text-lg font-bold mt-3"></p>
+            <p id="score-desc"  class="text-xs text-gray-400 mt-1 max-w-xs mx-auto"></p>
+        </div>
+
+        <!-- Category breakdown -->
+        <div class="card p-6">
+            <h3 class="font-bold text-sm mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-400 text-base">analytics</span> Score Breakdown
+            </h3>
+            <div id="breakdown" class="space-y-4"></div>
+        </div>
+
+        <!-- Improvement suggestions -->
+        <div class="card p-6">
+            <h3 class="font-bold text-sm mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-400 text-base">lightbulb</span> Improvement Suggestions
+            </h3>
+            <div id="suggestions"></div>
+        </div>
+
+        <!-- Re-analyse -->
+        <button onclick="resetTool()" class="w-full card py-3 text-sm text-gray-400 hover:text-white hover:border-indigo-500/40 transition font-semibold flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">refresh</span> Check Another CV
+        </button>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-12 pb-8">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+        <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
+        <p class="text-gray-500 mb-6">UCC • Cape Coast • The World</p>
+        <div class="flex justify-center gap-6 text-sm text-gray-400 mb-6">
+            <a href="index.html"              class="hover:text-white transition">CV Builder</a>
+            <a href="../faq.html"             class="hover:text-white transition">FAQ</a>
+            <a href="../privacy-policy.html"  class="hover:text-white transition">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="hover:text-white transition">Terms of Service</a>
+        </div>
+        <div class="text-sm text-gray-600">&copy; 2026 Francis Pwavwe Production. Powered by Sunlight &amp; Ambition.</div>
+    </div>
+</footer>
+
+<script type="module">
+// ─── Firebase + Vertex AI ───────────────────────────────────────────────────
+import { initializeApp }        from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+    authDomain:        "az-learner.firebaseapp.com",
+    projectId:         "az-learner",
+    storageBucket:     "az-learner.firebasestorage.app",
+    messagingSenderId: "12958795950",
+    appId:             "1:12958795950:web:326411293864571040453f"
+};
+
+const appInstance = initializeApp(firebaseConfig);
+const auth        = getAuth(appInstance);
+
+// Vertex AI
+let aiModel = null;
+(async () => {
+    try {
+        const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+        const vertexAI = getVertexAI(appInstance);
+        aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+        window._atsAiModel = aiModel;
+    } catch (e) {
+        console.warn("Vertex AI init failed:", e);
+        window._atsAiModel = null;
+    }
+})();
+
+// ─── Usage / Paywall ────────────────────────────────────────────────────────
+const FREE_LIMIT  = 2;
+const PAY_AMOUNT  = 15;      // GHS
+const STORAGE_KEY = "az_ats_uses";
+const UNLOCK_KEY  = "az_ats_unlocked";
+
+function getUsageCount() { return parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10); }
+function incrementUsage() { localStorage.setItem(STORAGE_KEY, getUsageCount() + 1); }
+function isUnlocked()    { return localStorage.getItem(UNLOCK_KEY) === "1"; }
+function unlockAccess()  { localStorage.setItem(UNLOCK_KEY, "1"); }
+function canAnalyse()    { return isUnlocked() || getUsageCount() < FREE_LIMIT; }
+
+function showSection(id) { document.getElementById(id).style.display = "block"; }
+function hideSection(id) { document.getElementById(id).style.display = "none"; }
+function showFlex(id)    { document.getElementById(id).style.display = "flex"; }
+
+function updateBadge() {
+    const badge = document.getElementById("tries-badge");
+    if (isUnlocked()) {
+        badge.textContent   = "✓ Unlimited";
+        badge.className     = "text-xs px-3 py-1 rounded-full font-semibold badge-paid";
+        badge.style.display = "inline-block";
+        return;
+    }
+    const left = Math.max(0, FREE_LIMIT - getUsageCount());
+    badge.textContent   = left === 1 ? "1 free check left" : left === 0 ? "No free checks" : `${left} free checks left`;
+    badge.className     = `text-xs px-3 py-1 rounded-full font-semibold ${left === 0 ? "badge-paid" : "badge-free"}`;
+    badge.style.display = "inline-block";
+}
+
+// ─── Payment modal ─────────────────────────────────────────────────────────
+function openPaymentModal() {
+    if (auth.currentUser && auth.currentUser.email) {
+        hideSection("pm-email-wrap");
+    } else {
+        document.getElementById("pm-email").value = "";
+        showSection("pm-email-wrap");
+    }
+    document.getElementById("payment-modal").classList.add("open");
+}
+function closePaymentModal() {
+    document.getElementById("payment-modal").classList.remove("open");
+}
+
+document.getElementById("pm-cancel-btn").addEventListener("click", closePaymentModal);
+
+// ─── Paystack ─────────────────────────────────────────────────────────────
+document.getElementById("pay-btn").addEventListener("click", () => {
+    const user  = auth.currentUser;
+    const email = user ? user.email : document.getElementById("pm-email").value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast("Please enter a valid email address.", "error");
+        document.getElementById("pm-email").focus();
+        return;
+    }
+    const handler = PaystackPop.setup({
+        key:      "pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2",
+        email,
+        amount:   PAY_AMOUNT * 100,
+        currency: "GHS",
+        channels: ["mobile_money", "card"],
+        metadata: {
+            custom_fields: [{ display_name: "Service", variable_name: "service", value: "ATS Score Checker" }]
+        },
+        callback() {
+            unlockAccess();
+            showToast("Payment successful! Unlimited access unlocked. 🎉", "success");
+            closePaymentModal();
+            updateBadge();
+        },
+        onClose() {
+            showToast("Payment cancelled.", "error");
+        }
+    });
+    handler.openIframe();
+});
+
+// ─── File handling ─────────────────────────────────────────────────────────
+window.clearFile = function() {
+    document.getElementById("cv-file").value = "";
+    hideSection("file-info");
+    showSection("drop-zone");
+    window._atsFile = null;
+};
+
+document.getElementById("cv-file").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) applyFile(file);
+});
+
+const dropZone = document.getElementById("drop-zone");
+dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", ()=> dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file) applyFile(file);
+});
+
+function applyFile(file) {
+    const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    if (file.size > 10 * 1024 * 1024) { showToast("File is too large (max 10 MB).", "error"); return; }
+    if (!allowed.includes(file.type))  { showToast("Please upload a PDF or image file.", "error"); return; }
+    document.getElementById("file-name").textContent = file.name;
+    document.getElementById("file-size").textContent = formatBytes(file.size);
+    showFlex("file-info");
+    hideSection("drop-zone");
+    window._atsFile = file;
+}
+
+function formatBytes(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + " KB";
+    return (b / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+// ─── Analysis ────────────────────────────────────────────────────────────────
+window.analyseCV = async function() {
+    if (!window._atsFile) { showToast("Please upload your CV first.", "error"); return; }
+
+    if (!canAnalyse()) {
+        openPaymentModal();
+        return;
+    }
+
+    const model = window._atsAiModel;
+    if (!model) { showToast("AI model is still loading. Please try in a moment.", "error"); return; }
+
+    hideSection("upload-section");
+    showSection("loading-section");
+    hideSection("results-section");
+
+    try {
+        const fileData = await readFileAsBase64(window._atsFile);
+        const jobDesc  = document.getElementById("job-desc").value.trim();
+
+        const prompt = buildPrompt(jobDesc);
+        const parts  = [
+            { inlineData: { mimeType: window._atsFile.type, data: fileData } },
+            { text: prompt }
+        ];
+
+        const result   = await model.generateContent({ contents: [{ role: "user", parts }] });
+        const rawText  = result.response.text();
+        const parsed   = parseAIResponse(rawText);
+
+        incrementUsage();
+        updateBadge();
+        renderResults(parsed);
+
+    } catch (err) {
+        console.error("ATS analysis error:", err);
+        showToast("Analysis failed: " + (err.message || "Unknown error"), "error");
+        resetTool();
+    }
+};
+
+function buildPrompt(jobDesc) {
+    return `You are an expert ATS (Applicant Tracking System) analyst and career coach. Analyse the uploaded CV document and respond ONLY with a valid JSON object in this exact structure:
+
+{
+  "overall_score": <integer 0-100>,
+  "categories": [
+    { "name": "Contact Information",     "score": <0-100>, "comment": "<brief feedback>" },
+    { "name": "Keywords & Skills",       "score": <0-100>, "comment": "<brief feedback>" },
+    { "name": "Work Experience",         "score": <0-100>, "comment": "<brief feedback>" },
+    { "name": "Education",               "score": <0-100>, "comment": "<brief feedback>" },
+    { "name": "Formatting & Structure",  "score": <0-100>, "comment": "<brief feedback>" },
+    { "name": "Readability",             "score": <0-100>, "comment": "<brief feedback>" }
+  ],
+  "suggestions": [
+    { "priority": "critical|warning|tip", "text": "<actionable suggestion>" }
+  ]
+}
+
+${jobDesc ? `The candidate is applying for this role:\n"""\n${jobDesc}\n"""\nScore keyword and skill relevance against that job description.` : "Score based on general ATS best practices."}
+
+Rules:
+- overall_score is a weighted average of category scores.
+- Provide 4–8 suggestions sorted by priority (critical first).
+- Each suggestion must be specific and actionable.
+- Output only the JSON object with no markdown fences or extra text.`;
+}
+
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = e => resolve(e.target.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function parseAIResponse(raw) {
+    try {
+        // Strip markdown fences if present
+        const clean = raw.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+        return JSON.parse(clean);
+    } catch (e) {
+        console.error("JSON parse error:", e, raw);
+        throw new Error("Could not parse AI response. Please try again.");
+    }
+}
+
+// ─── Render results ──────────────────────────────────────────────────────────
+function renderResults(data) {
+    hideSection("loading-section");
+    showSection("results-section");
+
+    const score = Math.min(100, Math.max(0, data.overall_score || 0));
+
+    // Animate score ring
+    const circumference = 326.73;
+    const arc = document.getElementById("score-arc");
+    const offset = circumference - (score / 100) * circumference;
+    arc.style.strokeDashoffset = offset;
+
+    // Colour ring by score
+    if (score >= 75) arc.setAttribute("stroke", "#10b981");
+    else if (score >= 50) arc.setAttribute("stroke", "#f59e0b");
+    else arc.setAttribute("stroke", "#ef4444");
+
+    // Animate number
+    animateNumber(document.getElementById("score-number"), 0, score, 1200);
+
+    // Label & description
+    const { label, desc } = scoreLabel(score);
+    document.getElementById("score-label").textContent = label;
+    document.getElementById("score-desc").textContent  = desc;
+
+    // Breakdown bars
+    const breakdownEl = document.getElementById("breakdown");
+    breakdownEl.innerHTML = "";
+    (data.categories || []).forEach(cat => {
+        const s = Math.min(100, Math.max(0, cat.score || 0));
+        const colour = s >= 75 ? "#10b981" : s >= 50 ? "#f59e0b" : "#ef4444";
+        breakdownEl.innerHTML += `
+        <div>
+            <div class="flex justify-between text-xs mb-1">
+                <span class="font-medium text-gray-300">${escHtml(cat.name)}</span>
+                <span class="font-bold" style="color:${colour}">${s}/100</span>
+            </div>
+            <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                <div class="bar-fill h-2 rounded-full" style="width:0%; background:${colour}" data-target="${s}"></div>
+            </div>
+            ${cat.comment ? `<p class="text-xs text-gray-500 mt-1">${escHtml(cat.comment)}</p>` : ""}
+        </div>`;
+    });
+
+    // Animate bars
+    requestAnimationFrame(() => {
+        document.querySelectorAll(".bar-fill").forEach(bar => {
+            bar.style.width = bar.dataset.target + "%";
+        });
+    });
+
+    // Suggestions
+    const suggestionsEl = document.getElementById("suggestions");
+    suggestionsEl.innerHTML = "";
+    if (!data.suggestions || data.suggestions.length === 0) {
+        suggestionsEl.innerHTML = `<p class="text-gray-500 text-sm">No specific suggestions – your CV looks great!</p>`;
+    } else {
+        (data.suggestions || []).forEach(s => {
+            const cls = s.priority === "critical" ? "suggestion-critical"
+                      : s.priority === "warning"  ? "suggestion-warning"
+                      : "suggestion-tip";
+            const icon = s.priority === "critical" ? "error"
+                       : s.priority === "warning"  ? "warning"
+                       : "check_circle";
+            const colour = s.priority === "critical" ? "#ef4444"
+                         : s.priority === "warning"  ? "#f59e0b"
+                         : "#10b981";
+            suggestionsEl.innerHTML += `
+            <div class="suggestion-item ${cls}">
+                <div class="flex items-start gap-2">
+                    <span class="material-symbols-outlined text-sm mt-0.5 shrink-0" style="color:${colour}">${icon}</span>
+                    <p class="text-sm text-gray-200">${escHtml(s.text)}</p>
+                </div>
+            </div>`;
+        });
+    }
+}
+
+function scoreLabel(score) {
+    if (score >= 85) return { label: "Excellent 🎉", desc: "Your CV is highly ATS-compatible. Most automated screens will pass it through." };
+    if (score >= 70) return { label: "Good 👍",      desc: "Your CV passes most ATS filters but has room for improvement." };
+    if (score >= 50) return { label: "Fair ⚠️",      desc: "Your CV may be filtered out by some ATS systems. Follow the suggestions below." };
+    return { label: "Needs Work 🔴", desc: "Your CV is likely to be rejected by ATS before a recruiter sees it. Act on the critical suggestions." };
+}
+
+function animateNumber(el, from, to, duration) {
+    const start = performance.now();
+    function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        el.textContent = Math.round(from + (to - from) * t);
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// ─── Reset ──────────────────────────────────────────────────────────────────
+window.resetTool = function() {
+    window._atsFile = null;
+    document.getElementById("cv-file").value  = "";
+    document.getElementById("job-desc").value = "";
+    hideSection("file-info");
+    showSection("drop-zone");
+    hideSection("results-section");
+    hideSection("loading-section");
+    showSection("upload-section");
+    if (!canAnalyse()) openPaymentModal();
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function showToast(msg, type) {
+    const toast = document.getElementById("toast");
+    const el    = document.createElement("div");
+    el.className   = `toast-item toast-${type || "info"}`;
+    el.textContent = msg;
+    toast.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+window.showToast = showToast;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, () => updateBadge());
+updateBadge();
+
+</script>
+</body>
+</html>

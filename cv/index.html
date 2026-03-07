@@ -172,12 +172,14 @@
         .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
         .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
         @media print {
-            @page { size: A4 portrait; margin: 0; }
+            @page { size: A4 portrait; margin: 10mm; }
             body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #cv-output, #cv-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            #cv-output { position: fixed; top: 0; left: 0; width: 100%; }
-            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 auto !important; }
+            #cv-output { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
+            .cv-preview { box-shadow: none !important; width: 100% !important; max-width: none !important; margin: 0 !important; page-break-inside: auto; }
+            .cv-section { page-break-inside: avoid; }
+            .cv-entry { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -224,7 +226,10 @@
         <h1 class="font-bold text-base sm:text-lg leading-tight">CV Builder</h1>
         <p class="text-xs text-gray-400">Craft your professional resume in minutes</p>
     </div>
-    <div class="ml-auto flex items-center gap-2">
+    <div class="ml-auto flex items-center gap-3">
+        <a href="ats.html" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-full font-semibold transition hidden sm:flex items-center gap-1">
+            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">grade</span> ATS Score
+        </a>
         <span class="text-xs text-gray-400 hidden sm:block">Powered by</span>
         <span class="text-orange-400 font-bold text-sm">AZ Learner</span>
     </div>
@@ -1380,6 +1385,7 @@
         <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
         <p class="text-gray-500 mb-6">UCC • Cape Coast • The World</p>
         <div class="flex justify-center gap-6 text-sm text-gray-400 mb-6">
+            <a href="ats.html" class="hover:text-white transition">ATS Score Checker</a>
             <a href="../faq.html" class="hover:text-white transition">FAQ</a>
             <a href="../privacy-policy.html" class="hover:text-white transition">Privacy Policy</a>
             <a href="../terms-of-service.html" class="hover:text-white transition">Terms of Service</a>
