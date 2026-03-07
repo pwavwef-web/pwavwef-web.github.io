@@ -426,22 +426,22 @@
         <div class="glass rounded-2xl p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <span class="material-symbols-outlined text-green-400">lock</span>
+                    <span id="cv-lock-icon" class="material-symbols-outlined text-green-400" aria-label="Payment required">lock</span>
                 </div>
                 <div>
                     <h3 class="font-bold">Unlock Download</h3>
-                    <p class="text-xs text-gray-400">One-time fee • Instant download</p>
+                    <p id="cv-price-label" class="text-xs text-gray-400">One-time fee • Instant download</p>
                 </div>
                 <div class="ml-auto text-right">
-                    <p class="text-2xl font-black text-green-400">GHS 5</p>
-                    <p class="text-xs text-gray-400">Mobile Money</p>
+                    <p id="cv-price-display" class="text-2xl font-black text-green-400">GHS 5</p>
+                    <p id="cv-payment-method" class="text-xs text-gray-400">Mobile Money</p>
                 </div>
             </div>
             <input type="email" id="pay-email" placeholder="Your email address" class="mb-3">
             <button id="pay-btn" onclick="initiatePayment()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2">
                 <span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download
             </button>
-            <div class="flex items-center justify-center gap-2 mt-3 opacity-60">
+            <div id="cv-paystack-badge" class="flex items-center justify-center gap-2 mt-3 opacity-60">
                 <img src="https://paystack.com/assets/img/login/paystack_logo.png" class="h-3 grayscale brightness-200" alt="Paystack" onerror="this.style.display='none'">
                 <span class="text-xs text-gray-400">Secured by Paystack</span>
             </div>
@@ -455,7 +455,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getFirestore, getDoc, doc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -468,6 +469,66 @@
 
     const appInstance = initializeApp(firebaseConfig);
     const db = getFirestore(appInstance);
+    const auth = getAuth(appInstance);
+
+    let currentUserRole = null;
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    currentUserRole = userDoc.data().role;
+                }
+            } catch (e) {
+                console.error("Role fetch error:", e);
+            }
+        } else {
+            currentUserRole = null;
+        }
+        window._cvUserRole = currentUserRole;
+        updatePaymentUI();
+    });
+
+    function updatePaymentUI() {
+        const isFree = currentUserRole === 'admin' || currentUserRole === 'ceo';
+        const priceEl = document.getElementById('cv-price-display');
+        const labelEl = document.getElementById('cv-price-label');
+        const methodEl = document.getElementById('cv-payment-method');
+        const iconEl = document.getElementById('cv-lock-icon');
+        const btnEl = document.getElementById('pay-btn');
+        const paystackBadge = document.getElementById('cv-paystack-badge');
+
+        if (!priceEl) return;
+
+        if (isFree) {
+            priceEl.textContent = 'FREE';
+            priceEl.className = 'text-2xl font-black text-yellow-400';
+            labelEl.textContent = 'Executive benefit \u2022 Instant download';
+            methodEl.textContent = 'No payment required';
+            iconEl.textContent = 'verified';
+            iconEl.className = 'material-symbols-outlined text-yellow-400';
+            iconEl.setAttribute('aria-label', 'Free download available');
+            if (btnEl) {
+                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> Download CV (Free)';
+                btnEl.className = 'w-full bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-bold py-3 rounded-xl hover:from-yellow-500 hover:to-amber-400 transition flex items-center justify-center gap-2';
+            }
+            if (paystackBadge) paystackBadge.classList.add('hidden');
+        } else {
+            priceEl.textContent = 'GHS 5';
+            priceEl.className = 'text-2xl font-black text-green-400';
+            labelEl.textContent = 'One-time fee \u2022 Instant download';
+            methodEl.textContent = 'Mobile Money';
+            iconEl.textContent = 'lock';
+            iconEl.className = 'material-symbols-outlined text-green-400';
+            iconEl.setAttribute('aria-label', 'Payment required');
+            if (btnEl) {
+                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download';
+                btnEl.className = 'w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2';
+            }
+            if (paystackBadge) paystackBadge.classList.remove('hidden');
+        }
+    }
 
     window.saveCV = async function(cvData, payRef) {
         try {
@@ -870,6 +931,25 @@
         if (!email || !email.includes('@')) { showToast('Enter a valid email!', 'error'); return; }
 
         const btn = document.getElementById('pay-btn');
+        const cvData = collectData();
+
+        // Free download for admin and CEO
+        if (window._cvUserRole === 'admin' || window._cvUserRole === 'ceo') {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Generating...';
+            const freeRef = 'EXEC_FREE_' + Date.now();
+            if (window.saveCV) {
+                window.saveCV({ ...cvData, email }, freeRef);
+            }
+            showToast('Downloading your CV...', 'success');
+            setTimeout(() => {
+                downloadCV(cvData);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> Download CV (Free)';
+            }, 800);
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Initializing...';
 
@@ -888,7 +968,6 @@
                 callback: function(response) {
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download';
-                    const cvData = collectData();
                     if (window.saveCV) {
                         window.saveCV({ ...cvData, email }, response.reference);
                     }
