@@ -140,9 +140,218 @@
 .dark.main-theme .ticket-stub {
     background-image: radial-gradient(circle at 0 50%, transparent 10px, #1e293b 11px);
 }
+
+/* === SPLASH SCREEN === */
+#splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#splash-screen.hidden-splash {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+#splash-logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
+    box-shadow: 0 8px 32px rgba(68,138,255,0.4);
+    animation: splashPulse 1.5s ease-in-out infinite;
+}
+@keyframes splashPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(68,138,255,0.4); }
+    50% { transform: scale(1.06); box-shadow: 0 12px 40px rgba(68,138,255,0.65); }
+}
+#splash-title {
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    letter-spacing: 0.01em;
+}
+#splash-subtitle {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+#splash-bar-wrap {
+    width: 200px;
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+    margin-top: 2.5rem;
+    overflow: hidden;
+}
+#splash-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #448AFF, #00d2ff);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+/* === iOS INSTALL BANNER === */
+#ios-install-banner {
+    position: fixed;
+    bottom: calc(4rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    right: 0.75rem;
+    z-index: 1000;
+    background: #1e293b;
+    border: 1px solid rgba(68,138,255,0.35);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: slideUpBanner 0.4s ease;
+}
+@keyframes slideUpBanner {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+#ios-install-banner img {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+#ios-install-banner .ios-banner-text { flex: 1; }
+#ios-install-banner .ios-banner-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+#ios-install-banner .ios-banner-body {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.78rem;
+    margin-top: 3px;
+    line-height: 1.4;
+}
+#ios-install-banner .ios-banner-body .share-icon {
+    display: inline-block;
+    vertical-align: middle;
+    color: #448AFF;
+}
+#ios-install-banner-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    flex-shrink: 0;
+    margin-top: -2px;
+}
+
+/* === ANDROID / DESKTOP INSTALL BANNER === */
+#pwa-install-banner {
+    position: fixed;
+    bottom: calc(4rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    right: 0.75rem;
+    z-index: 1000;
+    background: #1e293b;
+    border: 1px solid rgba(68,138,255,0.35);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: slideUpBanner 0.4s ease;
+}
+#pwa-install-banner img {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+#pwa-install-banner .pwa-banner-text { flex: 1; }
+#pwa-install-banner .pwa-banner-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+#pwa-install-banner .pwa-banner-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.78rem;
+    margin-top: 2px;
+}
+#pwa-install-btn {
+    background: #448AFF;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+#pwa-install-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    flex-shrink: 0;
+}
     </style>
 </head>
 <body class="font-sans antialiased transition-colors duration-200 bg-lightBg text-gray-900 dark:bg-darkBg dark:text-white pb-20 selection:bg-blueAccent selection:text-white">
+
+    <!-- ═══ SPLASH SCREEN ═══ -->
+    <div id="splash-screen" role="status" aria-label="Loading AZ Learner">
+        <img id="splash-logo" src="/pwa/icons/icon-192.png" alt="AZ Learner">
+        <p id="splash-title">AZ Learner</p>
+        <p id="splash-subtitle">The Squad Companion</p>
+        <div id="splash-bar-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="splash-bar"></div>
+        </div>
+    </div>
+
+    <!-- ═══ iOS "Add to Home Screen" INSTALL BANNER ═══ -->
+    <div id="ios-install-banner" class="hidden" role="complementary" aria-label="Install app on iOS">
+        <img src="/pwa/icons/icon-192.png" alt="AZ Learner icon">
+        <div class="ios-banner-text">
+            <p class="ios-banner-title">Install AZ Learner</p>
+            <p class="ios-banner-body">
+                Tap <span class="share-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></span> then
+                <strong style="color:#fff;">"Add to Home Screen"</strong> for the best experience.
+            </p>
+        </div>
+        <button id="ios-install-banner-close" onclick="pwaInstall.dismissIOS()" aria-label="Dismiss">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- ═══ ANDROID / DESKTOP INSTALL BANNER ═══ -->
+    <div id="pwa-install-banner" class="hidden" role="complementary" aria-label="Install app">
+        <img src="/pwa/icons/icon-192.png" alt="AZ Learner icon">
+        <div class="pwa-banner-text">
+            <p class="pwa-banner-title">Install AZ Learner</p>
+            <p class="pwa-banner-sub">Add to your home screen</p>
+        </div>
+        <button id="pwa-install-btn" onclick="pwaInstall.triggerPrompt()">Install</button>
+        <button id="pwa-install-close" onclick="pwaInstall.dismissAndroid()" aria-label="Dismiss">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
 
     <div id="recaptcha-container"></div>
     <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="none"></audio>
@@ -3918,6 +4127,157 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
                     .catch((err) => console.warn('[SW] Registration failed:', err));
             });
         }
+    </script>
+
+    <!-- ═══ SPLASH SCREEN + PWA INSTALL LOGIC ═══ -->
+    <script>
+    // ─── Shared timing constants ───────────────────────────────────────────────
+    const SPLASH_MIN_MS          = 1800; // minimum splash screen display time (ms)
+    const BANNER_DISPLAY_DELAY   = SPLASH_MIN_MS + 400; // show install banners after splash finishes
+
+    // ─── Splash Screen ────────────────────────────────────────────────────────
+    (function () {
+        const splash = document.getElementById('splash-screen');
+        const bar    = document.getElementById('splash-bar');
+        const wrap   = document.getElementById('splash-bar-wrap');
+        if (!splash) return;
+
+        let progress = 0;
+        const startTime = Date.now();
+
+        // Easing constants for the loading bar fill animation
+        const PROGRESS_SMOOTHING_FACTOR = 0.06; // controls how quickly it decelerates near 90 %
+        const PROGRESS_MIN_INCREMENT    = 0.5;  // ensures forward movement even when nearly full
+
+        // Animate the loading bar smoothly up to ~90 % while waiting
+        const ticker = setInterval(() => {
+            if (progress < 90) {
+                progress += (90 - progress) * PROGRESS_SMOOTHING_FACTOR + PROGRESS_MIN_INCREMENT;
+                bar.style.width = Math.min(progress, 90) + '%';
+                if (wrap) wrap.setAttribute('aria-valuenow', Math.round(progress));
+            }
+        }, 60);
+
+        function hideSplash() {
+            clearInterval(ticker);
+            bar.style.width = '100%';
+            if (wrap) wrap.setAttribute('aria-valuenow', 100);
+            // Wait for bar to fill, then fade out
+            setTimeout(() => {
+                splash.classList.add('hidden-splash');
+                // Remove from DOM after transition
+                splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+            }, 250);
+        }
+
+        function tryHide() {
+            const elapsed = Date.now() - startTime;
+            const remaining = SPLASH_MIN_MS - elapsed;
+            if (remaining <= 0) {
+                hideSplash();
+            } else {
+                setTimeout(hideSplash, remaining);
+            }
+        }
+
+        if (document.readyState === 'complete') {
+            tryHide();
+        } else {
+            window.addEventListener('load', tryHide);
+        }
+    })();
+
+    // ─── PWA Install Prompts ──────────────────────────────────────────────────
+    const pwaInstall = (() => {
+        const DISMISSED_KEY_IOS     = 'pwa_ios_banner_dismissed';
+        const DISMISSED_KEY_ANDROID = 'pwa_android_banner_dismissed';
+        let deferredPrompt = null;
+
+        /** True when running as an installed PWA (standalone / fullscreen) */
+        function isStandalone() {
+            return (
+                window.navigator.standalone === true ||                     // iOS Safari
+                window.matchMedia('(display-mode: standalone)').matches ||  // Android / Desktop
+                window.matchMedia('(display-mode: fullscreen)').matches
+            );
+        }
+
+        /**
+         * True on iOS Safari and third-party iOS browsers (Chrome/Firefox on iOS).
+         * Uses both UA string and touch capability to stay robust across iOS versions.
+         */
+        function isIOS() {
+            const ua = navigator.userAgent;
+            // iPadOS 13+ reports as 'MacIntel' with touch support
+            const isIPadOS = /Mac/.test(ua) && navigator.maxTouchPoints > 1;
+            return (/iPad|iPhone|iPod/.test(ua) || isIPadOS) && !window.MSStream;
+        }
+
+        function showIOSBanner() {
+            const banner = document.getElementById('ios-install-banner');
+            if (banner) banner.classList.remove('hidden');
+        }
+
+        function showAndroidBanner() {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.remove('hidden');
+        }
+
+        function dismissIOS() {
+            const banner = document.getElementById('ios-install-banner');
+            if (banner) banner.classList.add('hidden');
+            try { sessionStorage.setItem(DISMISSED_KEY_IOS, '1'); } catch(_) {}
+        }
+
+        function dismissAndroid() {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.add('hidden');
+            deferredPrompt = null;
+            try { sessionStorage.setItem(DISMISSED_KEY_ANDROID, '1'); } catch(_) {}
+        }
+
+        async function triggerPrompt() {
+            if (!deferredPrompt) return;
+            dismissAndroid();
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('[PWA] Install outcome:', outcome);
+            deferredPrompt = null;
+        }
+
+        // Capture the install prompt on Android / Desktop Chrome
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Only show if not already dismissed this session and not standalone
+            if (!isStandalone()) {
+                try {
+                    if (!sessionStorage.getItem(DISMISSED_KEY_ANDROID)) {
+                        // Delay so the splash screen finishes first
+                        setTimeout(showAndroidBanner, BANNER_DISPLAY_DELAY);
+                    }
+                } catch(_) { setTimeout(showAndroidBanner, BANNER_DISPLAY_DELAY); }
+            }
+        });
+
+        // iOS: show custom instructions banner (no beforeinstallprompt on iOS)
+        if (isIOS() && !isStandalone()) {
+            try {
+                if (!sessionStorage.getItem(DISMISSED_KEY_IOS)) {
+                    setTimeout(showIOSBanner, BANNER_DISPLAY_DELAY);
+                }
+            } catch(_) { setTimeout(showIOSBanner, BANNER_DISPLAY_DELAY); }
+        }
+
+        // Hide banners if the app gets installed
+        window.addEventListener('appinstalled', () => {
+            dismissAndroid();
+            dismissIOS();
+            console.log('[PWA] App installed 🎉');
+        });
+
+        return { dismissIOS, dismissAndroid, triggerPrompt };
+    })();
     </script>
 </body>
 </html>
