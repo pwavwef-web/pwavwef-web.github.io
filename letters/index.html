@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter Generator – AZ Learner</title>
+    <meta name="description" content="Generate professional query letters and official correspondence for AZ Learner team members and authorities.">
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
+
+        /* ── Letter preview paper ── */
+        .letter-paper {
+            background: #fff;
+            color: #1a1a1a;
+            font-family: 'Crimson Pro', Georgia, serif;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* ── Letterhead ── */
+        .lh-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #16325c 60%, #0f2540 100%);
+            color: white;
+            padding: 24px 32px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .lh-logo-wrap { display: flex; align-items: center; gap: 14px; }
+        .lh-logo-img { width: 54px; height: 54px; border-radius: 10px; object-fit: contain; background: white; padding: 4px; }
+        .lh-org-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22pt; font-weight: 800; letter-spacing: 0.5px; line-height: 1; }
+        .lh-org-tagline { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 8.5pt; opacity: 0.75; margin-top: 3px; letter-spacing: 0.5px; }
+        .lh-contact-box { text-align: right; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 8pt; opacity: 0.85; line-height: 1.7; }
+        .lh-stripe { height: 4px; background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6); }
+        .lh-divider { height: 1px; background: #d1d5db; margin: 0 32px; }
+
+        /* ── Letter body ── */
+        .letter-body { padding: 28px 36px 36px; }
+        .letter-meta { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5pt; color: #374151; margin-bottom: 20px; }
+        .letter-ref { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9pt; font-weight: 700; color: #1e3a5f; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.8px; }
+        .letter-subject { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11pt; font-weight: 700; color: #1a1a1a; text-decoration: underline; margin-bottom: 18px; }
+        .letter-content { font-size: 11pt; line-height: 1.85; color: #1a1a1a; white-space: pre-wrap; }
+        .letter-sig { margin-top: 32px; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .letter-sig-line { font-size: 10pt; color: #374151; line-height: 1.7; }
+        .letter-sig-name { font-size: 11pt; font-weight: 700; color: #1e3a5f; margin-top: 8px; }
+        .letter-sig-role { font-size: 9pt; color: #6b7280; }
+
+        /* ── Footer band ── */
+        .lh-footer {
+            background: #1e3a5f;
+            color: rgba(255,255,255,0.65);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 7.5pt;
+            padding: 8px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── Print styles ── */
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body { background: #fff !important; margin: 0; padding: 0; }
+            body * { visibility: hidden; }
+            #letter-output, #letter-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            #letter-output { position: fixed; top: 0; left: 0; width: 100%; }
+            .letter-paper { box-shadow: none !important; width: 210mm !important; min-height: 297mm !important; margin: 0 auto !important; }
+        }
+
+        /* ── UI helpers ── */
+        .form-label { display: block; font-size: 0.8125rem; font-weight: 600; color: #94a3b8; margin-bottom: 5px; letter-spacing: 0.4px; }
+        .form-input {
+            width: 100%; background: #1e293b; border: 1.5px solid #334155;
+            border-radius: 10px; color: white; padding: 10px 14px;
+            font-size: 0.9rem; font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.18); }
+        .form-input::placeholder { color: #475569; }
+        textarea.form-input { resize: vertical; min-height: 90px; }
+        select.form-input { cursor: pointer; }
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white; font-weight: 700; padding: 11px 24px;
+            border-radius: 12px; border: none; cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; transition: opacity 0.2s, transform 0.15s;
+        }
+        .btn-primary:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #1e293b; border: 1.5px solid #334155;
+            color: #cbd5e1; font-weight: 600; padding: 11px 24px;
+            border-radius: 12px; cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; transition: all 0.2s;
+        }
+        .btn-secondary:hover:not(:disabled) { border-color: #3b82f6; color: #93c5fd; }
+        .btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-download {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white; font-weight: 700; padding: 11px 24px;
+            border-radius: 12px; border: none; cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; transition: opacity 0.2s, transform 0.15s;
+        }
+        .btn-download:hover { opacity: 0.9; transform: translateY(-1px); }
+        .toast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; border: 1.5px solid #334155; color: white;
+            padding: 12px 24px; border-radius: 12px; font-size: 0.875rem;
+            z-index: 9999; opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; max-width: 90vw; text-align: center;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-color: #16a34a; }
+        .toast.error { border-color: #ef4444; }
+        .spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; }
+        .section-title { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #3b82f6; margin-bottom: 14px; }
+        .fade-in { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .letter-type-btn {
+            flex: 1; padding: 14px 8px; border: 2px solid #334155; border-radius: 12px;
+            background: #0f172a; color: #94a3b8; cursor: pointer; text-align: center;
+            transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .letter-type-btn:hover { border-color: #3b82f6; color: #93c5fd; }
+        .letter-type-btn.active { border-color: #3b82f6; background: rgba(59,130,246,0.12); color: #60a5fa; }
+        #auth-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .field-group { display: flex; flex-direction: column; gap: 16px; }
+    </style>
+</head>
+<body>
+
+<!-- Auth Gate (hidden once signed-in admin) -->
+<div id="auth-gate" class="hidden">
+    <div class="text-center px-6">
+        <div class="material-symbols-outlined text-5xl text-blue-400 mb-4">lock</div>
+        <h2 class="text-xl font-bold mb-2">Admin Access Required</h2>
+        <p class="text-slate-400 text-sm mb-6">You need to be signed in as an admin to use the Letter Generator.</p>
+        <a href="../home.html" class="btn-primary">
+            <span class="material-symbols-outlined text-sm">login</span> Go to Sign In
+        </a>
+    </div>
+</div>
+
+<!-- Loading screen -->
+<div id="loading-screen" class="min-h-screen flex items-center justify-center">
+    <div class="text-center">
+        <div class="spinner" style="width:36px;height:36px;border-width:3px;margin:0 auto 16px;"></div>
+        <p class="text-slate-400 text-sm">Loading…</p>
+    </div>
+</div>
+
+<!-- Main app -->
+<div id="app" class="hidden">
+
+    <!-- Top nav -->
+    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex items-center justify-between px-5 h-14">
+            <div class="flex items-center gap-3">
+                <img src="../brand.png" alt="AZ Learner" class="w-8 h-8 rounded-lg object-contain bg-white p-0.5">
+                <span class="font-extrabold text-sm tracking-wide text-white">AZ Learner</span>
+                <span class="hidden sm:inline text-slate-500 text-xs mx-1">·</span>
+                <span class="hidden sm:inline text-slate-400 text-xs font-semibold">Letter Generator</span>
+            </div>
+            <a href="../admin.html" class="text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1 transition">
+                <span class="material-symbols-outlined text-base">arrow_back</span> Admin
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+        <!-- LEFT: Form panel -->
+        <div class="space-y-6">
+
+            <div>
+                <h1 class="text-2xl font-extrabold leading-tight">Letter Generator</h1>
+                <p class="text-slate-400 text-sm mt-1">Use AI to draft professional letters on AZ Learner letterhead.</p>
+            </div>
+
+            <!-- Letter Type -->
+            <div class="card">
+                <p class="section-title">Letter Type</p>
+                <div class="flex gap-3 flex-wrap">
+                    <button class="letter-type-btn active" data-type="query" onclick="setLetterType('query')">
+                        <span class="material-symbols-outlined block text-2xl mb-1">gavel</span>
+                        Query Letter
+                    </button>
+                    <button class="letter-type-btn" data-type="warning" onclick="setLetterType('warning')">
+                        <span class="material-symbols-outlined block text-2xl mb-1">warning</span>
+                        Warning Letter
+                    </button>
+                    <button class="letter-type-btn" data-type="authority" onclick="setLetterType('authority')">
+                        <span class="material-symbols-outlined block text-2xl mb-1">account_balance</span>
+                        Letter to Authority
+                    </button>
+                    <button class="letter-type-btn" data-type="commendation" onclick="setLetterType('commendation')">
+                        <span class="material-symbols-outlined block text-2xl mb-1">stars</span>
+                        Commendation
+                    </button>
+                    <button class="letter-type-btn" data-type="suspension" onclick="setLetterType('suspension')">
+                        <span class="material-symbols-outlined block text-2xl mb-1">person_remove</span>
+                        Suspension
+                    </button>
+                    <button class="letter-type-btn" data-type="custom" onclick="setLetterType('custom')">
+                        <span class="material-symbols-outlined block text-2xl mb-1">edit_note</span>
+                        Custom
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic form fields -->
+            <div class="card" id="form-fields">
+                <p class="section-title" id="form-section-title">Query Details</p>
+                <div class="field-group" id="field-group-query">
+                    <div>
+                        <label class="form-label" for="q-member-name">Team Member Name</label>
+                        <input id="q-member-name" class="form-input" type="text" placeholder="e.g. Emmanuel Larbi" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="q-member-role">Team Member Role / Position</label>
+                        <input id="q-member-role" class="form-input" type="text" placeholder="e.g. Administrative Assistant" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="q-offence">Offence / Reason for Query</label>
+                        <textarea id="q-offence" class="form-input" placeholder="Describe the offence or behaviour that prompted this query in detail…"></textarea>
+                    </div>
+                    <div>
+                        <label class="form-label" for="q-date-of-incident">Date of Incident (optional)</label>
+                        <input id="q-date-of-incident" class="form-input" type="date">
+                    </div>
+                    <div>
+                        <label class="form-label" for="q-deadline">Response Deadline (days)</label>
+                        <input id="q-deadline" class="form-input" type="number" min="1" max="30" value="5" placeholder="5">
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="field-group-warning">
+                    <div>
+                        <label class="form-label" for="w-member-name">Team Member Name</label>
+                        <input id="w-member-name" class="form-input" type="text" placeholder="e.g. Andy Anim" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="w-member-role">Role / Position</label>
+                        <input id="w-member-role" class="form-input" type="text" placeholder="e.g. Chief of Ambassadors" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="w-reason">Warning Reason</label>
+                        <textarea id="w-reason" class="form-input" placeholder="Describe the behaviour or breach that warrants a warning…"></textarea>
+                    </div>
+                    <div>
+                        <label class="form-label" for="w-prior">Prior Warnings (optional)</label>
+                        <input id="w-prior" class="form-input" type="number" min="0" value="0" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="field-group-authority">
+                    <div>
+                        <label class="form-label" for="a-authority">Authority / Organisation</label>
+                        <input id="a-authority" class="form-input" type="text" placeholder="e.g. Student Representative Council (SRC)" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="a-recipient-name">Recipient Name / Title</label>
+                        <input id="a-recipient-name" class="form-input" type="text" placeholder="e.g. The SRC President" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="a-subject">Subject / Purpose</label>
+                        <input id="a-subject" class="form-input" type="text" placeholder="e.g. Request for Collaboration on Student Welfare Initiatives" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="a-details">Details / Background</label>
+                        <textarea id="a-details" class="form-input" placeholder="Provide context, background, and any specific requests…"></textarea>
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="field-group-commendation">
+                    <div>
+                        <label class="form-label" for="c-member-name">Team Member Name</label>
+                        <input id="c-member-name" class="form-input" type="text" placeholder="e.g. Bright Tetteh" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="c-member-role">Role / Position</label>
+                        <input id="c-member-role" class="form-input" type="text" placeholder="e.g. Lead Strategic Designer" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="c-achievement">Achievement / Reason for Commendation</label>
+                        <textarea id="c-achievement" class="form-input" placeholder="Describe the achievement or outstanding behaviour being recognised…"></textarea>
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="field-group-suspension">
+                    <div>
+                        <label class="form-label" for="s-member-name">Team Member Name</label>
+                        <input id="s-member-name" class="form-input" type="text" placeholder="e.g. Member Name" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="s-member-role">Role / Position</label>
+                        <input id="s-member-role" class="form-input" type="text" placeholder="e.g. Role" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="s-reason">Reason for Suspension</label>
+                        <textarea id="s-reason" class="form-input" placeholder="Describe the conduct or breach that necessitates this suspension…"></textarea>
+                    </div>
+                    <div>
+                        <label class="form-label" for="s-duration">Suspension Duration</label>
+                        <input id="s-duration" class="form-input" type="text" placeholder="e.g. 2 weeks / pending investigation" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="field-group-custom">
+                    <div>
+                        <label class="form-label" for="cu-recipient">Recipient / Addressee</label>
+                        <input id="cu-recipient" class="form-input" type="text" placeholder="e.g. All Team Leads" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="cu-subject">Subject</label>
+                        <input id="cu-subject" class="form-input" type="text" placeholder="e.g. Policy Update on Meeting Attendance" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="form-label" for="cu-instructions">Letter Instructions</label>
+                        <textarea id="cu-instructions" class="form-input" style="min-height:120px" placeholder="Describe exactly what this letter should say, include all key points and context…"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Common fields -->
+            <div class="card">
+                <p class="section-title">Signatory &amp; Date</p>
+                <div class="field-group">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label" for="admin-name">Signed by (Name)</label>
+                            <input id="admin-name" class="form-input" type="text" placeholder="e.g. Francis Pwavwe" autocomplete="off">
+                        </div>
+                        <div>
+                            <label class="form-label" for="admin-role">Signed by (Title)</label>
+                            <input id="admin-role" class="form-input" type="text" placeholder="e.g. Founder &amp; CEO" autocomplete="off">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label" for="letter-date">Letter Date</label>
+                        <input id="letter-date" class="form-input" type="date">
+                    </div>
+                    <div>
+                        <label class="form-label" for="ref-number">Reference Number (optional)</label>
+                        <input id="ref-number" class="form-input" type="text" placeholder="e.g. AZL/HR/2025/001" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-wrap gap-3">
+                <button class="btn-primary flex-1 justify-center" id="generate-btn" onclick="generateLetter()">
+                    <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                    Generate Letter with AI
+                </button>
+                <button class="btn-secondary" id="clear-btn" onclick="clearForm()">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                    Clear
+                </button>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: Preview panel -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="text-lg font-bold">Letter Preview</h2>
+                    <p class="text-slate-400 text-xs" id="preview-hint">Fill in the form and click Generate to preview your letter.</p>
+                </div>
+                <button class="btn-download" id="download-btn" onclick="downloadLetter()" disabled>
+                    <span class="material-symbols-outlined text-sm">download</span>
+                    Download PDF
+                </button>
+            </div>
+
+            <!-- Edit generated content -->
+            <div id="edit-panel" class="hidden">
+                <div class="card">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="section-title mb-0">Edit Letter Body</p>
+                        <button onclick="applyEdit()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 transition">
+                            <span class="material-symbols-outlined text-sm">check_circle</span> Apply
+                        </button>
+                    </div>
+                    <textarea id="letter-edit-area" class="form-input" style="min-height:200px;font-family:'Crimson Pro',serif;font-size:0.95rem;line-height:1.7;"></textarea>
+                </div>
+            </div>
+
+            <!-- Paper output (hidden until generated) -->
+            <div id="paper-placeholder" class="card flex flex-col items-center justify-center py-20 text-center">
+                <span class="material-symbols-outlined text-5xl text-slate-600 mb-3">description</span>
+                <p class="text-slate-500 text-sm font-medium">Your letter preview will appear here</p>
+                <p class="text-slate-600 text-xs mt-1">Fill the form and click <strong class="text-slate-400">Generate Letter with AI</strong></p>
+            </div>
+
+            <div id="letter-output" class="hidden fade-in">
+                <div class="letter-paper">
+                    <!-- Letterhead -->
+                    <div class="lh-header">
+                        <div class="lh-logo-wrap">
+                            <img src="../brand.png" alt="AZ Learner Logo" class="lh-logo-img" onerror="this.style.display='none'">
+                            <div>
+                                <div class="lh-org-name">AZ Learner</div>
+                                <div class="lh-org-tagline">Empowering Students · Transforming Education</div>
+                            </div>
+                        </div>
+                        <div class="lh-contact-box">
+                            <div>University of Cape Coast, Ghana</div>
+                            <div>hello@azlearner.me</div>
+                            <div>www.azlearner.me</div>
+                        </div>
+                    </div>
+                    <div class="lh-stripe"></div>
+
+                    <!-- Letter body -->
+                    <div class="letter-body">
+                        <div class="letter-meta" id="lh-date-ref">
+                            <!-- date + ref populated by JS -->
+                        </div>
+                        <div class="letter-ref" id="lh-letter-type-badge"></div>
+                        <div class="letter-subject" id="lh-subject"></div>
+                        <div class="letter-content" id="lh-body"></div>
+                        <div class="letter-sig" id="lh-sig">
+                            <!-- signature populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="lh-divider"></div>
+                    <div class="lh-footer">
+                        <span>AZ Learner · Official Correspondence</span>
+                        <span id="lh-footer-ref"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Firebase + Vertex AI -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+        authDomain: "az-learner.firebaseapp.com",
+        projectId: "az-learner",
+        storageBucket: "az-learner.firebasestorage.app",
+        messagingSenderId: "12958795950",
+        appId: "1:12958795950:web:326411293864571040453f"
+    };
+
+    const appInstance = initializeApp(firebaseConfig);
+    const db = getFirestore(appInstance);
+    const auth = getAuth(appInstance);
+
+    // Auth gate: only admin/ceo/coo roles can access
+    onAuthStateChanged(auth, async (user) => {
+        document.getElementById('loading-screen').classList.add('hidden');
+
+        if (!user) {
+            document.getElementById('auth-gate').classList.remove('hidden');
+            return;
+        }
+
+        let role = null;
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) role = userDoc.data().role;
+        } catch (e) {
+            console.error("Role fetch error:", e);
+        }
+
+        const allowed = ['admin', 'ceo', 'coo', 'manager'];
+        if (!allowed.includes(role)) {
+            document.getElementById('auth-gate').classList.remove('hidden');
+            return;
+        }
+
+        // Pre-fill signatory name from display name
+        if (user.displayName) {
+            const adminNameEl = document.getElementById('admin-name');
+            if (adminNameEl && !adminNameEl.value) adminNameEl.value = user.displayName;
+        }
+        if (role === 'ceo') {
+            const adminRoleEl = document.getElementById('admin-role');
+            if (adminRoleEl && !adminRoleEl.value) adminRoleEl.value = 'Founder & CEO';
+        }
+
+        document.getElementById('app').classList.remove('hidden');
+    });
+
+    // Vertex AI / Gemini
+    let aiModel = null;
+    (async () => {
+        try {
+            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+            const vertexAI = getVertexAI(appInstance);
+            aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+            window._aiModel = aiModel;
+        } catch (e) {
+            console.warn("Vertex AI unavailable:", e);
+            window._aiModel = null;
+        }
+    })();
+
+    window._callAI = async function(prompt) {
+        const model = window._aiModel;
+        if (!model) throw new Error("AI model not initialised. Please ensure Vertex AI is enabled for this Firebase project.");
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    };
+</script>
+
+<script>
+    // ── State ──────────────────────────────────────────────────────────
+    let currentType = 'query';
+    let generatedBody = '';
+
+    const LETTER_TYPE_LABELS = {
+        query: 'QUERY LETTER',
+        warning: 'WARNING LETTER',
+        authority: 'OFFICIAL CORRESPONDENCE',
+        commendation: 'LETTER OF COMMENDATION',
+        suspension: 'LETTER OF SUSPENSION',
+        custom: 'OFFICIAL LETTER'
+    };
+
+    const FORM_SECTION_LABELS = {
+        query: 'Query Details',
+        warning: 'Warning Details',
+        authority: 'Authority Letter Details',
+        commendation: 'Commendation Details',
+        suspension: 'Suspension Details',
+        custom: 'Custom Letter Details'
+    };
+
+    // Set today's date on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date().toISOString().split('T')[0];
+        const letterDateEl = document.getElementById('letter-date');
+        if (letterDateEl) letterDateEl.value = today;
+    });
+
+    // ── Letter type toggle ─────────────────────────────────────────────
+    function setLetterType(type) {
+        currentType = type;
+
+        // Update button states
+        document.querySelectorAll('.letter-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+
+        // Show/hide field groups
+        ['query','warning','authority','commendation','suspension','custom'].forEach(t => {
+            const el = document.getElementById('field-group-' + t);
+            if (el) el.classList.toggle('hidden', t !== type);
+        });
+
+        // Update form section title
+        const titleEl = document.getElementById('form-section-title');
+        if (titleEl) titleEl.textContent = FORM_SECTION_LABELS[type] || 'Letter Details';
+    }
+    window.setLetterType = setLetterType;
+
+    // ── Prompt builder ─────────────────────────────────────────────────
+    function buildPrompt(type) {
+        const adminName = document.getElementById('admin-name').value.trim() || 'The Management';
+        const adminRole = document.getElementById('admin-role').value.trim() || 'AZ Learner Management';
+        const dateStr = formatDate(document.getElementById('letter-date').value);
+
+        const baseContext = `You are drafting an official letter on behalf of AZ Learner, a student ed-tech organisation based at the University of Cape Coast, Ghana. The letter is dated ${dateStr} and signed by ${adminName} (${adminRole}).`;
+
+        switch (type) {
+            case 'query': {
+                const name = document.getElementById('q-member-name').value.trim();
+                const role = document.getElementById('q-member-role').value.trim();
+                const offence = document.getElementById('q-offence').value.trim();
+                const incident = document.getElementById('q-date-of-incident').value;
+                const deadline = document.getElementById('q-deadline').value || '5';
+                if (!name || !offence) return null;
+                return `${baseContext}
+
+Write a formal query letter addressed to ${name}${role ? `, ${role}` : ''} at AZ Learner.
+Offence / Misconduct: ${offence}${incident ? `\nDate of Incident: ${formatDate(incident)}` : ''}
+Response deadline: ${deadline} working days.
+
+Requirements:
+- Start with a formal salutation (Dear ${name},)
+- Clearly state the purpose (this is a query letter)
+- Describe the alleged misconduct factually and professionally
+- State that the organisation takes such matters seriously
+- Request a written response within the deadline explaining their actions
+- Mention that failure to respond or explain may result in further disciplinary action
+- Close professionally
+- Do NOT include the letterhead, date, reference, subject line, or signature block — those are added separately
+- Return ONLY the letter body paragraphs, no preamble or extra commentary`;
+            }
+            case 'warning': {
+                const name = document.getElementById('w-member-name').value.trim();
+                const role = document.getElementById('w-member-role').value.trim();
+                const reason = document.getElementById('w-reason').value.trim();
+                const prior = parseInt(document.getElementById('w-prior').value) || 0;
+                if (!name || !reason) return null;
+                return `${baseContext}
+
+Write a formal warning letter addressed to ${name}${role ? `, ${role}` : ''} at AZ Learner.
+Reason for warning: ${reason}
+${prior > 0 ? `This is their ${prior + 1}${ordinal(prior + 1)} warning.` : 'This is their first formal warning.'}
+
+Requirements:
+- Start with a formal salutation (Dear ${name},)
+- State clearly that this is a formal written warning
+- Describe the behaviour or breach clearly
+- State the expected standard of conduct
+- ${prior >= 1 ? 'Emphasise that repeated violations may result in suspension or termination of membership/role' : 'Advise that further violations may result in escalated disciplinary action'}
+- Close professionally
+- Do NOT include letterhead, date, reference, subject, or signature — those are added separately
+- Return ONLY the body paragraphs, no preamble`;
+            }
+            case 'authority': {
+                const authority = document.getElementById('a-authority').value.trim();
+                const recipientName = document.getElementById('a-recipient-name').value.trim();
+                const subject = document.getElementById('a-subject').value.trim();
+                const details = document.getElementById('a-details').value.trim();
+                if (!authority || !subject) return null;
+                return `${baseContext}
+
+Write a formal official letter from AZ Learner to ${recipientName || 'The Leadership'} of ${authority}.
+Subject / Purpose: ${subject}
+Additional details: ${details || 'N/A'}
+
+Requirements:
+- Start with a formal salutation (Dear ${recipientName || 'Sir/Madam'},)
+- Introduce AZ Learner briefly (student ed-tech platform at University of Cape Coast, Ghana)
+- Address the subject/purpose professionally
+- Be respectful and diplomatic in tone
+- Include a clear call to action or request if applicable
+- Close professionally with appreciation
+- Do NOT include letterhead, date, reference, subject line, or signature block — those are added separately
+- Return ONLY the letter body paragraphs`;
+            }
+            case 'commendation': {
+                const name = document.getElementById('c-member-name').value.trim();
+                const role = document.getElementById('c-member-role').value.trim();
+                const achievement = document.getElementById('c-achievement').value.trim();
+                if (!name || !achievement) return null;
+                return `${baseContext}
+
+Write a formal letter of commendation addressed to ${name}${role ? `, ${role}` : ''} at AZ Learner.
+Achievement / Reason for commendation: ${achievement}
+
+Requirements:
+- Start with a formal salutation (Dear ${name},)
+- Warmly but professionally acknowledge the achievement
+- Explain why it is valued by AZ Learner and the team
+- Encourage continued excellence
+- Close with appreciation and encouragement
+- Do NOT include letterhead, date, reference, subject line, or signature block
+- Return ONLY the body paragraphs`;
+            }
+            case 'suspension': {
+                const name = document.getElementById('s-member-name').value.trim();
+                const role = document.getElementById('s-member-role').value.trim();
+                const reason = document.getElementById('s-reason').value.trim();
+                const duration = document.getElementById('s-duration').value.trim();
+                if (!name || !reason) return null;
+                return `${baseContext}
+
+Write a formal letter of suspension addressed to ${name}${role ? `, ${role}` : ''} at AZ Learner.
+Reason for suspension: ${reason}
+Duration: ${duration || 'to be determined'}
+
+Requirements:
+- Start with a formal salutation (Dear ${name},)
+- State clearly that they are hereby suspended from their duties
+- Explain the reason factually and professionally
+- State the duration and conditions for reinstatement (if any)
+- Outline any obligations during the suspension period
+- Close formally
+- Do NOT include letterhead, date, reference, subject line, or signature block
+- Return ONLY the body paragraphs`;
+            }
+            case 'custom': {
+                const recipient = document.getElementById('cu-recipient').value.trim();
+                const instructions = document.getElementById('cu-instructions').value.trim();
+                if (!instructions) return null;
+                return `${baseContext}
+
+Write an official formal letter ${recipient ? `addressed to ${recipient}` : ''} for AZ Learner.
+Instructions: ${instructions}
+
+Requirements:
+- Use an appropriate formal salutation
+- Follow the instructions precisely
+- Maintain a professional, formal tone throughout
+- Do NOT include letterhead, date, reference, subject line, or signature block
+- Return ONLY the body paragraphs`;
+            }
+            default: return null;
+        }
+    }
+
+    function ordinal(n) {
+        if (n >= 11 && n <= 13) return 'th';
+        switch (n % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function getLetterSubject() {
+        switch (currentType) {
+            case 'query': {
+                const name = document.getElementById('q-member-name').value.trim();
+                return `Query Letter – ${name || 'Team Member'}`;
+            }
+            case 'warning': {
+                const name = document.getElementById('w-member-name').value.trim();
+                return `Formal Warning Letter – ${name || 'Team Member'}`;
+            }
+            case 'authority': {
+                const subj = document.getElementById('a-subject').value.trim();
+                return subj || 'Official Correspondence';
+            }
+            case 'commendation': {
+                const name = document.getElementById('c-member-name').value.trim();
+                return `Letter of Commendation – ${name || 'Team Member'}`;
+            }
+            case 'suspension': {
+                const name = document.getElementById('s-member-name').value.trim();
+                return `Letter of Suspension – ${name || 'Team Member'}`;
+            }
+            case 'custom': {
+                const subj = document.getElementById('cu-subject').value.trim();
+                return subj || 'Official Correspondence';
+            }
+            default: return 'Official Correspondence';
+        }
+    }
+
+    // ── Generate letter ────────────────────────────────────────────────
+    async function generateLetter() {
+        const btn = document.getElementById('generate-btn');
+        const prompt = buildPrompt(currentType);
+        if (!prompt) {
+            showToast('Please fill in the required fields before generating.', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Generating…';
+
+        try {
+            if (typeof window._callAI !== 'function') {
+                throw new Error('AI not ready. Please wait a moment and try again.');
+            }
+            const body = await window._callAI(prompt);
+            generatedBody = body.trim();
+            renderLetter(generatedBody);
+            showToast('Letter generated successfully!', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('AI generation failed: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">auto_awesome</span> Generate Letter with AI';
+        }
+    }
+    window.generateLetter = generateLetter;
+
+    // ── Render letter preview ──────────────────────────────────────────
+    function renderLetter(body) {
+        const dateStr = document.getElementById('letter-date').value;
+        const ref = document.getElementById('ref-number').value.trim();
+        const adminName = document.getElementById('admin-name').value.trim() || '_______________________';
+        const adminRole = document.getElementById('admin-role').value.trim() || 'AZ Learner Management';
+
+        // Date + ref
+        let metaHtml = `<div>${formatDate(dateStr)}</div>`;
+        if (ref) metaHtml += `<div style="margin-top:4px;font-weight:600;color:#1e3a5f;">Ref: ${escHtml(ref)}</div>`;
+        document.getElementById('lh-date-ref').innerHTML = metaHtml;
+
+        document.getElementById('lh-letter-type-badge').textContent = LETTER_TYPE_LABELS[currentType] || 'OFFICIAL LETTER';
+        document.getElementById('lh-subject').textContent = getLetterSubject();
+        document.getElementById('lh-body').textContent = body;
+        document.getElementById('lh-footer-ref').textContent = ref ? `Ref: ${ref}` : '';
+
+        // Signature
+        document.getElementById('lh-sig').innerHTML = `
+            <div class="letter-sig-line">Yours faithfully,</div>
+            <div style="margin-top:32px;border-top:1.5px solid #d1d5db;padding-top:6px;display:inline-block;min-width:160px;"></div>
+            <div class="letter-sig-name">${escHtml(adminName)}</div>
+            <div class="letter-sig-role">${escHtml(adminRole)}</div>
+            <div class="letter-sig-role" style="margin-top:2px;font-weight:600;">AZ Learner</div>
+        `;
+
+        // Show output
+        document.getElementById('paper-placeholder').classList.add('hidden');
+        document.getElementById('letter-output').classList.remove('hidden');
+        document.getElementById('letter-output').classList.add('fade-in');
+
+        // Enable edit panel and download
+        const editArea = document.getElementById('letter-edit-area');
+        editArea.value = body;
+        document.getElementById('edit-panel').classList.remove('hidden');
+        document.getElementById('download-btn').disabled = false;
+        document.getElementById('preview-hint').textContent = 'Edit the body below if needed, then download as PDF.';
+    }
+
+    // ── Apply edits ────────────────────────────────────────────────────
+    function applyEdit() {
+        const edited = document.getElementById('letter-edit-area').value.trim();
+        if (!edited) { showToast('Letter body cannot be empty.', 'error'); return; }
+        generatedBody = edited;
+        document.getElementById('lh-body').textContent = edited;
+        showToast('Changes applied to preview.', 'success');
+    }
+    window.applyEdit = applyEdit;
+
+    // ── Download PDF ───────────────────────────────────────────────────
+    function downloadLetter() {
+        if (!generatedBody) { showToast('Generate a letter first.', 'error'); return; }
+        window.print();
+    }
+    window.downloadLetter = downloadLetter;
+
+    // ── Clear form ─────────────────────────────────────────────────────
+    function clearForm() {
+        ['q-member-name','q-member-role','q-offence','q-date-of-incident',
+         'w-member-name','w-member-role','w-reason',
+         'a-authority','a-recipient-name','a-subject','a-details',
+         'c-member-name','c-member-role','c-achievement',
+         's-member-name','s-member-role','s-reason','s-duration',
+         'cu-recipient','cu-subject','cu-instructions',
+         'ref-number'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        const deadlineEl = document.getElementById('q-deadline');
+        if (deadlineEl) deadlineEl.value = '5';
+        const priorEl = document.getElementById('w-prior');
+        if (priorEl) priorEl.value = '0';
+        document.getElementById('letter-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('letter-output').classList.add('hidden');
+        document.getElementById('paper-placeholder').classList.remove('hidden');
+        document.getElementById('edit-panel').classList.add('hidden');
+        document.getElementById('download-btn').disabled = true;
+        document.getElementById('preview-hint').textContent = 'Fill in the form and click Generate to preview your letter.';
+        generatedBody = '';
+        showToast('Form cleared.', 'success');
+    }
+    window.clearForm = clearForm;
+
+    // ── Toast ──────────────────────────────────────────────────────────
+    let _toastTimer = null;
+    function showToast(msg, type = '') {
+        const el = document.getElementById('toast');
+        el.className = 'toast show ' + type;
+        const icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
+        el.innerHTML = `<span class="material-symbols-outlined text-base">${icon}</span>${escHtml(msg)}`;
+        if (_toastTimer) clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+    }
+    window.showToast = showToast;
+
+    // ── HTML escape ────────────────────────────────────────────────────
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
+</body>
+</html>
