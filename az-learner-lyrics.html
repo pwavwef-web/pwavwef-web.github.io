@@ -18,8 +18,8 @@
       --bridge:  #ce93d8;
       --outro:   #80deea;
 
-      /* Total scroll duration = 195 s so last line is visible at 3:15 */
-      --scroll-duration: 195s;
+      /* Total scroll duration = 228 s so last line is visible at 3:50 (228 + 2s delay = 230s) */
+      --scroll-duration: 228s;
     }
 
     html, body {
@@ -154,6 +154,32 @@
     .mask-top    { top: 0;    background: linear-gradient(to bottom, #000 0%, transparent 100%); }
     .mask-bottom { bottom: 0; background: linear-gradient(to top,   #000 0%, transparent 100%); }
 
+    /* ── Logo watermark ───────────────────────────────────────── */
+    .logo-watermark {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.55;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .logo-watermark img {
+      height: 36px;
+      width: auto;
+      filter: drop-shadow(0 0 6px rgba(79,195,247,0.5));
+    }
+    .logo-watermark span {
+      font-size: 0.8rem;
+      color: var(--blue);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(79,195,247,0.7);
+    }
+
     /* ── Playback UI (hidden during capture) ─────────────────── */
     .ui-bar {
       position: fixed;
@@ -162,8 +188,10 @@
       transform: translateX(-50%);
       z-index: 10;
       display: flex;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     .ui-bar button {
       background: rgba(79,195,247,0.15);
@@ -177,6 +205,22 @@
       transition: background 0.2s;
     }
     .ui-bar button:hover { background: rgba(79,195,247,0.28); }
+    #btnRecord {
+      background: rgba(229,57,53,0.15);
+      border-color: rgba(229,57,53,0.5);
+      color: #ef9a9a;
+    }
+    #btnRecord:hover { background: rgba(229,57,53,0.28); }
+    #btnRecord.recording {
+      background: rgba(229,57,53,0.3);
+      border-color: rgba(229,57,53,0.8);
+      color: #ff5252;
+      animation: recPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes recPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(229,57,53,0); }
+    }
     #timer-display {
       color: var(--gray);
       font-size: 0.85rem;
@@ -190,6 +234,12 @@
 <!-- Animated star background -->
 <canvas id="stars-canvas"></canvas>
 <div class="glow-overlay"></div>
+
+<!-- AZ Learner logo watermark -->
+<div class="logo-watermark" id="logoWatermark">
+  <img src="brand.png" alt="AZ Learner" onerror="this.parentElement.style.gap='0';this.style.display='none'">
+  <span>AZ Learner</span>
+</div>
 
 <!-- Fade masks -->
 <div class="mask-top"></div>
@@ -316,10 +366,11 @@
   </div><!-- /.scroll-track -->
 </div><!-- /.stage -->
 
-<!-- Playback controls (hide before screen-recording for CapCut) -->
+<!-- Playback controls -->
 <div class="ui-bar" id="uiBar">
   <button id="btnRestart">↺ Restart</button>
   <span id="timer-display">0:00</span>
+  <button id="btnRecord">⏺ Record</button>
   <button id="btnHideUI">Hide UI</button>
 </div>
 
@@ -376,10 +427,7 @@
 (function () {
   const track   = document.getElementById('lyricsTrack');
   const display = document.getElementById('timer-display');
-  const DELAY   = 2;    // seconds before scroll starts (matches CSS animation-delay)
   let   startTs = null;
-  let   paused  = false;
-  let   elapsed = 0;
   let   rafId;
 
   function formatTime(sec) {
@@ -390,7 +438,7 @@
 
   function tick(ts) {
     if (!startTs) startTs = ts;
-    elapsed = (ts - startTs) / 1000;
+    const elapsed = (ts - startTs) / 1000;
     display.textContent = formatTime(elapsed);
     rafId = requestAnimationFrame(tick);
   }
@@ -402,13 +450,81 @@
     track.offsetHeight;   // force reflow to restart CSS animation
     track.style.animation = '';
     startTs = null;
-    elapsed = 0;
     display.textContent = '0:00';
   });
 
   /* Hide UI for clean screen-record */
   document.getElementById('btnHideUI').addEventListener('click', () => {
     document.getElementById('uiBar').style.display = 'none';
+    document.getElementById('logoWatermark').style.opacity = '0.18';
+  });
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   Screen Recording (MediaRecorder + getDisplayMedia)
+═══════════════════════════════════════════════════════════════ */
+(function () {
+  const btnRecord = document.getElementById('btnRecord');
+  let mediaRecorder = null;
+  let recordedChunks = [];
+
+  btnRecord.addEventListener('click', async () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      return;
+    }
+
+    /* Pick the best supported mimeType */
+    const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+      .find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 30 } },
+        audio: false
+      });
+    } catch (err) {
+      /* User cancelled or permission denied */
+      return;
+    }
+
+    recordedChunks = [];
+    const opts = mimeType ? { mimeType } : {};
+    mediaRecorder = new MediaRecorder(stream, opts);
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'az-learner-lyrics.webm';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      btnRecord.textContent = '⏺ Record';
+      btnRecord.classList.remove('recording');
+    };
+
+    /* If the user stops sharing via browser UI */
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.addEventListener('ended', () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      });
+    }
+
+    mediaRecorder.start(1000); /* collect data every second */
+    btnRecord.textContent = '⏹ Stop & Save';
+    btnRecord.classList.add('recording');
   });
 })();
 </script>
