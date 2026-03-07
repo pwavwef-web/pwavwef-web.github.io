@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Score Calculator – AZ Learner | Ghana</title>
+    <meta name="description" content="Check how well your CV scores with Applicant Tracking Systems (ATS). Upload your CV, get an instant ATS score, and receive AI-powered improvement suggestions.">
+    <meta name="keywords" content="ATS score, ATS checker, CV scanner, resume ATS, applicant tracking system, CV score, resume checker, Ghana CV">
+    <link rel="canonical" href="https://azlearner.me/cv/ats.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://azlearner.me/cv/ats.html">
+    <meta property="og:title" content="ATS Score Calculator – AZ Learner">
+    <meta property="og:description" content="Upload your CV and get an instant ATS compatibility score with AI-powered improvement suggestions.">
+    <meta property="og:image" content="https://azlearner.me/brand.png">
+    <meta property="og:site_name" content="AZ Learner">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ATS Score Calculator – AZ Learner">
+    <meta name="twitter:description" content="Check your CV's ATS score instantly with AI-powered analysis and improvement suggestions.">
+    <meta name="twitter:image" content="https://azlearner.me/brand.png">
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <!-- PDF.js for PDF text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- mammoth.js for DOCX text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; font-weight: bold; padding: 12px 28px; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(59,130,246,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: rgba(255,255,255,0.08); color: white; font-weight: 600; padding: 12px 28px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.14); }
+        input, textarea { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px; padding: 10px 14px; width: 100%; outline: none; transition: border-color 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.35); }
+        input:focus, textarea:focus { border-color: #3b82f6; }
+        #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 99999; pointer-events: none; }
+        .toast-msg { background: #1e293b; border: 1px solid rgba(99,102,241,0.4); color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 30px rgba(0,0,0,0.4); opacity: 0; transform: translateY(8px); transition: all 0.3s; }
+        .toast-msg.show { opacity: 1; transform: translateY(0); }
+        .toast-msg.success { border-color: rgba(34,197,94,0.5); }
+        .toast-msg.error { border-color: rgba(239,68,68,0.5); }
+
+        /* Upload zone */
+        #upload-zone { border: 2px dashed rgba(99,102,241,0.4); border-radius: 16px; transition: all 0.3s; cursor: pointer; }
+        #upload-zone:hover, #upload-zone.drag-over { border-color: #6366f1; background: rgba(99,102,241,0.08); }
+        #upload-zone.has-file { border-color: rgba(34,197,94,0.5); background: rgba(34,197,94,0.05); }
+
+        /* Score ring */
+        .score-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+        .score-ring svg { transform: rotate(-90deg); }
+        .score-ring .score-text { position: absolute; text-align: center; }
+        .score-ring circle.track { fill: none; stroke: rgba(255,255,255,0.08); }
+        .score-ring circle.fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset 1.2s ease; }
+
+        /* Result cards */
+        .result-card { border-radius: 14px; padding: 16px 20px; }
+        .result-card.strengths { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); }
+        .result-card.improvements { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); }
+        .result-card.missing { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); }
+        .result-card.formatting { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); }
+        .result-card li { font-size: 13px; line-height: 1.65; margin-bottom: 6px; padding-left: 4px; }
+        .result-card li:last-child { margin-bottom: 0; }
+
+        /* Payment modal */
+        #payment-modal { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
+        #payment-modal.open { display: flex; }
+        #payment-modal-box { background: #1e293b; border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; padding: 28px 24px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+
+        /* Grade badge */
+        .grade-badge { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 14px; font-size: 24px; font-weight: 800; }
+
+        /* Tries badge */
+        .tries-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .tries-pill.low { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.35); color: #fcd34d; }
+        .tries-pill.zero { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); color: #fca5a5; }
+
+        @media (max-width: 640px) {
+            .score-ring svg { width: 160px; height: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- Payment Gate Modal -->
+<div id="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+    <div id="payment-modal-box">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-xl">🔒</div>
+            <div>
+                <h3 id="payment-modal-title" class="text-lg font-bold text-white">Free Tries Used Up</h3>
+                <p class="text-xs text-gray-400">You've used your 2 complimentary analyses</p>
+            </div>
+        </div>
+        <div class="glass rounded-2xl p-4 mb-5">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-sm text-gray-300 font-semibold">ATS Analysis</span>
+                <span class="text-green-400 font-black text-xl">GHS 5</span>
+            </div>
+            <ul class="text-xs text-gray-400 space-y-1.5">
+                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Full ATS compatibility score (0–100)</li>
+                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Detailed AI-powered feedback</li>
+                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Strengths &amp; improvement suggestions</li>
+                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Missing keywords &amp; formatting tips</li>
+            </ul>
+        </div>
+        <div class="mb-4">
+            <label class="text-xs text-gray-400 mb-1 block">Email address for receipt</label>
+            <input type="email" id="payment-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="flex gap-3">
+            <button id="pay-btn" onclick="initiatePayment()" class="flex-1 btn-primary flex items-center justify-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 &amp; Analyse
+            </button>
+            <button onclick="closePaymentModal()" class="btn-secondary text-sm py-3 px-5">Cancel</button>
+        </div>
+        <p class="text-center text-xs text-gray-600 mt-3">Secured by Paystack • Mobile Money &amp; Card accepted</p>
+    </div>
+</div>
+
+<!-- Header -->
+<header class="sticky top-0 z-50 glass px-4 py-3 flex items-center gap-3">
+    <a href="./index.html" class="text-blue-400 hover:text-blue-300 transition" aria-label="Back to CV Builder">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
+    </a>
+    <div>
+        <h1 class="font-bold text-base sm:text-lg leading-tight">ATS Score Calculator</h1>
+        <p class="text-xs text-gray-400">AI-powered CV compatibility checker</p>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+        <span class="text-xs text-gray-400 hidden sm:block">Powered by</span>
+        <span class="text-orange-400 font-bold text-sm">AZ Learner</span>
+    </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 py-8 pb-24">
+
+    <!-- Hero -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-3xl mb-4">🎯</div>
+        <h2 class="text-2xl sm:text-3xl font-black mb-2">Is Your CV ATS-Ready?</h2>
+        <p class="text-gray-400 text-sm sm:text-base max-w-md mx-auto">
+            Most companies use Applicant Tracking Systems to filter CVs before a human ever reads them.
+            Upload your CV and our AI will score it instantly.
+        </p>
+    </div>
+
+    <!-- Tries indicator -->
+    <div class="flex justify-center mb-6" id="tries-display">
+        <!-- Populated by JS -->
+    </div>
+
+    <!-- Upload section -->
+    <div class="glass rounded-2xl p-6 mb-6" id="upload-section">
+        <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-400">upload_file</span>
+            Upload Your CV
+        </h3>
+
+        <!-- Drop zone -->
+        <div id="upload-zone" class="p-8 text-center" onclick="document.getElementById('cv-file-input').click()"
+             ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <div id="upload-idle">
+                <span class="material-symbols-outlined text-4xl text-indigo-400 mb-3 block">cloud_upload</span>
+                <p class="font-semibold text-sm mb-1">Drop your CV here or <span class="text-indigo-400 underline">browse</span></p>
+                <p class="text-xs text-gray-400">Supports PDF, DOCX, and TXT files • Max 10 MB</p>
+            </div>
+            <div id="upload-preview" class="hidden">
+                <span class="material-symbols-outlined text-4xl text-green-400 mb-3 block">task</span>
+                <p class="font-semibold text-sm text-green-300" id="upload-filename">file.pdf</p>
+                <p class="text-xs text-gray-400 mt-1">Click or drop a new file to replace</p>
+            </div>
+            <input type="file" id="cv-file-input" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" class="hidden" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- Or paste text -->
+        <div class="mt-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="flex-1 h-px bg-gray-700"></div>
+                <span class="text-xs text-gray-500 font-semibold">OR PASTE CV TEXT</span>
+                <div class="flex-1 h-px bg-gray-700"></div>
+            </div>
+            <textarea id="cv-text-input" rows="5" placeholder="Paste your CV content here if you prefer not to upload a file…" style="resize:vertical;"></textarea>
+        </div>
+
+        <button id="analyse-btn" onclick="analyseCV()" class="btn-primary w-full mt-5 flex items-center justify-center gap-2 text-sm" disabled>
+            <span class="material-symbols-outlined text-sm">analytics</span>
+            Analyse My CV
+        </button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading-section" class="hidden glass rounded-2xl p-8 text-center mb-6">
+        <div class="inline-block w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="font-bold text-base mb-1">Analysing Your CV…</p>
+        <p class="text-gray-400 text-sm" id="loading-msg">Extracting text from your file…</p>
+    </div>
+
+    <!-- Results section -->
+    <div id="results-section" class="hidden">
+
+        <!-- Score card -->
+        <div class="glass rounded-2xl p-6 mb-5">
+            <div class="flex flex-col sm:flex-row items-center gap-6">
+                <!-- Score ring -->
+                <div class="score-ring flex-shrink-0">
+                    <svg width="180" height="180" viewBox="0 0 180 180">
+                        <circle class="track" cx="90" cy="90" r="78" stroke-width="14"/>
+                        <circle class="fill" id="score-fill" cx="90" cy="90" r="78" stroke-width="14"
+                                stroke-dasharray="490" stroke-dashoffset="490" stroke="#6366f1"/>
+                    </svg>
+                    <div class="score-text">
+                        <span id="score-number" class="text-4xl font-black">0</span>
+                        <span class="text-lg font-bold text-gray-300">/100</span>
+                        <p class="text-xs text-gray-400 mt-0.5">ATS Score</p>
+                    </div>
+                </div>
+                <!-- Summary -->
+                <div class="flex-1 text-center sm:text-left">
+                    <div class="flex items-center justify-center sm:justify-start gap-3 mb-3">
+                        <div id="grade-badge" class="grade-badge">A</div>
+                        <div>
+                            <p id="grade-label" class="font-black text-xl">Excellent</p>
+                            <p class="text-xs text-gray-400">Overall Grade</p>
+                        </div>
+                    </div>
+                    <p id="result-summary" class="text-sm text-gray-300 leading-relaxed"></p>
+                    <button onclick="resetAnalysis()" class="mt-4 text-xs text-indigo-400 hover:text-indigo-300 transition flex items-center gap-1 mx-auto sm:mx-0">
+                        <span class="material-symbols-outlined text-sm">refresh</span> Analyse another CV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strengths -->
+        <div class="result-card strengths mb-4" id="strengths-card">
+            <h4 class="font-bold text-sm text-green-400 flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-base">check_circle</span> Strengths
+            </h4>
+            <ul id="strengths-list" class="list-disc list-inside text-gray-200 space-y-1"></ul>
+        </div>
+
+        <!-- Improvements -->
+        <div class="result-card improvements mb-4" id="improvements-card">
+            <h4 class="font-bold text-sm text-red-400 flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-base">build</span> Improvements Needed
+            </h4>
+            <ul id="improvements-list" class="list-disc list-inside text-gray-200 space-y-1"></ul>
+        </div>
+
+        <!-- Missing keywords -->
+        <div class="result-card missing mb-4" id="missing-card">
+            <h4 class="font-bold text-sm text-yellow-400 flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-base">search</span> Missing Elements &amp; Keywords
+            </h4>
+            <ul id="missing-list" class="list-disc list-inside text-gray-200 space-y-1"></ul>
+        </div>
+
+        <!-- Formatting tips -->
+        <div class="result-card formatting mb-5" id="formatting-card">
+            <h4 class="font-bold text-sm text-blue-400 flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-base">format_list_bulleted</span> Formatting Suggestions
+            </h4>
+            <ul id="formatting-list" class="list-disc list-inside text-gray-200 space-y-1"></ul>
+        </div>
+
+        <!-- CTA -->
+        <div class="glass rounded-2xl p-5 text-center">
+            <p class="text-sm text-gray-300 mb-3">Ready to build a CV that passes ATS filters?</p>
+            <a href="./index.html" class="btn-primary inline-flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-sm">edit_document</span> Build My CV Now
+            </a>
+        </div>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-gray-800 mt-12 py-8 text-center">
+    <div class="max-w-2xl mx-auto px-4">
+        <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
+        <p class="text-gray-500 mb-6">UCC • Cape Coast • The World</p>
+        <div class="flex justify-center gap-6 text-sm text-gray-400 mb-6">
+            <a href="../faq.html" class="hover:text-white transition">FAQ</a>
+            <a href="../privacy-policy.html" class="hover:text-white transition">Privacy Policy</a>
+            <a href="../terms-of-service.html" class="hover:text-white transition">Terms of Service</a>
+        </div>
+        <div class="text-sm text-gray-600">
+            &copy; 2026 Francis Pwavwe Production. Powered by Sunlight &amp; Ambition.
+        </div>
+    </div>
+</footer>
+
+<!-- Firebase + Vertex AI -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getVertexAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+        authDomain: "az-learner.firebaseapp.com",
+        projectId: "az-learner",
+        storageBucket: "az-learner.firebasestorage.app",
+        messagingSenderId: "12958795950",
+        appId: "1:12958795950:web:326411293864571040453f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    try {
+        const vertexAI = getVertexAI(app);
+        const model = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+        window._atsAiModel = model;
+    } catch (e) {
+        console.warn("Vertex AI init failed:", e);
+        window._atsAiModel = null;
+    }
+</script>
+
+<script>
+    // ─── Constants ────────────────────────────────────────────────────
+    const MAX_FREE_TRIES = 2;
+    const ATS_PRICE_GHS  = 5;
+    const STORAGE_KEY    = 'ats_tries_used';
+    const PAYSTACK_KEY   = 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2';
+
+    // ─── Toast ────────────────────────────────────────────────────────
+    function showToast(msg, type = 'info') {
+        const el = document.getElementById('toast');
+        el.innerHTML = `<div class="toast-msg ${type}">${msg}</div>`;
+        const m = el.querySelector('.toast-msg');
+        requestAnimationFrame(() => m.classList.add('show'));
+        setTimeout(() => { m.classList.remove('show'); setTimeout(() => el.innerHTML = '', 400); }, 3500);
+    }
+
+    // ─── Usage tracking ───────────────────────────────────────────────
+    function getTriesUsed() {
+        return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+    }
+    function incrementTries() {
+        localStorage.setItem(STORAGE_KEY, String(getTriesUsed() + 1));
+    }
+    function getPaidBonus() {
+        return parseInt(localStorage.getItem('ats_paid_bonus') || '0', 10);
+    }
+    function consumePaidBonus() {
+        const n = getPaidBonus();
+        if (n > 0) localStorage.setItem('ats_paid_bonus', String(n - 1));
+    }
+    function getTotalRemaining() {
+        return Math.max(0, MAX_FREE_TRIES - getTriesUsed()) + getPaidBonus();
+    }
+    function hasTriesLeft() {
+        return getTotalRemaining() > 0;
+    }
+
+    function renderTriesDisplay() {
+        const total = getTotalRemaining();
+        const el = document.getElementById('tries-display');
+        let cls = 'tries-pill';
+        let icon = 'info';
+        let txt;
+        if (total > 1) {
+            txt = `${total} ${total === 1 ? 'analysis' : 'analyses'} remaining`;
+        } else if (total === 1) {
+            cls += ' low';
+            icon = 'warning';
+            txt = '1 analysis remaining';
+        } else {
+            cls += ' zero';
+            icon = 'lock';
+            txt = 'Free tries used — GHS 5 per analysis';
+        }
+        el.innerHTML = `<span class="${cls}"><span class="material-symbols-outlined text-sm">${icon}</span>${txt}</span>`;
+
+        // Update analyse button when no tries remain
+        const btn = document.getElementById('analyse-btn');
+        if (btn && total === 0) {
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">lock</span> Unlock Analysis – GHS 5';
+            btn.disabled = !selectedFile && !document.getElementById('cv-text-input').value.trim();
+        }
+    }
+
+    // ─── File handling ────────────────────────────────────────────────
+    let selectedFile = null;
+
+    function handleFileSelect(evt) {
+        const file = evt.target.files[0];
+        if (file) setFile(file);
+    }
+    function handleDragOver(evt) {
+        evt.preventDefault();
+        document.getElementById('upload-zone').classList.add('drag-over');
+    }
+    function handleDragLeave() {
+        document.getElementById('upload-zone').classList.remove('drag-over');
+    }
+    function handleDrop(evt) {
+        evt.preventDefault();
+        document.getElementById('upload-zone').classList.remove('drag-over');
+        const file = evt.dataTransfer.files[0];
+        if (file) setFile(file);
+    }
+    function setFile(file) {
+        const allowed = ['application/pdf',
+                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                         'text/plain'];
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowed.includes(file.type) && !['pdf','docx','txt'].includes(ext)) {
+            showToast('Please upload a PDF, DOCX, or TXT file.', 'error');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('File is too large. Maximum size is 10 MB.', 'error');
+            return;
+        }
+        selectedFile = file;
+        document.getElementById('upload-filename').textContent = file.name;
+        document.getElementById('upload-idle').classList.add('hidden');
+        document.getElementById('upload-preview').classList.remove('hidden');
+        document.getElementById('upload-zone').classList.add('has-file');
+        document.getElementById('analyse-btn').disabled = false;
+        // Clear paste text when file is selected
+        document.getElementById('cv-text-input').value = '';
+    }
+
+    // Enable analyse button when text is pasted
+    document.getElementById('cv-text-input').addEventListener('input', function() {
+        const hasText = this.value.trim().length > 30;
+        document.getElementById('analyse-btn').disabled = !hasText && !selectedFile;
+    });
+
+    // ─── Text extraction ──────────────────────────────────────────────
+    async function extractText(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const type = file.type;
+
+        if (type === 'text/plain' || ext === 'txt') {
+            return await file.text();
+        }
+
+        if (type === 'application/pdf' || ext === 'pdf') {
+            return await extractPDF(file);
+        }
+
+        if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === 'docx') {
+            return await extractDOCX(file);
+        }
+
+        throw new Error('Unsupported file type.');
+    }
+
+    async function extractPDF(file) {
+        if (typeof pdfjsLib === 'undefined') throw new Error('PDF library not loaded. Please refresh the page.');
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        return text.trim();
+    }
+
+    async function extractDOCX(file) {
+        if (typeof mammoth === 'undefined') throw new Error('DOCX library not loaded. Please refresh the page.');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        return result.value.trim();
+    }
+
+    // ─── AI analysis ──────────────────────────────────────────────────
+    const ATS_PROMPT_TEMPLATE = (cvText) => `You are an expert ATS (Applicant Tracking System) consultant with 15+ years of experience in HR and recruitment for companies in Africa and globally.
+
+Analyse the following CV/resume text and return a JSON object with these exact fields:
+
+{
+  "score": <integer 0-100, ATS compatibility score>,
+  "grade": "<one of: A, B, C, D, F>",
+  "gradeLabel": "<one of: Excellent, Good, Average, Below Average, Poor>",
+  "summary": "<2-3 sentence overall assessment>",
+  "strengths": ["<strength 1>", "<strength 2>", ...],
+  "improvements": ["<improvement 1>", "<improvement 2>", ...],
+  "missing": ["<missing element or keyword 1>", "<missing element 2>", ...],
+  "formatting": ["<formatting tip 1>", "<formatting tip 2>", ...]
+}
+
+Rules:
+- Each array should have 3–6 items
+- Be specific and actionable
+- Consider: keyword density, section completeness, formatting clarity, quantified achievements, contact details, skills section, professional summary
+- Return ONLY the JSON object, no markdown fences, no extra text
+
+CV Text:
+---
+${cvText.slice(0, 8000)}
+---`;
+
+    async function callAI(cvText) {
+        const model = window._atsAiModel;
+        if (!model) throw new Error('AI model not ready. Please refresh the page and try again.');
+        const result = await model.generateContent(ATS_PROMPT_TEMPLATE(cvText));
+        return result.response.text();
+    }
+
+    function parseAIResponse(raw) {
+        // Strip possible markdown code fences
+        let text = raw.trim();
+        if (text.startsWith('```')) {
+            text = text.replace(/^```[a-z]*\n?/i, '').replace(/```\s*$/, '').trim();
+        }
+        return JSON.parse(text);
+    }
+
+    // ─── Main analyse flow ────────────────────────────────────────────
+    window.analyseCV = async function() {
+        if (!hasTriesLeft()) {
+            openPaymentModal();
+            return;
+        }
+
+        const pastedText = document.getElementById('cv-text-input').value.trim();
+        if (!selectedFile && pastedText.length < 30) {
+            showToast('Please upload a file or paste your CV text.', 'error');
+            return;
+        }
+
+        document.getElementById('upload-section').classList.add('hidden');
+        document.getElementById('results-section').classList.add('hidden');
+        document.getElementById('loading-section').classList.remove('hidden');
+
+        try {
+            let cvText = pastedText;
+            if (selectedFile && !cvText) {
+                document.getElementById('loading-msg').textContent = 'Extracting text from your file…';
+                cvText = await extractText(selectedFile);
+            }
+
+            if (!cvText || cvText.length < 20) {
+                throw new Error('Could not extract readable text from the file. Please try pasting your CV text instead.');
+            }
+
+            document.getElementById('loading-msg').textContent = 'AI is analysing your CV…';
+            const rawResponse = await callAI(cvText);
+            const data = parseAIResponse(rawResponse);
+
+            // Consume the appropriate counter
+            if (getTriesUsed() < MAX_FREE_TRIES) {
+                incrementTries();
+            } else {
+                consumePaidBonus();
+            }
+            renderTriesDisplay();
+            showResults(data);
+        } catch (err) {
+            console.error('ATS analysis error:', err);
+            document.getElementById('loading-section').classList.add('hidden');
+            document.getElementById('upload-section').classList.remove('hidden');
+            showToast(err.message || 'Analysis failed. Please try again.', 'error');
+        }
+    };
+
+    // ─── Render results ───────────────────────────────────────────────
+    function showResults(data) {
+        document.getElementById('loading-section').classList.add('hidden');
+        document.getElementById('results-section').classList.remove('hidden');
+
+        // Animate score
+        const score = Math.min(100, Math.max(0, parseInt(data.score) || 0));
+        const circumference = 490;
+        const offset = circumference - (score / 100) * circumference;
+        const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#6366f1' : score >= 40 ? '#f59e0b' : '#ef4444';
+
+        document.getElementById('score-fill').style.stroke = scoreColor;
+        document.getElementById('score-fill').style.strokeDashoffset = String(offset);
+
+        // Animate number
+        let current = 0;
+        const step = Math.ceil(score / 50);
+        const timer = setInterval(() => {
+            current = Math.min(score, current + step);
+            document.getElementById('score-number').textContent = String(current);
+            if (current >= score) clearInterval(timer);
+        }, 25);
+
+        // Grade badge
+        const grade = data.grade || 'C';
+        const gradeColors = { A: 'bg-green-500', B: 'bg-blue-500', C: 'bg-yellow-500', D: 'bg-orange-500', F: 'bg-red-500' };
+        const badge = document.getElementById('grade-badge');
+        badge.textContent = grade;
+        badge.className = `grade-badge text-white ${gradeColors[grade] || 'bg-gray-500'}`;
+        document.getElementById('grade-label').textContent = data.gradeLabel || grade;
+        document.getElementById('result-summary').textContent = data.summary || '';
+
+        // Lists
+        populateList('strengths-list', data.strengths || []);
+        populateList('improvements-list', data.improvements || []);
+        populateList('missing-list', data.missing || []);
+        populateList('formatting-list', data.formatting || []);
+    }
+
+    function populateList(id, items) {
+        const el = document.getElementById(id);
+        if (!items.length) {
+            el.closest('.result-card').classList.add('hidden');
+            return;
+        }
+        el.closest('.result-card').classList.remove('hidden');
+        el.innerHTML = items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    window.resetAnalysis = function() {
+        selectedFile = null;
+        document.getElementById('cv-file-input').value = '';
+        document.getElementById('cv-text-input').value = '';
+        document.getElementById('upload-idle').classList.remove('hidden');
+        document.getElementById('upload-preview').classList.add('hidden');
+        document.getElementById('upload-zone').classList.remove('has-file');
+        document.getElementById('analyse-btn').disabled = true;
+        document.getElementById('results-section').classList.add('hidden');
+        document.getElementById('upload-section').classList.remove('hidden');
+
+        if (!hasTriesLeft()) {
+            document.getElementById('analyse-btn').textContent = '';
+            document.getElementById('analyse-btn').innerHTML =
+                '<span class="material-symbols-outlined text-sm">lock</span> Unlock Analysis – GHS 5';
+        }
+    };
+
+    // ─── Payment modal ────────────────────────────────────────────────
+    window.openPaymentModal = function() {
+        document.getElementById('payment-modal').classList.add('open');
+    };
+    window.closePaymentModal = function() {
+        document.getElementById('payment-modal').classList.remove('open');
+    };
+
+    window.initiatePayment = function() {
+        const email = document.getElementById('payment-email').value.trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showToast('Please enter a valid email address.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('pay-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Initializing…';
+
+        try {
+            const handler = PaystackPop.setup({
+                key: PAYSTACK_KEY,
+                email: email,
+                amount: ATS_PRICE_GHS * 100,
+                currency: 'GHS',
+                channels: ['mobile_money', 'card'],
+                metadata: {
+                    custom_fields: [
+                        { display_name: 'Service', variable_name: 'service', value: 'ATS Score Calculator' }
+                    ]
+                },
+                callback: function(response) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 &amp; Analyse';
+                    closePaymentModal();
+                    // Grant 5 extra uses by resetting tries to a paid level
+                    // We store a paid-unlock marker to give 5 more analyses
+                    const currentUsed = getTriesUsed();
+                    // Set tries so that MAX_FREE_TRIES - used = 0, then we credit 5 extra
+                    localStorage.setItem(STORAGE_KEY, String(Math.max(currentUsed, MAX_FREE_TRIES)));
+                    localStorage.setItem('ats_paid_ref', response.reference);
+                    localStorage.setItem('ats_paid_bonus', String(
+                        parseInt(localStorage.getItem('ats_paid_bonus') || '0', 10) + 5
+                    ));
+                    showToast('Payment successful! You now have 5 more analyses.', 'success');
+                    renderTriesDisplay();
+                    // Trigger analysis automatically
+                    setTimeout(() => window.analyseCV(), 400);
+                },
+                onClose: function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 &amp; Analyse';
+                    showToast('Payment cancelled.', 'error');
+                }
+            });
+            handler.openIframe();
+        } catch (err) {
+            console.error('Paystack error:', err);
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 &amp; Analyse';
+            showToast('Payment failed. Please check your connection and try again.', 'error');
+        }
+    };
+
+    // ─── Init ─────────────────────────────────────────────────────────
+    renderTriesDisplay();
+</script>
+
+</body>
+</html>

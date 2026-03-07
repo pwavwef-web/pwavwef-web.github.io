@@ -172,12 +172,14 @@
         .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
         .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
         @media print {
-            @page { size: A4 portrait; margin: 0; }
+            @page { size: A4 portrait; margin: 15mm; }
             body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #cv-output, #cv-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            #cv-output { position: fixed; top: 0; left: 0; width: 100%; }
-            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 auto !important; }
+            #cv-output { position: absolute; top: 0; left: 0; width: 100%; }
+            .cv-preview { box-shadow: none !important; width: 100% !important; margin: 0 !important; page-break-inside: auto; }
+            .cv-section { break-inside: avoid; page-break-inside: avoid; }
+            .cv-entry { break-inside: avoid; page-break-inside: avoid; }
         }
     </style>
 </head>
