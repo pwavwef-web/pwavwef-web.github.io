@@ -53,7 +53,7 @@
         .template-card { cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
         .template-card:hover { transform: translateY(-4px); }
         .template-card.selected { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.4); }
-        .cv-preview { background: white; color: #1a1a1a; font-family: Arial, sans-serif; min-height: 297mm; width: 210mm; margin: 0 auto; padding: 20mm; box-sizing: border-box; font-size: 11pt; }
+        .cv-preview { background: white; color: #1a1a1a; font-family: Arial, sans-serif; min-height: 297mm; width: 100%; margin: 0 auto; padding: 20mm; box-sizing: border-box; font-size: 11pt; }
         /* Template 1 – Classic Blue */
         .cv-t1 { position: relative; }
         .cv-t1 .cv-ribbon { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: linear-gradient(to bottom, #1e3a5f, #3b82f6, #1e3a5f); z-index: 2; }
@@ -141,7 +141,7 @@
         .cv-t8 .cv-footer { margin: 24px -20mm -20mm -20mm; padding: 12px 20mm; background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed); color: rgba(255,255,255,0.75); font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
         .cv-t8-badge { display: inline-block; background: linear-gradient(135deg, #4338ca, #7c3aed); color: white; padding: 2px 10px; border-radius: 12px; font-size: 8pt; margin: 2px 2px 2px 0; font-weight: 600; }
         @media (max-width: 768px) {
-            .cv-preview { width: 100%; min-height: auto; padding: 12mm; font-size: 9pt; }
+            .cv-preview { min-height: auto; padding: 12mm; font-size: 9pt; }
             .cv-t1 .cv-header, .cv-t3 .cv-header, .cv-t4 .cv-header { margin: -12mm -12mm 0 -12mm; }
             .cv-t1 .cv-contact-bar, .cv-t2 .cv-contact-bar, .cv-t3 .cv-ornament { margin-left: -12mm; margin-right: -12mm; }
             .cv-t1 .cv-footer, .cv-t3 .cv-footer, .cv-t4 .cv-footer { margin: 16px -12mm -12mm -12mm; }
@@ -599,18 +599,24 @@
         </div>
     </div>
 
-    <!-- Step 6: Preview & Pay -->
-    <div class="step mt-4" id="step-5">
+
+</div>
+
+<!-- Step 5: Preview & Pay (full-width so CV fits edge to edge) -->
+<div class="step mt-4 pb-20" id="step-5">
+    <div class="max-w-2xl mx-auto px-4">
         <div class="glass rounded-2xl p-5 mb-4">
             <h2 class="text-xl font-bold mb-1">Preview & Download 🚀</h2>
             <p class="text-gray-400 text-sm" id="preview-subtitle">Your CV looks great! Pay to download your selected template.</p>
         </div>
+    </div>
 
-        <!-- CV Preview -->
-        <div class="overflow-x-auto mb-4 rounded-2xl shadow-2xl" style="background: white;">
-            <div id="cv-output"></div>
-        </div>
+    <!-- CV Preview – full viewport width, edge to edge -->
+    <div class="mb-4 shadow-2xl" style="background: white;">
+        <div id="cv-output"></div>
+    </div>
 
+    <div class="max-w-2xl mx-auto px-4">
         <!-- Payment Card -->
         <div class="glass rounded-2xl p-6">
             <div class="flex items-center gap-3 mb-4">
