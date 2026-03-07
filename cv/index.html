@@ -414,7 +414,7 @@
     <div class="step mt-4" id="step-5">
         <div class="glass rounded-2xl p-5 mb-4">
             <h2 class="text-xl font-bold mb-1">Preview & Download 🚀</h2>
-            <p class="text-gray-400 text-sm">Your CV looks great! Pay GHS 5 to download.</p>
+            <p id="step5-subtitle" class="text-gray-400 text-sm">Your CV looks great! Pay GHS 5 to download.</p>
         </div>
 
         <!-- CV Preview -->
@@ -423,7 +423,7 @@
         </div>
 
         <!-- Payment Card -->
-        <div class="glass rounded-2xl p-6">
+        <div id="payment-card" class="glass rounded-2xl p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
                     <span class="material-symbols-outlined text-green-400">lock</span>
@@ -455,7 +455,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -468,6 +469,26 @@
 
     const appInstance = initializeApp(firebaseConfig);
     const db = getFirestore(appInstance);
+    const auth = getAuth(appInstance);
+
+    window.isAdminUser = false;
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    window.isAdminUser = true;
+                    // If the user is already on the payment step, update the UI immediately
+                    if (document.getElementById('step-5').classList.contains('active')) {
+                        window.updatePaymentUI();
+                    }
+                }
+            } catch (e) {
+                console.error("Role check error:", e);
+            }
+        }
+    });
 
     window.saveCV = async function(cvData, payRef) {
         try {
@@ -496,7 +517,7 @@
         if (from === 0 && !validatePersonal()) return;
         if (from === 3 && !validateSkills()) return;
         if (from === 4 && selectedTemplate === 0) { showToast("Please select a template first!", "error"); return; }
-        if (from === 4) { renderCV(); }
+        if (from === 4) { renderCV(); goToStep(from + 1); window.updatePaymentUI(); return; }
         goToStep(from + 1);
     };
 
@@ -862,6 +883,37 @@
         };
 
         document.getElementById('cv-output').innerHTML = templates[selectedTemplate] || templates[1];
+    };
+
+    // ---- Admin / CEO free download ----
+    window.updatePaymentUI = function() {
+        if (!window.isAdminUser) return;
+        const subtitle = document.getElementById('step5-subtitle');
+        if (subtitle) subtitle.textContent = 'Your CV looks great! Download it for free.';
+        const card = document.getElementById('payment-card');
+        if (!card) return;
+        card.innerHTML = `
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-blue-400">verified</span>
+                </div>
+                <div>
+                    <h3 class="font-bold">Admin Access</h3>
+                    <p class="text-xs text-gray-400">Free download • No payment required</p>
+                </div>
+                <div class="ml-auto text-right">
+                    <p class="text-2xl font-black text-blue-400">FREE</p>
+                </div>
+            </div>
+            <button onclick="freeDownload()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-blue-500 hover:to-indigo-500 transition flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">download</span> Download CV
+            </button>`;
+    };
+
+    window.freeDownload = function() {
+        const cvData = collectData();
+        showToast('Downloading your CV...', 'success');
+        setTimeout(() => downloadCV(cvData), 400);
     };
 
     // ---- Payment ----
