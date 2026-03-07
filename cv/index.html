@@ -1273,18 +1273,31 @@
         }
     };
 
-    // ---- Download PDF (fixed blank PDF) ----
-    function downloadCV(d) {
+    // ---- Download PDF ----
+    async function downloadCV(d) {
         const cvEl = document.getElementById('cv-output');
         const filename = (d.firstName + '_' + d.lastName + '_CV').replace(/\s+/g, '_') + '.pdf';
 
         // Clone the CV element into a temporary off-screen container so html2canvas
         // captures it free from any overflow/scroll constraints on the preview wrapper.
+        // Use position:fixed + visibility:hidden (NOT z-index:-1 which causes blank PDFs)
+        // so the browser still paints the element and html2canvas can capture it.
         const temp = document.createElement('div');
         temp.id = 'cv-pdf-temp';
-        temp.style.cssText = 'position:absolute;top:0;left:-9999px;width:794px;background:white;z-index:-1;';
+        temp.style.cssText = 'position:fixed;top:0;left:-9999px;width:794px;background:white;visibility:hidden;z-index:9999;';
         temp.innerHTML = cvEl.innerHTML;
         document.body.appendChild(temp);
+
+        // Wait for all fonts and images in the clone to finish loading before
+        // calling html2canvas, otherwise the snapshot can come out blank.
+        await document.fonts.ready;
+        const imgs = Array.from(temp.querySelectorAll('img'));
+        if (imgs.length) {
+            await Promise.all(imgs.map(img =>
+                img.complete ? Promise.resolve() :
+                new Promise(res => { img.onload = res; img.onerror = res; })
+            ));
+        }
 
         const opt = {
             margin: 0,
@@ -1300,7 +1313,7 @@
                 windowWidth: 794,
                 onclone: function(clonedDoc) {
                     const el = clonedDoc.getElementById('cv-pdf-temp');
-                    if (el) { el.style.left = '0'; el.style.position = 'relative'; }
+                    if (el) { el.style.left = '0'; el.style.position = 'relative'; el.style.visibility = 'visible'; }
                 }
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
