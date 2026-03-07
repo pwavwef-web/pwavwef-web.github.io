@@ -64,15 +64,7 @@
     .scroll-track {
       width: min(620px, 92vw);
       padding: 100vh 0 100vh;   /* start below fold, end above fold */
-      animation: lyricsScroll var(--scroll-duration) linear forwards;
-      animation-delay: 2s;      /* 2-second pause before scrolling starts */
       will-change: transform;
-    }
-
-    /* Translate from bottom to position where last line is visible at viewport centre */
-    @keyframes lyricsScroll {
-      from { transform: translateY(0); }
-      to   { transform: translateY(calc(-100% + 100vh)); }
     }
 
     /* ── Title block ──────────────────────────────────────────── */
@@ -237,7 +229,7 @@
 
 <!-- AZ Learner logo watermark -->
 <div class="logo-watermark" id="logoWatermark">
-  <img src="brand.png" alt="AZ Learner" onerror="this.parentElement.style.gap='0';this.style.display='none'">
+  <img src="favicon.png" alt="AZ Learner" onerror="this.parentElement.style.gap='0';this.style.display='none'">
   <span>AZ Learner</span>
 </div>
 
@@ -422,13 +414,14 @@
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   Playback controls & timer
+   Playback controls, timer & step scroller
 ═══════════════════════════════════════════════════════════════ */
 (function () {
   const track   = document.getElementById('lyricsTrack');
   const display = document.getElementById('timer-display');
-  let   startTs = null;
-  let   rafId;
+
+  /* ── Timer ──────────────────────────────────────────────────── */
+  let startTs = null;
 
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
@@ -436,28 +429,102 @@
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  function tick(ts) {
+  function timerTick(ts) {
     if (!startTs) startTs = ts;
-    const elapsed = (ts - startTs) / 1000;
-    display.textContent = formatTime(elapsed);
-    rafId = requestAnimationFrame(tick);
+    display.textContent = formatTime((ts - startTs) / 1000);
+    requestAnimationFrame(timerTick);
   }
-  rafId = requestAnimationFrame(tick);
+  requestAnimationFrame(timerTick);
 
-  /* Restart */
-  document.getElementById('btnRestart').addEventListener('click', () => {
-    track.style.animation = 'none';
-    track.offsetHeight;   // force reflow to restart CSS animation
-    track.style.animation = '';
+  /* ── Step Scroller ──────────────────────────────────────────── */
+  /* Remove CSS animation — driven by JS instead */
+  track.style.animation = 'none';
+
+  let posY      = 0;   /* current translateY in px */
+  let scrollRaf = null;
+  let stepTimer = null;
+
+  function easeInOutQuad(t) { return t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t; }
+
+  function animateTo(target, dur, done) {
+    if (scrollRaf) cancelAnimationFrame(scrollRaf);
+    const from = posY;
+    const t0   = performance.now();
+    function frame(now) {
+      const progress = Math.min((now - t0) / dur, 1);
+      posY = from + (target - from) * easeInOutQuad(progress);
+      track.style.transform = `translateY(${posY}px)`;
+      if (progress < 1) { scrollRaf = requestAnimationFrame(frame); }
+      else        { posY = target; scrollRaf = null; done && done(); }
+    }
+    scrollRaf = requestAnimationFrame(frame);
+  }
+
+  /* Target translateY to centre an element in the viewport */
+  function centerOf(el) {
+    const mid = el.offsetTop + el.offsetHeight / 2;
+    const max = -(track.offsetHeight - window.innerHeight);
+    return Math.max(max, Math.min(0, -(mid - window.innerHeight / 2)));
+  }
+
+  /* Build ordered list of scroll steps */
+  function buildSteps() {
+    const steps = [];
+    const title = track.querySelector('.song-title');
+    if (title) steps.push({ el: title, hold: 4000 });
+
+    track.querySelectorAll('.verse, .prechorus, .chorus, .bridge, .outro').forEach(block => {
+      const lines = block.querySelectorAll('.lyric-line');
+      if (lines.length <= 4) {
+        /* Short sections (≤4 lines): show whole block — extra hold for 2-line sections */
+        steps.push({ el: block, hold: lines.length <= 2 ? 4500 : 6000 });
+      } else {
+        /* Long sections (>4 lines): scroll in two halves */
+        const halfwayIndex = Math.ceil(lines.length / 2);
+        steps.push({ el: lines[halfwayIndex - 1], hold: 5000 });
+        steps.push({ el: lines[lines.length - 1], hold: 5000 });
+      }
+    });
+    return steps;
+  }
+
+  let steps = [];
+
+  function runStep(idx) {
+    if (idx >= steps.length) return;
+    const { el, hold } = steps[idx];
+    const target = centerOf(el);
+    const dist   = Math.abs(target - posY);
+    const dur    = Math.max(400, Math.min(2500, dist * 2.5));
+    animateTo(target, dur, () => {
+      stepTimer = setTimeout(() => runStep(idx + 1), hold);
+    });
+  }
+
+  function startScroller() {
+    steps = buildSteps();
+    stepTimer = setTimeout(() => runStep(0), 2000);
+  }
+
+  function restart() {
+    if (scrollRaf) cancelAnimationFrame(scrollRaf);
+    if (stepTimer) clearTimeout(stepTimer);
+    scrollRaf = stepTimer = null;
+    posY = 0;
+    track.style.transform = 'translateY(0)';
     startTs = null;
     display.textContent = '0:00';
-  });
+    startScroller();
+  }
 
-  /* Hide UI for clean screen-record */
+  /* ── Buttons ───────────────────────────────────────────────── */
+  document.getElementById('btnRestart').addEventListener('click', restart);
   document.getElementById('btnHideUI').addEventListener('click', () => {
     document.getElementById('uiBar').style.display = 'none';
     document.getElementById('logoWatermark').style.opacity = '0.18';
   });
+
+  startScroller();
 })();
 
 /* ═══════════════════════════════════════════════════════════════
@@ -481,8 +548,10 @@
     let stream;
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: 30 } },
-        audio: false
+        video: { frameRate: { ideal: 30 }, displaySurface: 'browser' },
+        audio: false,
+        selfBrowserSurface: 'include',  /* include this tab in the picker */
+        preferCurrentTab: true          /* auto-select this tab where supported */
       });
     } catch (err) {
       /* User cancelled or permission denied */
