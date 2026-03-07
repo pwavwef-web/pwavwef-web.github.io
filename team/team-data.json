@@ -27,6 +27,26 @@
       }
     },
     {
+      "name": "Andy Anim",
+      "role": "Chief of Ambassadors",
+      "image": "https://www.canva.com/design/DAHDOEzbgeM/OFMWBFIkz7FNEdbaEYTz6A/view?utm_content=DAHDOEzbgeM&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3ce963cc1a",
+      "bio": "As an accounting student, I am developing a strong foundation in financial principles and practices. Beyond my academic pursuits, I also consider myself a people person, possessing excellent interpersonal and communication skills. This unique combination allows me to effectively manage not only financial books and records but also to work collaboratively with individuals from diverse backgrounds. My ability to connect with others and build rapport is a valuable asset in both my studies and extracurricular activities. Currently, I hold the esteemed position of Chief of Ambassadors at AZLEARNER core. In this role, I am responsible for leading a team of ambassadors and coordinating their efforts to promote the AZ LEARNER brand to the public. A key aspect of my responsibilities involves working with and through people, leveraging their talents and enthusiasm to effectively communicate AZ LEARNER's vision and mission. My goal is to ensure that the organization's message resonates with a wide audience, fostering brand awareness and driving engagement. Ultimately, I am passionate about using my skills in both accounting and interpersonal relations to contribute to the success of AZLEARNER and its mission.",
+      "profile": "profiles/andy-anim.html",
+      "skills": [
+        "Communication Skills",
+        "Teamwork",
+        "Problem Solving",
+        "Creative",
+        "Detail Oriented",
+        "Persuasive"
+      ],
+      "socials": {
+        "github": "https://github.com/animandy92-svg",
+        "linkedin": "https://linkedin.com/in/andy-anim",
+        "twitter": ""
+      }
+    },
+    {
       "name": "Bright Tetteh",
       "role": "Lead Strategic Designer",
       "image": "https://www.facebook.com/photo/?fbid=640405722158887&set=a.640405535492239",
