@@ -227,6 +227,19 @@
       min-width: 60px;
       text-align: center;
     }
+
+    /* ── Active lyric-line highlight (audio sync) ────────────── */
+    .lyric-line {
+      transition: text-shadow 0.18s ease, transform 0.18s ease;
+    }
+    .lyric-line.active {
+      transform: scale(1.06);
+    }
+    .verse    .lyric-line.active  { text-shadow: 0 0 28px rgba(255,255,255,0.95), 0 0 56px rgba(255,255,255,0.6); color: #fff; }
+    .chorus   .lyric-line.active  { text-shadow: 0 0 28px rgba(255,213,79,1),     0 0 60px rgba(255,213,79,0.75); }
+    .bridge   .lyric-line.active  { text-shadow: 0 0 28px rgba(206,147,216,1),    0 0 60px rgba(206,147,216,0.75); }
+    .outro    .lyric-line.active  { text-shadow: 0 0 28px rgba(128,222,234,1),    0 0 60px rgba(128,222,234,0.75); }
+    .prechorus .lyric-line.active { text-shadow: 0 0 28px rgba(128,203,196,1),    0 0 56px rgba(128,203,196,0.7); }
   </style>
 </head>
 <body>
@@ -234,6 +247,9 @@
 <!-- Animated star background -->
 <canvas id="stars-canvas"></canvas>
 <div class="glow-overlay"></div>
+
+<!-- Background audio -->
+<audio id="bgAudio" src="learn-your-way.mp3" preload="auto"></audio>
 
 <!-- AZ Learner logo watermark -->
 <div class="logo-watermark" id="logoWatermark">
@@ -369,6 +385,7 @@
 
 <!-- Playback controls -->
 <div class="ui-bar" id="uiBar">
+  <button id="btnPlay">▶ Play</button>
   <button id="btnRestart">↺ Restart</button>
   <span id="timer-display">0:00</span>
   <button id="btnRecord">⏺ Record</button>
@@ -487,12 +504,36 @@
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   Playback controls & timer
+   Audio + Playback controls, timer & lyric-line sync
 ═══════════════════════════════════════════════════════════════ */
 (function () {
   const track   = document.getElementById('lyricsTrack');
   const display = document.getElementById('timer-display');
-  let   startTs = null;
+  const audio   = document.getElementById('bgAudio');
+  const btnPlay = document.getElementById('btnPlay');
+
+  /* ── Lyric timestamps (seconds from audio start) ───────────── *
+   * Estimated from song structure over a ~228 s runtime.         *
+   * Adjust these values to fine-tune sync with the real audio.   */
+  const TIMES = [
+     8,  12,  16,  20,  24,  28,  32,  36,  /* Verse 1       */
+    42,  46,                                 /* Pre-Chorus 1  */
+    52,  56,  60,  64,  68,  72,  76,  80,  /* Chorus 1      */
+    92,  96, 100, 104, 108, 112, 116, 120,  /* Verse 2       */
+   126, 130,                                 /* Pre-Chorus 2  */
+   136, 140, 144, 148, 152, 156, 160, 164,  /* Chorus 2      */
+   172, 176, 180, 184,                       /* Bridge        */
+   192, 196, 200, 204, 208, 212, 216, 220,  /* Final Chorus  */
+   222, 224, 226, 228                        /* Outro         */
+  ];
+
+  const lines = Array.from(document.querySelectorAll('.lyric-line'));
+  lines.forEach((line, i) => {
+    if (TIMES[i] !== undefined) line.dataset.time = TIMES[i];
+  });
+
+  /* ── Start animation paused; it starts when user presses Play ─ */
+  track.style.animationPlayState = 'paused';
 
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
@@ -500,21 +541,49 @@
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  function tick(ts) {
-    if (!startTs) startTs = ts;
-    const elapsed = (ts - startTs) / 1000;
-    display.textContent = formatTime(elapsed);
-    requestAnimationFrame(tick);
+  /* ── Highlight the currently-active lyric line ──────────────── */
+  function highlightLine(t) {
+    let active = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const ts = parseFloat(lines[i].dataset.time);
+      if (isNaN(ts)) continue;
+      if (ts <= t) active = i;
+      else break;
+    }
+    lines.forEach((l, i) => l.classList.toggle('active', i === active));
   }
-  requestAnimationFrame(tick);
+
+  audio.addEventListener('timeupdate', () => {
+    display.textContent = formatTime(audio.currentTime);
+    highlightLine(audio.currentTime);
+  });
+
+  /* ── Sync animation delay so it tracks audio.currentTime ──────
+   * The CSS animation has animation-delay: 2s, so at audio t=0
+   * the effective delay is 2 s.  At audio t=T, delay = (2 - T).  */
+  function syncAnimToAudio() {
+    track.style.animationDelay = `${2 - audio.currentTime}s`;
+  }
+
+  /* ── Play / Pause ───────────────────────────────────────────── */
+  btnPlay.addEventListener('click', () => {
+    if (audio.paused) {
+      syncAnimToAudio();
+      track.style.animationPlayState = 'running';
+      audio.play().catch(() => {
+        /* Autoplay blocked – reset to paused state so the button stays correct */
+        track.style.animationPlayState = 'paused';
+        btnPlay.textContent = '▶ Play';
+      });
+      btnPlay.textContent = '⏸ Pause';
+    } else {
+      audio.pause();
+      track.style.animationPlayState = 'paused';
+      btnPlay.textContent = '▶ Play';
+    }
+  });
 
   /* ── Freeze when last two lines are centred on screen ───────── */
-  /* We watch the zero-height sentinel (#lastTwoMidpoint) that sits
-     between "AZ Learner…" and "Learn your way."  The rootMargin
-     "-50% 0px -50% 0px" reduces the observable viewport to a thin
-     band at the exact vertical centre, so the observer fires the
-     moment that midpoint crosses the screen's midline – leaving
-     both outro lines symmetrically centred on screen.              */
   let freezeObserver = null;
 
   function observeLastLine() {
@@ -524,6 +593,8 @@
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           track.style.animationPlayState = 'paused';
+          audio.pause();
+          btnPlay.textContent = '▶ Play';
           obs.disconnect();
           freezeObserver = null;
         }
@@ -534,22 +605,29 @@
 
   observeLastLine();
 
-  /* Restart */
+  /* ── Restart ────────────────────────────────────────────────── */
   document.getElementById('btnRestart').addEventListener('click', () => {
-    /* Disconnect any active observer so it does not double-fire */
     if (freezeObserver) { freezeObserver.disconnect(); freezeObserver = null; }
-    /* Clear paused state and restart CSS animation */
+
+    /* Reset audio */
+    audio.pause();
+    audio.currentTime = 0;
+    btnPlay.textContent = '▶ Play';
+
+    /* Reset animation */
     track.style.animationPlayState = '';
     track.style.animation = 'none';
-    void track.offsetHeight;   /* force reflow to restart CSS animation */
+    void track.offsetHeight;  /* force reflow */
     track.style.animation = '';
-    startTs = null;
+    track.style.animationPlayState = 'paused';
+
+    /* Reset UI */
     display.textContent = '0:00';
-    /* Re-arm the freeze observer for the new playthrough */
+    lines.forEach(l => l.classList.remove('active'));
     observeLastLine();
   });
 
-  /* Hide UI for clean screen-record */
+  /* ── Hide UI for clean screen-record ───────────────────────── */
   document.getElementById('btnHideUI').addEventListener('click', () => {
     document.getElementById('uiBar').style.display = 'none';
     document.getElementById('logoWatermark').style.opacity = '0.18';
