@@ -46,7 +46,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://js.paystack.co/v1/inline.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
         .step { display: none; }
@@ -172,6 +171,14 @@
         .price-badge { display: inline-block; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 8px; }
         .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
         .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body { background: #fff !important; margin: 0; padding: 0; }
+            body * { visibility: hidden; }
+            #cv-output, #cv-output * { visibility: visible; }
+            #cv-output { position: fixed; top: 0; left: 0; width: 100%; }
+            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 auto !important; }
+        }
     </style>
 </head>
 <body>
@@ -1274,59 +1281,8 @@
     };
 
     // ---- Download PDF ----
-    async function downloadCV(d) {
-        const cvEl = document.getElementById('cv-output');
-        const filename = (d.firstName + '_' + d.lastName + '_CV').replace(/\s+/g, '_') + '.pdf';
-
-        // Clone the CV element into a temporary off-screen container so html2canvas
-        // captures it free from any overflow/scroll constraints on the preview wrapper.
-        // Use position:fixed + visibility:hidden (NOT z-index:-1 which causes blank PDFs)
-        // so the browser still paints the element and html2canvas can capture it.
-        const temp = document.createElement('div');
-        temp.id = 'cv-pdf-temp';
-        temp.style.cssText = 'position:fixed;top:0;left:-9999px;width:794px;background:white;visibility:hidden;z-index:9999;';
-        temp.innerHTML = cvEl.innerHTML;
-        document.body.appendChild(temp);
-
-        // Wait for all fonts and images in the clone to finish loading before
-        // calling html2canvas, otherwise the snapshot can come out blank.
-        await document.fonts.ready;
-        const imgs = Array.from(temp.querySelectorAll('img'));
-        if (imgs.length) {
-            await Promise.all(imgs.map(img =>
-                img.complete ? Promise.resolve() :
-                new Promise(res => { img.onload = res; img.onerror = res; })
-            ));
-        }
-
-        const opt = {
-            margin: 0,
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: 794,
-                onclone: function(clonedDoc) {
-                    const el = clonedDoc.getElementById('cv-pdf-temp');
-                    if (el) { el.style.left = '0'; el.style.position = 'relative'; el.style.visibility = 'visible'; }
-                }
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(temp).save().then(() => {
-            document.body.removeChild(temp);
-            showToast('CV downloaded successfully! 🎉', 'success');
-        }).catch(function(err) {
-            console.error('PDF error:', err);
-            if (document.body.contains(temp)) document.body.removeChild(temp);
-            showToast('Download failed. Please try again.', 'error');
-        });
+    function downloadCV() {
+        window.print();
     }
 
     // ---- AI Suggestion Helpers ----
