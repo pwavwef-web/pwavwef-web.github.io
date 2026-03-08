@@ -2575,12 +2575,12 @@ buyTicket(ev) {
                 
                 const price = ev.price;
                 const email = currentUser.email;
-                const amountKobo = price * 100;
+                const amountPesewas = price * 100;
 
                 const handler = PaystackPop.setup({
                     key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2', // ⚠️ Note: This is a LIVE key. You will be charged real money.
                     email: email,
-                    amount: amountKobo,
+                    amount: amountPesewas,
                     currency: 'GHS',
                     channels: ['mobile_money'],
                     metadata: {

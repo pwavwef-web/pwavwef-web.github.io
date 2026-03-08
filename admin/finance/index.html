@@ -197,8 +197,8 @@
                     <h3 class="text-sm font-bold text-gray-300">Add Budget Item</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <input id="budget-category" type="text" placeholder="Category" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
-                        <input id="budget-allocated" type="number" min="0" step="0.01" placeholder="Allocated (₦)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
-                        <input id="budget-spent" type="number" min="0" step="0.01" placeholder="Spent (₦)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-yellow-500 text-sm transition-colors">
+                        <input id="budget-allocated" type="number" min="0" step="0.01" placeholder="Allocated (GH₵)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-green-500 text-sm transition-colors">
+                        <input id="budget-spent" type="number" min="0" step="0.01" placeholder="Spent (GH₵)" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-yellow-500 text-sm transition-colors">
                         <input id="budget-notes" type="text" placeholder="Notes" class="p-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 outline-none focus:border-gray-500 text-sm transition-colors">
                     </div>
                     <button onclick="addBudgetItem()" class="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg text-sm transition">Add Item</button>
@@ -443,9 +443,9 @@
                         <button onclick="deleteBudgetItem('${escHtml(item.id)}')" class="text-gray-600 hover:text-red-500 text-xs transition"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <div class="flex gap-4 text-sm mb-2">
-                        <span class="text-gray-400">Allocated: <span class="text-white font-bold">₦${(item.allocated||0).toFixed(2)}</span></span>
-                        <span class="text-gray-400">Spent: <span class="text-yellow-400 font-bold">₦${(item.spent||0).toFixed(2)}</span></span>
-                        <span class="text-gray-400">Remaining: <span class="${(item.allocated-item.spent)>=0?'text-green-400':'text-red-400'} font-bold">₦${((item.allocated||0)-(item.spent||0)).toFixed(2)}</span></span>
+                        <span class="text-gray-400">Allocated: <span class="text-white font-bold">GH₵${(item.allocated||0).toFixed(2)}</span></span>
+                        <span class="text-gray-400">Spent: <span class="text-yellow-400 font-bold">GH₵${(item.spent||0).toFixed(2)}</span></span>
+                        <span class="text-gray-400">Remaining: <span class="${(item.allocated-item.spent)>=0?'text-green-400':'text-red-400'} font-bold">GH₵${((item.allocated||0)-(item.spent||0)).toFixed(2)}</span></span>
                     </div>
                     <div class="w-full bg-gray-700 rounded-full h-2">
                         <div class="${pctColor} h-2 rounded-full transition-all" style="width:${pct}%"></div>
@@ -477,15 +477,15 @@
             tbContainer.innerHTML = `
                 <div class="flex justify-between py-2 border-b border-gray-700">
                     <span class="text-gray-300 font-bold">Total Debits</span>
-                    <span class="text-red-400 font-black">₦${totalDR.toFixed(2)}</span>
+                    <span class="text-red-400 font-black">GH₵${totalDR.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-gray-700">
                     <span class="text-gray-300 font-bold">Total Credits</span>
-                    <span class="text-green-400 font-black">₦${totalCR.toFixed(2)}</span>
+                    <span class="text-green-400 font-black">GH₵${totalCR.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between py-2">
                     <span class="text-gray-300 font-bold">Balance</span>
-                    <span class="${totalDR===totalCR?'text-yellow-400':'text-red-400'} font-black">₦${(totalDR-totalCR).toFixed(2)}</span>
+                    <span class="${totalDR===totalCR?'text-yellow-400':'text-red-400'} font-black">GH₵${(totalDR-totalCR).toFixed(2)}</span>
                 </div>
                 <p class="text-[10px] ${totalDR===totalCR?'text-green-400':'text-red-400'} mt-2">${totalDR===totalCR?'✓ Trial balance agrees':'⚠ Trial balance does not agree'}</p>`;
             summaryContainer.innerHTML = Object.entries(accounts).map(([acct, vals]) =>
@@ -561,7 +561,7 @@
                         <p class="text-sm text-white truncate">${escHtml(e.narration||'-')}</p>
                         <p class="text-xs text-gray-500">${escHtml(e.date||'')} · DR: ${escHtml(e.debitAccount||'')} / CR: ${escHtml(e.creditAccount||'')}</p>
                     </div>
-                    <span class="text-sm font-bold text-yellow-400 ml-4">₦${(e.debit||0).toFixed(2)}</span>
+                    <span class="text-sm font-bold text-yellow-400 ml-4">GH₵${(e.debit||0).toFixed(2)}</span>
                 </div>`).join('');
         }
 
