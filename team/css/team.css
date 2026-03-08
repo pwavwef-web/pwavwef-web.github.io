@@ -228,8 +228,8 @@ body {
 /* Team grid */
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 28px;
   margin-top: 16px;
 }
 
@@ -268,8 +268,8 @@ body {
 }
 
 .card-image {
-  width: 96px;
-  height: 96px;
+  width: 108px;
+  height: 108px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid rgba(59, 130, 246, 0.4);
@@ -314,6 +314,11 @@ body {
   flex: 1;
   text-align: center;
   margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: calc(1.65em * 3);
 }
 
 /* View Profile button */

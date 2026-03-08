@@ -3,7 +3,7 @@
     {
       "name": "Francis Pwavwe",
       "role": "Founder & CEO",
-      "image": "assets/images/francis.png",
+      "image": "assets/images/francis.jpg",
       "bio": "As a dedicated tourism management student at the esteemed University of Cape Coast, I possess a strong enthusiasm for the development of educational technology. My primary focus lies in creating innovative ed tech solutions that effectively address and resolve the various challenges encountered by students. I am deeply committed to tackling these problems in a systematic and methodical manner, one step at a time. This involves a careful analysis of the issues faced by students and the design of targeted technological interventions to improve their academic experience and overall well-being. Ultimately, my aim is to leverage the power of technology to make a positive and lasting impact on the lives of students, empowering them to succeed in their educational pursuits.",
       "profile": "profiles/francis-pwavwe.html",
       "skills": ["Communication Skills", "Teamwork", "Problem Solving"],
@@ -16,7 +16,7 @@
     {
       "name": "Andy Anim",
       "role": "Chief of Ambassadors",
-      "image": "https://www.canva.com/design/DAHDOEzbgeM/OFMWBFIkz7FNEdbaEYTz6A/view?utm_content=DAHDOEzbgeM&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3ce963cc1a",
+      "image": "assets/images/andy.png",
       "bio": "As an accounting student, I am developing a strong foundation in financial principles and practices. Beyond my academic pursuits, I also consider myself a people person, possessing excellent interpersonal and communication skills. This unique combination allows me to effectively manage not only financial books and records but also to work collaboratively with individuals from diverse backgrounds. My ability to connect with others and build rapport is a valuable asset in both my studies and extracurricular activities. Currently, I hold the esteemed position of Chief of Ambassadors at AZLEARNER core. In this role, I am responsible for leading a team of ambassadors and coordinating their efforts to promote the AZ LEARNER brand to the public. A key aspect of my responsibilities involves working with and through people, leveraging their talents and enthusiasm to effectively communicate AZ LEARNER's vision and mission. My goal is to ensure that the organization's message resonates with a wide audience, fostering brand awareness and driving engagement. Ultimately, I am passionate about using my skills in both accounting and interpersonal relations to contribute to the success of AZLEARNER and its mission.",
       "profile": "profiles/andy-anim.html",
       "skills": [
@@ -36,7 +36,7 @@
     {
       "name": "Bright Tetteh",
       "role": "Lead Strategic Designer",
-      "image": "https://www.facebook.com/photo/?fbid=640405722158887&set=a.640405535492239",
+      "image": "assets/images/bright.png",
       "bio": "As a finance student at the University of Cape Coast, I find myself deeply involved in an exciting and rewarding project. Specifically, I am providing support to AZ learners, assisting them in both the development and subsequent deployment of the AZ podcast.",
       "profile": "profiles/bright-tetteh.html",
       "skills": ["Teamwork", "Problem Solving", "Communication Skills", "Detail Oriented"],
@@ -49,7 +49,7 @@
     {
       "name": "Emmanuel Larbi",
       "role": "Administrative assistant",
-      "image": "https://www.facebook.com/photo/?fbid=122142402152626896&set=a.122104663442626896&__tn__=%3C",
+      "image": "assets/images/emma.jpg",
       "bio": "My name is Emmanuel Larbi, and I am currently enrolled in University of Cape Coast, dedicating my academic pursuits to obtaining a Bachelor of Science degree in Tourism Management. My educational journey is complemented by my active involvement with AZ LEARNER, a comprehensive student application designed to streamline various aspects of student life. Within AZ LEARNER, I hold the position of Administrative Assistant, a role that allows me to contribute significantly to the platform's functionality and user experience. As an Administrator, my responsibilities encompass a wide range of tasks, including efficient user and account management, ensuring a seamless and secure experience for all users. Furthermore, I am deeply involved in content and resource administration, carefully curating and organizing the app's resources to provide students with valuable and easily accessible information. Another crucial aspect of my role is fostering user engagement, creating initiatives and opportunities for students to connect with the platform and its resources. AZ LEARNER itself is designed as an all-encompassing solution for students, offering a suite of tools to enhance their academic journey. The app provides features that allow students to effectively organize their class schedules and manage their time efficiently. In addition, AZ LEARNER assists students in building their professional profiles by offering tools to create and refine their CVs, preparing them for future career opportunities. Recognizing the challenges students face with academic projects, the app offers guidance and support to navigate these tasks successfully. Moreover, AZ LEARNER simplifies the often cumbersome process of assignment submission by offering printing and delivery services, ensuring students can meet their deadlines with ease.",
       "profile": "profiles/emmanuel-larbi.html",
       "skills": [
