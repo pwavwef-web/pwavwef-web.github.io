@@ -14,9 +14,10 @@
   /**
    * Build the HTML for a single profile card.
    * @param {Object} member - Team member object from JSON
+   * @param {number} index - Position in the team array
    * @returns {string} HTML string
    */
-  function buildCard(member) {
+  function buildCard(member, index) {
     const {
       name = 'Team Member',
       role = '',
@@ -25,8 +26,11 @@
       profile = '#',
     } = member;
 
+    const isCeo = index === 0;
+    const cardClass = isCeo ? 'profile-card ceo-card' : 'profile-card';
+
     return `
-      <article class="profile-card" aria-label="Profile card for ${escapeHtml(name)}">
+      <article class="${cardClass}" aria-label="Profile card for ${escapeHtml(name)}">
         <div class="card-accent"></div>
         <div class="card-image-wrap">
           <img

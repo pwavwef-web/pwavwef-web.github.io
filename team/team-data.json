@@ -99,6 +99,26 @@
         "linkedin": "https://linkedin.com/in/ibrahim-abaane",
         "twitter": "https://x.com/IAbaane36713"
       }
+    },
+    {
+      "name": "Chinedum Okonkwo Udeaja",
+      "role": "Developer",
+      "image": "https://azlearner.me/team/assets/images/chinedum.jpeg",
+      "bio": "As a hospitality student deeply fascinated by the world of coding, I harbor a strong ambition to become an event planner who can truly innovate the industry. My ultimate dream is to develop integrated systems that address the current fragmentation often found in event planning processes.",
+      "profile": "profiles/chinedum-okonkwo-udeaja.html",
+      "skills": [
+        "Front-end Development",
+        "Python",
+        "HTML",
+        "Teamwork",
+        "Problem Solver",
+        "Detail Oriented"
+      ],
+      "socials": {
+        "github": "https://github.com/udeajajr",
+        "linkedin": "https://linkedin.com/in/chinedum",
+        "twitter": ""
+      }
     }
   ]
 }
