@@ -505,12 +505,13 @@
             </div>
 
             <!-- Streak Card -->
-            <div id="home-streak-card" class="hidden bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-4 text-white flex items-center gap-4 shadow-lg">
+            <div id="home-streak-card" class="hidden bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-4 text-white flex items-center gap-4 shadow-lg cursor-pointer active:scale-95 transition-transform" onclick="app.openStreakHistory()">
                 <div class="text-4xl">🔥</div>
                 <div class="flex-1">
                     <p class="font-black text-lg"><span id="streak-count-display">0</span> <span id="streak-day-label">Day</span> Streak</p>
-                    <p class="text-xs opacity-80">Log in daily to keep your streak alive!</p>
+                    <p class="text-xs opacity-80">Tap to see your activity history</p>
                 </div>
+                <i class="fa-solid fa-chevron-right opacity-60"></i>
             </div>
 
             <!-- Premium Services Grid -->
@@ -522,20 +523,10 @@
                         <h3 class="font-bold text-blue-700 dark:text-blue-300 text-sm">Print & Deliver</h3>
                         <p class="text-[10px] opacity-60">Skip the queue</p>
                     </div>
-                    <div onclick="app.openServiceModal('Assignment Help')" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
-                        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2"><i class="fa-solid fa-book-open text-orange-500 text-lg"></i></div>
-                        <h3 class="font-bold text-sm">Research Assistance</h3>
-                        <p class="text-[10px] opacity-60">Stuck on research? we can help</p>
-                    </div>
-                    <div onclick="app.openServiceModal('Project Assistance')" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
-                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2"><i class="fa-solid fa-laptop-code text-purple-500 text-lg"></i></div>
-                        <h3 class="font-bold text-sm">Project Support</h3>
-                        <p class="text-[10px] opacity-60">Code & Tech</p>
-                    </div>
-                    <div onclick="window.location.href='/cv/'" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
+                    <div onclick="app.openCvOptions()" class="bg-white dark:bg-darkCard rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform shadow-sm border border-gray-100 dark:border-gray-700 h-32">
                         <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2"><i class="fa-solid fa-briefcase text-green-500 text-lg"></i></div>
-                        <h3 class="font-bold text-sm">CV/Resume Revamp</h3>
-                        <p class="text-[10px] opacity-60">Professional CVs that'll get you hired</p>
+                        <h3 class="font-bold text-sm">CV Builder</h3>
+                        <p class="text-[10px] opacity-60">Create or test your CV</p>
                     </div>
                 </div>
             </div>
@@ -676,6 +667,50 @@
                 <p class="opacity-60 max-w-xs mx-auto">Your feedback has been sent directly to the team. You are awesome!</p>
                 <button onclick="history.back()" class="mt-8 text-blueAccent font-bold">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- CV Options Modal -->
+    <div id="modal-cv-options" class="fixed inset-0 z-[70] flex items-end justify-center hidden" onclick="if(event.target===this) app.closeCvOptions()">
+        <div class="w-full max-w-lg bg-white dark:bg-darkCard rounded-t-3xl p-6 shadow-2xl pb-safe animate-[slideUp_0.3s_ease-out]">
+            <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-5"></div>
+            <h2 class="text-xl font-black mb-1 text-center">CV Builder 💼</h2>
+            <p class="text-xs text-center opacity-50 mb-6">What would you like to do?</p>
+            <div class="space-y-3">
+                <button onclick="window.location.href='/cv/'; app.closeCvOptions();" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-transform shadow-md">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-circle-plus text-2xl"></i></div>
+                    <div class="text-left">
+                        <h3 class="font-bold text-base">Create New CV</h3>
+                        <p class="text-xs opacity-80">Build a professional CV from scratch</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right ml-auto opacity-70"></i>
+                </button>
+                <button onclick="window.location.href='/cv/#ats'; app.closeCvOptions();" class="w-full bg-gradient-to-r from-blue-500 to-blueAccent text-white rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-transform shadow-md">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-magnifying-glass-chart text-2xl"></i></div>
+                    <div class="text-left">
+                        <h3 class="font-bold text-base">Test Your CV ATS</h3>
+                        <p class="text-xs opacity-80">Check how your CV scores against ATS</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right ml-auto opacity-70"></i>
+                </button>
+            </div>
+            <button onclick="app.closeCvOptions()" class="w-full mt-4 py-3 text-gray-500 dark:text-gray-400 font-bold text-sm">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Streak History Modal -->
+    <div id="modal-streak-history" class="fixed inset-0 z-[70] flex items-end justify-center hidden" onclick="if(event.target===this) app.closeStreakHistory()">
+        <div class="w-full max-w-lg bg-white dark:bg-darkCard rounded-t-3xl p-6 shadow-2xl pb-safe animate-[slideUp_0.3s_ease-out] max-h-[85vh] flex flex-col">
+            <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-5 flex-shrink-0"></div>
+            <div class="flex items-center gap-3 mb-4 flex-shrink-0">
+                <span class="text-3xl">🔥</span>
+                <div>
+                    <h2 class="text-xl font-black">Your Streak History</h2>
+                    <p class="text-xs opacity-50">Every day you showed up counts</p>
+                </div>
+            </div>
+            <div id="streak-history-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+            <button onclick="app.closeStreakHistory()" class="w-full mt-4 py-3 text-gray-500 dark:text-gray-400 font-bold text-sm flex-shrink-0">Close</button>
         </div>
     </div>
 
@@ -1289,7 +1324,10 @@
                                 let newStreak = lastStreakDate === yesterdayStr ? (this.data.user.streak || 0) + 1 : 1;
                                 this.data.user.streak = newStreak;
                                 this.data.user.lastStreakDate = todayStr;
-                                await updateDoc(doc(db, "users", user.uid), { streak: newStreak, lastStreakDate: todayStr });
+                                // Append today to activeDays log (keeps full history)
+                                if (!this.data.user.activeDays) this.data.user.activeDays = [];
+                                if (!this.data.user.activeDays.includes(todayStr)) this.data.user.activeDays.push(todayStr);
+                                await updateDoc(doc(db, "users", user.uid), { streak: newStreak, lastStreakDate: todayStr, activeDays: arrayUnion(todayStr) });
                             }
                             
                             if(this.data.user.role === 'banned') {
@@ -1589,6 +1627,34 @@ showNotifications() {
     // Show modal
     modal.classList.remove('hidden');
 },
+            // --- CV OPTIONS ---
+            openCvOptions() {
+                document.getElementById('modal-cv-options').classList.remove('hidden');
+            },
+            closeCvOptions() {
+                document.getElementById('modal-cv-options').classList.add('hidden');
+            },
+            // --- STREAK HISTORY ---
+            openStreakHistory() {
+                const list = document.getElementById('streak-history-list');
+                const activeDays = (this.data.user.activeDays || []).slice().reverse();
+                if (activeDays.length === 0) {
+                    list.innerHTML = '<p class="text-center opacity-50 py-8 text-sm">No activity recorded yet. Log in daily to build your history!</p>';
+                } else {
+                    list.innerHTML = activeDays.map((d, i) => {
+                        const date = new Date(d + 'T00:00:00');
+                        const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                        return `<div class="flex items-center gap-3 bg-orange-50 dark:bg-orange-900/10 rounded-xl px-4 py-3 border border-orange-100 dark:border-orange-800">
+                            <span class="text-xl">${i === 0 ? '🔥' : '✅'}</span>
+                            <span class="text-sm font-medium">${label}</span>
+                        </div>`;
+                    }).join('');
+                }
+                document.getElementById('modal-streak-history').classList.remove('hidden');
+            },
+            closeStreakHistory() {
+                document.getElementById('modal-streak-history').classList.add('hidden');
+            },
             // --- EVENT & HOME LOGIC ---
             renderHome() {
                 // Greeting Logic
@@ -3153,14 +3219,28 @@ updateBadge() {
                     navigator.vibrate([500, 200, 500]); 
                 }
                 if(Notification.permission === "granted") {
-                    try { 
-                        new Notification(title, { 
+                    try {
+                        const notifOpts = {
                             body: body,
-                            icon: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png', 
-                            vibrate: [500, 200, 500],
-                            requireInteraction: true 
-                        }); 
-                    } catch(e){}
+                            icon: '/pwa/icons/icon-192.png',
+                            badge: '/pwa/icons/icon-192.png',
+                            tag: 'az-learner-alert',
+                            renotify: true,
+                            requireInteraction: true,
+                            data: { url: '/pwa/index.html' }
+                        };
+                        // Prefer service worker showNotification so it works when app is backgrounded
+                        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.ready.then(reg => {
+                                reg.showNotification(title, notifOpts);
+                            }).catch(e => {
+                                console.warn('[AZ] SW notification failed, using Notification API:', e);
+                                new Notification(title, notifOpts);
+                            });
+                        } else {
+                            new Notification(title, notifOpts);
+                        }
+                    } catch(e){ console.warn('[AZ] Notification error:', e); }
                 }
                 const toast = document.createElement('div');
                 toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-4 animate-bounce border-2 border-white";
@@ -3629,8 +3709,23 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
                             audio.play().then(() => {
                                 audio.pause();
                                 audio.currentTime = 0;
-                            });
-                            this.sendSystemNotification("Alerts Active 🔔", "Sound and Vibration enabled!"); 
+                            }).catch(() => {});
+                            this.sendSystemNotification("Alerts Active 🔔", "Sound and Vibration enabled!");
+                            // Subscribe to push via service worker so background notifications work
+                            if (navigator.serviceWorker) {
+                                navigator.serviceWorker.ready.then(reg => {
+                                    reg.pushManager.getSubscription().then(existing => {
+                                        if (!existing) {
+                                            reg.pushManager.subscribe({
+                                                userVisibleOnly: true,
+                                                applicationServerKey: urlBase64ToUint8Array(AZ_VAPID_PUBLIC_KEY)
+                                            }).then(sub => {
+                                                console.log('[Push] Subscribed:', sub.endpoint);
+                                            }).catch(e => console.warn('[Push] Subscribe failed:', e));
+                                        }
+                                    }).catch(e => console.warn('[Push] getSubscription failed:', e));
+                                }).catch(e => console.warn('[Push] SW ready failed:', e));
+                            }
                         } else {
                             alert("We need permission to send alerts! Please allow them in your browser settings.");
                         }
@@ -4080,6 +4175,20 @@ document.getElementById('admin-team-list').innerHTML = adminHtml || '<tr><td col
 
     <!-- PWA: Service Worker Registration -->
     <script>
+        /** Converts a URL-safe base64 string to Uint8Array (needed for VAPID push subscription). */
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = atob(base64);
+            return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+        }
+
+        /**
+         * VAPID public key for Web Push subscriptions.
+         * Replace this with the real public key from your push server configuration.
+         */
+        const AZ_VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 // The SW file lives at /pwa/sw.js; its default scope is /pwa/.

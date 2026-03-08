@@ -17,7 +17,7 @@
  *                             readable offline after first visit)
  */
 
-const CACHE_NAME = 'az-learner-v1';
+const CACHE_NAME = 'az-learner-v2';
 
 /** Assets to pre-cache on install (the "app shell") */
 const PRECACHE_URLS = [
@@ -131,5 +131,41 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => caches.match(request))
+  );
+});
+
+// ─── Push Notifications ────────────────────────────────────────────────────────
+
+self.addEventListener('push', (event) => {
+  let data = { title: 'AZ Learner ��', body: 'You have a new notification.' };
+  if (event.data) {
+    try { data = event.data.json(); } catch (e) { data.body = event.data.text(); }
+  }
+
+  const options = {
+    body: data.body || '',
+    icon: '/pwa/icons/icon-192.png',
+    badge: '/pwa/icons/icon-192.png',
+    tag: data.tag || 'az-learner',
+    renotify: true,
+    requireInteraction: data.requireInteraction || false,
+    data: { url: data.url || '/pwa/index.html' },
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/pwa/index.html';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes('/pwa/') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
   );
 });
