@@ -47,6 +47,24 @@
       }
     },
     {
+      "name": "Jude Makafui Dzansi",
+      "role": "Head of communications and marketing",
+      "image": "https://azlearner.me/team/assets/images/jude.png",
+      "bio": "As a communication studies student at the University of Cape Coast, I'm developing a strong command of communication principles and practices. While still a student, I consider myself well on the path to mastering communications. This is largely due to the practical experience I've gained over the years, which has significantly enhanced my ability to connect with individuals on a personal and meaningful level. I find that my background allows me to build rapport and foster understanding effectively. Currently, I serve as the Communications and Marketing Lead for AZ Learner, a role that I embrace with enthusiasm and dedication. My primary objective in this position is to drive the project toward substantial success through the implementation of strategic and impactful marketing initiatives. I am committed to leveraging my communication skills and marketing expertise to elevate the project's visibility and resonance within the target audience. This particular project, AZ Learner, stands out as exceptionally unique and excellent in its scope and potential. The innovative nature of the project excites me, and I feel a deep sense of pride in being an integral part of it. Contributing to a project with such promise is a rewarding experience, and I am eager to see the positive impact it will have.",
+      "profile": "profiles/jude-makafui-dzansi.html",
+      "skills": [
+        "Communication Skills",
+        "Teamwork",
+        "Problem Solving",
+        "Marketing"
+      ],
+      "socials": {
+        "github": "",
+        "linkedin": "https://linkedin.com/in/jude-dzansi",
+        "twitter": "https://twitter.com/jude-makafui"
+      }
+    },
+    {
       "name": "Emmanuel Larbi",
       "role": "Administrative assistant",
       "image": "assets/images/emma.jpg",
