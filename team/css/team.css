@@ -233,6 +233,14 @@ body {
   margin-top: 16px;
 }
 
+/* CEO card – centred in its own full-width row */
+.ceo-card {
+  grid-column: 1 / -1;
+  max-width: 380px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* =============================================
    PROFILE CARD
    ============================================= */
