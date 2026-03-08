@@ -3,9 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Andy Anim – Chief of Ambassadors at AZ Learner." />
+  <meta name="description" content="Andy Anim – Chief of Ambassadors at AZ Learner. Accounting student with strong interpersonal skills leading AZ Learner's ambassador team." />
   <meta name="author" content="AZ Learner" />
   <title>Andy Anim | AZ Learner Team</title>
+
+  <!-- Open Graph / Social Preview -->
+  <meta property="og:type" content="profile" />
+  <meta property="og:site_name" content="AZ Learner" />
+  <meta property="og:title" content="Andy Anim | AZ Learner Team" />
+  <meta property="og:description" content="Chief of Ambassadors at AZ Learner. Accounting student with strong interpersonal skills leading AZ Learner's ambassador team." />
+  <meta property="og:image" content="https://azlearner.me/team/assets/images/andy.png" />
+  <meta property="og:url" content="https://azlearner.me/team/profiles/andy-anim.html" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Andy Anim | AZ Learner Team" />
+  <meta name="twitter:description" content="Chief of Ambassadors at AZ Learner. Accounting student with strong interpersonal skills leading AZ Learner's ambassador team." />
+  <meta name="twitter:image" content="https://azlearner.me/team/assets/images/andy.png" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="../../favicon.png" />
@@ -63,6 +77,13 @@
         </div>
         <h1 id="profile-name" class="text-gradient">Andy Anim</h1>
         <span class="role-badge">Chief of Ambassadors</span>
+        <button class="btn-share" id="share-btn" aria-label="Share this profile" onclick="shareProfile()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          <span class="btn-share-text">Share Profile</span>
+        </button>
       </section>
 
       <!-- CONTENT -->
@@ -139,6 +160,31 @@
   <footer class="site-footer">
     <p>Built by the <a href="../../index.html">AZ Learner Team</a> &mdash; helping students learn smarter.</p>
   </footer>
+
+  <script>
+    function shareProfile() {
+      var url = 'https://azlearner.me/team/profiles/andy-anim.html';
+      var title = 'Andy Anim | AZ Learner Team';
+      var text = 'Check out Andy Anim, Chief of Ambassadors at AZ Learner!';
+      if (navigator.share) {
+        navigator.share({ title: title, text: text, url: url }).catch(function () {});
+      } else {
+        navigator.clipboard.writeText(url).then(function () {
+          var btn = document.getElementById('share-btn');
+          var label = btn.querySelector('.btn-share-text');
+          var orig = label ? label.textContent : '';
+          if (label) label.textContent = 'Link copied!';
+          btn.setAttribute('aria-label', 'Profile link copied');
+          setTimeout(function () {
+            if (label) label.textContent = orig;
+            btn.setAttribute('aria-label', 'Share this profile');
+          }, 2000);
+        }).catch(function () {
+          window.prompt('Copy this link:', url);
+        });
+      }
+    }
+  </script>
 
 </body>
 </html>

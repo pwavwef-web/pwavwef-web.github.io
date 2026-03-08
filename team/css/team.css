@@ -418,6 +418,38 @@ body {
   letter-spacing: 0.06em;
 }
 
+/* Share profile button */
+.btn-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 22px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 50px;
+  color: var(--brand-blue);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-share:hover,
+.btn-share:focus-visible {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.7);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.btn-share svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 /* Profile sections layout */
 .profile-content {
   display: grid;
