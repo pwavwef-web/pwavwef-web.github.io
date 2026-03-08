@@ -80,6 +80,25 @@
         "linkedin": "https://www.linkedin.com/in/emmanuel-larbi-88311a3a6?trk=contact-info",
         "twitter": ""
       }
+    },
+    {
+      "name": "Ibrahim Abaabe",
+      "role": "Head of Finance",
+      "image": "https://azlearner.me/team/assets/images/ibrahim.png",
+      "bio": "As a dedicated actuarial science student at the University of Cape Coast, I find immense satisfaction in applying numerical analysis to unravel complex global challenges. The opportunity to contribute my skills to this team has been a source of profound honor and genuine enthusiasm for me. My vision extends beyond the conventional role of a head of finance; I aspire to be the central financial mechanism, the very wheel that drives AZ Learner towards unparalleled success. I possess a deep-seated commitment to accuracy and precision in all my calculations. It's almost as if I experience a form of numerical meticulousness, perhaps even a touch of numbers-related obsessiveness. A single errant calculation, a minor discrepancy, can linger in my thoughts, becoming a persistent source of concern for weeks on end. This unwavering dedication to precision is what I believe sets me apart and what I hope to bring to AZ Learner. I am driven by the desire to see AZ Learner flourish, powered by sound financial strategies and meticulously accurate forecasting. I am fully invested in ensuring the company's financial health and stability, contributing not just as a finance head but as a crucial component of the organization's overall success. My objective is to proactively identify and address potential financial risks, while simultaneously optimizing opportunities for growth and profitability. I intend to use my analytical skills and actuarial expertise to provide data-driven insights that will inform strategic decision-making at all levels of the company. I am eager to collaborate with other team members, sharing my knowledge and expertise to foster a culture of financial literacy and responsibility throughout the organization.",
+      "profile": "profiles/ibrahim-abaabe.html",
+      "skills": [
+        "Finance Literacy",
+        "Python",
+        "Detail Oriented",
+        "Teamwork",
+        "Social"
+      ],
+      "socials": {
+        "github": "",
+        "linkedin": "https://linkedin.com/in/ibrahim-abaane",
+        "twitter": "https://x.com/IAbaane36713"
+      }
     }
   ]
 }
