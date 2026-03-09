@@ -184,12 +184,12 @@
         .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
         .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
         @media print {
-            @page { size: A4 portrait; margin: 15mm; }
+            @page { size: A4 portrait; margin: 0; }
             body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #cv-output, #cv-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             #cv-output { position: absolute; top: 0; left: 0; width: 100%; }
-            .cv-preview { box-shadow: none !important; width: 100% !important; margin: 0 !important; page-break-inside: auto; }
+            .cv-preview { box-shadow: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; page-break-inside: auto; }
             .cv-section { break-inside: avoid; page-break-inside: avoid; }
             .cv-entry { break-inside: avoid; page-break-inside: avoid; }
         }
@@ -445,6 +445,23 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-400 mb-1">Interests / Hobbies</label>
                 <input type="text" id="cv-interests" placeholder="e.g. Photography, Chess, Volunteering">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-2">References</label>
+                <div class="flex gap-6 mb-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="ref-mode" value="upon_request" id="refmode-request" checked onchange="toggleRefMode()">
+                        <span class="text-sm text-gray-300">Available upon request</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="ref-mode" value="list" id="refmode-list" onchange="toggleRefMode()">
+                        <span class="text-sm text-gray-300">List references</span>
+                    </label>
+                </div>
+                <div id="references-list-container" style="display:none;">
+                    <div id="references-list" class="space-y-4"></div>
+                    <button class="add-btn mt-3" onclick="addReference()">+ Add Reference</button>
+                </div>
             </div>
         </div>
         <div class="flex justify-between mt-6">
@@ -991,6 +1008,55 @@
         if (el) el.remove();
     };
 
+    // ---- References ----
+    let refCounter = 0;
+
+    window.toggleRefMode = function() {
+        const mode = document.querySelector('input[name="ref-mode"]:checked').value;
+        const container = document.getElementById('references-list-container');
+        container.style.display = mode === 'list' ? 'block' : 'none';
+        if (mode === 'list' && document.getElementById('references-list').children.length === 0) {
+            addReference();
+        }
+    };
+
+    window.addReference = function() {
+        refCounter++;
+        const id = 'refentry-' + refCounter;
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'p-4 rounded-xl space-y-3';
+        div.style.background = 'rgba(255,255,255,0.05)';
+        div.style.border = '1px solid rgba(255,255,255,0.1)';
+        div.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-semibold text-gray-400">Reference ${refCounter}</span>
+                <button type="button" onclick="removeItem('${id}')" class="remove-btn">Remove</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Full Name *</label>
+                    <input type="text" class="ref-name" placeholder="Dr. Jane Mensah" aria-required="true">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Position / Title</label>
+                    <input type="text" class="ref-position" placeholder="Senior Lecturer">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Organisation</label>
+                    <input type="text" class="ref-company" placeholder="University of Ghana">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Phone / Email</label>
+                    <input type="text" class="ref-contact" placeholder="+233 XX XXX XXXX">
+                </div>
+            </div>
+        `;
+        document.getElementById('references-list').appendChild(div);
+    };
+
     // ---- Photo Upload ----
     window.handlePhotoUpload = function(event) {
         const file = event.target.files[0];
@@ -1075,6 +1141,22 @@
             }
         });
 
+        const references = [];
+        const refMode = document.querySelector('input[name="ref-mode"]:checked')?.value || 'upon_request';
+        if (refMode === 'list') {
+            document.querySelectorAll('[id^="refentry-"]').forEach(el => {
+                const name = el.querySelector('.ref-name')?.value.trim();
+                if (name) {
+                    references.push({
+                        name,
+                        position: el.querySelector('.ref-position')?.value.trim(),
+                        company: el.querySelector('.ref-company')?.value.trim(),
+                        contact: el.querySelector('.ref-contact')?.value.trim()
+                    });
+                }
+            });
+        }
+
         return {
             firstName: document.getElementById('cv-firstname').value.trim(),
             lastName: document.getElementById('cv-lastname').value.trim(),
@@ -1090,6 +1172,8 @@
             interests: document.getElementById('cv-interests').value.trim(),
             education,
             experience,
+            refMode,
+            references,
             photoUrl: cvPhotoDataUrl,
             template: selectedTemplate
         };
@@ -1127,6 +1211,17 @@
         return skills.split(',').map(s => s.trim()).filter(Boolean).map(s => `<span class="cv-skill-tag">${escHtml(s)}</span>`).join('');
     }
 
+    function renderReferences(refs) {
+        if (!refs || refs.length === 0) return '';
+        return refs.map(r => `
+            <div class="cv-item">
+                <div class="cv-item-title">${escHtml(r.name)}</div>
+                ${(r.position || r.company) ? `<div class="cv-item-sub">${[r.position, r.company].filter(Boolean).map(escHtml).join(' &nbsp;|&nbsp; ')}</div>` : ''}
+                ${r.contact ? `<div class="cv-body-text" style="margin-top:2px;">${escHtml(r.contact)}</div>` : ''}
+            </div>
+        `).join('');
+    }
+
     window.renderCV = function() {
         const d = collectData();
         const contactParts = [d.phone, d.email, d.location, d.website].filter(Boolean);
@@ -1153,6 +1248,9 @@
         const langHtml = d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-body-text">${escHtml(d.languages)}</div>` : '';
         const certHtml = d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : '';
         const interestHtml = d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-body-text">${escHtml(d.interests)}</div>` : '';
+        const refHtml = d.refMode === 'upon_request'
+            ? `<div class="cv-section-title">References</div><div class="cv-body-text"><em>Available upon request</em></div>`
+            : (d.references && d.references.length ? `<div class="cv-section-title">References</div>${renderReferences(d.references)}` : '');
 
         const templates = {
             1: `<div class="cv-preview cv-t1">
@@ -1163,7 +1261,7 @@
                     </div>
                     <div class="cv-contact-bar">${contactStr}</div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
                     <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae</span></div>
                 </div>`,
             2: `<div class="cv-preview cv-t2">
@@ -1173,7 +1271,7 @@
                     </div>
                     <div class="cv-contact-bar">${contactStr}</div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
                     <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)} — ${escHtml(d.title)}</span><span>Curriculum Vitae</span></div>
                 </div>`,
             3: `<div class="cv-preview cv-t3">
@@ -1184,7 +1282,7 @@
                     </div>
                     <div class="cv-ornament">✦ &nbsp; ${contactStr} &nbsp; ✦</div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
                     <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;·&nbsp; ${escHtml(d.title)}</div>
                 </div>`,
             4: `<div class="cv-preview cv-t4">
@@ -1194,7 +1292,7 @@
                         <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
                     </div>
                     <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
                     <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae &nbsp;·&nbsp; ${new Date().getFullYear()}</span></div>
                 </div>`,
             5: `<div class="cv-preview cv-t5">
@@ -1221,6 +1319,7 @@
                             <div class="cv-body-text">${escHtml(d.summary)}</div>
                             ${expHtml}${eduHtml}
                             ${d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : ''}
+                            ${refHtml}
                         </div>
                     </div>
                 </div>`,
@@ -1246,6 +1345,7 @@
                             <div class="cv-body-text">${escHtml(d.summary)}</div>
                             ${d.experience.length ? `<div class="cv-main-section-title">Work Experience</div>${renderExperience(d.experience)}` : ''}
                             ${d.education.length ? `<div class="cv-main-section-title">Education</div>${renderEducation(d.education)}` : ''}
+                            ${refHtml}
                         </div>
                     </div>
                     <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae</span></div>
@@ -1260,7 +1360,7 @@
                     <div class="cv-contact-bar">${contactStr}</div>
                     <div class="cv-section-title">Professional Profile</div>
                     <div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}
+                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
                     <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;·&nbsp; ${escHtml(d.title)} &nbsp;·&nbsp; ${new Date().getFullYear()}</div>
                 </div>`,
             8: `<div class="cv-preview cv-t8">
@@ -1284,6 +1384,7 @@
                     ${d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-card cv-body-text">${escHtml(d.languages)}</div>` : ''}
                     ${d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-card cv-body-text">${escHtml(d.certs)}</div>` : ''}
                     ${d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-card cv-body-text">${escHtml(d.interests)}</div>` : ''}
+                    ${refHtml}
                     <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>✦ Curriculum Vitae ${new Date().getFullYear()} ✦</span></div>
                 </div>`
         };
