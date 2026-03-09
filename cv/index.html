@@ -193,6 +193,10 @@
             .cv-section { break-inside: avoid; page-break-inside: avoid; }
             .cv-entry { break-inside: avoid; page-break-inside: avoid; }
         }
+        @media print {
+            body.cv-print-locked * { visibility: hidden !important; }
+            body.cv-print-locked::after { content: "Payment required — please complete payment at azlearner.me/cv to download your CV."; visibility: visible !important; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; text-align: center; color: #333; width: 80%; display: block; font-family: sans-serif; }
+        }
     </style>
 </head>
 <body>
@@ -1460,7 +1464,36 @@
     };
 
     // ---- Download PDF ----
+    window._cvHasPaid = false;
+
+    // Intercept Ctrl+P / Cmd+P keyboard shortcut before the browser opens the print dialog
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+            if (!window._cvHasPaid) {
+                e.preventDefault();
+                showToast('Please complete payment first to download your CV!', 'error');
+                document.getElementById('pay-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+        }
+    });
+
+    // Fallback: catch any other print trigger (browser menu, right-click Print, etc.)
+    window.addEventListener('beforeprint', function() {
+        if (!window._cvHasPaid) {
+            document.body.classList.add('cv-print-locked');
+        }
+    });
+
+    window.addEventListener('afterprint', function() {
+        document.body.classList.remove('cv-print-locked');
+        if (!window._cvHasPaid) {
+            showToast('Please complete payment first to download your CV!', 'error');
+        }
+    });
+
     function downloadCV() {
+        window._cvHasPaid = true;
         window.print();
     }
 
@@ -1632,7 +1665,7 @@ You are knowledgeable about:
 - Premium Gradient (Template 8): GHS 25
 
 **ATS Score Checker:**
-AZ Learner also offers a dedicated ATS Score Checker tool at /cv/ats.html. Users can upload their CV (PDF, DOCX, or TXT) and receive a detailed ATS compatibility score (0–100) with a grade (A–F), strengths, improvement tips, missing keywords, and formatting feedback — all powered by AI. The first 2 analyses are free; additional analyses cost GHS 5 each via Paystack.
+AZ Learner also offers a dedicated ATS Score Checker tool at https://azlearner.me/cv/ats.html. Users can upload their CV (PDF, DOCX, or TXT) and receive a detailed ATS compatibility score (0–100) with a grade (A–F), strengths, improvement tips, missing keywords, and formatting feedback — all powered by AI. The first 2 analyses are free; additional analyses cost GHS 5 each via Paystack.
 
 Keep responses concise (3-5 sentences max unless detail is requested), practical, and encouraging. Use bullet points for tips. Always relate advice to the AZ Learner CV builder steps where relevant.`;
 
