@@ -741,8 +741,10 @@
     const auth = getAuth(appInstance);
 
     let currentUserRole = null;
+    let _cvHasPaid = false;
 
     onAuthStateChanged(auth, async (user) => {
+        _cvHasPaid = false;
         if (user) {
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -771,6 +773,7 @@
         if (!priceEl) return;
 
         if (isFree) {
+            _cvHasPaid = true;
             priceEl.textContent = 'FREE';
             priceEl.className = 'text-2xl font-black text-yellow-400';
             labelEl.textContent = 'Executive benefit \u2022 Instant download';
@@ -1436,6 +1439,7 @@
                     ]
                 },
                 callback: function(response) {
+                    _cvHasPaid = true;
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
                     if (window.saveCV) {
@@ -1463,6 +1467,21 @@
     function downloadCV() {
         window.print();
     }
+
+    // ---- Print payment guard (blocks Ctrl+P / window.print when not paid) ----
+    window.addEventListener('beforeprint', function() {
+        if (!_cvHasPaid) {
+            const cvOutput = document.getElementById('cv-output');
+            if (cvOutput) cvOutput.style.visibility = 'hidden';
+        }
+    });
+    window.addEventListener('afterprint', function() {
+        const cvOutput = document.getElementById('cv-output');
+        if (cvOutput) cvOutput.style.visibility = '';
+        if (!_cvHasPaid) {
+            showToast('Please complete payment to download your CV!', 'error');
+        }
+    });
 
     // ---- AI Suggestion Helpers ----
     let _aiCurrentTarget = null;
@@ -1632,7 +1651,7 @@ You are knowledgeable about:
 - Premium Gradient (Template 8): GHS 25
 
 **ATS Score Checker:**
-AZ Learner also offers a dedicated ATS Score Checker tool at /cv/ats.html. Users can upload their CV (PDF, DOCX, or TXT) and receive a detailed ATS compatibility score (0–100) with a grade (A–F), strengths, improvement tips, missing keywords, and formatting feedback — all powered by AI. The first 2 analyses are free; additional analyses cost GHS 5 each via Paystack.
+AZ Learner also offers a dedicated ATS Score Checker tool at https://azlearner.me/cv/ats.html. Users can upload their CV (PDF, DOCX, or TXT) and receive a detailed ATS compatibility score (0–100) with a grade (A–F), strengths, improvement tips, missing keywords, and formatting feedback — all powered by AI. The first 2 analyses are free; additional analyses cost GHS 5 each via Paystack.
 
 Keep responses concise (3-5 sentences max unless detail is requested), practical, and encouraging. Use bullet points for tips. Always relate advice to the AZ Learner CV builder steps where relevant.`;
 
