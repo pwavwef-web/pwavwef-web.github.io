@@ -205,6 +205,23 @@
                             <i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-purple-400 transition"></i>
                         </div>
                     </a>
+
+                    <a href="../pwa/" class="group block bg-gray-800/80 border border-blue-700/30 hover:border-blue-500/60 p-5 rounded-xl transition">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-900/40 flex items-center justify-center">
+                                <i class="fa-solid fa-shield-halved text-blue-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-white group-hover:text-blue-300 transition">PWA Admin</p>
+                                <p class="text-[11px] text-gray-500">Role: <span class="text-blue-400">admin</span></p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">User management, print queue, blog moderation and broadcast center.</p>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span id="count-pwa" class="text-xs text-gray-500">Loading...</span>
+                            <i class="fa-solid fa-arrow-right text-xs text-gray-600 group-hover:text-blue-400 transition"></i>
+                        </div>
+                    </a>
                 </div>
             </div>
 
@@ -358,6 +375,30 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- PWA Admin Access -->
+                <div class="bg-gray-800/80 rounded-xl border border-blue-700/30 overflow-hidden">
+                    <div class="flex items-center gap-3 px-5 py-4 border-b border-blue-700/20">
+                        <div class="w-8 h-8 rounded-lg bg-blue-900/40 flex items-center justify-center">
+                            <i class="fa-solid fa-shield-halved text-blue-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">PWA Admin</p>
+                            <p class="text-[11px] text-gray-500">Role: admin · Portal: <a href="../pwa/" class="text-blue-400 hover:underline">admin/pwa/</a></p>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex gap-2 mb-4">
+                            <input id="grant-pwa-email" type="email" placeholder="Enter user's email..."
+                                class="flex-1 p-2.5 rounded-lg bg-gray-700 outline-none text-white border border-gray-600 focus:border-blue-500 text-sm transition-colors">
+                            <button onclick="grantRole('admin', 'grant-pwa-email', 'pwa-admins-list')"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm transition whitespace-nowrap">Grant Access</button>
+                        </div>
+                        <div id="pwa-admins-list" class="space-y-2">
+                            <p class="text-xs text-gray-500 animate-pulse">Loading...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- ACTIVITY LOG VIEW -->
@@ -458,7 +499,8 @@
                 { role: 'admin_assistant', countId: 'count-assistant' },
                 { role: 'developer', countId: 'count-developer' },
                 { role: 'marketing_lead', countId: 'count-marketing' },
-                { role: 'podcast_lead', countId: 'count-podcast' }
+                { role: 'podcast_lead', countId: 'count-podcast' },
+                { role: 'admin', countId: 'count-pwa' }
             ];
             for (const { role, countId } of roles) {
                 try {
@@ -480,6 +522,7 @@
                 loadRoleUsers('developer', 'developer-leads-list'),
                 loadRoleUsers('marketing_lead', 'marketing-leads-list'),
                 loadRoleUsers('podcast_lead', 'podcast-leads-list'),
+                loadRoleUsers('admin', 'pwa-admins-list'),
             ]);
         }
 
