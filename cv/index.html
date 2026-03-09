@@ -168,6 +168,18 @@
         #ai-modal { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
         #ai-modal.open { display: flex; }
         #ai-modal-box { background: #1e293b; border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; padding: 24px; max-width: 560px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        /* AZ AI Chat */
+        #az-ai-btn { position: fixed; bottom: 24px; right: 24px; z-index: 9000; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 50px; padding: 12px 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.5); display: flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        #az-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.6); }
+        @media print { #az-ai-btn { display: none; } }
+        #az-ai-chat { display: none; position: fixed; inset: 0; z-index: 9500; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: flex-end; justify-content: flex-end; padding: 16px; }
+        #az-ai-chat.open { display: flex; }
+        #az-ai-chat-box { background: #0f172a; border: 1px solid rgba(99,102,241,0.4); border-radius: 20px; width: 100%; max-width: 420px; height: 560px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; }
+        .az-chat-msg { display: flex; gap: 8px; margin-bottom: 12px; }
+        .az-chat-msg.user { flex-direction: row-reverse; }
+        .az-chat-bubble { max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+        .az-chat-msg.ai .az-chat-bubble { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.2); color: #e2e8f0; border-radius: 4px 16px 16px 16px; }
+        .az-chat-msg.user .az-chat-bubble { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 16px 16px 4px 16px; }
         .price-badge { display: inline-block; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 8px; }
         .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
         .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
@@ -213,6 +225,45 @@
         <div id="ai-modal-error" class="hidden">
             <p class="text-red-400 text-sm mb-4" id="ai-error-msg">AI suggestion failed. Please try again.</p>
             <button onclick="closeAiModal()" class="btn-secondary text-sm py-2 px-6">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- AZ AI Floating Button -->
+<button id="az-ai-btn" onclick="openAzAiChat()" aria-label="Open AZ AI Help">
+    <span style="font-size:18px;">🤖</span> AZ AI
+</button>
+
+<!-- AZ AI Chat Modal -->
+<div id="az-ai-chat" role="dialog" aria-modal="true" aria-label="AZ AI Chat Assistant">
+    <div id="az-ai-chat-box">
+        <!-- Chat Header -->
+        <div style="background: linear-gradient(135deg, #312e81, #4c1d95); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">🤖</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 15px; color: white; letter-spacing: 0.5px;">AZ AI</div>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.6);">Your CV writing assistant</div>
+                </div>
+            </div>
+            <button onclick="closeAzAiChat()" style="background: rgba(255,255,255,0.12); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;" aria-label="Close AZ AI">✕</button>
+        </div>
+        <!-- Messages -->
+        <div id="az-chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; scroll-behavior: smooth;"></div>
+        <!-- Input Area -->
+        <div style="padding: 10px 14px 14px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; background: rgba(255,255,255,0.02);">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <input id="az-chat-input" type="text" placeholder="Ask about your CV…" autocomplete="off"
+                    style="flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; font-family: 'Plus Jakarta Sans', sans-serif;"
+                    onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendAzAiMessage();}">
+                <button onclick="sendAzAiMessage()"
+                    style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;">Send</button>
+            </div>
+            <button onclick="askForHumanHelp()"
+                style="width: 100%; background: rgba(37,211,102,0.12); border: 1px solid rgba(37,211,102,0.3); color: #4ade80; border-radius: 10px; padding: 8px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.2s;"
+                onmouseover="this.style.background='rgba(37,211,102,0.22)'" onmouseout="this.style.background='rgba(37,211,102,0.12)'">
+                💬 Chat with a Human on WhatsApp
+            </button>
         </div>
     </div>
 </div>
@@ -285,7 +336,10 @@
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Professional Title *</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-gray-400">Professional Title *</label>
+                    <button type="button" onclick="aiSuggestTitle()" class="ai-suggest-btn" id="ai-title-btn" title="Let AI suggest your professional title" style="font-size:11px;padding:4px 10px;">✨ AI Suggest</button>
+                </div>
                 <input type="text" id="cv-title" placeholder="e.g. Software Developer, Marketing Student">
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -337,7 +391,10 @@
 
     <!-- Step 2: Education -->
     <div class="step glass rounded-2xl p-6 mt-4" id="step-1">
-        <h2 class="text-xl font-bold mb-1">Education 🎓</h2>
+        <div class="flex items-center justify-between mb-1">
+            <h2 class="text-xl font-bold">Education 🎓</h2>
+            <button type="button" onclick="aiEducationTips()" class="ai-suggest-btn" id="ai-edu-btn" title="Get ATS tips for education section" style="font-size:11px;padding:4px 10px;">✨ ATS Tips</button>
+        </div>
         <p class="text-gray-400 text-sm mb-6">Add your educational background.</p>
         <div id="education-list" class="space-y-4"></div>
         <button class="add-btn mt-3" onclick="addEducation()">+ Add Education</button>
@@ -349,7 +406,10 @@
 
     <!-- Step 3: Work Experience -->
     <div class="step glass rounded-2xl p-6 mt-4" id="step-2">
-        <h2 class="text-xl font-bold mb-1">Work Experience 💼</h2>
+        <div class="flex items-center justify-between mb-1">
+            <h2 class="text-xl font-bold">Work Experience 💼</h2>
+            <button type="button" onclick="aiExperienceTips()" class="ai-suggest-btn" id="ai-exp-tips-btn" title="Get ATS tips for experience section" style="font-size:11px;padding:4px 10px;">✨ ATS Tips</button>
+        </div>
         <p class="text-gray-400 text-sm mb-6">Add your work history. (Optional if you're a fresh graduate)</p>
         <div id="experience-list" class="space-y-4"></div>
         <button class="add-btn mt-3" onclick="addExperience()">+ Add Experience</button>
@@ -376,7 +436,10 @@
                 <input type="text" id="cv-languages" placeholder="e.g. English (Fluent), French (Basic)">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Certifications / Achievements</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-gray-400">Certifications / Achievements</label>
+                    <button type="button" onclick="aiSuggestCerts()" class="ai-suggest-btn" id="ai-certs-btn" title="Let AI suggest certifications for your role" style="font-size:11px;padding:4px 10px;">✨ AI Suggest</button>
+                </div>
                 <textarea id="cv-certs" rows="3" placeholder="e.g. Google Data Analytics Certificate, Dean's List 2023..."></textarea>
             </div>
             <div>
@@ -903,7 +966,10 @@
                 </div>
             </div>
             <div>
-                <label class="block text-xs text-gray-400 mb-1">Key Responsibilities & Achievements</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs text-gray-400">Key Responsibilities & Achievements</label>
+                    <button type="button" class="ai-suggest-btn ai-exp-btn" onclick="aiSuggestExpDesc('exp-${id}')" title="Let AI write achievement bullets" style="font-size:11px;padding:4px 10px;">✨ AI Bullets</button>
+                </div>
                 <textarea class="exp-desc" rows="3" placeholder="• Led development of customer portal (React)&#10;• Reduced load time by 40%&#10;• Collaborated with 5-person agile team"></textarea>
             </div>
         `;
@@ -1290,6 +1356,7 @@
     // ---- AI Suggestion Helpers ----
     let _aiCurrentTarget = null;
     let _aiCurrentPrompt = null;
+    let _aiCustomAccept = null;
 
     window.aiSuggestSummary = async function() {
         const btn = document.getElementById('ai-summary-btn');
@@ -1336,11 +1403,15 @@
 
     window.acceptAiSuggestion = function() {
         const text = document.getElementById('ai-suggestion-text').value.trim();
-        if (_aiCurrentTarget && text) {
+        if (_aiCustomAccept && text) {
+            _aiCustomAccept(text);
+            showToast('AI suggestion applied! ✨', 'success');
+        } else if (_aiCurrentTarget && text) {
             document.getElementById(_aiCurrentTarget).value = text;
             showToast('AI suggestion applied! ✨', 'success');
         }
         closeAiModal();
+        _aiCustomAccept = null;
     };
 
     window.regenerateAiSuggestion = async function() {
@@ -1362,7 +1433,178 @@
 
     window.closeAiModal = function() {
         document.getElementById('ai-modal').classList.remove('open');
+        _aiCustomAccept = null;
     };
+
+    // ---- New AI Suggest: Title ----
+    window.aiSuggestTitle = async function() {
+        const btn = document.getElementById('ai-title-btn');
+        const firstName = document.getElementById('cv-firstname').value.trim();
+        const lastName = document.getElementById('cv-lastname').value.trim();
+        const existing = document.getElementById('cv-title').value.trim();
+        const edu = document.querySelector('.edu-degree')?.value.trim() || '';
+        _aiCurrentTarget = 'cv-title';
+        _aiCurrentPrompt = `Suggest the single best ATS-friendly professional title for a CV. Candidate name: "${(firstName + ' ' + lastName).trim() || 'the candidate'}". ${edu ? 'Education: ' + edu + '.' : ''} ${existing ? 'Current title: ' + existing + ' – refine it.' : 'Suggest an ideal title.'} Return ONLY the job title, no explanation.`;
+        openAiModal('Professional Title Suggestion', _aiCurrentPrompt, btn);
+    };
+
+    // ---- New AI Suggest: Education ATS Tips ----
+    window.aiEducationTips = async function() {
+        const btn = document.getElementById('ai-edu-btn');
+        const title = document.getElementById('cv-title').value.trim();
+        _aiCurrentTarget = null;
+        _aiCustomAccept = null;
+        _aiCurrentPrompt = `Give 4 concise, practical ATS-friendly tips for writing the Education section of a CV${title ? ' for a "' + title + '" role' : ''}. Focus on: what to include, how to format degrees, whether to include GPA, and relevant coursework. Format as a numbered list. Be brief and actionable.`;
+        openAiModal('ATS Tips for Education', _aiCurrentPrompt, btn);
+    };
+
+    // ---- New AI Suggest: Experience ATS Tips ----
+    window.aiExperienceTips = async function() {
+        const btn = document.getElementById('ai-exp-tips-btn');
+        const title = document.getElementById('cv-title').value.trim();
+        _aiCurrentTarget = null;
+        _aiCustomAccept = null;
+        _aiCurrentPrompt = `Give 4 concise, practical ATS-friendly tips for writing the Work Experience section of a CV${title ? ' for a "' + title + '" role' : ''}. Focus on: using action verbs, quantifying achievements, using job-relevant keywords, and formatting bullets. Format as a numbered list. Be brief and actionable.`;
+        openAiModal('ATS Tips for Work Experience', _aiCurrentPrompt, btn);
+    };
+
+    // ---- New AI Suggest: Experience Bullet Points ----
+    window.aiSuggestExpDesc = function(expId) {
+        const expEl = document.getElementById(expId);
+        if (!expEl) return;
+        const role = expEl.querySelector('.exp-role')?.value.trim();
+        const company = expEl.querySelector('.exp-company')?.value.trim();
+        const title = document.getElementById('cv-title').value.trim();
+        const existing = expEl.querySelector('.exp-desc')?.value.trim();
+        if (!role) { showToast('Enter the Job Title for this entry first!', 'error'); return; }
+        const descEl = expEl.querySelector('.exp-desc');
+        const btn = expEl.querySelector('.ai-exp-btn');
+        _aiCurrentTarget = null;
+        _aiCustomAccept = (text) => { if (descEl) descEl.value = text; };
+        _aiCurrentPrompt = `Write 3-4 strong, ATS-optimised achievement bullet points for a "${role}" position${company ? ' at "' + company + '"' : ''}.${title ? ' The candidate\'s overall career target is: ' + title + '.' : ''} Rules: start each bullet with a powerful action verb, quantify results where possible (e.g. "Increased efficiency by 30%"), use industry keywords, keep each bullet under 20 words. Return ONLY the bullets starting with •.${existing ? '\n\nImprove or expand these existing points:\n' + existing : ''}`;
+        openAiModal('Experience Bullet Points', _aiCurrentPrompt, btn);
+    };
+
+    // ---- New AI Suggest: Certifications ----
+    window.aiSuggestCerts = async function() {
+        const btn = document.getElementById('ai-certs-btn');
+        const title = document.getElementById('cv-title').value.trim();
+        const existing = document.getElementById('cv-certs').value.trim();
+        if (!title) { showToast('Enter your Professional Title first (Step 1)!', 'error'); return; }
+        _aiCurrentTarget = 'cv-certs';
+        _aiCurrentPrompt = `List 3-5 of the most valuable and widely recognised certifications or achievements for a "${title}" role. For each, give the certification name and why it matters (one sentence). Format each on a new line starting with •. Return ONLY the list.${existing ? '\n\nExisting certifications (supplement, don\'t repeat): ' + existing : ''}`;
+        openAiModal('Certifications & Achievements Suggestion', _aiCurrentPrompt, btn);
+    };
+
+    // ---- AZ AI Chat ----
+    const AZ_AI_SYSTEM = `You are AZ AI, an expert CV writing coach for AZ Learner. Your role is to help users create perfect ATS-friendly CVs using the AZ Learner CV Builder (6-step process: Personal Info → Education → Work Experience → Skills → Template → Download).
+
+You are knowledgeable about:
+- ATS (Applicant Tracking System) optimisation: keywords, formatting, file types
+- Writing compelling professional summaries and objective statements
+- Structuring work experience with quantifiable achievements and action verbs
+- Choosing the right skills (hard + soft) for specific industries
+- Education section best practices (GPA, relevant coursework, honours)
+- Certifications and professional development that boost CV strength
+- Choosing the right CV template for different industries and seniority levels
+- CV writing conventions for Ghana, Africa, UK, US, and international markets
+- LinkedIn profiles and cover letters as complements to a CV
+
+Keep responses concise (3-5 sentences max unless detail is requested), practical, and encouraging. Use bullet points for tips. Always relate advice to the AZ Learner CV builder steps where relevant.`;
+
+    // How many recent history entries to include in the AI prompt and WhatsApp context
+    const MAX_CHAT_HISTORY = 8;
+    const MAX_WHATSAPP_CONTEXT = 6;
+
+    let azAiHistory = [];
+    let azAiTyping = false;
+
+    window.openAzAiChat = function() {
+        document.getElementById('az-ai-chat').classList.add('open');
+        if (azAiHistory.length === 0) {
+            const firstName = document.getElementById('cv-firstname')?.value.trim() || '';
+            const greeting = firstName
+                ? `Hi ${firstName}! 👋 I'm **AZ AI**, your personal CV coach powered by Vertex AI. I'll help you build an ATS-friendly CV that gets you noticed. What would you like help with today?\n\n💡 *Try asking:*\n• How do I write a great summary?\n• What skills should I include?\n• Which template is best for tech jobs?`
+                : `Hi there! 👋 I'm **AZ AI**, your personal CV coach powered by Vertex AI.\n\nI'll guide you step-by-step to create a perfect ATS-friendly CV. What would you like help with?\n\n💡 *Try asking:*\n• How do I make my CV ATS-friendly?\n• How should I list my experience?\n• What's the best template for me?`;
+            appendAzMessage('ai', greeting);
+        }
+        setTimeout(() => document.getElementById('az-chat-input').focus(), 100);
+    };
+
+    window.closeAzAiChat = function() {
+        document.getElementById('az-ai-chat').classList.remove('open');
+    };
+
+    function appendAzMessage(role, text) {
+        const msgs = document.getElementById('az-chat-messages');
+        const div = document.createElement('div');
+        div.className = 'az-chat-msg ' + role;
+        const bubble = document.createElement('div');
+        bubble.className = 'az-chat-bubble';
+        // Basic markdown: **bold**, *italic*, bullet •
+        bubble.innerHTML = text
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+        div.appendChild(bubble);
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        azAiHistory.push({ role: role === 'ai' ? 'model' : 'user', parts: [{ text }] });
+    }
+
+    window.sendAzAiMessage = async function() {
+        if (azAiTyping) return;
+        const input = document.getElementById('az-chat-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        input.value = '';
+        appendAzMessage('user', msg);
+        azAiTyping = true;
+
+        const msgs = document.getElementById('az-chat-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'az-chat-msg ai';
+        typingDiv.id = 'az-typing';
+        typingDiv.innerHTML = '<div class="az-chat-bubble" style="opacity:0.5;font-style:italic;">AZ AI is thinking…</div>';
+        msgs.appendChild(typingDiv);
+        msgs.scrollTop = msgs.scrollHeight;
+
+        try {
+            const recentHistory = azAiHistory.slice(-MAX_CHAT_HISTORY).map(m =>
+                (m.role === 'user' ? 'User' : 'AZ AI') + ': ' + m.parts[0].text
+            ).join('\n');
+            const fullPrompt = AZ_AI_SYSTEM + '\n\n---\nConversation:\n' + recentHistory + '\n\nRespond as AZ AI:';
+            const reply = await window._callAI(fullPrompt);
+            typingDiv.remove();
+            appendAzMessage('ai', reply.trim());
+        } catch (e) {
+            typingDiv.remove();
+            appendAzMessage('ai', 'Sorry, I\'m having trouble right now. Please try again, or tap **"Chat with a Human on WhatsApp"** below and our team will help you directly. 🙏');
+        } finally {
+            azAiTyping = false;
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+    };
+
+    window.askForHumanHelp = function() {
+        const firstName = document.getElementById('cv-firstname')?.value.trim() || '';
+        const lastName = document.getElementById('cv-lastname')?.value.trim() || '';
+        const name = (firstName + ' ' + lastName).trim() || 'a user';
+
+        const recentMessages = azAiHistory.slice(-MAX_WHATSAPP_CONTEXT).filter(m => m.role === 'user').map(m => m.parts[0].text).join('; ');
+        const issue = recentMessages
+            ? `Hi, I'm ${name}. I need help with my CV on AZ Learner.\n\nMy question: ${recentMessages}`
+            : `Hi, I'm ${name}. I need help with my CV on the AZ Learner CV Builder.`;
+
+        const waUrl = 'https://wa.me/233557535673?text=' + encodeURIComponent(issue);
+        window.open(waUrl, '_blank');
+    };
+
+    // Close AZ AI chat on backdrop click
+    document.getElementById('az-ai-chat').addEventListener('click', function(e) {
+        if (e.target === this) closeAzAiChat();
+    });
 
     // ---- Toast ----
     window.showToast = function(msg, type) {

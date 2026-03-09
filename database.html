@@ -31,6 +31,12 @@
         .db-view { display: none; }
         .db-view.active-view { display: flex; flex-direction: column; }
         .nav-btn.active { background: rgba(68,138,255,0.2); color: #448AFF; border-color: rgba(68,138,255,0.4); }
+        th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+        th.sortable:hover { color: #fff; }
+        th.sortable .sort-icon { display: inline-block; margin-left: 4px; opacity: 0.4; font-size: 10px; }
+        th.sortable.sort-asc .sort-icon::after { content: '↑'; opacity: 1; }
+        th.sortable.sort-desc .sort-icon::after { content: '↓'; opacity: 1; }
+        th.sortable:not(.sort-asc):not(.sort-desc) .sort-icon::after { content: '↕'; }
     </style>
 </head>
 
@@ -132,10 +138,10 @@
                     <table class="w-full text-left text-sm text-gray-400">
                         <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
                             <tr>
-                                <th class="px-4 py-3">Name</th>
-                                <th class="px-4 py-3">Email</th>
-                                <th class="px-4 py-3 hidden md:table-cell">Phone</th>
-                                <th class="px-4 py-3">Role</th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('name')" data-sort="name">Name<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('email')" data-sort="email">Email<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 hidden md:table-cell sortable" onclick="app.setSortField('phone')" data-sort="phone">Phone<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('role')" data-sort="role">Role<span class="sort-icon"></span></th>
                                 <th class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -150,9 +156,9 @@
                     <table class="w-full text-left text-sm text-gray-400">
                         <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
                             <tr>
-                                <th class="px-4 py-3">Name</th>
-                                <th class="px-4 py-3">Email</th>
-                                <th class="px-4 py-3">Role</th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('name')" data-sort="name">Name<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('email')" data-sort="email">Email<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('role')" data-sort="role">Role<span class="sort-icon"></span></th>
                                 <th class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -167,9 +173,9 @@
                     <table class="w-full text-left text-sm text-gray-400">
                         <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
                             <tr>
-                                <th class="px-4 py-3">Name</th>
-                                <th class="px-4 py-3">Email</th>
-                                <th class="px-4 py-3 hidden md:table-cell">Phone</th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('name')" data-sort="name">Name<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('email')" data-sort="email">Email<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 hidden md:table-cell sortable" onclick="app.setSortField('phone')" data-sort="phone">Phone<span class="sort-icon"></span></th>
                                 <th class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -184,8 +190,8 @@
                     <table class="w-full text-left text-sm text-gray-400">
                         <thead class="bg-gray-900/80 text-gray-300 uppercase text-[10px] sticky top-0">
                             <tr>
-                                <th class="px-4 py-3">Name</th>
-                                <th class="px-4 py-3">Email</th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('name')" data-sort="name">Name<span class="sort-icon"></span></th>
+                                <th class="px-4 py-3 sortable" onclick="app.setSortField('email')" data-sort="email">Email<span class="sort-icon"></span></th>
                                 <th class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -232,6 +238,8 @@
         let currentUser = null;
         let allUsersCache = [];
         let currentView = 'users';
+        let sortField = 'name';
+        let sortDir = 'asc'; // 'asc' | 'desc'
 
         const CEO_EMAIL = "pwavwef@gmail.com";
 
@@ -297,7 +305,28 @@
                     btn.classList.remove('active');
                     if (btn.id === `nav-${view}`) btn.classList.add('active');
                 });
+                this.updateSortHeaders();
                 this.filterAndRender();
+            },
+
+            setSortField(field) {
+                if (sortField === field) {
+                    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortField = field;
+                    sortDir = 'asc';
+                }
+                this.updateSortHeaders();
+                this.filterAndRender();
+            },
+
+            updateSortHeaders() {
+                document.querySelectorAll('th.sortable').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    if (th.dataset.sort === sortField) {
+                        th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    }
+                });
             },
 
             async loadUsers() {
@@ -330,7 +359,15 @@
                     admins: 'admin', ambassadors: 'ambassador', banned: 'banned'
                 }[currentView] : null;
 
-                const users = roleFilter ? filtered.filter(u => u.role === roleFilter) : filtered;
+                let users = roleFilter ? filtered.filter(u => u.role === roleFilter) : filtered;
+
+                // Apply sorting
+                users = [...users].sort((a, b) => {
+                    const av = (a[sortField] || '').toString().toLowerCase();
+                    const bv = (b[sortField] || '').toString().toLowerCase();
+                    const cmp = av.localeCompare(bv);
+                    return sortDir === 'asc' ? cmp : -cmp;
+                });
 
                 if (currentView === 'users') this.renderTable('list-all-users', users, ['name', 'email', 'phone', 'role']);
                 else if (currentView === 'admins') this.renderTable('list-admins', users, ['name', 'email', 'role']);
