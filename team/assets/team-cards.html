@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AZ Learner Team Cards — Download beautiful identity cards for each AZ Learner team member." />
+  <title>AZ Learner | Team Cards</title>
+  <link rel="icon" type="image/png" href="../../favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: '#3b82f6',
+            brandPurple: '#a855f7',
+            brandOrange: '#FFAB40'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+      background-size: 400% 400%;
+      animation: gradientBG 18s ease infinite;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    @keyframes gradientBG {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Member card visual (the area captured by html2canvas) */
+    .member-card {
+      width: 340px;
+      min-height: 440px;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+
+    .member-card .card-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .member-card .card-body {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px 28px;
+      height: 100%;
+    }
+
+    /* Photo ring */
+    .photo-ring {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, #60a5fa, #a855f7, #ec4899);
+      flex-shrink: 0;
+      margin-bottom: 18px;
+    }
+    .photo-ring img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      background: #1e293b;
+    }
+
+    /* Divider shimmer line */
+    .shimmer-line {
+      width: 60px;
+      height: 3px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
+      margin: 14px auto;
+      opacity: 0.85;
+    }
+
+    /* AZ watermark at bottom */
+    .card-footer-brand {
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Hover lift for the wrapper */
+    .card-wrapper {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card-wrapper:hover {
+      transform: translateY(-6px);
+    }
+
+    @media print {
+      body { background: white !important; animation: none !important; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+
+  <!-- Nav -->
+  <nav class="no-print sticky top-0 z-50 bg-slate-900/80 backdrop-blur border-b border-white/10 px-4 py-3 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-2 text-white font-bold text-lg">
+      <i class="fas fa-arrow-left text-blue-400"></i>
+      <span>Team</span>
+    </a>
+    <span class="text-white/50 text-sm font-semibold tracking-wide">Team Cards</span>
+    <a href="../../index.html" class="text-white/60 hover:text-white text-sm font-semibold transition">
+      <i class="fas fa-home"></i>
+    </a>
+  </nav>
+
+  <!-- Hero -->
+  <header class="no-print text-center px-6 py-12">
+    <div class="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+      <i class="fas fa-id-card"></i> Official Team Cards
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black mb-4">Meet the Team 🚀</h1>
+    <p class="text-white/60 text-lg max-w-xl mx-auto">Download beautiful identity cards for each AZ Learner team member. Click <strong class="text-white">Download Card</strong> under any card to save it as a PNG.</p>
+  </header>
+
+  <!-- Cards Grid -->
+  <main class="max-w-6xl mx-auto px-4 pb-20">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 justify-items-center" id="cardsGrid">
+
+      <!-- Francis Pwavwe (CEO) -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-francis">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 55%, #172554 100%);"></div>
+          <!-- Decorative circles -->
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(59,130,246,0.08);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(168,85,247,0.08);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring">
+              <img src="../images/francis.jpg" alt="Francis Pwavwe" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.25rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Francis Pwavwe</div>
+              <div class="shimmer-line"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#a855f7);color:white;font-size:0.78rem;font-weight:700;padding:5px 16px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Founder &amp; CEO</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Tourism Management</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#3b82f6,#a855f7,#ec4899);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-francis', 'francis-pwavwe-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+      <!-- Andy Anim -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-andy">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #1e3a5a 55%, #1e1b4b 100%);"></div>
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(99,102,241,0.09);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(236,72,153,0.07);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring">
+              <img src="../images/andy.png" alt="Andy Anim" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.25rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Andy Anim</div>
+              <div class="shimmer-line"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#ec4899);color:white;font-size:0.78rem;font-weight:700;padding:5px 16px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Chief of Ambassadors</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Accounting</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#6366f1,#ec4899);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-andy', 'andy-anim-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+      <!-- Bright Tetteh -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-bright">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #134e4a 55%, #0f2a2a 100%);"></div>
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(20,184,166,0.09);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(59,130,246,0.07);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring" style="background:linear-gradient(135deg,#14b8a6,#3b82f6,#6366f1);">
+              <img src="../images/bright.png" alt="Bright Tetteh" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.25rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Bright Tetteh</div>
+              <div class="shimmer-line" style="background:linear-gradient(90deg,#14b8a6,#3b82f6);"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#14b8a6,#3b82f6);color:white;font-size:0.78rem;font-weight:700;padding:5px 16px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Lead Strategic Designer</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Finance</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#14b8a6,#3b82f6);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-bright', 'bright-tetteh-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+      <!-- Jude Makafui Dzansi -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-jude">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #1c1917 55%, #2d1b69 100%);"></div>
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(245,158,11,0.08);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(168,85,247,0.08);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring" style="background:linear-gradient(135deg,#f59e0b,#ef4444,#a855f7);">
+              <img src="../images/jude.png" alt="Jude Makafui Dzansi" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.15rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Jude Makafui Dzansi</div>
+              <div class="shimmer-line" style="background:linear-gradient(90deg,#f59e0b,#a855f7);"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;font-size:0.75rem;font-weight:700;padding:5px 14px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Head of Communications &amp; Marketing</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Communication Studies</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#f59e0b,#a855f7);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-jude', 'jude-dzansi-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+      <!-- Emmanuel Larbi -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-emmanuel">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #1a2744 55%, #0f1d36 100%);"></div>
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(16,185,129,0.08);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(59,130,246,0.08);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring" style="background:linear-gradient(135deg,#10b981,#3b82f6,#6366f1);">
+              <img src="../images/emma.jpg" alt="Emmanuel Larbi" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.25rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Emmanuel Larbi</div>
+              <div class="shimmer-line" style="background:linear-gradient(90deg,#10b981,#3b82f6);"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#10b981,#3b82f6);color:white;font-size:0.78rem;font-weight:700;padding:5px 16px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Administrative Assistant</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Tourism Management</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-emmanuel', 'emmanuel-larbi-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+      <!-- Ibrahim Abaabe -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-ibrahim">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #1a0a2e 55%, #0f172a 100%);"></div>
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(168,85,247,0.1);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(236,72,153,0.07);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring" style="background:linear-gradient(135deg,#a855f7,#ec4899,#f59e0b);">
+              <img src="../images/ibrahim.png" alt="Ibrahim Abaabe" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.25rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Ibrahim Abaabe</div>
+              <div class="shimmer-line" style="background:linear-gradient(90deg,#a855f7,#ec4899);"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#a855f7,#ec4899);color:white;font-size:0.78rem;font-weight:700;padding:5px 16px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Head of Finance</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Actuarial Science</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#a855f7,#ec4899);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-ibrahim', 'ibrahim-abaabe-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+      <!-- Chinedum Okonkwo Udeaja -->
+      <div class="card-wrapper flex flex-col items-center gap-3">
+        <div class="member-card shadow-2xl" id="card-chinedum">
+          <div class="card-bg" style="background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 55%, #1a0a2e 100%);"></div>
+          <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(99,102,241,0.1);z-index:0;"></div>
+          <div style="position:absolute;bottom:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(16,185,129,0.07);z-index:0;"></div>
+          <div class="card-body">
+            <div class="photo-ring" style="background:linear-gradient(135deg,#6366f1,#10b981,#3b82f6);">
+              <img src="../images/chinedum.png" alt="Chinedum Okonkwo Udeaja" onerror="this.src='../images/placeholder.svg'" crossorigin="anonymous" />
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.1rem;font-weight:800;color:#f1f5f9;letter-spacing:-0.3px;line-height:1.2;">Chinedum Okonkwo Udeaja</div>
+              <div class="shimmer-line" style="background:linear-gradient(90deg,#6366f1,#10b981);"></div>
+              <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#10b981);color:white;font-size:0.78rem;font-weight:700;padding:5px 16px;border-radius:99px;margin-bottom:12px;letter-spacing:0.03em;">Developer</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);font-weight:500;">University of Cape Coast</div>
+              <div style="font-size:0.8rem;color:rgba(148,163,184,0.85);margin-top:4px;">Hospitality Management</div>
+            </div>
+            <div class="card-footer-brand">
+              <div style="width:40px;height:2px;background:linear-gradient(90deg,#6366f1,#10b981);border-radius:99px;margin-bottom:8px;"></div>
+              <div style="font-size:1rem;font-weight:900;color:#f1f5f9;letter-spacing:-0.5px;">AZ LEARNER</div>
+              <div style="font-size:0.7rem;color:rgba(148,163,184,0.7);font-weight:600;letter-spacing:0.05em;">azlearner.me</div>
+            </div>
+          </div>
+        </div>
+        <button class="no-print download-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition" onclick="downloadCard(this, 'card-chinedum', 'chinedum-okonkwo-udeaja-az-learner')">
+          <i class="fas fa-download"></i> Download Card
+        </button>
+      </div>
+
+    </div><!-- /#cardsGrid -->
+
+    <!-- Instructions -->
+    <div class="no-print mt-16 bg-white/5 border border-white/10 rounded-2xl p-8 text-center max-w-2xl mx-auto">
+      <i class="fas fa-info-circle text-blue-400 text-2xl mb-3"></i>
+      <h2 class="text-xl font-bold mb-2">How to use these cards</h2>
+      <p class="text-white/60 text-sm max-w-lg mx-auto">Click <strong class="text-white">Download Card</strong> under any team member's card to save it as a high-resolution PNG image. Cards are perfect for social media, presentations, and official documents.</p>
+    </div>
+
+  </main>
+
+  <!-- html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    async function downloadCard(btn, id, filename) {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…';
+      }
+      try {
+        const el = document.getElementById(id);
+        const canvas = await html2canvas(el, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,
+          logging: false
+        });
+        const link = document.createElement('a');
+        link.download = filename + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        console.error('Card download failed:', err);
+        alert('Could not generate the card. Please try again.');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-download"></i> Download Card';
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
