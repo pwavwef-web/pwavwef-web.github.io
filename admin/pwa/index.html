@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Learner – PWA Admin Portal 🛡️</title>
+    <link rel="icon" type="image/png" href="../../adminfavicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Roboto', 'sans-serif'] },
+                    colors: { blueAccent: '#448AFF', orangeAccent: '#FFAB40' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #0f172a; color: white; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .nav-btn { transition: background 0.15s, color 0.15s; }
+        .nav-btn.active { background: rgba(68,138,255,0.18); color: #448AFF; border-color: rgba(68,138,255,0.4); }
+        .view { display: none; }
+        .view.active { display: block; }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-slate-900 p-8 rounded-2xl shadow-2xl text-center border border-blue-700/40">
+            <div class="text-5xl mb-4">🛡️</div>
+            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-2">PWA Admin Portal</h1>
+            <p class="text-xs text-gray-500 mb-6">Restricted Access · Admin Personnel Only</p>
+            <input type="email" id="login-email" placeholder="Admin Email" autocomplete="email"
+                class="w-full mb-3 p-3 rounded-lg bg-slate-800 outline-none text-white border border-slate-700 focus:border-blue-500 transition-colors">
+            <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+                class="w-full mb-5 p-3 rounded-lg bg-slate-800 outline-none text-white border border-slate-700 focus:border-blue-500 transition-colors">
+            <button onclick="authManager.login()"
+                class="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black rounded-xl shadow-lg active:scale-95 transition-transform mb-3">
+                Initialize Session 🔐
+            </button>
+            <p id="login-msg" class="text-red-400 text-xs h-4"></p>
+        </div>
+    </div>
+
+    <!-- Access Denied -->
+    <div id="access-denied" class="hidden fixed inset-0 z-[90] bg-slate-950 flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <div class="text-5xl">⛔</div>
+        <h2 class="text-2xl font-black text-red-400">Access Denied</h2>
+        <p class="text-gray-400 text-sm max-w-xs">Your account does not have PWA admin clearance. Contact the CEO to request access.</p>
+        <button onclick="authManager.logout()"
+            class="mt-4 px-6 py-2.5 bg-slate-800 hover:bg-red-900/60 text-white rounded-xl font-bold text-sm transition">
+            <i class="fa-solid fa-power-off mr-1.5"></i>Sign Out
+        </button>
+    </div>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-slate-900 border-b border-blue-700/30 px-5 py-4 flex justify-between items-center shrink-0 shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🛡️</span>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 leading-tight">PWA Admin Portal</h1>
+                    <p id="admin-name-display" class="text-xs text-gray-400 font-mono">Initializing...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../../pwa/" class="bg-slate-800 hover:bg-slate-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition hidden md:flex items-center gap-1.5">
+                    <i class="fa-solid fa-mobile-screen text-blue-400"></i> Open PWA
+                </a>
+                <button onclick="authManager.logout()"
+                    class="bg-slate-800 hover:bg-red-900/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    Logout <i class="fa-solid fa-power-off ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 overflow-x-auto no-scrollbar flex gap-2 shrink-0">
+            <button onclick="switchView('dashboard')" id="nav-dashboard"
+                class="nav-btn active px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap border border-transparent text-gray-400">
+                <i class="fa-solid fa-chart-pie mr-1.5"></i>Dashboard</button>
+            <button onclick="switchView('users')" id="nav-users"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap border border-transparent text-gray-400">
+                <i class="fa-solid fa-users mr-1.5 text-cyan-400"></i>Users</button>
+            <button onclick="switchView('queue')" id="nav-queue"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap border border-transparent text-gray-400">
+                <i class="fa-solid fa-print mr-1.5 text-green-400"></i>Print Queue</button>
+            <button onclick="switchView('blogs')" id="nav-blogs"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap border border-transparent text-gray-400">
+                <i class="fa-solid fa-newspaper mr-1.5 text-purple-400"></i>Blogs</button>
+            <button onclick="switchView('broadcast')" id="nav-broadcast"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap border border-transparent text-gray-400">
+                <i class="fa-solid fa-bullhorn mr-1.5 text-orange-400"></i>Broadcast</button>
+            <button onclick="switchView('feedback')" id="nav-feedback"
+                class="nav-btn px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap border border-transparent text-gray-400">
+                <i class="fa-solid fa-star mr-1.5 text-yellow-400"></i>Feedback</button>
+        </div>
+
+        <!-- Views -->
+        <div class="flex-1 overflow-y-auto bg-slate-950">
+
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="view active p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-blue-900/30 to-slate-900 p-5 rounded-2xl border border-blue-700/30">
+                    <h2 class="text-xl font-black text-blue-400 mb-1">PWA Overview</h2>
+                    <p class="text-gray-400 text-sm">Real-time statistics for the AZ Learner PWA. All data is live from Firestore.</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Users</h3>
+                        <p class="text-3xl font-black text-white mt-1" id="stat-users">—</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Pending Requests</h3>
+                        <p class="text-3xl font-black text-blue-400 mt-1" id="stat-reqs">—</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Blog Posts</h3>
+                        <p class="text-3xl font-black text-purple-400 mt-1" id="stat-blogs">—</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                        <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Reviews</h3>
+                        <p class="text-3xl font-black text-yellow-400 mt-1" id="stat-feedback">—</p>
+                    </div>
+                </div>
+
+                <!-- Recent Print Jobs -->
+                <div>
+                    <h2 class="text-lg font-bold mb-3 text-gray-300 flex items-center gap-2">
+                        <i class="fa-solid fa-print text-green-400"></i> Live Print Queue
+                    </h2>
+                    <div class="bg-slate-800 rounded-xl overflow-hidden border border-green-700/30 shadow-lg">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-slate-900/60 text-gray-300 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="px-4 py-3">Student</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-print-list" class="divide-y divide-slate-700">
+                                <tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">Loading jobs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Users -->
+                <div>
+                    <h2 class="text-lg font-bold mb-3 text-gray-300 flex items-center gap-2">
+                        <i class="fa-solid fa-user-clock text-cyan-400"></i> Recent Sign-ups
+                    </h2>
+                    <div class="bg-slate-800 rounded-xl overflow-hidden border border-cyan-700/30 shadow-lg">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-slate-900/60 text-gray-300 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="px-4 py-3">Name</th>
+                                    <th class="px-4 py-3">Email</th>
+                                    <th class="px-4 py-3">Role</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-recent-users" class="divide-y divide-slate-700">
+                                <tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS VIEW -->
+            <div id="view-users" class="view p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-cyan-900/20 to-slate-900 p-5 rounded-2xl border border-cyan-700/30">
+                    <h2 class="text-xl font-black text-cyan-400 mb-1">User Management</h2>
+                    <p class="text-gray-400 text-sm">Promote users to admin, demote existing admins, or ban bad actors.</p>
+                </div>
+
+                <!-- Promote to Admin -->
+                <div class="bg-slate-800/80 rounded-xl border border-blue-700/30 overflow-hidden">
+                    <div class="flex items-center gap-3 px-5 py-4 border-b border-blue-700/20">
+                        <div class="w-8 h-8 rounded-lg bg-blue-900/40 flex items-center justify-center">
+                            <i class="fa-solid fa-user-shield text-blue-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">The Circle — Admin Access</p>
+                            <p class="text-[11px] text-gray-500">Role: <span class="text-blue-400">admin</span> · Grants full PWA admin panel access</p>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex gap-2 mb-4">
+                            <input id="promote-email" type="email" placeholder="Enter user's email to promote..."
+                                class="flex-1 p-2.5 rounded-lg bg-slate-700 outline-none text-white border border-slate-600 focus:border-blue-500 text-sm transition-colors">
+                            <button onclick="promoteAdmin()"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm transition whitespace-nowrap">
+                                <i class="fa-solid fa-user-plus mr-1"></i>Promote
+                            </button>
+                        </div>
+                        <p id="promote-msg" class="text-xs h-4 mb-3"></p>
+                        <div id="admin-list" class="space-y-2">
+                            <p class="text-xs text-gray-500 animate-pulse">Loading admins...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ban Hammer -->
+                <div class="bg-red-900/20 border border-red-500/40 rounded-xl overflow-hidden">
+                    <div class="flex items-center gap-3 px-5 py-4 border-b border-red-700/20">
+                        <div class="w-8 h-8 rounded-lg bg-red-900/40 flex items-center justify-center">
+                            <i class="fa-solid fa-gavel text-red-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">The Ban Hammer</p>
+                            <p class="text-[11px] text-gray-500">Permanently restrict a user's access to the platform.</p>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex gap-2">
+                            <input id="ban-email" type="email" placeholder="Bad actor's email..."
+                                class="flex-1 p-2.5 rounded-lg bg-slate-900 outline-none text-white border border-red-500/30 text-sm focus:border-red-500 transition-colors">
+                            <button onclick="banUser()"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm transition whitespace-nowrap">
+                                <i class="fa-solid fa-ban mr-1"></i>Ban
+                            </button>
+                        </div>
+                        <p id="ban-msg" class="text-xs h-4 mt-2"></p>
+                    </div>
+                </div>
+
+                <!-- All Users Table -->
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-lg font-bold text-gray-300 flex items-center gap-2">
+                            <i class="fa-solid fa-users text-cyan-400"></i> All Users
+                        </h2>
+                        <input id="user-search" type="text" placeholder="Search name or email..."
+                            oninput="filterUsers()"
+                            class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500 transition w-40 md:w-56">
+                    </div>
+                    <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-lg">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-slate-900/60 text-gray-300 uppercase text-[10px] tracking-wider sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">Name</th>
+                                    <th class="px-4 py-3">Email</th>
+                                    <th class="px-4 py-3">Role</th>
+                                    <th class="px-4 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-list" class="divide-y divide-slate-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-500 text-xs">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRINT QUEUE VIEW -->
+            <div id="view-queue" class="view p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-green-900/20 to-slate-900 p-5 rounded-2xl border border-green-700/30">
+                    <h2 class="text-xl font-black text-green-400 mb-1">Print Queue &amp; Service Requests</h2>
+                    <p class="text-gray-400 text-sm">Manage all active print orders and service requests from students.</p>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-gray-300 flex items-center gap-2">
+                        <i class="fa-solid fa-print text-green-400"></i> Live Jobs
+                        <span id="queue-live-badge" class="bg-green-500/20 text-green-400 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">LIVE</span>
+                    </h2>
+                    <button onclick="flushRequests()"
+                        class="bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/40 px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-broom"></i> Purge Logs
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl overflow-hidden border border-green-700/20 shadow-lg">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-slate-900/60 text-gray-300 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Student</th>
+                                <th class="px-4 py-3">Service</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queue-list" class="divide-y divide-slate-700">
+                            <tr><td colspan="5" class="p-4 text-center text-gray-500 text-xs">Loading queue...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- BLOGS VIEW -->
+            <div id="view-blogs" class="view p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-purple-900/20 to-slate-900 p-5 rounded-2xl border border-purple-700/30">
+                    <h2 class="text-xl font-black text-purple-400 mb-1">Blog Moderation</h2>
+                    <p class="text-gray-400 text-sm">Review and moderate all blog posts submitted by users.</p>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl overflow-hidden border border-purple-700/20 shadow-lg">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-slate-900/60 text-gray-300 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Author</th>
+                                <th class="px-4 py-3">Post Preview</th>
+                                <th class="px-4 py-3">Likes</th>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blogs-list" class="divide-y divide-slate-700">
+                            <tr><td colspan="5" class="p-4 text-center text-gray-500 text-xs">Loading blogs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- BROADCAST VIEW -->
+            <div id="view-broadcast" class="view p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-orange-900/20 to-slate-900 p-5 rounded-2xl border border-orange-700/30">
+                    <h2 class="text-xl font-black text-orange-400 mb-1">Broadcast Center</h2>
+                    <p class="text-gray-400 text-sm">Send global announcements to all AZ Learner users. Messages appear as in-app notifications.</p>
+                </div>
+
+                <!-- Compose -->
+                <div class="bg-slate-800 p-6 rounded-xl border border-orange-700/30 shadow-lg">
+                    <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-orange-400"></i> New Announcement
+                    </h3>
+                    <input id="bc-title" type="text" placeholder="Announcement title..." maxlength="100"
+                        class="w-full mb-3 p-3 rounded-lg bg-slate-900 border border-slate-700 text-white outline-none focus:border-orange-500 text-sm transition-colors">
+                    <textarea id="bc-body" placeholder="Write your message here..." rows="4" maxlength="500"
+                        class="w-full mb-4 p-3 rounded-lg bg-slate-900 border border-slate-700 text-white outline-none focus:border-orange-500 text-sm resize-none transition-colors"></textarea>
+                    <div class="flex gap-3 items-center">
+                        <button onclick="sendBroadcast(false)"
+                            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Send Normal
+                        </button>
+                        <button onclick="sendBroadcast(true)"
+                            class="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-yellow-500 text-black font-black rounded-lg text-sm transition active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-crown"></i> Send VIP Alert
+                        </button>
+                        <span id="bc-msg" class="text-xs text-green-400 flex-1 text-right opacity-0 transition-opacity"></span>
+                    </div>
+                </div>
+
+                <!-- Past Announcements -->
+                <div>
+                    <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-gray-500"></i> Past Announcements
+                    </h3>
+                    <div id="announcements-list" class="space-y-3">
+                        <p class="text-xs text-gray-500 animate-pulse">Loading announcements...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEEDBACK VIEW -->
+            <div id="view-feedback" class="view p-4 md:p-6 space-y-6">
+                <div class="bg-gradient-to-br from-yellow-900/20 to-slate-900 p-5 rounded-2xl border border-yellow-700/30">
+                    <h2 class="text-xl font-black text-yellow-400 mb-1">User Feedback &amp; Reviews</h2>
+                    <p class="text-gray-400 text-sm">All star ratings and messages submitted by users from the PWA.</p>
+                </div>
+
+                <!-- Average Rating -->
+                <div class="flex items-center gap-4 bg-slate-800 p-4 rounded-xl border border-yellow-700/20">
+                    <div class="text-center">
+                        <p class="text-4xl font-black text-yellow-400" id="avg-rating">—</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Avg Rating</p>
+                    </div>
+                    <div id="rating-stars" class="flex gap-1 text-2xl text-gray-700"></div>
+                    <p id="total-reviews" class="text-xs text-gray-400 ml-2"></p>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl overflow-hidden border border-yellow-700/20 shadow-lg">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-slate-900/60 text-gray-300 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">User</th>
+                                <th class="px-4 py-3">Message</th>
+                                <th class="px-4 py-3">Rating</th>
+                                <th class="px-4 py-3">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-list" class="divide-y divide-slate-700">
+                            <tr><td colspan="4" class="p-4 text-center text-gray-500 text-xs">Loading feedback...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- end views -->
+    </div><!-- end app-content -->
+
+    <!-- Print Chat Panel -->
+    <div id="chat-panel" class="hidden fixed inset-0 z-[80] bg-slate-900 flex flex-col">
+        <div class="bg-slate-800 border-b border-slate-700 px-5 py-4 flex justify-between items-center shrink-0">
+            <div>
+                <h2 id="chat-title" class="font-bold text-white">Chat</h2>
+                <p id="chat-status" class="text-xs text-blue-400 font-bold"></p>
+            </div>
+            <button onclick="closeChat()" class="text-gray-400 hover:text-white transition text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        <div class="bg-slate-800 border-t border-slate-700 p-4 shrink-0">
+            <div class="flex gap-2">
+                <select id="chat-status-select" class="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-2 outline-none flex-shrink-0">
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="done">Done</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                <input id="chat-reply-input" type="text" placeholder="Type reply..." class="flex-1 bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition">
+                <button onclick="sendChatReply()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import {
+            getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+            query, where, orderBy, limit, onSnapshot, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import {
+            getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let allUsers = [];
+        let activeChatUnsub = null;
+        let activeChatOrderId = null;
+        let queueUnsub = null;
+
+        // ─── HTML escape helper ────────────────────────────────────────────────
+        function esc(str) {
+            return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function fmtDate(ts) {
+            if (!ts) return '—';
+            const d = ts.toDate ? ts.toDate() : new Date(ts);
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // ─── Auth ──────────────────────────────────────────────────────────────
+        window.authManager = {
+            async login() {
+                const msg = document.getElementById('login-msg');
+                msg.textContent = '';
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value;
+                if (!email || !pass) { msg.textContent = 'Please fill in all fields.'; return; }
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (err) {
+                    msg.textContent = 'Login failed: ' + err.message;
+                }
+            },
+            logout() { signOut(auth); }
+        };
+
+        document.getElementById('login-pass').addEventListener('keydown', e => {
+            if (e.key === 'Enter') authManager.login();
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('auth-overlay').classList.add('hidden');
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (!userDoc.exists()) { showDenied(); signOut(auth); return; }
+                    const role = userDoc.data().role || '';
+                    if (role !== 'admin') { showDenied(); signOut(auth); return; }
+
+                    currentUser = { uid: user.uid, email: user.email, name: userDoc.data().name || user.email };
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('admin-name-display').textContent = `Logged in as ${currentUser.name}`;
+                    loadDashboard();
+                } catch (err) {
+                    document.getElementById('login-msg').textContent = 'Error: ' + err.message;
+                    document.getElementById('auth-overlay').classList.remove('hidden');
+                    signOut(auth);
+                }
+            } else {
+                currentUser = null;
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+                document.getElementById('access-denied').classList.add('hidden');
+            }
+        });
+
+        function showDenied() {
+            document.getElementById('app-content').classList.add('hidden');
+            document.getElementById('access-denied').classList.remove('hidden');
+        }
+
+        // ─── Nav ───────────────────────────────────────────────────────────────
+        const VIEWS = ['dashboard','users','queue','blogs','broadcast','feedback'];
+
+        window.switchView = function(name) {
+            VIEWS.forEach(v => {
+                document.getElementById('view-' + v).classList.remove('active');
+                const btn = document.getElementById('nav-' + v);
+                if (btn) btn.classList.remove('active');
+            });
+            document.getElementById('view-' + name).classList.add('active');
+            const active = document.getElementById('nav-' + name);
+            if (active) active.classList.add('active');
+
+            if (name === 'users') loadUsers();
+            if (name === 'queue') loadQueue();
+            if (name === 'blogs') loadBlogs();
+            if (name === 'broadcast') loadAnnouncements();
+            if (name === 'feedback') loadFeedback();
+        };
+
+        // ─── Dashboard ─────────────────────────────────────────────────────────
+        async function loadDashboard() {
+            try {
+                const [usersSnap, reqSnap, blogsSnap, fbSnap, recentUsersSnap] = await Promise.all([
+                    getDocs(query(collection(db, 'users'), limit(200))),
+                    getDocs(query(collection(db, 'service_requests'), orderBy('timestamp','desc'), limit(50))),
+                    getDocs(query(collection(db, 'blogs'), orderBy('timestamp','desc'), limit(50))),
+                    getDocs(query(collection(db, 'feedback'), limit(50))),
+                    getDocs(query(collection(db, 'users'), limit(8)))
+                ]);
+
+                document.getElementById('stat-users').textContent = usersSnap.size + (usersSnap.size === 200 ? '+' : '');
+                document.getElementById('stat-reqs').textContent = reqSnap.size + (reqSnap.size === 50 ? '+' : '');
+                document.getElementById('stat-blogs').textContent = blogsSnap.size + (blogsSnap.size === 50 ? '+' : '');
+                document.getElementById('stat-feedback').textContent = fbSnap.size;
+
+                // Recent users (separate limited query)
+                document.getElementById('dash-recent-users').innerHTML = recentUsersSnap.docs.map(d => {
+                    const u = d.data();
+                    return `<tr class="border-b border-slate-700">
+                        <td class="px-4 py-3 font-medium text-white">${esc(u.name || '—')}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${esc(u.email || '—')}</td>
+                        <td class="px-4 py-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${roleColor(u.role)}">${esc(u.role || 'student')}</span></td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No users found.</td></tr>';
+            } catch (err) {
+                console.error('Dashboard load error:', err);
+            }
+
+            // Live print queue
+            if (queueUnsub) queueUnsub();
+            const q = query(collection(db, 'print_orders'), orderBy('lastUpdated','desc'), limit(20));
+            queueUnsub = onSnapshot(q, snap => {
+                const el = document.getElementById('dash-print-list');
+                if (snap.empty) { el.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500 text-xs">No active jobs.</td></tr>'; return; }
+                el.innerHTML = snap.docs.map(d => {
+                    const j = d.data();
+                    const badge = j.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 animate-pulse">NEW</span>' : '';
+                    return `<tr class="border-b border-slate-700">
+                        <td class="px-4 py-3 font-medium text-white">${esc(j.userName || 'Student')}${badge}<span class="text-[10px] text-gray-500 block">${fmtDate(j.lastUpdated)}</span></td>
+                        <td class="px-4 py-3 text-xs font-bold text-blue-300 uppercase">${esc(j.status || '—')}</td>
+                        <td class="px-4 py-3 text-right"><button onclick="openChat('${esc(d.id)}','${esc(j.userName || 'Student')}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded font-bold transition">Chat</button></td>
+                    </tr>`;
+                }).join('');
+            });
+        }
+
+        function roleColor(role) {
+            if (role === 'admin') return 'bg-blue-500/20 text-blue-300';
+            if (role === 'banned') return 'bg-red-500/20 text-red-400';
+            if (role === 'student') return 'bg-green-500/20 text-green-300';
+            return 'bg-gray-500/20 text-gray-400';
+        }
+
+        // ─── Users ─────────────────────────────────────────────────────────────
+        async function loadUsers() {
+            try {
+                const snap = await getDocs(query(collection(db, 'users'), orderBy('name'), limit(200)));
+                allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderUsers(allUsers);
+
+                // Also populate admin list
+                const admins = allUsers.filter(u => u.role === 'admin');
+                document.getElementById('admin-list').innerHTML = admins.length
+                    ? admins.map(u => `<div class="flex justify-between items-center bg-slate-900 px-4 py-3 rounded-lg border border-slate-700">
+                        <div>
+                            <p class="text-sm font-bold text-white">${esc(u.name || 'Unknown')}</p>
+                            <p class="text-xs text-gray-400">${esc(u.email || '')}</p>
+                        </div>
+                        <button onclick="demoteAdmin('${esc(u.id)}','${esc(u.name || u.email)}')"
+                            class="text-xs text-red-400 hover:text-red-300 font-bold px-3 py-1 rounded bg-red-900/20 hover:bg-red-900/40 transition">Demote</button>
+                    </div>`).join('')
+                    : '<p class="text-xs text-gray-500 italic">No other admins found.</p>';
+            } catch (err) {
+                document.getElementById('users-list').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-400 text-xs">Error: ${esc(err.message)}</td></tr>`;
+            }
+        }
+
+        function renderUsers(list) {
+            document.getElementById('users-list').innerHTML = list.length
+                ? list.map(u => `<tr class="border-b border-slate-700">
+                    <td class="px-4 py-3 font-medium text-white">${esc(u.name || '—')}</td>
+                    <td class="px-4 py-3 text-xs text-gray-400">${esc(u.email || '—')}</td>
+                    <td class="px-4 py-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${roleColor(u.role)}">${esc(u.role || 'student')}</span></td>
+                    <td class="px-4 py-3 text-right">
+                        ${u.role !== 'banned' ? `<button onclick="banUserById('${esc(u.id)}','${esc(u.email)}')" class="text-xs text-red-400 hover:text-red-300 font-bold px-2 py-1 rounded bg-red-900/20 hover:bg-red-900/40 transition mr-1">Ban</button>` : `<button onclick="unbanUser('${esc(u.id)}','${esc(u.email)}')" class="text-xs text-green-400 hover:text-green-300 font-bold px-2 py-1 rounded bg-green-900/20 hover:bg-green-900/40 transition mr-1">Unban</button>`}
+                        ${u.role !== 'admin' ? `<button onclick="promoteById('${esc(u.id)}','${esc(u.email)}')" class="text-xs text-blue-400 hover:text-blue-300 font-bold px-2 py-1 rounded bg-blue-900/20 hover:bg-blue-900/40 transition">Admin+</button>` : ''}
+                    </td>
+                </tr>`).join('')
+                : '<tr><td colspan="4" class="p-4 text-center text-gray-500 text-xs">No users found.</td></tr>';
+        }
+
+        window.filterUsers = function() {
+            const q = document.getElementById('user-search').value.toLowerCase();
+            const filtered = allUsers.filter(u =>
+                (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+            );
+            renderUsers(filtered);
+        };
+
+        window.promoteAdmin = async function() {
+            const email = document.getElementById('promote-email').value.trim();
+            const msg = document.getElementById('promote-msg');
+            if (!email) { msg.textContent = 'Enter an email address.'; msg.className = 'text-xs h-4 mb-3 text-red-400'; return; }
+            try {
+                const snap = await getDocs(query(collection(db, 'users'), where('email','==', email)));
+                if (snap.empty) { msg.textContent = 'User not found.'; msg.className = 'text-xs h-4 mb-3 text-red-400'; return; }
+                await Promise.all(snap.docs.map(d => updateDoc(doc(db,'users',d.id), { role: 'admin' })));
+                msg.textContent = `✓ ${email} promoted to admin.`;
+                msg.className = 'text-xs h-4 mb-3 text-green-400';
+                document.getElementById('promote-email').value = '';
+                loadUsers();
+            } catch (err) {
+                msg.textContent = 'Error: ' + err.message;
+                msg.className = 'text-xs h-4 mb-3 text-red-400';
+            }
+        };
+
+        window.demoteAdmin = async function(uid, name) {
+            if (!confirm(`Demote ${name} from admin?`)) return;
+            await updateDoc(doc(db,'users',uid), { role: 'student' });
+            loadUsers();
+        };
+
+        window.banUser = async function() {
+            const email = document.getElementById('ban-email').value.trim();
+            const msg = document.getElementById('ban-msg');
+            if (!email) return;
+            if (!confirm(`⚠️ Ban ${email} permanently?`)) return;
+            try {
+                const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
+                if (snap.empty) { msg.textContent = 'User not found.'; msg.className = 'text-xs h-4 mt-2 text-red-400'; return; }
+                await Promise.all(snap.docs.map(d => updateDoc(doc(db,'users',d.id), { role: 'banned' })));
+                msg.textContent = `✓ ${email} banned.`;
+                msg.className = 'text-xs h-4 mt-2 text-green-400';
+                document.getElementById('ban-email').value = '';
+            } catch (err) {
+                msg.textContent = 'Error: ' + err.message;
+                msg.className = 'text-xs h-4 mt-2 text-red-400';
+            }
+        };
+
+        window.banUserById = async function(uid, email) {
+            if (!confirm(`⚠️ Ban ${email}?`)) return;
+            await updateDoc(doc(db,'users',uid), { role: 'banned' });
+            loadUsers();
+        };
+
+        window.unbanUser = async function(uid, email) {
+            if (!confirm(`Unban ${email}?`)) return;
+            await updateDoc(doc(db,'users',uid), { role: 'student' });
+            loadUsers();
+        };
+
+        window.promoteById = async function(uid, email) {
+            if (!confirm(`Promote ${email} to admin?`)) return;
+            await updateDoc(doc(db,'users',uid), { role: 'admin' });
+            loadUsers();
+        };
+
+        // ─── Print Queue ────────────────────────────────────────────────────────
+        function loadQueue() {
+            if (queueUnsub) queueUnsub();
+            const q = query(collection(db,'print_orders'), orderBy('lastUpdated','desc'), limit(50));
+            queueUnsub = onSnapshot(q, snap => {
+                const el = document.getElementById('queue-list');
+                if (snap.empty) { el.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 text-xs">No active jobs.</td></tr>'; return; }
+                el.innerHTML = snap.docs.map(d => {
+                    const j = d.data();
+                    const badge = j.hasUnread ? '<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 animate-pulse">NEW</span>' : '';
+                    return `<tr class="border-b border-slate-700">
+                        <td class="px-4 py-3 font-medium text-white">${esc(j.userName || 'Student')}${badge}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${esc(j.service || '—')}</td>
+                        <td class="px-4 py-3 text-xs font-bold text-blue-300 uppercase">${esc(j.status || '—')}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">${fmtDate(j.lastUpdated)}</td>
+                        <td class="px-4 py-3 text-right"><button onclick="openChat('${esc(d.id)}','${esc(j.userName || 'Student')}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded font-bold transition">Chat</button></td>
+                    </tr>`;
+                }).join('');
+            });
+        }
+
+        window.flushRequests = async function() {
+            if (!confirm('⚠️ This will permanently delete ALL service request logs. Continue?')) return;
+            const snap = await getDocs(collection(db,'service_requests'));
+            if (snap.empty) { alert('System is already clean. ✨'); return; }
+            await Promise.all(snap.docs.map(d => deleteDoc(doc(db,'service_requests',d.id))));
+            alert(`✓ ${snap.size} records purged.`);
+        };
+
+        // ─── Chat ──────────────────────────────────────────────────────────────
+        window.openChat = async function(orderId, userName) {
+            activeChatOrderId = orderId;
+            if (activeChatUnsub) activeChatUnsub();
+            document.getElementById('chat-panel').classList.remove('hidden');
+            document.getElementById('chat-title').textContent = `Chat — ${userName}`;
+
+            const orderDoc = await getDoc(doc(db,'print_orders',orderId));
+            if (orderDoc.exists()) {
+                document.getElementById('chat-status').textContent = 'Status: ' + (orderDoc.data().status || '—');
+                document.getElementById('chat-status-select').value = orderDoc.data().status || 'pending';
+                if (orderDoc.data().hasUnread) {
+                    await updateDoc(doc(db,'print_orders',orderId), { hasUnread: false });
+                }
+            }
+
+            const msgRef = collection(db,'print_orders',orderId,'messages');
+            activeChatUnsub = onSnapshot(query(msgRef, orderBy('timestamp','asc')), snap => {
+                const el = document.getElementById('chat-messages');
+                el.innerHTML = snap.docs.map(d => {
+                    const m = d.data();
+                    const isAdmin = m.senderRole === 'admin';
+                    return `<div class="flex ${isAdmin ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-xs px-4 py-2 rounded-2xl text-sm shadow ${isAdmin ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-slate-700 text-white rounded-tl-sm'}">
+                            <p>${esc(m.text || '')}</p>
+                            <p class="text-[10px] opacity-60 mt-1 text-right">${fmtDate(m.timestamp)}</p>
+                        </div>
+                    </div>`;
+                }).join('');
+                el.scrollTop = el.scrollHeight;
+            });
+        };
+
+        window.closeChat = function() {
+            if (activeChatUnsub) { activeChatUnsub(); activeChatUnsub = null; }
+            activeChatOrderId = null;
+            document.getElementById('chat-panel').classList.add('hidden');
+        };
+
+        window.sendChatReply = async function() {
+            if (!activeChatOrderId || !currentUser) return;
+            const input = document.getElementById('chat-reply-input');
+            const text = input.value.trim();
+            const status = document.getElementById('chat-status-select').value;
+            if (!text) return;
+            input.value = '';
+            const msgRef = collection(db,'print_orders',activeChatOrderId,'messages');
+            await addDoc(msgRef, { text, senderRole: 'admin', senderName: currentUser.name, timestamp: serverTimestamp() });
+            await updateDoc(doc(db,'print_orders',activeChatOrderId), { status, lastUpdated: serverTimestamp(), hasUnread: false });
+            document.getElementById('chat-status').textContent = 'Status: ' + status;
+        };
+
+        document.getElementById('chat-reply-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') sendChatReply();
+        });
+
+        // ─── Blogs ─────────────────────────────────────────────────────────────
+        async function loadBlogs() {
+            try {
+                const snap = await getDocs(query(collection(db,'blogs'), orderBy('timestamp','desc'), limit(100)));
+                const el = document.getElementById('blogs-list');
+                if (snap.empty) { el.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 text-xs">No blog posts found.</td></tr>'; return; }
+                el.innerHTML = snap.docs.map(d => {
+                    const b = d.data();
+                    const preview = (b.text || '').substring(0, 60) + ((b.text || '').length > 60 ? '…' : '');
+                    return `<tr class="border-b border-slate-700">
+                        <td class="px-4 py-3 font-medium text-white">${esc(b.authorName || '—')}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400 max-w-xs truncate">${esc(preview)}</td>
+                        <td class="px-4 py-3 text-xs text-pink-400 font-bold">${esc(String(b.likes || 0))} ❤️</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">${fmtDate(b.timestamp)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="deleteBlog('${esc(d.id)}')" class="text-xs text-red-400 hover:text-red-300 font-bold px-3 py-1 rounded bg-red-900/20 hover:bg-red-900/40 transition">Delete</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                document.getElementById('blogs-list').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 text-xs">Error: ${esc(err.message)}</td></tr>`;
+            }
+        }
+
+        window.deleteBlog = async function(blogId) {
+            if (!confirm('Delete this blog post permanently?')) return;
+            await deleteDoc(doc(db,'blogs',blogId));
+            loadBlogs();
+        };
+
+        // ─── Broadcast ─────────────────────────────────────────────────────────
+        window.sendBroadcast = async function(isVIP) {
+            const title = document.getElementById('bc-title').value.trim();
+            const body = document.getElementById('bc-body').value.trim();
+            const msgEl = document.getElementById('bc-msg');
+            if (!title || !body) { msgEl.textContent = 'Please fill in both fields.'; msgEl.className = 'text-xs flex-1 text-right text-red-400 opacity-100'; return; }
+            try {
+                await addDoc(collection(db,'global_announcements'), {
+                    title, body, isVIP: !!isVIP,
+                    sentBy: currentUser ? currentUser.email : 'admin',
+                    timestamp: serverTimestamp()
+                });
+                document.getElementById('bc-title').value = '';
+                document.getElementById('bc-body').value = '';
+                msgEl.textContent = `✓ ${isVIP ? 'VIP Alert' : 'Announcement'} sent!`;
+                msgEl.className = 'text-xs flex-1 text-right text-green-400 opacity-100';
+                setTimeout(() => { msgEl.className = 'text-xs flex-1 text-right opacity-0'; }, 3000);
+                loadAnnouncements();
+            } catch (err) {
+                msgEl.textContent = 'Error: ' + err.message;
+                msgEl.className = 'text-xs flex-1 text-right text-red-400 opacity-100';
+            }
+        };
+
+        async function loadAnnouncements() {
+            try {
+                const snap = await getDocs(query(collection(db,'global_announcements'), orderBy('timestamp','desc'), limit(20)));
+                const el = document.getElementById('announcements-list');
+                if (snap.empty) { el.innerHTML = '<p class="text-xs text-gray-500 italic">No announcements yet.</p>'; return; }
+                el.innerHTML = snap.docs.map(d => {
+                    const a = d.data();
+                    const vipBadge = a.isVIP ? '<span class="bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full ml-2">VIP</span>' : '';
+                    return `<div class="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-white text-sm">${esc(a.title)}${vipBadge}</p>
+                                <p class="text-xs text-gray-400 mt-1">${esc(a.body)}</p>
+                                <p class="text-[10px] text-gray-600 mt-2">${fmtDate(a.timestamp)} · by ${esc(a.sentBy || 'admin')}</p>
+                            </div>
+                            <button onclick="deleteAnnouncement('${esc(d.id)}')" class="text-gray-600 hover:text-red-400 transition text-sm shrink-0">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                document.getElementById('announcements-list').innerHTML = `<p class="text-xs text-red-400">Error: ${esc(err.message)}</p>`;
+            }
+        }
+
+        window.deleteAnnouncement = async function(id) {
+            if (!confirm('Delete this announcement?')) return;
+            await deleteDoc(doc(db,'global_announcements',id));
+            loadAnnouncements();
+        };
+
+        // ─── Feedback ──────────────────────────────────────────────────────────
+        async function loadFeedback() {
+            try {
+                const snap = await getDocs(query(collection(db,'feedback'), orderBy('timestamp','desc'), limit(100)));
+                const el = document.getElementById('feedback-list');
+                if (snap.empty) { el.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 text-xs">No feedback yet.</td></tr>'; return; }
+                let total = 0;
+                let count = 0;
+                el.innerHTML = snap.docs.map(d => {
+                    const f = d.data();
+                    const r = Number(f.rating) || 0;
+                    total += r; count++;
+                    const stars = '★'.repeat(r) + '☆'.repeat(5 - r);
+                    return `<tr class="border-b border-slate-700">
+                        <td class="px-4 py-3 font-medium text-white">${esc(f.userName || '—')}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400 max-w-xs">${esc(f.message || '—')}</td>
+                        <td class="px-4 py-3 text-yellow-400 font-bold text-xs">${stars}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">${fmtDate(f.timestamp)}</td>
+                    </tr>`;
+                }).join('');
+
+                if (count > 0) {
+                    const avg = (total / count).toFixed(1);
+                    document.getElementById('avg-rating').textContent = avg;
+                    const rounded = Math.round(total / count);
+                    document.getElementById('rating-stars').innerHTML = Array.from({length:5}, (_,i) =>
+                        `<i class="fa-solid fa-star ${i < rounded ? 'text-yellow-400' : 'text-gray-700'}"></i>`
+                    ).join('');
+                    document.getElementById('total-reviews').textContent = `${count} review${count !== 1 ? 's' : ''}`;
+                }
+            } catch (err) {
+                document.getElementById('feedback-list').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-400 text-xs">Error: ${esc(err.message)}</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>
