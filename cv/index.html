@@ -834,12 +834,22 @@
         if (from === 3 && !validateSkills()) return;
         if (from === 4 && selectedTemplate === 0) { showToast("Please select a template first!", "error"); return; }
         if (from === 4) { renderCV(); }
+        history.pushState({ cvStep: from + 1 }, '');
         goToStep(from + 1);
     };
 
     window.prevStep = function(from) {
-        goToStep(from - 1);
+        history.back();
     };
+
+    // Seed history so the back button from step 0 exits the page naturally
+    history.replaceState({ cvStep: 0 }, '');
+
+    // Handle phone/browser back button between steps
+    window.addEventListener('popstate', function(event) {
+        const step = event.state?.cvStep ?? 0;
+        goToStep(step);
+    });
 
     function goToStep(n) {
         document.getElementById('step-' + currentStep).classList.remove('active');
@@ -1509,6 +1519,19 @@ You are knowledgeable about:
 - Choosing the right CV template for different industries and seniority levels
 - CV writing conventions for Ghana, Africa, UK, US, and international markets
 - LinkedIn profiles and cover letters as complements to a CV
+
+**CV Template Pricing (GHS):**
+- Classic Blue (Template 1): GHS 5
+- Modern Green (Template 2): GHS 5
+- Elegant Dark (Template 3): GHS 8
+- Creative Orange (Template 4): GHS 8
+- Minimalist Purple (Template 5): GHS 12
+- Executive Navy (Template 6): GHS 15
+- Luxury Gold (Template 7): GHS 20
+- Premium Gradient (Template 8): GHS 25
+
+**ATS Score Checker:**
+AZ Learner also offers a dedicated ATS Score Checker tool at /cv/ats.html. Users can upload their CV (PDF, DOCX, or TXT) and receive a detailed ATS compatibility score (0–100) with a grade (A–F), strengths, improvement tips, missing keywords, and formatting feedback — all powered by AI. The first 2 analyses are free; additional analyses cost GHS 5 each via Paystack.
 
 Keep responses concise (3-5 sentences max unless detail is requested), practical, and encouraging. Use bullet points for tips. Always relate advice to the AZ Learner CV builder steps where relevant.`;
 
