@@ -3,1778 +3,347 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CV Builder &amp; Resume Maker – AZ Learner | Ghana</title>
-    <meta name="description" content="Build a professional CV or resume online with AZ Learner. Choose from 5 premium templates, fill in your details instantly, and download a polished PDF for GHS 5. Perfect for students, graduates and job seekers in Ghana and beyond.">
-    <meta name="keywords" content="CV builder, resume maker, professional CV online, Ghana CV, AZ Learner CV, create resume, download CV PDF, job application, student resume, resume templates Ghana">
+    <title>CV & Resume Centre – AZ Learner | Ghana</title>
+    <meta name="description" content="Build a professional CV and check its ATS compatibility — all in one place. AZ Learner's CV tools help Ghanaian students and graduates land their dream jobs.">
+    <meta name="keywords" content="CV builder, ATS checker, resume maker, CV tools Ghana, AZ Learner CV, professional CV, ATS score, job application Ghana">
     <link rel="canonical" href="https://azlearner.me/cv/">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://azlearner.me/cv/">
-    <meta property="og:title" content="CV Builder &amp; Resume Maker – AZ Learner">
-    <meta property="og:description" content="Build a professional CV in minutes. Choose from 5 elegant templates, add your details, and download a polished PDF for GHS 5. For students and professionals in Ghana.">
+    <meta property="og:title" content="CV & Resume Centre – AZ Learner">
+    <meta property="og:description" content="Build a professional CV and check its ATS compatibility — all in one place. Land your dream job with AZ Learner.">
     <meta property="og:image" content="https://azlearner.me/brand.png">
     <meta property="og:site_name" content="AZ Learner">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="CV Builder &amp; Resume Maker – AZ Learner">
-    <meta name="twitter:description" content="Build a professional CV in minutes with AZ Learner. 5 premium templates, instant PDF download for GHS 5.">
+    <meta name="twitter:title" content="CV & Resume Centre – AZ Learner">
+    <meta name="twitter:description" content="Build a professional CV and check its ATS compatibility — all in one place.">
     <meta name="twitter:image" content="https://azlearner.me/brand.png">
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "AZ Learner CV Builder",
-      "url": "https://azlearner.me/cv/",
-      "description": "Online CV and resume builder for students and professionals. Create and customise a professional CV, then download it as a PDF.",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Any",
-      "offers": {
-        "@type": "Offer",
-        "price": "5",
-        "priceCurrency": "GHS"
-      },
-      "provider": {
-        "@type": "Organization",
-        "name": "AZ Learner",
-        "url": "https://azlearner.me"
-      }
-    }
-    </script>
     <link rel="icon" type="image/png" href="../favicon1.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <script src="https://js.paystack.co/v1/inline.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
-        .step { display: none; }
-        .step.active { display: block; }
-        .template-card { cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
-        .template-card:hover { transform: translateY(-4px); }
-        .template-card.selected { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.4); }
-        .cv-preview { background: white; color: #1a1a1a; font-family: Arial, sans-serif; min-height: 297mm; width: 210mm; margin: 0 auto; padding: 20mm; box-sizing: border-box; font-size: 11pt; }
-        /* Template 1 – Classic Blue */
-        .cv-t1 { position: relative; }
-        .cv-t1 .cv-ribbon { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: linear-gradient(to bottom, #1e3a5f, #3b82f6, #1e3a5f); z-index: 2; }
-        .cv-t1 .cv-header { background: #1e3a5f; color: white; padding: 20px 20mm; margin: -20mm -20mm 0 -20mm; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        .cv-t1 .cv-header h1 { font-size: 22pt; font-weight: bold; margin: 0; }
-        .cv-t1 .cv-header p { font-size: 10pt; margin: 4px 0 0; opacity: 0.85; }
-        .cv-t1 .cv-contact-bar { background: #16325c; color: rgba(255,255,255,0.85); padding: 7px 20mm; margin: 0 -20mm 16px -20mm; font-size: 9pt; letter-spacing: 0.3px; }
-        .cv-t1 .cv-section-title { color: #1e3a5f; font-size: 12pt; font-weight: bold; border-bottom: 2px solid #1e3a5f; margin-bottom: 8px; padding-bottom: 4px; margin-top: 16px; }
-        .cv-t1 .cv-footer { margin: 20px -20mm -20mm -20mm; padding: 8px 20mm; background: #1e3a5f; color: rgba(255,255,255,0.65); font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
-        /* Template 2 – Modern Green */
-        .cv-t2 .cv-header { display: flex; align-items: center; gap: 16px; border-left: 6px solid #16a34a; padding-left: 16px; margin-bottom: 0; padding-bottom: 12px; }
-        .cv-t2 .cv-header h1 { font-size: 22pt; font-weight: bold; color: #16a34a; margin: 0; }
-        .cv-t2 .cv-header p { font-size: 10pt; color: #555; margin: 4px 0 0; }
-        .cv-t2 .cv-contact-bar { background: #f0fdf4; color: #166534; padding: 7px 16px 7px 22px; margin-bottom: 16px; border-left: 6px solid #16a34a; font-size: 9pt; }
-        .cv-t2 .cv-section-title { color: #16a34a; font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 16px; }
-        .cv-t2 .cv-footer { border-top: 2px solid #16a34a; margin-top: 20px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 8pt; color: #555; }
-        /* Template 3 – Elegant Dark */
-        .cv-t3 .cv-header { background: #1a1a1a; color: white; text-align: center; padding: 28px 20mm; margin: -20mm -20mm 0 -20mm; }
-        .cv-t3 .cv-header h1 { font-size: 24pt; font-weight: bold; letter-spacing: 3px; margin: 0; }
-        .cv-t3 .cv-header p { font-size: 10pt; opacity: 0.7; margin: 6px 0 0; }
-        .cv-t3 .cv-ornament { text-align: center; color: #444; font-size: 8.5pt; letter-spacing: 3px; margin: 0 -20mm 16px -20mm; padding: 7px 0; background: #f5f5f5; border-bottom: 1px solid #ddd; }
-        .cv-t3 .cv-section-title { font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: #1a1a1a; border-bottom: 1px solid #ccc; margin-bottom: 8px; padding-bottom: 4px; margin-top: 16px; }
-        .cv-t3 .cv-footer { margin: 20px -20mm -20mm -20mm; padding: 9px 20mm; background: #1a1a1a; color: rgba(255,255,255,0.5); font-size: 8pt; text-align: center; }
-        /* Template 4 – Creative Orange */
-        .cv-t4 { position: relative; }
-        .cv-t4 .cv-ribbon { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: linear-gradient(to bottom, #ea580c, #f97316, #ea580c); z-index: 2; }
-        .cv-t4 .cv-header { background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 20px 20mm; margin: -20mm -20mm 16px -20mm; border-radius: 0 0 16px 16px; display: flex; align-items: center; gap: 16px; }
-        .cv-t4 .cv-header h1 { font-size: 22pt; font-weight: bold; margin: 0; }
-        .cv-t4 .cv-header p { font-size: 10pt; opacity: 0.9; margin: 4px 0 0; }
-        .cv-t4 .cv-section-title { color: #ea580c; font-size: 12pt; font-weight: bold; margin-bottom: 8px; margin-top: 16px; padding-left: 8px; border-left: 4px solid #ea580c; }
-        .cv-t4 .cv-footer { margin: 20px -20mm -20mm -20mm; padding: 8px 20mm; background: linear-gradient(135deg, #ea580c, #f97316); color: rgba(255,255,255,0.85); font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
-        /* Template 5 – Minimalist Purple (sidebar layout) */
-        .cv-preview.cv-t5 { padding: 0; background: #fafafa; }
-        .cv-t5-wrap { display: flex; min-height: 297mm; }
-        .cv-t5-sidebar { width: 70mm; background: #7c3aed; color: white; padding: 24px 16px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
-        .cv-t5-main { flex: 1; padding: 24px 20px; background: #fafafa; }
-        .cv-t5-main .cv-section-title { color: #7c3aed; font-size: 11pt; font-weight: bold; margin-bottom: 8px; margin-top: 16px; padding-bottom: 4px; border-bottom: 2px solid #ede9fe; }
-        .cv-t5-sidebar .t5-section-label { font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; opacity: 0.65; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.25); padding-bottom: 3px; }
-        .cv-t5-sidebar .t5-contact-item { font-size: 8.5pt; opacity: 0.9; margin-bottom: 3px; word-break: break-all; }
-        .cv-t5-sidebar .t5-skill-tag { display: inline-block; background: rgba(255,255,255,0.18); color: white; padding: 2px 8px; border-radius: 10px; font-size: 8pt; margin: 2px 2px 2px 0; }
-        .cv-body-text { font-size: 10.5pt; line-height: 1.6; color: #333; }
-        .cv-item { margin-bottom: 10px; }
-        .cv-item-title { font-weight: bold; font-size: 11pt; }
-        .cv-item-sub { color: #666; font-size: 10pt; }
-        .cv-skills { display: flex; flex-wrap: wrap; gap: 6px; }
-        .cv-skill-tag { background: #f0f4ff; color: #1e3a5f; padding: 3px 10px; border-radius: 12px; font-size: 9.5pt; }
-        .step-indicator div { transition: all 0.3s; }
-        /* Template 6 – Executive Navy */
-        .cv-t6 { position: relative; }
-        .cv-t6 .cv-header { background: linear-gradient(135deg, #0f2d52, #1a4a7a); color: white; padding: 22px 20mm; margin: -20mm -20mm 0 -20mm; display: flex; align-items: center; gap: 16px; }
-        .cv-t6 .cv-header h1 { font-size: 22pt; font-weight: bold; margin: 0; letter-spacing: 0.5px; }
-        .cv-t6 .cv-header p { font-size: 10pt; margin: 4px 0 0; color: #06b6d4; font-weight: 600; }
-        .cv-t6 .cv-teal-bar { background: #06b6d4; height: 4px; margin: 0 -20mm 0 -20mm; }
-        .cv-t6 .cv-contact-bar { background: #f0f9ff; color: #0c4a6e; padding: 7px 20mm; margin: 0 -20mm 16px -20mm; font-size: 9pt; border-bottom: 1px solid #bae6fd; }
-        .cv-t6 .cv-body { display: flex; gap: 20px; }
-        .cv-t6 .cv-left { width: 38%; flex-shrink: 0; }
-        .cv-t6 .cv-right { flex: 1; }
-        .cv-t6 .cv-section-title { color: #06b6d4; font-size: 10.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; margin-top: 14px; padding-bottom: 3px; border-bottom: 2px solid #06b6d4; }
-        .cv-t6 .cv-main-section-title { color: #0f2d52; font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 14px; padding-bottom: 4px; border-bottom: 2px solid #0f2d52; }
-        .cv-t6 .cv-footer { margin: 20px -20mm -20mm -20mm; padding: 8px 20mm; background: linear-gradient(135deg, #0f2d52, #1a4a7a); color: rgba(255,255,255,0.6); font-size: 8pt; display: flex; justify-content: space-between; }
-        /* Template 7 – Luxury Gold */
-        .cv-t7 { background: white; }
-        .cv-t7 .cv-header { background: #1a1a1a; color: white; padding: 30px 20mm; margin: -20mm -20mm 0 -20mm; text-align: center; }
-        .cv-t7 .cv-header h1 { font-size: 26pt; font-weight: 800; letter-spacing: 2px; margin: 0; color: white; }
-        .cv-t7 .cv-header p { font-size: 10pt; color: #d4af37; margin: 8px 0 0; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
-        .cv-t7 .cv-gold-divider { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 -20mm; padding: 10px 20mm; background: #111; }
-        .cv-t7 .cv-gold-divider span { color: #d4af37; font-size: 8pt; letter-spacing: 2px; }
-        .cv-t7 .cv-gold-divider::before, .cv-t7 .cv-gold-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, #d4af37, transparent); }
-        .cv-t7 .cv-contact-bar { background: #fffbeb; color: #78350f; padding: 8px 20mm; margin: 0 -20mm 16px -20mm; font-size: 9pt; text-align: center; border-bottom: 1px solid #fde68a; }
-        .cv-t7 .cv-section-title { color: #92400e; font-size: 11pt; font-weight: bold; margin-bottom: 8px; margin-top: 16px; display: flex; align-items: center; gap: 10px; }
-        .cv-t7 .cv-section-title::before { content: ''; width: 30px; height: 2px; background: linear-gradient(to right, #d4af37, #f59e0b); flex-shrink: 0; }
-        .cv-t7 .cv-section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, #fde68a, transparent); }
-        .cv-t7 .cv-footer { margin: 24px -20mm -20mm -20mm; padding: 10px 20mm; background: #1a1a1a; color: #d4af37; font-size: 8pt; text-align: center; letter-spacing: 2px; }
-        /* Template 8 – Premium Gradient */
-        .cv-t8 { background: #fafafa; }
-        .cv-t8 .cv-header { background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed, #a855f7); color: white; padding: 32px 20mm 24px; margin: -20mm -20mm 0 -20mm; position: relative; overflow: hidden; }
-        .cv-t8 .cv-header::before { content: ''; position: absolute; top: -30px; right: -30px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.07); }
-        .cv-t8 .cv-header::after { content: ''; position: absolute; bottom: -40px; left: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.05); }
-        .cv-t8 .cv-header h1 { font-size: 24pt; font-weight: 800; margin: 0; letter-spacing: 1px; position: relative; z-index: 1; }
-        .cv-t8 .cv-header p { font-size: 11pt; margin: 6px 0 0; opacity: 0.85; position: relative; z-index: 1; font-weight: 500; letter-spacing: 1px; }
-        .cv-t8 .cv-contact-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20mm; margin: 0 -20mm 16px -20mm; background: #ede9fe; border-bottom: 2px solid #c4b5fd; }
-        .cv-t8 .cv-chip { background: white; color: #4338ca; padding: 3px 12px; border-radius: 20px; font-size: 8.5pt; font-weight: 600; border: 1px solid #c4b5fd; }
-        .cv-t8 .cv-section-title { font-size: 11pt; font-weight: 800; margin-bottom: 10px; margin-top: 18px; padding: 6px 12px; background: linear-gradient(135deg, #eef2ff, #f5f3ff); border-left: 4px solid; border-image: linear-gradient(to bottom, #4338ca, #7c3aed) 1; color: #312e81; border-radius: 0 6px 6px 0; }
-        .cv-t8 .cv-card { background: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; border: 1px solid #e0e7ff; box-shadow: 0 1px 3px rgba(67,56,202,0.08); }
-        .cv-t8 .cv-footer { margin: 24px -20mm -20mm -20mm; padding: 12px 20mm; background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed); color: rgba(255,255,255,0.75); font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }
-        .cv-t8-badge { display: inline-block; background: linear-gradient(135deg, #4338ca, #7c3aed); color: white; padding: 2px 10px; border-radius: 12px; font-size: 8pt; margin: 2px 2px 2px 0; font-weight: 600; }
-        @media (max-width: 768px) {
-            .cv-preview { width: 100%; min-height: auto; padding: 12mm; font-size: 9pt; }
-            .cv-t1 .cv-header, .cv-t3 .cv-header, .cv-t4 .cv-header { margin: -12mm -12mm 0 -12mm; }
-            .cv-t1 .cv-contact-bar, .cv-t2 .cv-contact-bar, .cv-t3 .cv-ornament { margin-left: -12mm; margin-right: -12mm; }
-            .cv-t1 .cv-footer, .cv-t3 .cv-footer, .cv-t4 .cv-footer { margin: 16px -12mm -12mm -12mm; }
-            .cv-t5-wrap { flex-direction: column; }
-            .cv-t5-sidebar { width: 100%; min-height: auto; }
-            .cv-t6 .cv-body { flex-direction: column; }
-            .cv-t6 .cv-left { width: 100%; }
-        }
-        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        input, textarea, select { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px; padding: 10px 14px; width: 100%; outline: none; transition: border-color 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
-        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.35); }
-        input:focus, textarea:focus, select:focus { border-color: #3b82f6; }
-        select option { background: #1e293b; color: white; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; font-weight: bold; padding: 12px 28px; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(59,130,246,0.3); }
-        .btn-secondary { background: rgba(255,255,255,0.08); color: white; font-weight: 600; padding: 12px 28px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s; }
-        .btn-secondary:hover { background: rgba(255,255,255,0.14); }
-        .add-btn { background: rgba(59,130,246,0.15); border: 1px dashed rgba(59,130,246,0.4); color: #93c5fd; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; transition: background 0.2s; }
-        .add-btn:hover { background: rgba(59,130,246,0.25); }
-        .remove-btn { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-        .ai-suggest-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; }
-        .ai-suggest-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
-        .ai-suggest-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        #ai-modal { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
-        #ai-modal.open { display: flex; }
-        #ai-modal-box { background: #1e293b; border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; padding: 24px; max-width: 560px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-        /* AZ AI Chat */
-        #az-ai-btn { position: fixed; bottom: 24px; right: 24px; z-index: 9000; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 50px; padding: 12px 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.5); display: flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
-        #az-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.6); }
-        @media print { #az-ai-btn { display: none; } }
-        #az-ai-chat { display: none; position: fixed; inset: 0; z-index: 9500; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: flex-end; justify-content: flex-end; padding: 16px; }
-        #az-ai-chat.open { display: flex; }
-        #az-ai-chat-box { background: #0f172a; border: 1px solid rgba(99,102,241,0.4); border-radius: 20px; width: 100%; max-width: 420px; height: 560px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; }
-        .az-chat-msg { display: flex; gap: 8px; margin-bottom: 12px; }
-        .az-chat-msg.user { flex-direction: row-reverse; }
-        .az-chat-bubble { max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
-        .az-chat-msg.ai .az-chat-bubble { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.2); color: #e2e8f0; border-radius: 4px 16px 16px 16px; }
-        .az-chat-msg.user .az-chat-bubble { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 16px 16px 4px 16px; }
-        .price-badge { display: inline-block; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 8px; }
-        .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
-        .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
-        @media print {
-            @page { size: A4 portrait; margin: 0; }
-            body { background: #fff !important; margin: 0; padding: 0; }
-            body * { visibility: hidden; }
-            #cv-output, #cv-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            #cv-output { position: absolute; top: 0; left: 0; width: 100%; }
-            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 !important; page-break-inside: auto; }
-            .cv-section { break-inside: avoid; page-break-inside: avoid; }
-            .cv-entry { break-inside: avoid; page-break-inside: avoid; }
-        }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-strong { background: rgba(255,255,255,0.07); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12); }
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; font-weight: 700; padding: 14px 28px; border-radius: 14px; border: none; cursor: pointer; transition: all 0.25s; text-decoration: none; font-size: 15px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(59,130,246,0.35); }
+        .btn-green { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #16a34a, #059669); color: white; font-weight: 700; padding: 14px 28px; border-radius: 14px; border: none; cursor: pointer; transition: all 0.25s; text-decoration: none; font-size: 15px; }
+        .btn-green:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(22,163,74,0.35); }
+        .btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: transparent; color: white; font-weight: 600; padding: 13px 26px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.25s; text-decoration: none; font-size: 15px; }
+        .btn-outline:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.35); }
+        .service-card { border-radius: 24px; transition: transform 0.3s, box-shadow 0.3s; }
+        .service-card:hover { transform: translateY(-6px); }
+        .service-card.blue { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); }
+        .service-card.blue:hover { box-shadow: 0 20px 60px rgba(59,130,246,0.18); }
+        .service-card.green { background: rgba(22,163,74,0.08); border: 1px solid rgba(22,163,74,0.25); }
+        .service-card.green:hover { box-shadow: 0 20px 60px rgba(22,163,74,0.18); }
+        .feature-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 20px; }
+        .step-num { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .float-slow { animation: float 4s ease-in-out infinite; }
+        .float-mid { animation: float 3.5s ease-in-out infinite 0.5s; }
+        .gradient-text { background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gradient-text-green { background: linear-gradient(135deg, #4ade80, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .divider { height: 1px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent); }
+        /* Animated background glow */
+        .glow-blue { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%); pointer-events: none; }
+        .glow-purple { position: absolute; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%); pointer-events: none; }
+        .glow-green { position: absolute; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(22,163,74,0.1) 0%, transparent 70%); pointer-events: none; }
     </style>
 </head>
 <body>
 
-<div id="toast"></div>
-
-<!-- AI Suggestion Modal -->
-<div id="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
-    <div id="ai-modal-box">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-                <span class="text-2xl">✨</span>
-                <h3 id="ai-modal-title" class="text-lg font-bold text-white">AI Suggestion</h3>
-            </div>
-            <button onclick="closeAiModal()" class="text-gray-400 hover:text-white text-xl font-bold leading-none" aria-label="Close">&times;</button>
-        </div>
-        <div id="ai-modal-loading" class="text-center py-8 hidden">
-            <div class="inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-            <p class="text-gray-400 text-sm">AI is crafting your suggestion…</p>
-        </div>
-        <div id="ai-modal-content" class="hidden">
-            <p class="text-xs text-gray-400 mb-2">Here's what our AI suggests. Feel free to edit before accepting:</p>
-            <textarea id="ai-suggestion-text" rows="8" style="background:rgba(255,255,255,0.07);border:1px solid rgba(99,102,241,0.4);color:white;border-radius:10px;padding:12px;width:100%;font-size:13px;line-height:1.6;resize:vertical;font-family:inherit;"></textarea>
-            <div class="flex gap-3 mt-4">
-                <button onclick="acceptAiSuggestion()" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-2.5 rounded-xl hover:from-indigo-500 hover:to-purple-500 transition text-sm">✓ Use This</button>
-                <button onclick="regenerateAiSuggestion()" class="btn-secondary text-sm py-2.5 px-4">↺ Regenerate</button>
-                <button onclick="closeAiModal()" class="btn-secondary text-sm py-2.5 px-4">✕ Dismiss</button>
-            </div>
-        </div>
-        <div id="ai-modal-error" class="hidden">
-            <p class="text-red-400 text-sm mb-4" id="ai-error-msg">AI suggestion failed. Please try again.</p>
-            <button onclick="closeAiModal()" class="btn-secondary text-sm py-2 px-6">Close</button>
-        </div>
-    </div>
-</div>
-
-<!-- AZ AI Floating Button -->
-<button id="az-ai-btn" onclick="openAzAiChat()" aria-label="Open AZ AI Help">
-    <span style="font-size:18px;">🤖</span> AZ AI
-</button>
-
-<!-- AZ AI Chat Modal -->
-<div id="az-ai-chat" role="dialog" aria-modal="true" aria-label="AZ AI Chat Assistant">
-    <div id="az-ai-chat-box">
-        <!-- Chat Header -->
-        <div style="background: linear-gradient(135deg, #312e81, #4c1d95); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">🤖</div>
-                <div>
-                    <div style="font-weight: 800; font-size: 15px; color: white; letter-spacing: 0.5px;">AZ AI</div>
-                    <div style="font-size: 11px; color: rgba(255,255,255,0.6);">Your CV writing assistant</div>
-                </div>
-            </div>
-            <button onclick="closeAzAiChat()" style="background: rgba(255,255,255,0.12); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;" aria-label="Close AZ AI">✕</button>
-        </div>
-        <!-- Messages -->
-        <div id="az-chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; scroll-behavior: smooth;"></div>
-        <!-- Input Area -->
-        <div style="padding: 10px 14px 14px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; background: rgba(255,255,255,0.02);">
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <input id="az-chat-input" type="text" placeholder="Ask about your CV…" autocomplete="off"
-                    style="flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; font-family: 'Plus Jakarta Sans', sans-serif;"
-                    onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendAzAiMessage();}">
-                <button onclick="sendAzAiMessage()"
-                    style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;">Send</button>
-            </div>
-            <button onclick="askForHumanHelp()"
-                style="width: 100%; background: rgba(37,211,102,0.12); border: 1px solid rgba(37,211,102,0.3); color: #4ade80; border-radius: 10px; padding: 8px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.2s;"
-                onmouseover="this.style.background='rgba(37,211,102,0.22)'" onmouseout="this.style.background='rgba(37,211,102,0.12)'">
-                💬 Chat with a Human on WhatsApp
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- Header -->
 <header class="sticky top-0 z-50 glass px-4 py-3 flex items-center gap-3">
-    <a href="../index.html" class="text-blue-400 hover:text-blue-300 transition">
+    <a href="../" class="text-blue-400 hover:text-blue-300 transition" aria-label="Back to home">
         <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
     </a>
-    <div>
-        <h1 class="font-bold text-base sm:text-lg leading-tight">CV Builder</h1>
-        <p class="text-xs text-gray-400">Craft your professional resume in minutes</p>
+    <div class="flex items-center gap-2">
+        <span class="text-orange-400 font-black text-base">AZ</span>
+        <span class="font-bold text-base text-white">Learner</span>
+        <span class="text-gray-500 mx-1">/</span>
+        <span class="font-semibold text-sm text-gray-300">CV Centre</span>
     </div>
     <div class="ml-auto flex items-center gap-2">
-        <span class="text-xs text-gray-400 hidden sm:block">Powered by</span>
-        <span class="text-orange-400 font-bold text-sm">AZ Learner</span>
+        <a href="./builder.html" class="btn-outline text-xs py-2 px-4 hidden sm:inline-flex">
+            <span class="material-symbols-outlined text-sm">edit_document</span> Build CV
+        </a>
+        <a href="./ats.html" class="btn-primary text-xs py-2 px-4">
+            <span class="material-symbols-outlined text-sm">fact_check</span> ATS Check
+        </a>
     </div>
 </header>
 
-<!-- Step Indicator -->
-<div class="max-w-2xl mx-auto px-4 pt-6 pb-2">
-    <div class="flex items-center justify-between step-indicator" id="stepIndicator">
-        <div class="flex flex-col items-center" id="si-0">
-            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold">1</div>
-            <span class="text-xs mt-1 text-blue-400 font-semibold hidden sm:block">Info</span>
+<!-- Hero Section -->
+<section class="relative overflow-hidden px-4 py-20 text-center">
+    <!-- Background glows -->
+    <div class="glow-blue" style="top: -150px; left: -100px;"></div>
+    <div class="glow-purple" style="top: 50px; right: -150px;"></div>
+
+    <div class="relative max-w-3xl mx-auto">
+        <div class="inline-flex items-center gap-2 glass text-xs font-semibold px-4 py-2 rounded-full mb-6 text-blue-300 border border-blue-500/20">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+            CV Revamp — Powered by AI
         </div>
-        <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-0"></div>
-        <div class="flex flex-col items-center" id="si-1">
-            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">2</div>
-            <span class="text-xs mt-1 text-gray-500 hidden sm:block">Education</span>
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-black leading-tight mb-5">
+            Your Career Starts<br>
+            With a <span class="gradient-text">Great CV</span>
+        </h1>
+        <p class="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+            Build a professional, recruiter-ready CV in minutes — then check if it will survive the ATS filters that screen out most applicants before a human ever reads them.
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            <a href="./builder.html" class="btn-primary text-base">
+                <span class="material-symbols-outlined">edit_document</span> Build My CV
+            </a>
+            <a href="./ats.html" class="btn-outline text-base">
+                <span class="material-symbols-outlined">fact_check</span> Check ATS Score
+            </a>
         </div>
-        <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-1"></div>
-        <div class="flex flex-col items-center" id="si-2">
-            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">3</div>
-            <span class="text-xs mt-1 text-gray-500 hidden sm:block">Experience</span>
-        </div>
-        <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-2"></div>
-        <div class="flex flex-col items-center" id="si-3">
-            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">4</div>
-            <span class="text-xs mt-1 text-gray-500 hidden sm:block">Skills</span>
-        </div>
-        <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-3"></div>
-        <div class="flex flex-col items-center" id="si-4">
-            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">5</div>
-            <span class="text-xs mt-1 text-gray-500 hidden sm:block">Template</span>
-        </div>
-        <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-4"></div>
-        <div class="flex flex-col items-center" id="si-5">
-            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">6</div>
-            <span class="text-xs mt-1 text-gray-500 hidden sm:block">Download</span>
+        <!-- Trust badges -->
+        <div class="flex flex-wrap items-center justify-center gap-4 mt-8 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="text-green-400">✓</span> 8 premium templates</span>
+            <span class="flex items-center gap-1"><span class="text-green-400">✓</span> AI-powered suggestions</span>
+            <span class="flex items-center gap-1"><span class="text-green-400">✓</span> Instant ATS scoring</span>
+            <span class="flex items-center gap-1"><span class="text-green-400">✓</span> Mobile Money accepted</span>
         </div>
     </div>
-</div>
+</section>
 
-<div class="max-w-2xl mx-auto px-4 pb-20">
+<div class="divider mx-8 mb-16"></div>
 
-    <!-- Step 1: Personal Info -->
-    <div class="step active glass rounded-2xl p-6 mt-4" id="step-0">
-        <h2 class="text-xl font-bold mb-1">Personal Information 👤</h2>
-        <p class="text-gray-400 text-sm mb-6">Let's start with the basics.</p>
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">First Name *</label>
-                    <input type="text" id="cv-firstname" placeholder="John">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">Last Name *</label>
-                    <input type="text" id="cv-lastname" placeholder="Doe">
-                </div>
-            </div>
-            <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-semibold text-gray-400">Professional Title *</label>
-                    <button type="button" onclick="aiSuggestTitle()" class="ai-suggest-btn" id="ai-title-btn" title="Let AI suggest your professional title" style="font-size:11px;padding:4px 10px;">✨ AI Suggest</button>
-                </div>
-                <input type="text" id="cv-title" placeholder="e.g. Software Developer, Marketing Student">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">Email *</label>
-                    <input type="email" id="cv-email" placeholder="john@example.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">Phone *</label>
-                    <input type="tel" id="cv-phone" placeholder="+233 XX XXX XXXX">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">Location</label>
-                    <input type="text" id="cv-location" placeholder="Accra, Ghana">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">LinkedIn / Portfolio</label>
-                    <input type="text" id="cv-website" placeholder="linkedin.com/in/johndoe">
-                </div>
-            </div>
-            <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-semibold text-gray-400">Professional Summary *</label>
-                    <button type="button" onclick="aiSuggestSummary()" class="ai-suggest-btn" id="ai-summary-btn" title="Let AI write your summary">✨ AI Suggest</button>
-                </div>
-                <textarea id="cv-summary" rows="4" placeholder="A brief 2-3 sentence overview of your professional background, key skills, and career goals..."></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-2">Profile Photo <span class="font-normal text-gray-500">(optional — appears as a circle on your CV)</span></label>
-                <div class="flex items-center gap-4">
-                    <div id="photo-preview-ring" onclick="document.getElementById('cv-photo').click()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('cv-photo').click()" style="width:76px;height:76px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,0.07);border:2px dashed rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" title="Click to upload photo">
-                        <span class="material-symbols-outlined text-gray-400" style="font-size:36px;">person</span>
-                    </div>
-                    <div>
-                        <input type="file" id="cv-photo" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
-                        <button type="button" onclick="document.getElementById('cv-photo').click()" class="btn-secondary" style="padding:8px 16px;font-size:13px;">Upload Photo</button>
-                        <p class="text-xs text-gray-500 mt-2">PNG, JPG, WEBP · Max 2 MB</p>
-                        <button type="button" id="photo-remove-btn" onclick="removePhoto()" class="remove-btn" style="display:none;margin-top:6px;">Remove photo</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="flex justify-end mt-6">
-            <button class="btn-primary" onclick="nextStep(0)">Next: Education <span class="material-symbols-outlined text-sm" style="vertical-align:middle;">arrow_forward</span></button>
-        </div>
+<!-- Service Cards Section -->
+<section class="max-w-5xl mx-auto px-4 pb-16">
+    <div class="text-center mb-12">
+        <h2 class="text-2xl sm:text-3xl font-black mb-3">Two Powerful Tools, One Goal</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">Everything you need to craft and optimise your CV for today's competitive job market.</p>
     </div>
 
-    <!-- Step 2: Education -->
-    <div class="step glass rounded-2xl p-6 mt-4" id="step-1">
-        <div class="flex items-center justify-between mb-1">
-            <h2 class="text-xl font-bold">Education 🎓</h2>
-            <button type="button" onclick="aiEducationTips()" class="ai-suggest-btn" id="ai-edu-btn" title="Get ATS tips for education section" style="font-size:11px;padding:4px 10px;">✨ ATS Tips</button>
+    <div class="grid md:grid-cols-2 gap-6">
+
+        <!-- CV Builder Card -->
+        <div class="service-card blue p-7">
+            <div class="flex items-center gap-4 mb-5">
+                <div class="float-slow w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-3xl shadow-lg shadow-blue-500/20">
+                    📄
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">CV Writing Tool</span>
+                    <h3 class="text-xl font-black text-white mt-0.5">CV Builder</h3>
+                </div>
+            </div>
+
+            <p class="text-gray-300 text-sm leading-relaxed mb-5">
+                Create a polished, professional CV from scratch — no design skills needed. Choose from 8 hand-crafted templates, fill in your details step by step, then download a print-ready PDF.
+            </p>
+
+            <!-- Feature list -->
+            <ul class="space-y-2.5 mb-6">
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-blue-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">8 premium templates</strong> — Classic, Modern, Elegant, Creative and more</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-blue-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">AI-powered suggestions</strong> — smart summary and skills prompts via Gemini AI</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-blue-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Step-by-step wizard</strong> — personal info, education, work, skills, preview</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-blue-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Instant PDF download</strong> — print-quality A4 output from <span class="text-green-400 font-bold">GHS 5</span></span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-blue-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Mobile Money & card</strong> — pay securely via Paystack</span>
+                </li>
+            </ul>
+
+            <!-- Pricing badge -->
+            <div class="glass rounded-xl p-3 flex items-center justify-between mb-5">
+                <span class="text-xs text-gray-400">Starting from</span>
+                <span class="text-green-400 font-black text-xl">GHS 5</span>
+            </div>
+
+            <a href="./builder.html" class="btn-primary w-full text-sm">
+                <span class="material-symbols-outlined text-sm">edit_document</span> Start Building My CV
+            </a>
         </div>
-        <p class="text-gray-400 text-sm mb-6">Add your educational background.</p>
-        <div id="education-list" class="space-y-4"></div>
-        <button class="add-btn mt-3" onclick="addEducation()">+ Add Education</button>
-        <div class="flex justify-between mt-6">
-            <button class="btn-secondary" onclick="prevStep(1)">Back</button>
-            <button class="btn-primary" onclick="nextStep(1)">Next: Experience <span class="material-symbols-outlined text-sm" style="vertical-align:middle;">arrow_forward</span></button>
+
+        <!-- ATS Checker Card -->
+        <div class="service-card green p-7">
+            <div class="flex items-center gap-4 mb-5">
+                <div class="float-mid w-14 h-14 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center text-3xl shadow-lg shadow-green-500/20">
+                    🎯
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-green-400 uppercase tracking-wider">ATS Compatibility</span>
+                    <h3 class="text-xl font-black text-white mt-0.5">ATS Score Checker</h3>
+                </div>
+            </div>
+
+            <p class="text-gray-300 text-sm leading-relaxed mb-5">
+                Most companies use Applicant Tracking Systems to filter out CVs automatically. Upload yours and our AI will instantly score it, highlight weaknesses, and tell you exactly what to fix.
+            </p>
+
+            <!-- Feature list -->
+            <ul class="space-y-2.5 mb-6">
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Instant ATS score</strong> — 0–100 compatibility rating with grade (A–F)</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Supports PDF & DOCX</strong> — upload your existing CV in any format</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Detailed AI feedback</strong> — strengths, improvements, missing keywords</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">Formatting tips</strong> — layout and structure recommendations</span>
+                </li>
+                <li class="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span>
+                    <span><strong class="text-white">2 free analyses</strong> — try before you pay, then just <span class="text-green-400 font-bold">GHS 5</span> per report</span>
+                </li>
+            </ul>
+
+            <!-- Pricing badge -->
+            <div class="glass rounded-xl p-3 flex items-center justify-between mb-5">
+                <span class="text-xs text-gray-400">2 free tries, then</span>
+                <span class="text-green-400 font-black text-xl">GHS 5 / scan</span>
+            </div>
+
+            <a href="./ats.html" class="btn-green w-full text-sm">
+                <span class="material-symbols-outlined text-sm">fact_check</span> Check My ATS Score
+            </a>
         </div>
+
+    </div>
+</section>
+
+<div class="divider mx-8 mb-16"></div>
+
+<!-- How It Works Section -->
+<section class="max-w-4xl mx-auto px-4 pb-20">
+    <div class="text-center mb-12">
+        <h2 class="text-2xl sm:text-3xl font-black mb-3">How It Works</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">From blank page to job-ready in three simple steps.</p>
     </div>
 
-    <!-- Step 3: Work Experience -->
-    <div class="step glass rounded-2xl p-6 mt-4" id="step-2">
-        <div class="flex items-center justify-between mb-1">
-            <h2 class="text-xl font-bold">Work Experience 💼</h2>
-            <button type="button" onclick="aiExperienceTips()" class="ai-suggest-btn" id="ai-exp-tips-btn" title="Get ATS tips for experience section" style="font-size:11px;padding:4px 10px;">✨ ATS Tips</button>
+    <div class="grid md:grid-cols-3 gap-6 mb-16">
+        <!-- Step 1 -->
+        <div class="glass-strong rounded-2xl p-6 text-center">
+            <div class="step-num mx-auto mb-4 bg-blue-500/20 text-blue-400 border border-blue-500/30">1</div>
+            <div class="text-3xl mb-3">✍️</div>
+            <h3 class="font-bold text-base mb-2">Build Your CV</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">Pick a template, fill in your details with AI suggestions, and preview your professional CV — all for free.</p>
         </div>
-        <p class="text-gray-400 text-sm mb-6">Add your work history. (Optional if you're a fresh graduate)</p>
-        <div id="experience-list" class="space-y-4"></div>
-        <button class="add-btn mt-3" onclick="addExperience()">+ Add Experience</button>
-        <div class="flex justify-between mt-6">
-            <button class="btn-secondary" onclick="prevStep(2)">Back</button>
-            <button class="btn-primary" onclick="nextStep(2)">Next: Skills <span class="material-symbols-outlined text-sm" style="vertical-align:middle;">arrow_forward</span></button>
+        <!-- Step 2 -->
+        <div class="glass-strong rounded-2xl p-6 text-center">
+            <div class="step-num mx-auto mb-4 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">2</div>
+            <div class="text-3xl mb-3">🎯</div>
+            <h3 class="font-bold text-base mb-2">Check ATS Score</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">Upload your CV (or download it first) and instantly see how it scores against real-world Applicant Tracking Systems.</p>
         </div>
-    </div>
-
-    <!-- Step 4: Skills -->
-    <div class="step glass rounded-2xl p-6 mt-4" id="step-3">
-        <h2 class="text-xl font-bold mb-1">Skills & Extras ⚡</h2>
-        <p class="text-gray-400 text-sm mb-6">What are you good at?</p>
-        <div class="space-y-4">
-            <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-semibold text-gray-400">Skills (comma-separated) *</label>
-                    <button type="button" onclick="aiSuggestSkills()" class="ai-suggest-btn" id="ai-skills-btn" title="Let AI suggest relevant skills">✨ AI Suggest</button>
-                </div>
-                <input type="text" id="cv-skills" placeholder="e.g. Python, Communication, Project Management, Excel">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Languages</label>
-                <input type="text" id="cv-languages" placeholder="e.g. English (Fluent), French (Basic)">
-            </div>
-            <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-semibold text-gray-400">Certifications / Achievements</label>
-                    <button type="button" onclick="aiSuggestCerts()" class="ai-suggest-btn" id="ai-certs-btn" title="Let AI suggest certifications for your role" style="font-size:11px;padding:4px 10px;">✨ AI Suggest</button>
-                </div>
-                <textarea id="cv-certs" rows="3" placeholder="e.g. Google Data Analytics Certificate, Dean's List 2023..."></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Interests / Hobbies</label>
-                <input type="text" id="cv-interests" placeholder="e.g. Photography, Chess, Volunteering">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-2">References</label>
-                <div class="flex gap-6 mb-3">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="ref-mode" value="upon_request" id="refmode-request" checked onchange="toggleRefMode()">
-                        <span class="text-sm text-gray-300">Available upon request</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="ref-mode" value="list" id="refmode-list" onchange="toggleRefMode()">
-                        <span class="text-sm text-gray-300">List references</span>
-                    </label>
-                </div>
-                <div id="references-list-container" style="display:none;">
-                    <div id="references-list" class="space-y-4"></div>
-                    <button class="add-btn mt-3" onclick="addReference()">+ Add Reference</button>
-                </div>
-            </div>
-        </div>
-        <div class="flex justify-between mt-6">
-            <button class="btn-secondary" onclick="prevStep(3)">Back</button>
-            <button class="btn-primary" onclick="nextStep(3)">Next: Choose Template <span class="material-symbols-outlined text-sm" style="vertical-align:middle;">arrow_forward</span></button>
+        <!-- Step 3 -->
+        <div class="glass-strong rounded-2xl p-6 text-center">
+            <div class="step-num mx-auto mb-4 bg-green-500/20 text-green-400 border border-green-500/30">3</div>
+            <div class="text-3xl mb-3">🚀</div>
+            <h3 class="font-bold text-base mb-2">Apply with Confidence</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">Fix the highlighted issues, download your polished PDF, and send out applications knowing your CV will get through.</p>
         </div>
     </div>
 
-    <!-- Step 5: Template Selection -->
-    <div class="step mt-4" id="step-4">
-        <div class="glass rounded-2xl p-6 mb-4">
-            <h2 class="text-xl font-bold mb-1">Choose Your Template 🎨</h2>
-            <p class="text-gray-400 text-sm">Select a design that reflects your style. Premium templates unlock advanced layouts.</p>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-1" onclick="selectTemplate(1)">
-                <div class="bg-[#1e3a5f] px-4 pt-4 pb-2">
-                    <div class="bg-white rounded h-2 mb-1 w-3/4"></div>
-                    <div class="bg-white/40 rounded h-1.5 w-1/2"></div>
-                </div>
-                <div class="p-4 space-y-2">
-                    <div class="border-b-2 border-[#1e3a5f] pb-1 w-16"><div class="bg-[#1e3a5f] h-2 rounded w-full"></div></div>
-                    <div class="space-y-1">
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-blue-300">Classic Blue</span>
-                        <p class="text-xs text-gray-400">Clean &amp; professional</p>
-                    </div>
-                    <span class="price-badge">GHS 5</span>
-                </div>
-            </div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-2" onclick="selectTemplate(2)">
-                <div class="p-4 border-l-4 border-green-600">
-                    <div class="bg-green-500 rounded h-2 mb-1 w-2/3"></div>
-                    <div class="bg-green-300/40 rounded h-1.5 w-1/2"></div>
-                </div>
-                <div class="p-4 space-y-2">
-                    <div class="text-green-500 text-xs font-bold uppercase tracking-wider">EXPERIENCE</div>
-                    <div class="space-y-1">
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-3/4"></div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-green-300">Modern Green</span>
-                        <p class="text-xs text-gray-400">Fresh &amp; dynamic</p>
-                    </div>
-                    <span class="price-badge">GHS 5</span>
-                </div>
-            </div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-3" onclick="selectTemplate(3)">
-                <div class="bg-gray-900 text-center px-4 pt-4 pb-2">
-                    <div class="bg-white rounded h-2 mb-1 w-1/2 mx-auto"></div>
-                    <div class="bg-white/30 rounded h-1.5 w-1/3 mx-auto"></div>
-                </div>
-                <div class="p-4 space-y-2">
-                    <div class="text-gray-300 text-xs font-bold uppercase tracking-widest border-b border-gray-600 pb-1 w-20">ABOUT</div>
-                    <div class="space-y-1">
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-gray-300">Elegant Dark</span>
-                        <p class="text-xs text-gray-400">Sophisticated &amp; bold</p>
-                    </div>
-                    <span class="price-badge">GHS 8</span>
-                </div>
-            </div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-4" onclick="selectTemplate(4)">
-                <div class="bg-gradient-to-r from-orange-700 to-orange-500 px-4 pt-4 pb-2">
-                    <div class="bg-white rounded h-2 mb-1 w-2/3"></div>
-                    <div class="bg-white/50 rounded h-1.5 w-1/2"></div>
-                </div>
-                <div class="p-4 space-y-2">
-                    <div class="border-l-4 border-orange-500 pl-2">
-                        <div class="bg-orange-500/70 rounded h-1.5 w-16"></div>
-                    </div>
-                    <div class="space-y-1">
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-3/4"></div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-orange-300">Creative Orange</span>
-                        <p class="text-xs text-gray-400">Energetic &amp; eye-catching</p>
-                    </div>
-                    <span class="price-badge">GHS 8</span>
-                </div>
-            </div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden sm:col-span-2" id="tcard-5" onclick="selectTemplate(5)">
-                <div class="p-4 text-center border-b border-gray-600">
-                    <div class="bg-purple-500 rounded h-2 mb-1 w-1/3 mx-auto"></div>
-                    <div class="bg-purple-300/30 rounded h-1.5 w-1/4 mx-auto"></div>
-                </div>
-                <div class="p-4 flex gap-6 items-start">
-                    <div class="flex-1 space-y-1">
-                        <div class="bg-purple-500/70 h-1.5 rounded w-16 mb-2"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
-                    </div>
-                    <div class="flex-1 space-y-1">
-                        <div class="bg-purple-500/70 h-1.5 rounded w-12 mb-2"></div>
-                        <div class="flex flex-wrap gap-1">
-                            <div class="bg-purple-900/60 rounded-full h-4 w-12"></div>
-                            <div class="bg-purple-900/60 rounded-full h-4 w-16"></div>
-                            <div class="bg-purple-900/60 rounded-full h-4 w-10"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-purple-300">Minimalist Purple</span>
-                        <p class="text-xs text-gray-400">Clean, modern &amp; elegant</p>
-                    </div>
-                    <span class="price-badge">GHS 12</span>
-                </div>
-            </div>
-
-            <!-- Premium Templates -->
-            <div class="sm:col-span-2"><p class="text-xs font-bold text-yellow-400 uppercase tracking-widest my-2 flex items-center gap-2"><span>⭐</span> Premium Templates</p></div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-6" onclick="selectTemplate(6)">
-                <div class="bg-gradient-to-r from-[#0f2d52] to-[#1a4a7a] px-4 pt-4 pb-2">
-                    <div class="bg-white rounded h-2 mb-1 w-3/4"></div>
-                    <div class="bg-cyan-400/70 rounded h-1.5 w-1/2"></div>
-                </div>
-                <div class="h-0.5 bg-cyan-400"></div>
-                <div class="p-4 flex gap-3">
-                    <div class="w-1/3 space-y-1">
-                        <div class="bg-cyan-500/70 h-1.5 rounded w-12 mb-2"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-3/4"></div>
-                    </div>
-                    <div class="flex-1 space-y-1">
-                        <div class="border-b border-[#0f2d52] pb-1 w-16"><div class="bg-[#0f2d52] h-1.5 rounded w-full"></div></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                        <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-cyan-300">Executive Navy</span>
-                        <p class="text-xs text-gray-400">Corporate &amp; authoritative</p>
-                    </div>
-                    <span class="price-badge premium">GHS 15</span>
-                </div>
-            </div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden" id="tcard-7" onclick="selectTemplate(7)">
-                <div class="bg-[#1a1a1a] text-center px-4 pt-4 pb-2">
-                    <div class="bg-yellow-400 rounded h-2 mb-1 w-1/2 mx-auto"></div>
-                    <div class="bg-yellow-600/40 rounded h-1.5 w-1/3 mx-auto"></div>
-                </div>
-                <div class="p-4 space-y-2">
-                    <div class="flex items-center gap-2">
-                        <div class="h-0.5 w-6 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
-                        <div class="bg-yellow-600/70 h-1.5 rounded w-16"></div>
-                        <div class="flex-1 h-px bg-gradient-to-r from-yellow-200 to-transparent"></div>
-                    </div>
-                    <div class="bg-gray-600 rounded h-1.5 w-full"></div>
-                    <div class="bg-gray-600 rounded h-1.5 w-4/5"></div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-yellow-300">Luxury Gold</span>
-                        <p class="text-xs text-gray-400">Prestigious &amp; exclusive</p>
-                    </div>
-                    <span class="price-badge premium">GHS 20</span>
-                </div>
-            </div>
-
-            <div class="template-card glass rounded-2xl overflow-hidden sm:col-span-2" id="tcard-8" onclick="selectTemplate(8)">
-                <div class="p-5 bg-gradient-to-r from-indigo-900 via-purple-900 to-fuchsia-900">
-                    <div class="bg-white/90 rounded h-2.5 mb-1.5 w-2/3"></div>
-                    <div class="bg-white/40 rounded h-2 w-1/3"></div>
-                </div>
-                <div class="p-4 flex gap-4 items-start bg-slate-900/40">
-                    <div class="flex-1 space-y-1.5">
-                        <div class="h-5 rounded w-20 bg-gradient-to-r from-indigo-900 to-purple-900 border-l-4 border-indigo-400"></div>
-                        <div class="bg-white/10 rounded-lg h-8 w-full border border-indigo-900/40"></div>
-                    </div>
-                    <div class="flex-1 space-y-1.5">
-                        <div class="h-5 rounded w-16 bg-gradient-to-r from-indigo-900 to-purple-900 border-l-4 border-purple-400"></div>
-                        <div class="flex flex-wrap gap-1">
-                            <div class="rounded-full h-4 w-14 bg-gradient-to-r from-indigo-700 to-purple-700"></div>
-                            <div class="rounded-full h-4 w-16 bg-gradient-to-r from-purple-700 to-fuchsia-700"></div>
-                            <div class="rounded-full h-4 w-10 bg-gradient-to-r from-indigo-700 to-purple-700"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="px-4 pb-4 flex items-end justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-fuchsia-300">Premium Gradient ✨</span>
-                        <p class="text-xs text-gray-400">Most striking • Maximum impact</p>
-                    </div>
-                    <span class="price-badge luxury">GHS 25</span>
-                </div>
-            </div>
-        </div>
-        <div class="flex justify-between">
-            <button class="btn-secondary" onclick="prevStep(4)">Back</button>
-            <button class="btn-primary" onclick="nextStep(4)" id="preview-btn">Preview CV <span class="material-symbols-outlined text-sm" style="vertical-align:middle;">preview</span></button>
-        </div>
-    </div>
-
-    <!-- Step 6: Preview & Pay -->
-    <div class="step mt-4" id="step-5">
-        <div class="glass rounded-2xl p-5 mb-4">
-            <h2 class="text-xl font-bold mb-1">Preview & Download 🚀</h2>
-            <p class="text-gray-400 text-sm" id="preview-subtitle">Your CV looks great! Pay to download your selected template.</p>
-        </div>
-
-        <!-- CV Preview -->
-        <div class="overflow-x-auto mb-4 rounded-2xl shadow-2xl" style="background: white;">
-            <div id="cv-output"></div>
-        </div>
-
-        <!-- Payment Card -->
-        <div class="glass rounded-2xl p-6">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <span id="cv-lock-icon" class="material-symbols-outlined text-green-400" aria-label="Payment required">lock</span>
-                </div>
-                <div>
-                    <h3 class="font-bold">Unlock Download</h3>
-                    <p id="cv-price-label" class="text-xs text-gray-400">One-time fee • Instant download</p>
-                </div>
-                <div class="ml-auto text-right">
-                    <p id="cv-price-display" class="text-2xl font-black text-green-400">GHS 5</p>
-                    <p id="cv-payment-method" class="text-xs text-gray-400">Mobile Money</p>
-                </div>
-            </div>
-            <input type="email" id="pay-email" placeholder="Your email address" class="mb-3">
-            <button id="pay-btn" onclick="initiatePayment()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download
-            </button>
-            <div id="cv-paystack-badge" class="flex items-center justify-center gap-2 mt-3 opacity-60">
-                <img src="https://paystack.com/assets/img/login/paystack_logo.png" class="h-3 grayscale brightness-200" alt="Paystack" onerror="this.style.display='none'">
-                <span class="text-xs text-gray-400">Secured by Paystack</span>
-            </div>
-        </div>
-
-        <div class="flex justify-start mt-4">
-            <button class="btn-secondary" onclick="prevStep(5)">← Change Template</button>
-        </div>
-    </div>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getFirestore, getDoc, doc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
-        authDomain: "az-learner.firebaseapp.com",
-        projectId: "az-learner",
-        storageBucket: "az-learner.firebasestorage.app",
-        messagingSenderId: "12958795950",
-        appId: "1:12958795950:web:326411293864571040453f"
-    };
-
-    const appInstance = initializeApp(firebaseConfig);
-    const db = getFirestore(appInstance);
-    const auth = getAuth(appInstance);
-
-    let currentUserRole = null;
-    let _cvHasPaid = false;
-
-    onAuthStateChanged(auth, async (user) => {
-        _cvHasPaid = false;
-        if (user) {
-            try {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    currentUserRole = userDoc.data().role;
-                }
-            } catch (e) {
-                console.error("Role fetch error:", e);
-            }
-        } else {
-            currentUserRole = null;
-        }
-        window._cvUserRole = currentUserRole;
-        updatePaymentUI();
-    });
-
-    function updatePaymentUI() {
-        const isFree = currentUserRole === 'admin' || currentUserRole === 'ceo';
-        const priceEl = document.getElementById('cv-price-display');
-        const labelEl = document.getElementById('cv-price-label');
-        const methodEl = document.getElementById('cv-payment-method');
-        const iconEl = document.getElementById('cv-lock-icon');
-        const btnEl = document.getElementById('pay-btn');
-        const paystackBadge = document.getElementById('cv-paystack-badge');
-
-        if (!priceEl) return;
-
-        if (isFree) {
-            _cvHasPaid = true;
-            priceEl.textContent = 'FREE';
-            priceEl.className = 'text-2xl font-black text-yellow-400';
-            labelEl.textContent = 'Executive benefit \u2022 Instant download';
-            methodEl.textContent = 'No payment required';
-            iconEl.textContent = 'verified';
-            iconEl.className = 'material-symbols-outlined text-yellow-400';
-            iconEl.setAttribute('aria-label', 'Free download available');
-            if (btnEl) {
-                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> Download CV (Free)';
-                btnEl.className = 'w-full bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-bold py-3 rounded-xl hover:from-yellow-500 hover:to-amber-400 transition flex items-center justify-center gap-2';
-            }
-            if (paystackBadge) paystackBadge.classList.add('hidden');
-        } else {
-            const price = window._cvTemplatePrice || 5;
-            priceEl.textContent = 'GHS ' + price;
-            priceEl.className = 'text-2xl font-black text-green-400';
-            labelEl.textContent = 'One-time fee \u2022 Instant download';
-            methodEl.textContent = 'Mobile Money / Card';
-            iconEl.textContent = 'lock';
-            iconEl.className = 'material-symbols-outlined text-green-400';
-            iconEl.setAttribute('aria-label', 'Payment required');
-            if (btnEl) {
-                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
-                btnEl.className = 'w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2';
-            }
-            if (paystackBadge) paystackBadge.classList.remove('hidden');
-        }
-    }
-    window._updatePaymentUI = updatePaymentUI;
-
-    window.saveCV = async function(cvData, payRef) {
-        try {
-            await addDoc(collection(db, "cv_orders"), {
-                ...cvData,
-                paymentRef: payRef,
-                status: "paid",
-                createdAt: serverTimestamp()
-            });
-        } catch (e) {
-            console.error("CV save error:", e);
-        }
-    };
-
-    // ---- Vertex AI / Gemini Integration ----
-    let aiModel = null;
-    (async () => {
-        try {
-            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
-            const vertexAI = getVertexAI(appInstance);
-            aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
-            window._aiModel = aiModel;
-        } catch (e) {
-            console.warn("Vertex AI not available:", e);
-            window._aiModel = null;
-        }
-    })();
-
-    window._callAI = async function(prompt) {
-        const model = window._aiModel;
-        if (!model) throw new Error("AI model not initialized. Ensure Vertex AI is enabled for this Firebase project.");
-        const result = await model.generateContent(prompt);
-        const response = result.response;
-        return response.text();
-    };
-
-</script>
-
-<script>
-    // ---- State ----
-    let currentStep = 0;
-    let selectedTemplate = 0;
-    let cvPhotoDataUrl = null;
-    const totalSteps = 6;
-
-    // ---- Step Navigation ----
-    window.nextStep = function(from) {
-        if (from === 0 && !validatePersonal()) return;
-        if (from === 3 && !validateSkills()) return;
-        if (from === 4 && selectedTemplate === 0) { showToast("Please select a template first!", "error"); return; }
-        if (from === 4) { renderCV(); }
-        history.pushState({ cvStep: from + 1 }, '');
-        goToStep(from + 1);
-    };
-
-    window.prevStep = function(from) {
-        history.back();
-    };
-
-    // Seed history so the back button from step 0 exits the page naturally
-    history.replaceState({ cvStep: 0 }, '');
-
-    // Handle phone/browser back button between steps
-    window.addEventListener('popstate', function(event) {
-        const step = event.state?.cvStep ?? 0;
-        goToStep(step);
-    });
-
-    function goToStep(n) {
-        document.getElementById('step-' + currentStep).classList.remove('active');
-        currentStep = n;
-        document.getElementById('step-' + currentStep).classList.add('active');
-        updateStepIndicator();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function updateStepIndicator() {
-        for (let i = 0; i < totalSteps; i++) {
-            const el = document.getElementById('si-' + i);
-            if (!el) continue;
-            const circle = el.querySelector('div');
-            const label = el.querySelector('span');
-            if (i < currentStep) {
-                circle.className = 'w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold';
-                circle.innerHTML = '✓';
-                if (label) label.className = 'text-xs mt-1 text-green-400 font-semibold hidden sm:block';
-            } else if (i === currentStep) {
-                circle.className = 'w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold';
-                circle.innerHTML = i + 1;
-                if (label) label.className = 'text-xs mt-1 text-blue-400 font-semibold hidden sm:block';
-            } else {
-                circle.className = 'w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold';
-                circle.innerHTML = i + 1;
-                if (label) label.className = 'text-xs mt-1 text-gray-500 hidden sm:block';
-            }
-            if (i < totalSteps - 1) {
-                const line = document.getElementById('si-line-' + i);
-                if (line) line.className = 'flex-1 h-0.5 mx-1 ' + (i < currentStep ? 'bg-green-500' : 'bg-gray-700');
-            }
-        }
-    }
-
-    // ---- Validation ----
-    function validatePersonal() {
-        const fields = [
-            { id: 'cv-firstname', name: 'First Name' },
-            { id: 'cv-lastname', name: 'Last Name' },
-            { id: 'cv-title', name: 'Professional Title' },
-            { id: 'cv-email', name: 'Email' },
-            { id: 'cv-phone', name: 'Phone' },
-            { id: 'cv-summary', name: 'Summary' }
-        ];
-        for (const f of fields) {
-            if (!document.getElementById(f.id).value.trim()) {
-                showToast(f.name + ' is required!', 'error');
-                document.getElementById(f.id).focus();
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function validateSkills() {
-        if (!document.getElementById('cv-skills').value.trim()) {
-            showToast('Please enter at least one skill!', 'error');
-            return false;
-        }
-        return true;
-    }
-
-    // ---- Education ----
-    let educationCount = 0;
-    window.addEducation = function() {
-        const id = educationCount++;
-        const div = document.createElement('div');
-        div.className = 'glass rounded-xl p-4 space-y-3 relative';
-        div.id = 'edu-' + id;
-        div.innerHTML = `
-            <button class="remove-btn absolute top-3 right-3" onclick="removeItem('edu-${id}')">Remove</button>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Degree/Certificate *</label>
-                    <input type="text" class="edu-degree" placeholder="BSc Computer Science">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Institution *</label>
-                    <input type="text" class="edu-school" placeholder="University of Cape Coast">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Year (Start – End)</label>
-                    <input type="text" class="edu-year" placeholder="2020 – 2024">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Grade / CGPA</label>
-                    <input type="text" class="edu-grade" placeholder="3.8 / 4.0">
-                </div>
-            </div>
-        `;
-        document.getElementById('education-list').appendChild(div);
-    };
-
-    // ---- Experience ----
-    let expCount = 0;
-    window.addExperience = function() {
-        const id = expCount++;
-        const div = document.createElement('div');
-        div.className = 'glass rounded-xl p-4 space-y-3 relative';
-        div.id = 'exp-' + id;
-        div.innerHTML = `
-            <button class="remove-btn absolute top-3 right-3" onclick="removeItem('exp-${id}')">Remove</button>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Job Title *</label>
-                    <input type="text" class="exp-role" placeholder="Software Developer Intern">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Company *</label>
-                    <input type="text" class="exp-company" placeholder="Tech Corp Ltd">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Duration</label>
-                    <input type="text" class="exp-duration" placeholder="Jun 2023 – Aug 2023">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Location</label>
-                    <input type="text" class="exp-location" placeholder="Accra, Ghana">
-                </div>
-            </div>
+    <!-- What is ATS section -->
+    <div class="glass rounded-2xl p-7 mb-10">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-yellow-500/15 flex items-center justify-center text-2xl flex-shrink-0 border border-yellow-500/25">💡</div>
             <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs text-gray-400">Key Responsibilities & Achievements</label>
-                    <button type="button" class="ai-suggest-btn ai-exp-btn" onclick="aiSuggestExpDesc('exp-${id}')" title="Let AI write achievement bullets" style="font-size:11px;padding:4px 10px;">✨ AI Bullets</button>
-                </div>
-                <textarea class="exp-desc" rows="3" placeholder="• Led development of customer portal (React)&#10;• Reduced load time by 40%&#10;• Collaborated with 5-person agile team"></textarea>
+                <h3 class="font-bold text-lg mb-2">What is an ATS?</h3>
+                <p class="text-gray-300 text-sm leading-relaxed mb-3">
+                    An <strong class="text-white">Applicant Tracking System (ATS)</strong> is software used by most companies to automatically scan and filter job applications before a recruiter ever sees them. It looks for specific keywords, formatting, and structure.
+                </p>
+                <p class="text-gray-300 text-sm leading-relaxed">
+                    Studies show that <strong class="text-yellow-400">over 75% of CVs are rejected by ATS</strong> before reaching a human. Our ATS Score Checker analyses your CV the same way these systems do — so you can fix issues before they cost you an interview.
+                </p>
             </div>
-        `;
-        document.getElementById('experience-list').appendChild(div);
-    };
+        </div>
+    </div>
 
-    window.removeItem = function(id) {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-    };
-
-    // ---- References ----
-    let refCounter = 0;
-
-    window.toggleRefMode = function() {
-        const mode = document.querySelector('input[name="ref-mode"]:checked').value;
-        const container = document.getElementById('references-list-container');
-        container.style.display = mode === 'list' ? 'block' : 'none';
-        if (mode === 'list' && document.getElementById('references-list').children.length === 0) {
-            addReference();
-        }
-    };
-
-    window.addReference = function() {
-        refCounter++;
-        const id = 'refentry-' + refCounter;
-        const div = document.createElement('div');
-        div.id = id;
-        div.className = 'p-4 rounded-xl space-y-3';
-        div.style.background = 'rgba(255,255,255,0.05)';
-        div.style.border = '1px solid rgba(255,255,255,0.1)';
-        div.innerHTML = `
-            <div class="flex justify-between items-center mb-1">
-                <span class="text-xs font-semibold text-gray-400">Reference ${refCounter}</span>
-                <button type="button" onclick="removeItem('${id}')" class="remove-btn">Remove</button>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
+    <!-- Why use both -->
+    <div class="glass rounded-2xl p-7">
+        <h3 class="font-bold text-lg mb-5 text-center">Why Use Both Tools Together?</h3>
+        <div class="grid sm:grid-cols-2 gap-4">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-blue-400 text-xl mt-0.5">looks_one</span>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Full Name *</label>
-                    <input type="text" class="ref-name" placeholder="Dr. Jane Mensah" aria-required="true">
+                    <p class="font-semibold text-sm text-white mb-1">Build with best practices built in</p>
+                    <p class="text-gray-400 text-xs leading-relaxed">Our CV Builder already follows ATS-friendly formatting — clean layouts, standard fonts, and structured sections.</p>
                 </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-green-400 text-xl mt-0.5">looks_two</span>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Position / Title</label>
-                    <input type="text" class="ref-position" placeholder="Senior Lecturer">
+                    <p class="font-semibold text-sm text-white mb-1">Verify with the ATS Checker</p>
+                    <p class="text-gray-400 text-xs leading-relaxed">After building, run your CV through the ATS checker to confirm it's optimised for the specific role you're targeting.</p>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-indigo-400 text-xl mt-0.5">looks_3</span>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Organisation</label>
-                    <input type="text" class="ref-company" placeholder="University of Ghana">
+                    <p class="font-semibold text-sm text-white mb-1">Iterate quickly</p>
+                    <p class="text-gray-400 text-xs leading-relaxed">Spotted a missing keyword? Jump back to the builder, add it, download, and re-check — the full loop takes minutes.</p>
                 </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-orange-400 text-xl mt-0.5">looks_4</span>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Phone / Email</label>
-                    <input type="text" class="ref-contact" placeholder="+233 XX XXX XXXX">
+                    <p class="font-semibold text-sm text-white mb-1">Already have a CV? Start with the checker</p>
+                    <p class="text-gray-400 text-xs leading-relaxed">Upload your existing CV first. The checker will flag what's missing so you know exactly what to improve — or rebuild from scratch.</p>
                 </div>
             </div>
-        `;
-        document.getElementById('references-list').appendChild(div);
-    };
+        </div>
+    </div>
+</section>
 
-    // ---- Photo Upload ----
-    window.handlePhotoUpload = function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!allowed.includes(file.type)) { showToast('Only JPG, PNG or WEBP images are allowed!', 'error'); return; }
-        if (file.size > 2 * 1024 * 1024) { showToast('Photo must be under 2 MB!', 'error'); return; }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            cvPhotoDataUrl = e.target.result;
-            const ring = document.getElementById('photo-preview-ring');
-            ring.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = cvPhotoDataUrl;
-            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-            ring.appendChild(img);
-            document.getElementById('photo-remove-btn').style.display = 'inline-block';
-            showToast('Photo uploaded!', 'success');
-        };
-        reader.readAsDataURL(file);
-    };
-
-    window.removePhoto = function() {
-        cvPhotoDataUrl = null;
-        document.getElementById('cv-photo').value = '';
-        const ring = document.getElementById('photo-preview-ring');
-        ring.innerHTML = '<span class="material-symbols-outlined text-gray-400" style="font-size:36px;">person</span>';
-        document.getElementById('photo-remove-btn').style.display = 'none';
-    };
-
-    // ---- Template Selection (with pricing) ----
-    const TEMPLATE_PRICES = { 1: 5, 2: 5, 3: 8, 4: 8, 5: 12, 6: 15, 7: 20, 8: 25 };
-    const TEMPLATE_NAMES = { 1: 'Classic Blue', 2: 'Modern Green', 3: 'Elegant Dark', 4: 'Creative Orange', 5: 'Minimalist Purple', 6: 'Executive Navy', 7: 'Luxury Gold', 8: 'Premium Gradient' };
-
-    window.selectTemplate = function(n) {
-        selectedTemplate = n;
-        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById('tcard-' + n).classList.add('selected');
-        const price = TEMPLATE_PRICES[n] || 5;
-        window._cvTemplatePrice = price;
-        // Update price display directly so it works even if Firebase module is delayed
-        const priceEl = document.getElementById('cv-price-display');
-        const btnEl = document.getElementById('pay-btn');
-        const methodEl = document.getElementById('cv-payment-method');
-        if (!(window._cvUserRole === 'admin' || window._cvUserRole === 'ceo')) {
-            if (priceEl) priceEl.textContent = 'GHS ' + price;
-            if (methodEl) methodEl.textContent = 'Mobile Money / Card';
-            if (btnEl) btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
-        }
-        if (window._updatePaymentUI) window._updatePaymentUI();
-        showToast(TEMPLATE_NAMES[n] + ' selected — GHS ' + price, 'success');
-    };
-
-    // ---- Collect Data ----
-    function collectData() {
-        const education = [];
-        document.querySelectorAll('[id^="edu-"]').forEach(el => {
-            const degree = el.querySelector('.edu-degree')?.value.trim();
-            const school = el.querySelector('.edu-school')?.value.trim();
-            if (degree || school) {
-                education.push({
-                    degree,
-                    school,
-                    year: el.querySelector('.edu-year')?.value.trim(),
-                    grade: el.querySelector('.edu-grade')?.value.trim()
-                });
-            }
-        });
-
-        const experience = [];
-        document.querySelectorAll('[id^="exp-"]').forEach(el => {
-            const role = el.querySelector('.exp-role')?.value.trim();
-            const company = el.querySelector('.exp-company')?.value.trim();
-            if (role || company) {
-                experience.push({
-                    role,
-                    company,
-                    duration: el.querySelector('.exp-duration')?.value.trim(),
-                    location: el.querySelector('.exp-location')?.value.trim(),
-                    desc: el.querySelector('.exp-desc')?.value.trim()
-                });
-            }
-        });
-
-        const references = [];
-        const refMode = document.querySelector('input[name="ref-mode"]:checked')?.value || 'upon_request';
-        if (refMode === 'list') {
-            document.querySelectorAll('[id^="refentry-"]').forEach(el => {
-                const name = el.querySelector('.ref-name')?.value.trim();
-                if (name) {
-                    references.push({
-                        name,
-                        position: el.querySelector('.ref-position')?.value.trim(),
-                        company: el.querySelector('.ref-company')?.value.trim(),
-                        contact: el.querySelector('.ref-contact')?.value.trim()
-                    });
-                }
-            });
-        }
-
-        return {
-            firstName: document.getElementById('cv-firstname').value.trim(),
-            lastName: document.getElementById('cv-lastname').value.trim(),
-            title: document.getElementById('cv-title').value.trim(),
-            email: document.getElementById('cv-email').value.trim(),
-            phone: document.getElementById('cv-phone').value.trim(),
-            location: document.getElementById('cv-location').value.trim(),
-            website: document.getElementById('cv-website').value.trim(),
-            summary: document.getElementById('cv-summary').value.trim(),
-            skills: document.getElementById('cv-skills').value.trim(),
-            languages: document.getElementById('cv-languages').value.trim(),
-            certs: document.getElementById('cv-certs').value.trim(),
-            interests: document.getElementById('cv-interests').value.trim(),
-            education,
-            experience,
-            refMode,
-            references,
-            photoUrl: cvPhotoDataUrl,
-            template: selectedTemplate
-        };
-    }
-
-    // ---- Render CV ----
-    function escHtml(s) {
-        if (!s) return '';
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-    }
-
-    function renderEducation(edu) {
-        if (!edu || edu.length === 0) return '';
-        return edu.map(e => `
-            <div class="cv-item">
-                <div class="cv-item-title">${escHtml(e.degree)}</div>
-                <div class="cv-item-sub">${escHtml(e.school)}${e.year ? ' &nbsp;|&nbsp; ' + escHtml(e.year) : ''}${e.grade ? ' &nbsp;|&nbsp; GPA: ' + escHtml(e.grade) : ''}</div>
-            </div>
-        `).join('');
-    }
-
-    function renderExperience(exp) {
-        if (!exp || exp.length === 0) return '';
-        return exp.map(e => `
-            <div class="cv-item">
-                <div class="cv-item-title">${escHtml(e.role)}</div>
-                <div class="cv-item-sub">${escHtml(e.company)}${e.duration ? ' &nbsp;|&nbsp; ' + escHtml(e.duration) : ''}${e.location ? ' &nbsp;|&nbsp; ' + escHtml(e.location) : ''}</div>
-                ${e.desc ? '<div class="cv-body-text" style="margin-top:4px;">' + escHtml(e.desc) + '</div>' : ''}
-            </div>
-        `).join('');
-    }
-
-    function renderSkills(skills) {
-        if (!skills) return '';
-        return skills.split(',').map(s => s.trim()).filter(Boolean).map(s => `<span class="cv-skill-tag">${escHtml(s)}</span>`).join('');
-    }
-
-    function renderReferences(refs) {
-        if (!refs || refs.length === 0) return '';
-        return refs.map(r => `
-            <div class="cv-item">
-                <div class="cv-item-title">${escHtml(r.name)}</div>
-                ${(r.position || r.company) ? `<div class="cv-item-sub">${[r.position, r.company].filter(Boolean).map(escHtml).join(' &nbsp;|&nbsp; ')}</div>` : ''}
-                ${r.contact ? `<div class="cv-body-text" style="margin-top:2px;">${escHtml(r.contact)}</div>` : ''}
-            </div>
-        `).join('');
-    }
-
-    window.renderCV = function() {
-        const d = collectData();
-        const contactParts = [d.phone, d.email, d.location, d.website].filter(Boolean);
-        const contactStr = contactParts.map(c => escHtml(c)).join(' &nbsp;|&nbsp; ');
-
-        // Photo helpers – validate data URL before use
-        const safeUrl = d.photoUrl && /^data:image\/(jpeg|png|webp);base64,/.test(d.photoUrl) ? d.photoUrl : null;
-        const mkPhoto = (sz, border, extra) => safeUrl
-            ? `<img src="${safeUrl}" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:cover;border:3px solid ${border};flex-shrink:0;${extra||''}" alt="Profile">`
-            : '';
-        const photoRight  = mkPhoto(76, 'rgba(255,255,255,0.65)');
-        const photoLeft   = mkPhoto(76, 'rgba(255,255,255,0.65)');
-        const photoGreen  = mkPhoto(76, '#16a34a');
-        const photoCentre = safeUrl
-            ? `<img src="${safeUrl}" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.65);margin:0 auto 10px;display:block;" alt="Profile">`
-            : '';
-        const photoSidebar = safeUrl
-            ? `<img src="${safeUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.5);margin:0 auto;display:block;" alt="Profile">`
-            : '';
-
-        const eduHtml = d.education.length ? `<div class="cv-section-title">Education</div>${renderEducation(d.education)}` : '';
-        const expHtml = d.experience.length ? `<div class="cv-section-title">Work Experience</div>${renderExperience(d.experience)}` : '';
-        const skillsHtml = d.skills ? `<div class="cv-section-title">Skills</div><div class="cv-skills">${renderSkills(d.skills)}</div>` : '';
-        const langHtml = d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-body-text">${escHtml(d.languages)}</div>` : '';
-        const certHtml = d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : '';
-        const interestHtml = d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-body-text">${escHtml(d.interests)}</div>` : '';
-        const refHtml = d.refMode === 'upon_request'
-            ? `<div class="cv-section-title">References</div><div class="cv-body-text"><em>Available upon request</em></div>`
-            : (d.references && d.references.length ? `<div class="cv-section-title">References</div>${renderReferences(d.references)}` : '');
-
-        const templates = {
-            1: `<div class="cv-preview cv-t1">
-                    <div class="cv-ribbon"></div>
-                    <div class="cv-header">
-                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p></div>
-                        ${photoRight}
-                    </div>
-                    <div class="cv-contact-bar">${contactStr}</div>
-                    <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
-                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae</span></div>
-                </div>`,
-            2: `<div class="cv-preview cv-t2">
-                    <div class="cv-header">
-                        ${photoGreen}
-                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p></div>
-                    </div>
-                    <div class="cv-contact-bar">${contactStr}</div>
-                    <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
-                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)} — ${escHtml(d.title)}</span><span>Curriculum Vitae</span></div>
-                </div>`,
-            3: `<div class="cv-preview cv-t3">
-                    <div class="cv-header">
-                        ${photoCentre}
-                        <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
-                        <p>${escHtml(d.title)}</p>
-                    </div>
-                    <div class="cv-ornament">✦ &nbsp; ${contactStr} &nbsp; ✦</div>
-                    <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
-                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;·&nbsp; ${escHtml(d.title)}</div>
-                </div>`,
-            4: `<div class="cv-preview cv-t4">
-                    <div class="cv-ribbon"></div>
-                    <div class="cv-header">
-                        ${photoLeft}
-                        <div><h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1><p>${escHtml(d.title)}</p><p style="margin-top:6px;font-size:9pt;">${contactStr}</p></div>
-                    </div>
-                    <div class="cv-section-title">Profile</div><div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
-                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae &nbsp;·&nbsp; ${new Date().getFullYear()}</span></div>
-                </div>`,
-            5: `<div class="cv-preview cv-t5">
-                    <div class="cv-t5-wrap">
-                        <div class="cv-t5-sidebar">
-                            ${photoSidebar}
-                            <div style="text-align:center;">
-                                <div style="font-size:14pt;font-weight:bold;color:white;line-height:1.2;">${escHtml(d.firstName)}<br>${escHtml(d.lastName)}</div>
-                                <div style="font-size:9pt;opacity:0.75;margin-top:4px;">${escHtml(d.title)}</div>
-                            </div>
-                            <div>
-                                <div class="t5-section-label">Contact</div>
-                                ${d.phone ? `<div class="t5-contact-item">${escHtml(d.phone)}</div>` : ''}
-                                ${d.email ? `<div class="t5-contact-item">${escHtml(d.email)}</div>` : ''}
-                                ${d.location ? `<div class="t5-contact-item">${escHtml(d.location)}</div>` : ''}
-                                ${d.website ? `<div class="t5-contact-item">${escHtml(d.website)}</div>` : ''}
-                            </div>
-                            ${d.skills ? `<div><div class="t5-section-label">Skills</div><div>${d.skills.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="t5-skill-tag">${escHtml(s)}</span>`).join('')}</div></div>` : ''}
-                            ${d.languages ? `<div><div class="t5-section-label">Languages</div><div style="font-size:8.5pt;opacity:0.9;">${escHtml(d.languages)}</div></div>` : ''}
-                            ${d.interests ? `<div><div class="t5-section-label">Interests</div><div style="font-size:8.5pt;opacity:0.9;">${escHtml(d.interests)}</div></div>` : ''}
-                        </div>
-                        <div class="cv-t5-main">
-                            <div class="cv-section-title" style="margin-top:0;">Profile</div>
-                            <div class="cv-body-text">${escHtml(d.summary)}</div>
-                            ${expHtml}${eduHtml}
-                            ${d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : ''}
-                            ${refHtml}
-                        </div>
-                    </div>
-                </div>`,
-            6: `<div class="cv-preview cv-t6">
-                    <div class="cv-header">
-                        ${mkPhoto(80, 'rgba(6,182,212,0.7)')}
-                        <div style="flex:1;">
-                            <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
-                            <p>${escHtml(d.title)}</p>
-                        </div>
-                    </div>
-                    <div class="cv-teal-bar"></div>
-                    <div class="cv-contact-bar">${contactStr}</div>
-                    <div class="cv-body">
-                        <div class="cv-left">
-                            ${d.skills ? `<div class="cv-section-title">Skills</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${d.skills.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span style="background:#e0f7fa;color:#0e7490;padding:2px 8px;border-radius:10px;font-size:8.5pt;margin-bottom:3px;display:inline-block;">${escHtml(s)}</span>`).join('')}</div>` : ''}
-                            ${d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-body-text">${escHtml(d.languages)}</div>` : ''}
-                            ${d.certs ? `<div class="cv-section-title">Certifications</div><div class="cv-body-text">${escHtml(d.certs)}</div>` : ''}
-                            ${d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-body-text">${escHtml(d.interests)}</div>` : ''}
-                        </div>
-                        <div class="cv-right">
-                            <div class="cv-main-section-title" style="margin-top:0;">Profile</div>
-                            <div class="cv-body-text">${escHtml(d.summary)}</div>
-                            ${d.experience.length ? `<div class="cv-main-section-title">Work Experience</div>${renderExperience(d.experience)}` : ''}
-                            ${d.education.length ? `<div class="cv-main-section-title">Education</div>${renderEducation(d.education)}` : ''}
-                            ${refHtml}
-                        </div>
-                    </div>
-                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>Curriculum Vitae</span></div>
-                </div>`,
-            7: `<div class="cv-preview cv-t7">
-                    <div class="cv-header">
-                        ${safeUrl ? `<img src="${safeUrl}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #d4af37;margin:0 auto 12px;display:block;" alt="Profile">` : ''}
-                        <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
-                        <p>${escHtml(d.title)}</p>
-                    </div>
-                    <div class="cv-gold-divider"></div>
-                    <div class="cv-contact-bar">${contactStr}</div>
-                    <div class="cv-section-title">Professional Profile</div>
-                    <div class="cv-body-text">${escHtml(d.summary)}</div>
-                    ${expHtml}${eduHtml}${skillsHtml}${langHtml}${certHtml}${interestHtml}${refHtml}
-                    <div class="cv-footer">${escHtml(d.firstName)} ${escHtml(d.lastName)} &nbsp;·&nbsp; ${escHtml(d.title)} &nbsp;·&nbsp; ${new Date().getFullYear()}</div>
-                </div>`,
-            8: `<div class="cv-preview cv-t8">
-                    <div class="cv-header">
-                        <div style="display:flex;align-items:center;gap:20px;position:relative;z-index:1;">
-                            ${safeUrl ? `<img src="${safeUrl}" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.5);flex-shrink:0;" alt="Profile">` : ''}
-                            <div>
-                                <h1>${escHtml(d.firstName)} ${escHtml(d.lastName)}</h1>
-                                <p>${escHtml(d.title)}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="cv-contact-chips">
-                        ${[d.phone, d.email, d.location, d.website].filter(Boolean).map(c=>`<span class="cv-chip">${escHtml(c)}</span>`).join('')}
-                    </div>
-                    <div class="cv-section-title">Professional Profile</div>
-                    <div class="cv-card cv-body-text">${escHtml(d.summary)}</div>
-                    ${d.experience.length ? `<div class="cv-section-title">Work Experience</div>${d.experience.map(e=>`<div class="cv-card cv-item"><div class="cv-item-title">${escHtml(e.role)}</div><div class="cv-item-sub">${escHtml(e.company)}${e.duration?' &nbsp;|&nbsp; '+escHtml(e.duration):''}${e.location?' &nbsp;|&nbsp; '+escHtml(e.location):''}</div>${e.desc?'<div class="cv-body-text" style="margin-top:4px;">'+escHtml(e.desc)+'</div>':''}</div>`).join('')}` : ''}
-                    ${d.education.length ? `<div class="cv-section-title">Education</div>${d.education.map(e=>`<div class="cv-card cv-item"><div class="cv-item-title">${escHtml(e.degree)}</div><div class="cv-item-sub">${escHtml(e.school)}${e.year?' &nbsp;|&nbsp; '+escHtml(e.year):''}${e.grade?' &nbsp;|&nbsp; GPA: '+escHtml(e.grade):''}</div></div>`).join('')}` : ''}
-                    ${d.skills ? `<div class="cv-section-title">Skills</div><div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;">${d.skills.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="cv-t8-badge">${escHtml(s)}</span>`).join('')}</div>` : ''}
-                    ${d.languages ? `<div class="cv-section-title">Languages</div><div class="cv-card cv-body-text">${escHtml(d.languages)}</div>` : ''}
-                    ${d.certs ? `<div class="cv-section-title">Certifications &amp; Achievements</div><div class="cv-card cv-body-text">${escHtml(d.certs)}</div>` : ''}
-                    ${d.interests ? `<div class="cv-section-title">Interests</div><div class="cv-card cv-body-text">${escHtml(d.interests)}</div>` : ''}
-                    ${refHtml}
-                    <div class="cv-footer"><span>${escHtml(d.firstName)} ${escHtml(d.lastName)}</span><span>✦ Curriculum Vitae ${new Date().getFullYear()} ✦</span></div>
-                </div>`
-        };
-
-        document.getElementById('cv-output').innerHTML = templates[selectedTemplate] || templates[1];
-    };
-
-    // ---- Payment ----
-    window.initiatePayment = function() {
-        const email = document.getElementById('pay-email').value.trim();
-        if (!email || !email.includes('@')) { showToast('Enter a valid email!', 'error'); return; }
-
-        const btn = document.getElementById('pay-btn');
-        const cvData = collectData();
-        const price = window._cvTemplatePrice || 5;
-        const amountPesewas = price * 100;
-
-        // Free download for admin and CEO
-        if (window._cvUserRole === 'admin' || window._cvUserRole === 'ceo') {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Generating...';
-            const freeRef = 'EXEC_FREE_' + Date.now();
-            if (window.saveCV) {
-                window.saveCV({ ...cvData, email }, freeRef);
-            }
-            showToast('Downloading your CV...', 'success');
-            setTimeout(() => {
-                downloadCV(cvData);
-                btn.disabled = false;
-                btn.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> Download CV (Free)';
-            }, 800);
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Initializing...';
-
-        try {
-            const handler = PaystackPop.setup({
-                key: 'pk_live_a81acbe138e6a3ce8087f4b36a1dd8e64580ffe2',
-                email: email,
-                amount: amountPesewas,
-                currency: 'GHS',
-                channels: ['mobile_money', 'card'],
-                metadata: {
-                    custom_fields: [
-                        { display_name: "Service", variable_name: "service", value: "CV Builder" },
-                        { display_name: "Template", variable_name: "template", value: (TEMPLATE_NAMES[selectedTemplate] || 'CV') }
-                    ]
-                },
-                callback: function(response) {
-                    _cvHasPaid = true;
-                    btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
-                    if (window.saveCV) {
-                        window.saveCV({ ...cvData, email }, response.reference);
-                    }
-                    showToast('Payment successful! Downloading your CV...', 'success');
-                    setTimeout(() => downloadCV(cvData), 800);
-                },
-                onClose: function() {
-                    btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
-                    showToast('Payment cancelled.', 'error');
-                }
-            });
-            handler.openIframe();
-        } catch (err) {
-            console.error('Paystack error:', err);
-            btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
-            showToast('Payment failed. Check your connection.', 'error');
-        }
-    };
-
-    // ---- Download PDF ----
-    function downloadCV() {
-        window.print();
-    }
-
-    // ---- Print payment guard (blocks Ctrl+P / window.print when not paid) ----
-    window.addEventListener('beforeprint', function() {
-        if (!_cvHasPaid) {
-            const cvOutput = document.getElementById('cv-output');
-            if (cvOutput) cvOutput.style.visibility = 'hidden';
-        }
-    });
-    window.addEventListener('afterprint', function() {
-        const cvOutput = document.getElementById('cv-output');
-        if (cvOutput) cvOutput.style.visibility = '';
-        if (!_cvHasPaid) {
-            showToast('Please complete payment to download your CV!', 'error');
-        }
-    });
-
-    // ---- AI Suggestion Helpers ----
-    let _aiCurrentTarget = null;
-    let _aiCurrentPrompt = null;
-    let _aiCustomAccept = null;
-
-    window.aiSuggestSummary = async function() {
-        const btn = document.getElementById('ai-summary-btn');
-        const name = (document.getElementById('cv-firstname').value + ' ' + document.getElementById('cv-lastname').value).trim();
-        const title = document.getElementById('cv-title').value.trim();
-        const existing = document.getElementById('cv-summary').value.trim();
-        if (!title) { showToast('Enter your Professional Title first!', 'error'); return; }
-        _aiCurrentTarget = 'cv-summary';
-        _aiCurrentPrompt = `Write a compelling 3-sentence professional CV summary for a person named "${name || 'the candidate'}" applying as a "${title}". Be specific, confident, and results-oriented. Return ONLY the summary text, no preamble.${existing ? ' Improve this draft: ' + existing : ''}`;
-        openAiModal('Professional Summary Suggestion', _aiCurrentPrompt, btn);
-    };
-
-    window.aiSuggestSkills = async function() {
-        const btn = document.getElementById('ai-skills-btn');
-        const title = document.getElementById('cv-title').value.trim();
-        const existing = document.getElementById('cv-skills').value.trim();
-        if (!title) { showToast('Enter your Professional Title first (Step 1)!', 'error'); return; }
-        _aiCurrentTarget = 'cv-skills';
-        _aiCurrentPrompt = `List 10-14 relevant professional skills for a "${title}" role as a comma-separated list (e.g. Skill1, Skill2, Skill3). Include both hard and soft skills. Return ONLY the comma-separated list.${existing ? ' Existing skills to consider keeping: ' + existing : ''}`;
-        openAiModal('Skills Suggestion', _aiCurrentPrompt, btn);
-    };
-
-    async function openAiModal(title, prompt, btn) {
-        document.getElementById('ai-modal-title').textContent = title;
-        document.getElementById('ai-modal-loading').classList.remove('hidden');
-        document.getElementById('ai-modal-content').classList.add('hidden');
-        document.getElementById('ai-modal-error').classList.add('hidden');
-        document.getElementById('ai-modal').classList.add('open');
-        if (btn) { btn.disabled = true; }
-        try {
-            const text = await window._callAI(prompt);
-            document.getElementById('ai-suggestion-text').value = text.trim();
-            document.getElementById('ai-modal-loading').classList.add('hidden');
-            document.getElementById('ai-modal-content').classList.remove('hidden');
-        } catch (e) {
-            console.error('AI error:', e);
-            document.getElementById('ai-modal-loading').classList.add('hidden');
-            document.getElementById('ai-modal-error').classList.remove('hidden');
-            document.getElementById('ai-error-msg').textContent = 'AI suggestion failed: ' + (e.message || 'Please try again.');
-        } finally {
-            if (btn) { btn.disabled = false; }
-        }
-    }
-
-    window.acceptAiSuggestion = function() {
-        const text = document.getElementById('ai-suggestion-text').value.trim();
-        if (_aiCustomAccept && text) {
-            _aiCustomAccept(text);
-            showToast('AI suggestion applied! ✨', 'success');
-        } else if (_aiCurrentTarget && text) {
-            document.getElementById(_aiCurrentTarget).value = text;
-            showToast('AI suggestion applied! ✨', 'success');
-        }
-        closeAiModal();
-        _aiCustomAccept = null;
-    };
-
-    window.regenerateAiSuggestion = async function() {
-        if (!_aiCurrentPrompt) return;
-        document.getElementById('ai-modal-loading').classList.remove('hidden');
-        document.getElementById('ai-modal-content').classList.add('hidden');
-        document.getElementById('ai-modal-error').classList.add('hidden');
-        try {
-            const text = await window._callAI(_aiCurrentPrompt);
-            document.getElementById('ai-suggestion-text').value = text.trim();
-            document.getElementById('ai-modal-loading').classList.add('hidden');
-            document.getElementById('ai-modal-content').classList.remove('hidden');
-        } catch (e) {
-            document.getElementById('ai-modal-loading').classList.add('hidden');
-            document.getElementById('ai-modal-error').classList.remove('hidden');
-            document.getElementById('ai-error-msg').textContent = 'AI suggestion failed: ' + (e.message || 'Please try again.');
-        }
-    };
-
-    window.closeAiModal = function() {
-        document.getElementById('ai-modal').classList.remove('open');
-        _aiCustomAccept = null;
-    };
-
-    // ---- New AI Suggest: Title ----
-    window.aiSuggestTitle = async function() {
-        const btn = document.getElementById('ai-title-btn');
-        const firstName = document.getElementById('cv-firstname').value.trim();
-        const lastName = document.getElementById('cv-lastname').value.trim();
-        const existing = document.getElementById('cv-title').value.trim();
-        const edu = document.querySelector('.edu-degree')?.value.trim() || '';
-        _aiCurrentTarget = 'cv-title';
-        _aiCurrentPrompt = `Suggest the single best ATS-friendly professional title for a CV. Candidate name: "${(firstName + ' ' + lastName).trim() || 'the candidate'}". ${edu ? 'Education: ' + edu + '.' : ''} ${existing ? 'Current title: ' + existing + ' – refine it.' : 'Suggest an ideal title.'} Return ONLY the job title, no explanation.`;
-        openAiModal('Professional Title Suggestion', _aiCurrentPrompt, btn);
-    };
-
-    // ---- New AI Suggest: Education ATS Tips ----
-    window.aiEducationTips = async function() {
-        const btn = document.getElementById('ai-edu-btn');
-        const title = document.getElementById('cv-title').value.trim();
-        _aiCurrentTarget = null;
-        _aiCustomAccept = null;
-        _aiCurrentPrompt = `Give 4 concise, practical ATS-friendly tips for writing the Education section of a CV${title ? ' for a "' + title + '" role' : ''}. Focus on: what to include, how to format degrees, whether to include GPA, and relevant coursework. Format as a numbered list. Be brief and actionable.`;
-        openAiModal('ATS Tips for Education', _aiCurrentPrompt, btn);
-    };
-
-    // ---- New AI Suggest: Experience ATS Tips ----
-    window.aiExperienceTips = async function() {
-        const btn = document.getElementById('ai-exp-tips-btn');
-        const title = document.getElementById('cv-title').value.trim();
-        _aiCurrentTarget = null;
-        _aiCustomAccept = null;
-        _aiCurrentPrompt = `Give 4 concise, practical ATS-friendly tips for writing the Work Experience section of a CV${title ? ' for a "' + title + '" role' : ''}. Focus on: using action verbs, quantifying achievements, using job-relevant keywords, and formatting bullets. Format as a numbered list. Be brief and actionable.`;
-        openAiModal('ATS Tips for Work Experience', _aiCurrentPrompt, btn);
-    };
-
-    // ---- New AI Suggest: Experience Bullet Points ----
-    window.aiSuggestExpDesc = function(expId) {
-        const expEl = document.getElementById(expId);
-        if (!expEl) return;
-        const role = expEl.querySelector('.exp-role')?.value.trim();
-        const company = expEl.querySelector('.exp-company')?.value.trim();
-        const title = document.getElementById('cv-title').value.trim();
-        const existing = expEl.querySelector('.exp-desc')?.value.trim();
-        if (!role) { showToast('Enter the Job Title for this entry first!', 'error'); return; }
-        const descEl = expEl.querySelector('.exp-desc');
-        const btn = expEl.querySelector('.ai-exp-btn');
-        _aiCurrentTarget = null;
-        _aiCustomAccept = (text) => { if (descEl) descEl.value = text; };
-        _aiCurrentPrompt = `Write 3-4 strong, ATS-optimised achievement bullet points for a "${role}" position${company ? ' at "' + company + '"' : ''}.${title ? ' The candidate\'s overall career target is: ' + title + '.' : ''} Rules: start each bullet with a powerful action verb, quantify results where possible (e.g. "Increased efficiency by 30%"), use industry keywords, keep each bullet under 20 words. Return ONLY the bullets starting with •.${existing ? '\n\nImprove or expand these existing points:\n' + existing : ''}`;
-        openAiModal('Experience Bullet Points', _aiCurrentPrompt, btn);
-    };
-
-    // ---- New AI Suggest: Certifications ----
-    window.aiSuggestCerts = async function() {
-        const btn = document.getElementById('ai-certs-btn');
-        const title = document.getElementById('cv-title').value.trim();
-        const existing = document.getElementById('cv-certs').value.trim();
-        if (!title) { showToast('Enter your Professional Title first (Step 1)!', 'error'); return; }
-        _aiCurrentTarget = 'cv-certs';
-        _aiCurrentPrompt = `List 3-5 of the most valuable and widely recognised certifications or achievements for a "${title}" role. For each, give the certification name and why it matters (one sentence). Format each on a new line starting with •. Return ONLY the list.${existing ? '\n\nExisting certifications (supplement, don\'t repeat): ' + existing : ''}`;
-        openAiModal('Certifications & Achievements Suggestion', _aiCurrentPrompt, btn);
-    };
-
-    // ---- AZ AI Chat ----
-    const AZ_AI_SYSTEM = `You are AZ AI, an expert CV writing coach for AZ Learner. Your role is to help users create perfect ATS-friendly CVs using the AZ Learner CV Builder (6-step process: Personal Info → Education → Work Experience → Skills → Template → Download).
-
-You are knowledgeable about:
-- ATS (Applicant Tracking System) optimisation: keywords, formatting, file types
-- Writing compelling professional summaries and objective statements
-- Structuring work experience with quantifiable achievements and action verbs
-- Choosing the right skills (hard + soft) for specific industries
-- Education section best practices (GPA, relevant coursework, honours)
-- Certifications and professional development that boost CV strength
-- Choosing the right CV template for different industries and seniority levels
-- CV writing conventions for Ghana, Africa, UK, US, and international markets
-- LinkedIn profiles and cover letters as complements to a CV
-
-**CV Template Pricing (GHS):**
-- Classic Blue (Template 1): GHS 5
-- Modern Green (Template 2): GHS 5
-- Elegant Dark (Template 3): GHS 8
-- Creative Orange (Template 4): GHS 8
-- Minimalist Purple (Template 5): GHS 12
-- Executive Navy (Template 6): GHS 15
-- Luxury Gold (Template 7): GHS 20
-- Premium Gradient (Template 8): GHS 25
-
-**ATS Score Checker:**
-AZ Learner also offers a dedicated ATS Score Checker tool at https://azlearner.me/cv/ats.html. Users can upload their CV (PDF, DOCX, or TXT) and receive a detailed ATS compatibility score (0–100) with a grade (A–F), strengths, improvement tips, missing keywords, and formatting feedback — all powered by AI. The first 2 analyses are free; additional analyses cost GHS 5 each via Paystack.
-
-Keep responses concise (3-5 sentences max unless detail is requested), practical, and encouraging. Use bullet points for tips. Always relate advice to the AZ Learner CV builder steps where relevant.`;
-
-    // How many recent history entries to include in the AI prompt and WhatsApp context
-    const MAX_CHAT_HISTORY = 8;
-    const MAX_WHATSAPP_CONTEXT = 6;
-
-    let azAiHistory = [];
-    let azAiTyping = false;
-
-    window.openAzAiChat = function() {
-        document.getElementById('az-ai-chat').classList.add('open');
-        if (azAiHistory.length === 0) {
-            const firstName = document.getElementById('cv-firstname')?.value.trim() || '';
-            const greeting = firstName
-                ? `Hi ${firstName}! 👋 I'm **AZ AI**, your personal CV coach powered by Vertex AI. I'll help you build an ATS-friendly CV that gets you noticed. What would you like help with today?\n\n💡 *Try asking:*\n• How do I write a great summary?\n• What skills should I include?\n• Which template is best for tech jobs?`
-                : `Hi there! 👋 I'm **AZ AI**, your personal CV coach powered by Vertex AI.\n\nI'll guide you step-by-step to create a perfect ATS-friendly CV. What would you like help with?\n\n💡 *Try asking:*\n• How do I make my CV ATS-friendly?\n• How should I list my experience?\n• What's the best template for me?`;
-            appendAzMessage('ai', greeting);
-        }
-        setTimeout(() => document.getElementById('az-chat-input').focus(), 100);
-    };
-
-    window.closeAzAiChat = function() {
-        document.getElementById('az-ai-chat').classList.remove('open');
-    };
-
-    function appendAzMessage(role, text) {
-        const msgs = document.getElementById('az-chat-messages');
-        const div = document.createElement('div');
-        div.className = 'az-chat-msg ' + role;
-        const bubble = document.createElement('div');
-        bubble.className = 'az-chat-bubble';
-        // Basic markdown: **bold**, *italic*, bullet •
-        bubble.innerHTML = text
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-        div.appendChild(bubble);
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
-        azAiHistory.push({ role: role === 'ai' ? 'model' : 'user', parts: [{ text }] });
-    }
-
-    window.sendAzAiMessage = async function() {
-        if (azAiTyping) return;
-        const input = document.getElementById('az-chat-input');
-        const msg = input.value.trim();
-        if (!msg) return;
-        input.value = '';
-        appendAzMessage('user', msg);
-        azAiTyping = true;
-
-        const msgs = document.getElementById('az-chat-messages');
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'az-chat-msg ai';
-        typingDiv.id = 'az-typing';
-        typingDiv.innerHTML = '<div class="az-chat-bubble" style="opacity:0.5;font-style:italic;">AZ AI is thinking…</div>';
-        msgs.appendChild(typingDiv);
-        msgs.scrollTop = msgs.scrollHeight;
-
-        try {
-            const recentHistory = azAiHistory.slice(-MAX_CHAT_HISTORY).map(m =>
-                (m.role === 'user' ? 'User' : 'AZ AI') + ': ' + m.parts[0].text
-            ).join('\n');
-            const fullPrompt = AZ_AI_SYSTEM + '\n\n---\nConversation:\n' + recentHistory + '\n\nRespond as AZ AI:';
-            const reply = await window._callAI(fullPrompt);
-            typingDiv.remove();
-            appendAzMessage('ai', reply.trim());
-        } catch (e) {
-            typingDiv.remove();
-            appendAzMessage('ai', 'Sorry, I\'m having trouble right now. Please try again, or tap **"Chat with a Human on WhatsApp"** below and our team will help you directly. 🙏');
-        } finally {
-            azAiTyping = false;
-            msgs.scrollTop = msgs.scrollHeight;
-        }
-    };
-
-    window.askForHumanHelp = function() {
-        const firstName = document.getElementById('cv-firstname')?.value.trim() || '';
-        const lastName = document.getElementById('cv-lastname')?.value.trim() || '';
-        const name = (firstName + ' ' + lastName).trim() || 'a user';
-
-        const recentMessages = azAiHistory.slice(-MAX_WHATSAPP_CONTEXT).filter(m => m.role === 'user').map(m => m.parts[0].text).join('; ');
-        const issue = recentMessages
-            ? `Hi, I'm ${name}. I need help with my CV on AZ Learner.\n\nMy question: ${recentMessages}`
-            : `Hi, I'm ${name}. I need help with my CV on the AZ Learner CV Builder.`;
-
-        const waUrl = 'https://wa.me/233557535673?text=' + encodeURIComponent(issue);
-        window.open(waUrl, '_blank');
-    };
-
-    // Close AZ AI chat on backdrop click
-    document.getElementById('az-ai-chat').addEventListener('click', function(e) {
-        if (e.target === this) closeAzAiChat();
-    });
-
-    // ---- Toast ----
-    window.showToast = function(msg, type) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = 'show ' + (type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white');
-        setTimeout(() => { t.className = t.className.replace('show',''); }, 3000);
-    };
-
-    // Initialize with one education entry
-    addEducation();
-</script>
+<!-- CTA Banner -->
+<section class="relative overflow-hidden px-4 pb-20">
+    <div class="glow-green" style="bottom: -100px; right: -100px;"></div>
+    <div class="max-w-3xl mx-auto glass-strong rounded-3xl p-10 text-center relative">
+        <div class="text-4xl mb-4">🎓</div>
+        <h2 class="text-2xl sm:text-3xl font-black mb-3">Ready to Land Your Dream Job?</h2>
+        <p class="text-gray-400 mb-8 max-w-lg mx-auto text-sm leading-relaxed">
+            Join thousands of Ghanaian students and graduates who've used AZ Learner's CV tools to stand out in their job search.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="./builder.html" class="btn-primary">
+                <span class="material-symbols-outlined text-sm">edit_document</span> Build My CV — from GHS 5
+            </a>
+            <a href="./ats.html" class="btn-outline">
+                <span class="material-symbols-outlined text-sm">fact_check</span> Check ATS Score — 2 free tries
+            </a>
+        </div>
+    </div>
+</section>
 
 <!-- Footer -->
-<footer class="border-t border-white/5 bg-black/20 backdrop-blur-md pt-16 pb-8">
-    <div class="max-w-7xl mx-auto px-6 text-center">
-        <div class="text-2xl font-black tracking-tight mb-4">AZ LEARNER</div>
-        <p class="text-gray-500 mb-6">UCC • Cape Coast • The World</p>
-        <div class="flex justify-center gap-6 text-sm text-gray-400 mb-6">
-            <a href="../faq.html" class="hover:text-white transition">FAQ</a>
-            <a href="../privacy-policy.html" class="hover:text-white transition">Privacy Policy</a>
-            <a href="../terms-of-service.html" class="hover:text-white transition">Terms of Service</a>
-        </div>
-        <div class="text-sm text-gray-600">
-            &copy; 2026 Francis Pwavwe Production. Powered by Sunlight & Ambition.
-        </div>
-    </div>
+<footer class="text-center pb-10 text-xs text-gray-600 px-4">
+    <div class="divider mx-8 mb-6"></div>
+    <p class="mb-1">
+        <a href="../" class="text-gray-500 hover:text-gray-300 transition">← Back to AZ Learner</a>
+        <span class="mx-2">•</span>
+        <a href="./builder.html" class="text-blue-500 hover:text-blue-300 transition">CV Builder</a>
+        <span class="mx-2">•</span>
+        <a href="./ats.html" class="text-green-500 hover:text-green-300 transition">ATS Checker</a>
+    </p>
+    <p class="mt-2">© 2025 AZ Learner • azlearner.me</p>
 </footer>
 
 </body>
