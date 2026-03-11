@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter to SRC – AZ Learner</title>
+    <meta name="description" content="Official letter from AZ Learner to the Students' Representative Council, University of Cape Coast.">
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
+
+        .letter-paper {
+            background: #fff;
+            color: #1a1a1a;
+            font-family: 'Crimson Pro', Georgia, serif;
+            width: 100%;
+            min-height: 297mm;
+            margin: 0;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lh-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #16325c 60%, #0f2540 100%);
+            color: white;
+            padding: 24px 32px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .lh-logo-wrap { display: flex; align-items: center; gap: 14px; }
+        .lh-logo-img { width: 54px; height: 54px; border-radius: 10px; object-fit: contain; background: white; padding: 4px; }
+        .lh-org-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22pt; font-weight: 800; letter-spacing: 0.5px; line-height: 1; }
+        .lh-org-tagline { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 8.5pt; opacity: 0.75; margin-top: 3px; letter-spacing: 0.5px; }
+        .lh-contact-box { text-align: right; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 8pt; opacity: 0.85; line-height: 1.7; }
+        .lh-stripe { height: 4px; background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6); }
+        .lh-divider { height: 1px; background: #d1d5db; margin: 0 32px; }
+
+        .letter-body { padding: 28px 36px 36px; flex: 1; }
+        .letter-meta { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5pt; color: #374151; margin-bottom: 20px; }
+        .letter-ref { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9pt; font-weight: 700; color: #1e3a5f; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.8px; }
+        .letter-subject { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11pt; font-weight: 700; color: #1a1a1a; text-decoration: underline; margin-bottom: 18px; }
+        .letter-content { font-size: 11pt; line-height: 1.85; color: #1a1a1a; }
+        .letter-content p { margin-bottom: 14px; }
+        .letter-sig { margin-top: 32px; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .letter-sig-line { font-size: 10pt; color: #374151; line-height: 1.7; }
+        .letter-sig-name { font-size: 11pt; font-weight: 700; color: #1e3a5f; margin-top: 8px; }
+        .letter-sig-role { font-size: 9pt; color: #6b7280; }
+
+        .lh-footer {
+            background: #1e3a5f;
+            color: rgba(255,255,255,0.65);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 7.5pt;
+            padding: 8px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.3px;
+        }
+
+        .address-block { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5pt; color: #374151; margin-bottom: 22px; line-height: 1.7; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body { background: #fff !important; margin: 0; padding: 0; }
+            body * { visibility: hidden; }
+            #letter-output, #letter-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            #letter-output { position: fixed; top: 0; left: 0; width: 100%; }
+            .letter-paper { box-shadow: none !important; width: 100% !important; min-height: 297mm !important; margin: 0 !important; }
+            .no-print { display: none !important; }
+        }
+
+        .btn-download {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white; font-weight: 700; padding: 11px 24px;
+            border-radius: 12px; border: none; cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; transition: opacity 0.2s, transform 0.15s;
+        }
+        .btn-download:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #1e293b; border: 1.5px solid #334155;
+            color: #cbd5e1; font-weight: 600; padding: 11px 24px;
+            border-radius: 12px; cursor: pointer; text-decoration: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; transition: all 0.2s;
+        }
+        .btn-back:hover { border-color: #3b82f6; color: #93c5fd; }
+    </style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-slate-800 no-print">
+    <div class="max-w-4xl mx-auto flex items-center justify-between px-5 h-14">
+        <div class="flex items-center gap-3">
+            <img src="../favicon.png" alt="AZ Learner" class="w-8 h-8 rounded-lg object-contain bg-white p-0.5">
+            <span class="font-extrabold text-sm tracking-wide text-white">AZ Learner</span>
+            <span class="hidden sm:inline text-slate-500 text-xs mx-1">·</span>
+            <span class="hidden sm:inline text-slate-400 text-xs font-semibold">Letters</span>
+        </div>
+        <a href="index.html" class="text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1 transition">
+            <span class="material-symbols-outlined text-base">arrow_back</span> All Letters
+        </a>
+    </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- Page header -->
+    <div class="mb-6 no-print">
+        <h1 class="text-2xl font-extrabold leading-tight">Letter to the SRC</h1>
+        <p class="text-slate-400 text-sm mt-1">Official correspondence to the Students' Representative Council, University of Cape Coast.</p>
+    </div>
+
+    <!-- Action bar -->
+    <div class="flex flex-wrap gap-3 mb-6 no-print">
+        <button class="btn-download" onclick="window.print()">
+            <span class="material-symbols-outlined text-sm">download</span>
+            Download as PDF
+        </button>
+        <a href="index.html" class="btn-back">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Back to Letters
+        </a>
+    </div>
+
+    <!-- Letter -->
+    <div id="letter-output">
+        <div class="letter-paper">
+
+            <!-- Letterhead -->
+            <div class="lh-header">
+                <div class="lh-logo-wrap">
+                    <img src="../favicon.png" alt="AZ Learner Logo" class="lh-logo-img" onerror="this.style.display='none'">
+                    <div>
+                        <div class="lh-org-name">AZ Learner</div>
+                        <div class="lh-org-tagline">Empowering Students · Transforming Education</div>
+                    </div>
+                </div>
+                <div class="lh-contact-box">
+                    <div>University of Cape Coast, Ghana</div>
+                    <div>info@azlearner.me</div>
+                    <div>www.azlearner.me</div>
+                </div>
+            </div>
+            <div class="lh-stripe"></div>
+
+            <!-- Letter body -->
+            <div class="letter-body">
+
+                <div class="letter-meta">
+                    <div id="letter-date"></div>
+                </div>
+
+                <div class="address-block">
+                    The President<br>
+                    Students' Representative Council (SRC)<br>
+                    University of Cape Coast<br>
+                    Cape Coast, Central Region<br>
+                    Ghana
+                </div>
+
+                <div class="letter-ref">OFFICIAL CORRESPONDENCE &nbsp;·&nbsp; Ref: AZL/SRC/2025/001</div>
+
+                <div class="letter-subject">
+                    Request for Official Recognition and Collaboration – AZ Learner Student Ed-Tech Platform
+                </div>
+
+                <div class="letter-content">
+                    <p>Dear SRC President,</p>
+
+                    <p>
+                        We write on behalf of <strong>AZ Learner</strong>, a student-driven educational technology platform
+                        founded at the University of Cape Coast, Ghana. AZ Learner is built by UCC students, for UCC
+                        students — providing a suite of free and affordable digital tools designed to enhance academic
+                        performance and campus life.
+                    </p>
+
+                    <p>
+                        Our platform currently offers the following services to students:
+                    </p>
+
+                    <p style="margin-left:20px; line-height:2;">
+                        • <strong>GPA Calculator</strong> — allowing students to track and plan their academic performance;<br>
+                        • <strong>Document Printing</strong> — convenient on-campus printing requests via mobile;<br>
+                        • <strong>Course Chat Groups</strong> — moderated group chats organised by course and level;<br>
+                        • <strong>Leaderboard &amp; XP System</strong> — gamified engagement to encourage consistent learning;<br>
+                        • <strong>Events Board</strong> — a centralised hub for academic and social events on campus;<br>
+                        • <strong>CV Builder</strong> — a guided tool to help students create professional CVs;<br>
+                        • <strong>Ambassador Programme</strong> — empowering student advocates across departments.
+                    </p>
+
+                    <p>
+                        We are writing to respectfully request the <strong>official recognition and endorsement</strong> of AZ Learner
+                        by the Students' Representative Council. Such recognition would greatly strengthen our ability to
+                        serve the student body and would signal to the broader UCC community that AZ Learner is a
+                        trusted, student-endorsed resource.
+                    </p>
+
+                    <p>
+                        We also wish to explore a collaborative partnership with the SRC through which we can
+                        co-promote student welfare initiatives, amplify SRC communications to our growing user base,
+                        and jointly organise events that benefit UCC students. We believe our platform's reach and the
+                        SRC's authority together create a powerful channel for positive student impact.
+                    </p>
+
+                    <p>
+                        We would be honoured to meet with you and the SRC executive at your earliest convenience to
+                        present AZ Learner in full and discuss the terms of a mutually beneficial partnership. We are
+                        flexible with scheduling and can accommodate any time that suits the Council.
+                    </p>
+
+                    <p>
+                        Thank you sincerely for your time and consideration. We look forward to your response.
+                    </p>
+
+                    <div class="letter-sig">
+                        <div class="letter-sig-line">Yours faithfully,</div>
+                        <div style="margin-top:16px;">
+                            <img src="../signature.png" alt="Francis Pwavwe signature" style="height:56px;max-width:160px;display:block;margin-bottom:0;" onerror="this.parentElement.style.display='none'">
+                        </div>
+                        <div style="border-top:1.5px solid #d1d5db;padding-top:6px;display:inline-block;min-width:160px;"></div>
+                        <div class="letter-sig-name">Francis Pwavwe</div>
+                        <div class="letter-sig-role">Founder &amp; CEO</div>
+                        <div class="letter-sig-role" style="margin-top:2px;font-weight:600;">AZ Learner</div>
+                        <div class="letter-sig-role" style="margin-top:2px;">info@azlearner.me &nbsp;·&nbsp; www.azlearner.me</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lh-divider"></div>
+            <div class="lh-footer">
+                <span>AZ Learner · Official Correspondence</span>
+                <span>Ref: AZL/SRC/2025/001</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom action bar -->
+    <div class="flex flex-wrap gap-3 mt-6 no-print">
+        <button class="btn-download" onclick="window.print()">
+            <span class="material-symbols-outlined text-sm">download</span>
+            Download as PDF
+        </button>
+        <a href="index.html" class="btn-back">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Back to Letters
+        </a>
+    </div>
+
+</main>
+
+<script>
+    // Insert today's date
+    (function() {
+        const el = document.getElementById('letter-date');
+        if (el) {
+            const d = new Date();
+            el.textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+    })();
+</script>
+</body>
+</html>
