@@ -187,12 +187,17 @@
             @page { size: A4 portrait; margin: 0; }
             body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
-            #cv-output, #cv-output * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            #cv-output { position: absolute; top: 0; left: 0; width: 100%; }
-            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 !important; page-break-inside: auto; }
+            /* cv-output-6 is in the download step (step-6) and is the print target */
+            #cv-output-6, #cv-output-6 * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            #cv-output-6 { position: absolute; top: 0; left: 0; width: 100%; margin: 0; }
+            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 !important; font-family: Arial, sans-serif !important; page-break-inside: auto; }
             .cv-section { break-inside: avoid; page-break-inside: avoid; }
             .cv-entry { break-inside: avoid; page-break-inside: avoid; }
+            .cv-item { break-inside: avoid; page-break-inside: avoid; }
         }
+        /* Toast */
+        #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); padding: 12px 26px; border-radius: 100px; font-weight: 700; font-size: 0.875rem; z-index: 9999; transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); white-space: nowrap; box-shadow: 0 10px 40px rgba(0,0,0,0.4); pointer-events: none; }
+        #toast.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
@@ -270,7 +275,7 @@
 
 <!-- Header -->
 <header class="sticky top-0 z-50 glass px-4 py-3 flex items-center gap-3">
-    <a href="../index.html" class="text-blue-400 hover:text-blue-300 transition">
+    <a href="./index.html" class="text-blue-400 hover:text-blue-300 transition">
         <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
     </a>
     <div>
@@ -313,6 +318,11 @@
         <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-4"></div>
         <div class="flex flex-col items-center" id="si-5">
             <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">6</div>
+            <span class="text-xs mt-1 text-gray-500 hidden sm:block">Preview</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-gray-700 mx-1" id="si-line-5"></div>
+        <div class="flex flex-col items-center" id="si-6">
+            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">7</div>
             <span class="text-xs mt-1 text-gray-500 hidden sm:block">Download</span>
         </div>
     </div>
@@ -679,11 +689,22 @@
         </div>
     </div>
 
-    <!-- Step 6: Preview & Pay -->
+    <!-- Step 6: Preview (step index 5) -->
     <div class="step mt-4" id="step-5">
         <div class="glass rounded-2xl p-5 mb-4">
-            <h2 class="text-xl font-bold mb-1">Preview & Download 🚀</h2>
-            <p class="text-gray-400 text-sm" id="preview-subtitle">Your CV looks great! Pay to download your selected template.</p>
+            <h2 class="text-xl font-bold mb-1">Your CV Preview 👀</h2>
+            <p class="text-gray-400 text-sm" id="preview-subtitle">Review your CV below, then pay to unlock your high-quality PDF download.</p>
+        </div>
+
+        <!-- ATS Readiness Checklist -->
+        <div class="glass rounded-2xl p-4 mb-4 border border-blue-500/20">
+            <div class="flex items-center gap-2 mb-3">
+                <span style="font-size:1.25rem;">🤖</span>
+                <h3 class="font-semibold text-sm text-blue-300">ATS Readiness Checklist</h3>
+                <span class="ml-auto text-xs text-gray-500">Applicant Tracking System</span>
+            </div>
+            <div id="ats-checklist" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs"></div>
+            <p class="text-xs text-gray-500 mt-3">💡 <a href="./ats.html" class="text-blue-400 hover:underline">Upload your downloaded CV to ATS Checker</a> for a full compatibility score.</p>
         </div>
 
         <!-- CV Preview -->
@@ -692,33 +713,145 @@
         </div>
 
         <!-- Payment Card -->
-        <div class="glass rounded-2xl p-6">
+        <div class="glass rounded-2xl p-6" id="pay-panel">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
                     <span id="cv-lock-icon" class="material-symbols-outlined text-green-400" aria-label="Payment required">lock</span>
                 </div>
                 <div>
-                    <h3 class="font-bold">Unlock Download</h3>
-                    <p id="cv-price-label" class="text-xs text-gray-400">One-time fee • Instant download</p>
+                    <h3 class="font-bold">Unlock Your PDF Download</h3>
+                    <p id="cv-price-label" class="text-xs text-gray-400">One-time fee • Instant ATS-ready PDF</p>
                 </div>
                 <div class="ml-auto text-right">
                     <p id="cv-price-display" class="text-2xl font-black text-green-400">GHS 5</p>
                     <p id="cv-payment-method" class="text-xs text-gray-400">Mobile Money</p>
                 </div>
             </div>
-            <input type="email" id="pay-email" placeholder="Your email address" class="mb-3">
-            <button id="pay-btn" onclick="initiatePayment()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-sm">payments</span> Pay GHS 5 & Download
+            <button id="pay-btn" onclick="openPaymentModal()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">payments</span> <span id="pay-btn-text">Pay GHS 5 & Download</span>
             </button>
             <div id="cv-paystack-badge" class="flex items-center justify-center gap-2 mt-3 opacity-60">
                 <img src="https://paystack.com/assets/img/login/paystack_logo.png" class="h-3 grayscale brightness-200" alt="Paystack" onerror="this.style.display='none'">
-                <span class="text-xs text-gray-400">Secured by Paystack</span>
+                <span class="text-xs text-gray-400">Secured by Paystack • Mobile Money</span>
             </div>
         </div>
 
         <div class="flex justify-start mt-4">
             <button class="btn-secondary" onclick="prevStep(5)">← Change Template</button>
         </div>
+    </div>
+
+    <!-- Step 7: Download (step index 6) -->
+    <div class="step mt-4" id="step-6">
+        <div class="glass rounded-2xl p-8 text-center mb-4">
+            <div style="font-size:4rem;margin-bottom:12px;line-height:1;">🎉</div>
+            <h2 class="text-2xl font-black text-green-400 mb-2">Payment Successful!</h2>
+            <p class="text-gray-300 mb-1">Your ATS-ready CV is unlocked and ready to download.</p>
+            <p class="text-gray-500 text-sm">Text is fully selectable and extractable by any ATS system.</p>
+        </div>
+
+        <!-- CV for Download (filled by JS when navigating here) -->
+        <div class="overflow-x-auto mb-4 rounded-2xl shadow-2xl" style="background: white;">
+            <div id="cv-output-6"></div>
+        </div>
+
+        <!-- Download Card -->
+        <div class="glass rounded-2xl p-6 mb-4">
+            <button onclick="downloadCV()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl hover:from-blue-500 hover:to-indigo-500 transition flex items-center justify-center gap-2 text-base">
+                <span class="material-symbols-outlined">download</span> Download CV as PDF
+            </button>
+            <div class="mt-4 space-y-2">
+                <div class="flex items-center gap-2 text-xs text-green-400">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span>Text fully selectable and extractable — ATS-proof</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-green-400">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span>Print dialog opens — choose <strong style="color:inherit">"Save as PDF"</strong></span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-blue-400">
+                    <span class="material-symbols-outlined text-sm">info</span>
+                    <span>You can download multiple times — your payment is saved.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ATS Checker CTA -->
+        <div class="glass rounded-2xl p-5 border border-blue-500/20 mb-4">
+            <div class="flex items-start gap-4">
+                <div style="font-size:2.5rem;flex-shrink:0;line-height:1;">🤖</div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-sm mb-1">Check Your ATS Score</h3>
+                    <p class="text-xs text-gray-400 mb-3">Upload your downloaded CV to see how it scores with Applicant Tracking Systems. First 2 analyses are free!</p>
+                    <a href="./ats.html" class="btn-primary text-xs py-2 px-4 inline-flex">
+                        <span class="material-symbols-outlined text-sm">fact_check</span> Check ATS Score
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Payment Modal -->
+<div id="payment-modal" role="dialog" aria-modal="true" aria-labelledby="pay-modal-title" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.88); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:linear-gradient(135deg,#0a2540,#1e293b); border:1px solid rgba(34,197,94,0.3); border-radius:24px; padding:28px; max-width:400px; width:100%; box-shadow:0 30px 80px rgba(0,0,0,0.6); max-height:90vh; overflow-y:auto;">
+        <!-- Header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:44px;height:44px;background:rgba(34,197,94,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span class="material-symbols-outlined text-green-400">smartphone</span>
+                </div>
+                <div>
+                    <h3 id="pay-modal-title" style="font-weight:800;font-size:16px;color:white;margin:0;">Mobile Money Payment</h3>
+                    <p style="font-size:11px;color:rgba(255,255,255,0.45);margin:2px 0 0;">Secured by Paystack</p>
+                </div>
+            </div>
+            <button onclick="closePaymentModal()" style="background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;" aria-label="Close">×</button>
+        </div>
+
+        <!-- Amount Display -->
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:16px;padding:18px;text-align:center;margin-bottom:20px;">
+            <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0 0 4px;">Amount Due</p>
+            <p id="pay-modal-amount" style="font-size:2.25rem;font-weight:900;color:#4ade80;line-height:1;margin:0;">GHS 5</p>
+            <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:4px 0 0;">One-time payment • Instant PDF download</p>
+        </div>
+
+        <!-- What you get -->
+        <div style="margin-bottom:18px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#4ade80;">
+                <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                <span>ATS-proof PDF — text fully extractable</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#4ade80;">
+                <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                <span>Professionally designed template</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#4ade80;">
+                <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                <span>Download as many times as you need</span>
+            </div>
+        </div>
+
+        <!-- Form Fields -->
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
+            <div>
+                <label for="pay-modal-email" style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:6px;">Email Address *</label>
+                <input type="email" id="pay-modal-email" placeholder="your@email.com" autocomplete="email">
+            </div>
+            <div>
+                <label for="pay-modal-phone" style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:6px;">Mobile Money Phone *</label>
+                <input type="tel" id="pay-modal-phone" placeholder="+233 XX XXX XXXX" autocomplete="tel">
+                <p style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:4px;">Number linked to your mobile money wallet (MTN/Vodafone/AirtelTigo)</p>
+            </div>
+        </div>
+
+        <!-- Pay Button -->
+        <button id="pay-modal-btn" onclick="initiatePayment()" style="width:100%;background:linear-gradient(135deg,#16a34a,#059669);color:white;font-weight:800;padding:15px 24px;border-radius:14px;border:none;cursor:pointer;font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;margin-bottom:12px;">
+            <span class="material-symbols-outlined" style="font-size:18px;">payments</span>
+            <span id="pay-modal-btn-text">Pay with Mobile Money</span>
+        </button>
+
+        <p style="font-size:11px;text-align:center;color:rgba(255,255,255,0.35);margin:0;">By paying, you agree to our <a href="../terms-of-service.html" style="color:#60a5fa;">Terms of Service</a></p>
     </div>
 </div>
 
@@ -768,6 +901,7 @@
         const methodEl = document.getElementById('cv-payment-method');
         const iconEl = document.getElementById('cv-lock-icon');
         const btnEl = document.getElementById('pay-btn');
+        const btnTextEl = document.getElementById('pay-btn-text');
         const paystackBadge = document.getElementById('cv-paystack-badge');
 
         if (!priceEl) return;
@@ -782,23 +916,23 @@
             iconEl.className = 'material-symbols-outlined text-yellow-400';
             iconEl.setAttribute('aria-label', 'Free download available');
             if (btnEl) {
-                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> Download CV (Free)';
                 btnEl.className = 'w-full bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-bold py-3 rounded-xl hover:from-yellow-500 hover:to-amber-400 transition flex items-center justify-center gap-2';
             }
+            if (btnTextEl) btnTextEl.textContent = 'Download CV (Free)';
             if (paystackBadge) paystackBadge.classList.add('hidden');
         } else {
             const price = window._cvTemplatePrice || 5;
             priceEl.textContent = 'GHS ' + price;
             priceEl.className = 'text-2xl font-black text-green-400';
-            labelEl.textContent = 'One-time fee \u2022 Instant download';
-            methodEl.textContent = 'Mobile Money / Card';
+            labelEl.textContent = 'One-time fee \u2022 Instant ATS-ready PDF';
+            methodEl.textContent = 'Mobile Money';
             iconEl.textContent = 'lock';
             iconEl.className = 'material-symbols-outlined text-green-400';
             iconEl.setAttribute('aria-label', 'Payment required');
             if (btnEl) {
-                btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
                 btnEl.className = 'w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-500 hover:to-emerald-500 transition flex items-center justify-center gap-2';
             }
+            if (btnTextEl) btnTextEl.textContent = 'Pay GHS ' + price + ' & Download';
             if (paystackBadge) paystackBadge.classList.remove('hidden');
         }
     }
@@ -846,14 +980,14 @@
     let currentStep = 0;
     let selectedTemplate = 0;
     let cvPhotoDataUrl = null;
-    const totalSteps = 6;
+    const totalSteps = 7;
 
     // ---- Step Navigation ----
     window.nextStep = function(from) {
         if (from === 0 && !validatePersonal()) return;
         if (from === 3 && !validateSkills()) return;
         if (from === 4 && selectedTemplate === 0) { showToast("Please select a template first!", "error"); return; }
-        if (from === 4) { renderCV(); }
+        if (from === 4) { renderCV(); renderATSChecklist(); }
         history.pushState({ cvStep: from + 1 }, '');
         goToStep(from + 1);
     };
@@ -1102,15 +1236,22 @@
         window._cvTemplatePrice = price;
         // Update price display directly so it works even if Firebase module is delayed
         const priceEl = document.getElementById('cv-price-display');
-        const btnEl = document.getElementById('pay-btn');
+        const btnTextEl = document.getElementById('pay-btn-text');
         const methodEl = document.getElementById('cv-payment-method');
+        const modalAmountEl = document.getElementById('pay-modal-amount');
         if (!(window._cvUserRole === 'admin' || window._cvUserRole === 'ceo')) {
             if (priceEl) priceEl.textContent = 'GHS ' + price;
-            if (methodEl) methodEl.textContent = 'Mobile Money / Card';
-            if (btnEl) btnEl.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
+            if (methodEl) methodEl.textContent = 'Mobile Money';
+            if (btnTextEl) btnTextEl.textContent = 'Pay GHS ' + price + ' & Download';
+            if (modalAmountEl) modalAmountEl.textContent = 'GHS ' + price;
         }
         if (window._updatePaymentUI) window._updatePaymentUI();
-        showToast(TEMPLATE_NAMES[n] + ' selected — GHS ' + price, 'success');
+        // ATS warning for complex/multi-column templates
+        if (n >= 5) {
+            showToast(TEMPLATE_NAMES[n] + ' selected — GHS ' + price + ' ⚠️ Multi-column layout (ATS may struggle)', 'success');
+        } else {
+            showToast(TEMPLATE_NAMES[n] + ' selected — GHS ' + price, 'success');
+        }
     };
 
     // ---- Collect Data ----
@@ -1395,35 +1536,53 @@
         document.getElementById('cv-output').innerHTML = templates[selectedTemplate] || templates[1];
     };
 
+    // ---- Payment Modal ----
+    window.openPaymentModal = function() {
+        const isFree = window._cvUserRole === 'admin' || window._cvUserRole === 'ceo';
+        if (isFree) {
+            _cvHasPaid = true;
+            const cvData = collectData();
+            const freeRef = 'EXEC_FREE_' + Date.now();
+            if (window.saveCV) window.saveCV({ ...cvData, email: 'exec@azlearner.me' }, freeRef);
+            showToast('Preparing your download...', 'success');
+            proceedToDownload();
+            return;
+        }
+        const price = window._cvTemplatePrice || 5;
+        const modalAmountEl = document.getElementById('pay-modal-amount');
+        const modalBtnTextEl = document.getElementById('pay-modal-btn-text');
+        if (modalAmountEl) modalAmountEl.textContent = 'GHS ' + price;
+        if (modalBtnTextEl) modalBtnTextEl.textContent = 'Pay GHS ' + price + ' with Mobile Money';
+        document.getElementById('payment-modal').style.display = 'flex';
+    };
+
+    window.closePaymentModal = function() {
+        document.getElementById('payment-modal').style.display = 'none';
+    };
+
+    // Close payment modal on backdrop click
+    document.getElementById('payment-modal').addEventListener('click', function(e) {
+        if (e.target === this) closePaymentModal();
+    });
+
     // ---- Payment ----
     window.initiatePayment = function() {
-        const email = document.getElementById('pay-email').value.trim();
+        const email = document.getElementById('pay-modal-email').value.trim();
+        const phone = document.getElementById('pay-modal-phone').value.trim();
         if (!email || !email.includes('@')) { showToast('Enter a valid email!', 'error'); return; }
+        if (!phone) { showToast('Enter your mobile money phone number!', 'error'); return; }
 
-        const btn = document.getElementById('pay-btn');
         const cvData = collectData();
         const price = window._cvTemplatePrice || 5;
         const amountPesewas = price * 100;
 
-        // Free download for admin and CEO
-        if (window._cvUserRole === 'admin' || window._cvUserRole === 'ceo') {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Generating...';
-            const freeRef = 'EXEC_FREE_' + Date.now();
-            if (window.saveCV) {
-                window.saveCV({ ...cvData, email }, freeRef);
-            }
-            showToast('Downloading your CV...', 'success');
-            setTimeout(() => {
-                downloadCV(cvData);
-                btn.disabled = false;
-                btn.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> Download CV (Free)';
-            }, 800);
-            return;
-        }
+        // Basic phone sanitization: keep only digits, +, spaces, -, ()
+        const sanitizedPhone = phone.replace(/[^0-9+\s\-()]/g, '').trim();
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Initializing...';
+        const btn = document.getElementById('pay-modal-btn');
+        const btnText = document.getElementById('pay-modal-btn-text');
+        if (btn) btn.disabled = true;
+        if (btnText) btnText.textContent = 'Initializing...';
 
         try {
             const handler = PaystackPop.setup({
@@ -1431,57 +1590,100 @@
                 email: email,
                 amount: amountPesewas,
                 currency: 'GHS',
-                channels: ['mobile_money', 'card'],
+                channels: ['mobile_money'],
                 metadata: {
                     custom_fields: [
                         { display_name: "Service", variable_name: "service", value: "CV Builder" },
-                        { display_name: "Template", variable_name: "template", value: (TEMPLATE_NAMES[selectedTemplate] || 'CV') }
+                        { display_name: "Template", variable_name: "template", value: (TEMPLATE_NAMES[selectedTemplate] || 'CV') },
+                        { display_name: "Phone", variable_name: "phone", value: sanitizedPhone }
                     ]
                 },
                 callback: function(response) {
+                    if (btn) btn.disabled = false;
+                    if (btnText) btnText.textContent = 'Pay GHS ' + price + ' with Mobile Money';
+                    closePaymentModal();
                     _cvHasPaid = true;
-                    btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
-                    if (window.saveCV) {
-                        window.saveCV({ ...cvData, email }, response.reference);
-                    }
-                    showToast('Payment successful! Downloading your CV...', 'success');
-                    setTimeout(() => downloadCV(cvData), 800);
+                    if (window.saveCV) window.saveCV({ ...cvData, email, phone: sanitizedPhone }, response.reference);
+                    showToast('Payment successful! Preparing your download...', 'success');
+                    setTimeout(() => proceedToDownload(), 600);
                 },
                 onClose: function() {
-                    btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
+                    if (btn) btn.disabled = false;
+                    if (btnText) btnText.textContent = 'Pay GHS ' + price + ' with Mobile Money';
                     showToast('Payment cancelled.', 'error');
                 }
             });
             handler.openIframe();
         } catch (err) {
             console.error('Paystack error:', err);
-            btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined text-sm">payments</span> Pay GHS ' + price + ' & Download';
+            if (btn) btn.disabled = false;
+            if (btnText) btnText.textContent = 'Pay GHS ' + price + ' with Mobile Money';
             showToast('Payment failed. Check your connection.', 'error');
         }
     };
 
+    // ---- Proceed to Download Step ----
+    function proceedToDownload() {
+        // Copy CV HTML to the download step output
+        const cvOut = document.getElementById('cv-output');
+        const cvDl = document.getElementById('cv-output-6');
+        if (cvOut && cvDl) cvDl.innerHTML = cvOut.innerHTML;
+        history.pushState({ cvStep: 6 }, '');
+        goToStep(6);
+    }
+
     // ---- Download PDF ----
     function downloadCV() {
+        if (!_cvHasPaid) {
+            showToast('Please complete payment to download your CV!', 'error');
+            return;
+        }
         window.print();
     }
 
     // ---- Print payment guard (blocks Ctrl+P / window.print when not paid) ----
     window.addEventListener('beforeprint', function() {
-        if (!_cvHasPaid) {
-            const cvOutput = document.getElementById('cv-output');
-            if (cvOutput) cvOutput.style.visibility = 'hidden';
+        if (!_cvHasPaid || currentStep !== 6) {
+            const cvOut6 = document.getElementById('cv-output-6');
+            if (cvOut6) cvOut6.style.visibility = 'hidden';
         }
     });
     window.addEventListener('afterprint', function() {
-        const cvOutput = document.getElementById('cv-output');
-        if (cvOutput) cvOutput.style.visibility = '';
+        const cvOut6 = document.getElementById('cv-output-6');
+        if (cvOut6) cvOut6.style.visibility = '';
         if (!_cvHasPaid) {
             showToast('Please complete payment to download your CV!', 'error');
         }
     });
+
+    // ---- ATS Readiness Checklist ----
+    function renderATSChecklist() {
+        const d = collectData();
+        const skillCount = (d.skills || '').split(',').map(s => s.trim()).filter(Boolean).length;
+        const hasEnoughSkills = skillCount >= 3;
+        const isComplexTemplate = selectedTemplate >= 5;
+        const items = [
+            { ok: !!(d.firstName && d.lastName), text: 'Full name included' },
+            { ok: !!(d.email && d.email.includes('@')), text: 'Email address present' },
+            { ok: !!d.phone, text: 'Phone number included' },
+            { ok: !!d.location, text: 'Location specified' },
+            { ok: !!(d.summary && d.summary.length >= 40), text: 'Professional summary (40+ chars)' },
+            { ok: d.education.length > 0, text: 'Education history added' },
+            { ok: hasEnoughSkills, text: hasEnoughSkills ? skillCount + ' skills listed ✓' : 'Add 3+ skills (ATS scans keywords)' },
+            { ok: d.experience.length > 0, text: 'Work experience added', warn: true },
+            { ok: !isComplexTemplate, text: isComplexTemplate ? 'Multi-column layout may reduce ATS score' : 'Single-column ATS-friendly layout', warn: isComplexTemplate }
+        ];
+        const container = document.getElementById('ats-checklist');
+        if (!container) return;
+        container.innerHTML = items.map(item => {
+            const color = item.ok ? 'color:#4ade80;' : (item.warn ? 'color:#fbbf24;' : 'color:#f87171;');
+            const icon = item.ok ? 'check_circle' : (item.warn ? 'warning' : 'cancel');
+            return `<div style="display:flex;align-items:center;gap:6px;${color}">
+                <span class="material-symbols-outlined" style="font-size:14px;flex-shrink:0;">${icon}</span>
+                <span>${escHtml(item.text)}</span>
+            </div>`;
+        }).join('');
+    }
 
     // ---- AI Suggestion Helpers ----
     let _aiCurrentTarget = null;
@@ -1753,8 +1955,13 @@ Keep responses concise (3-5 sentences max unless detail is requested), practical
     window.showToast = function(msg, type) {
         const t = document.getElementById('toast');
         t.textContent = msg;
-        t.className = 'show ' + (type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white');
-        setTimeout(() => { t.className = t.className.replace('show',''); }, 3000);
+        t.style.background = type === 'error'
+            ? 'linear-gradient(135deg,#dc2626,#b91c1c)'
+            : 'linear-gradient(135deg,#16a34a,#059669)';
+        t.style.color = 'white';
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove('show'), 3000);
     };
 
     // Initialize with one education entry
