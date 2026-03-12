@@ -410,6 +410,116 @@
       padding: 24px 0 0;
     }
 
+    /* ── Score Select ── */
+    .score-select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 4px 26px 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2394a3b8' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      transition: opacity 0.2s;
+    }
+    .score-select:hover { opacity: 0.85; }
+    .score-select.score-0 {
+      background-color: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+    }
+    .score-select.score-1 { background-color: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .score-select.score-2 { background-color: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .score-select.score-3 { background-color: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+    .score-select.score-4 { background-color: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+    .score-select.score-5 { background-color: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+
+    /* ── Notes Textarea ── */
+    .notes-textarea {
+      width: 100%;
+      min-height: 80px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #e2e8f0;
+      font-size: 0.82rem;
+      font-family: inherit;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .notes-textarea:focus { border-color: rgba(59,130,246,0.5); border-style: solid; }
+    .notes-textarea::placeholder { color: #64748b; font-style: italic; }
+
+    /* ── Discussion Response Area ── */
+    .response-wrapper { margin-top: 14px; }
+    .response-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .response-textarea {
+      width: 100%;
+      min-height: 100px;
+      background: rgba(59,130,246,0.03);
+      border: 1px solid rgba(59,130,246,0.15);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      font-family: inherit;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .response-textarea:focus { border-color: rgba(59,130,246,0.4); }
+    .response-textarea::placeholder { color: #475569; }
+
+    /* ── Eval Toolbar ── */
+    .eval-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-wrap: wrap;
+    }
+    .save-indicator {
+      font-size: 0.78rem;
+      color: #4ade80;
+      margin-right: auto;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .save-indicator.show { opacity: 1; }
+    .btn-eval {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid;
+      transition: opacity 0.2s;
+    }
+    .btn-eval:hover { opacity: 0.8; }
+    .btn-export { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #93c5fd; }
+    .btn-clear  { background: rgba(239,68,68,0.10);  border-color: rgba(239,68,68,0.25);  color: #f87171; }
+
     @media (max-width: 640px) {
       .member-eval { padding: 24px 18px; }
       .member-eval-header { gap: 14px; }
@@ -491,6 +601,13 @@
         <a class="toc-pill" href="#eval-ibrahim">Ibrahim (Finance)</a>
         <a class="toc-pill" href="#eval-chinedum">Chinedum (Dev)</a>
       </div>
+    </div>
+
+    <!-- ── EVAL TOOLBAR ── -->
+    <div class="eval-toolbar">
+      <span class="save-indicator" id="save-indicator">✓ Saved</span>
+      <button class="btn-eval btn-export" onclick="evalForm.exportSummary()">⬇ Export Summary</button>
+      <button class="btn-eval btn-clear" onclick="evalForm.clearAll()">🗑 Clear All</button>
     </div>
 
     <!-- ── CONTENT ── -->
@@ -1285,6 +1402,8 @@
           history.replaceState({ unlocked: true }, '');
           input.value = '';
           error.textContent = '';
+          // Initialise the interactive evaluation form
+          evalForm.init();
         } else {
           error.textContent = 'Incorrect password. Please try again.';
           input.classList.add('error');
@@ -1315,6 +1434,218 @@
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+
+    // ── Interactive Evaluation Form ──
+    window.evalForm = {
+      STORAGE_KEY: 'azl-eval-form',
+
+      init: function () {
+        this.transformScoreCells();
+        this.transformNoteBoxes();
+        this.addResponseAreas();
+        this.loadSaved();
+        this.bindAutoSave();
+      },
+
+      // Replace static score-pill spans with <select> dropdowns
+      transformScoreCells: function () {
+        document.querySelectorAll('.criteria-table tbody tr').forEach(function (row) {
+          var memberCard = row.closest('.member-eval');
+          var memberId = memberCard ? memberCard.id : 'unknown';
+          var scoreCell = row.querySelector('td:last-child');
+          if (!scoreCell || !scoreCell.querySelector('.score-pill')) return;
+
+          var criterionCell = row.querySelector('td:first-child');
+          var criterionKey = criterionCell
+            ? criterionCell.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
+            : Math.random().toString(36).slice(2);
+
+          var fieldKey = memberId + '-' + criterionKey;
+
+          var select = document.createElement('select');
+          select.className = 'score-select score-0';
+          select.setAttribute('data-field', fieldKey);
+          select.setAttribute('aria-label', 'Score for ' + (criterionCell ? criterionCell.textContent.trim() : 'criterion'));
+          select.innerHTML =
+            '<option value="">— /5</option>' +
+            '<option value="1">1 – Needs Improvement</option>' +
+            '<option value="2">2 – Below Expectations</option>' +
+            '<option value="3">3 – Meets Expectations</option>' +
+            '<option value="4">4 – Exceeds Expectations</option>' +
+            '<option value="5">5 – Outstanding</option>';
+
+          scoreCell.innerHTML = '';
+          scoreCell.appendChild(select);
+        });
+      },
+
+      // Replace static notes-box divs with textareas
+      transformNoteBoxes: function () {
+        document.querySelectorAll('.notes-box').forEach(function (box) {
+          var memberCard = box.closest('.member-eval');
+          var memberId = memberCard ? memberCard.id : 'unknown';
+          var fieldKey = memberId + '-notes';
+
+          var textarea = document.createElement('textarea');
+          textarea.className = 'notes-textarea';
+          textarea.setAttribute('data-field', fieldKey);
+          textarea.setAttribute('placeholder', '📝 Evaluator\'s notes…');
+          textarea.setAttribute('rows', '3');
+          textarea.setAttribute('aria-label', 'Evaluator notes');
+
+          box.parentNode.replaceChild(textarea, box);
+        });
+      },
+
+      // Append a response textarea after each discussion question list
+      addResponseAreas: function () {
+        document.querySelectorAll('.eval-section').forEach(function (section) {
+          if (!section.querySelector('.question-list')) return;
+          var memberCard = section.closest('.member-eval');
+          var memberId = memberCard ? memberCard.id : 'unknown';
+          var fieldKey = memberId + '-responses';
+
+          var wrapper = document.createElement('div');
+          wrapper.className = 'response-wrapper';
+
+          var label = document.createElement('div');
+          label.className = 'response-label';
+          label.textContent = '📋 Recorded responses & key points';
+          wrapper.appendChild(label);
+
+          var textarea = document.createElement('textarea');
+          textarea.className = 'response-textarea';
+          textarea.setAttribute('data-field', fieldKey);
+          textarea.setAttribute('placeholder', 'Enter the member\'s responses and key discussion points here…');
+          textarea.setAttribute('rows', '5');
+          textarea.setAttribute('aria-label', 'Recorded discussion responses');
+          wrapper.appendChild(textarea);
+
+          section.appendChild(wrapper);
+        });
+      },
+
+      // Restore previously saved values from localStorage
+      loadSaved: function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}');
+          document.querySelectorAll('[data-field]').forEach(function (el) {
+            var val = saved[el.getAttribute('data-field')];
+            if (val !== undefined && val !== null) {
+              el.value = val;
+              if (el.tagName === 'SELECT') {
+                el.className = 'score-select score-' + (val || '0');
+              }
+            }
+          });
+        } catch (e) { console.error('[evalForm] Failed to load saved data:', e); }
+      },
+
+      // Persist all field values to localStorage and show the save indicator
+      save: function () {
+        var data = {};
+        document.querySelectorAll('[data-field]').forEach(function (el) {
+          data[el.getAttribute('data-field')] = el.value;
+        });
+        try {
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+        } catch (e) { console.error('[evalForm] Failed to save data:', e); }
+
+        var indicator = document.getElementById('save-indicator');
+        if (indicator) {
+          indicator.classList.add('show');
+          clearTimeout(this._saveTimer);
+          this._saveTimer = setTimeout(function () {
+            indicator.classList.remove('show');
+          }, 1800);
+        }
+      },
+
+      // Auto-save on change/input
+      bindAutoSave: function () {
+        var self = this;
+        document.addEventListener('change', function (e) {
+          if (!e.target.hasAttribute('data-field')) return;
+          if (e.target.tagName === 'SELECT') {
+            e.target.className = 'score-select score-' + (e.target.value || '0');
+          }
+          self.save();
+        });
+        document.addEventListener('input', function (e) {
+          if (e.target.hasAttribute('data-field') && e.target.tagName === 'TEXTAREA') {
+            self.save();
+          }
+        });
+      },
+
+      // Clear all entered data after confirmation
+      clearAll: function () {
+        if (!confirm('Clear all entered scores, notes, and responses? This cannot be undone.')) return;
+        try { localStorage.removeItem(this.STORAGE_KEY); } catch (e) { console.error('[evalForm] Failed to clear data:', e); }
+        document.querySelectorAll('[data-field]').forEach(function (el) {
+          el.value = '';
+          if (el.tagName === 'SELECT') el.className = 'score-select score-0';
+        });
+      },
+
+      // Export evaluation summary as a plain-text file
+      exportSummary: function () {
+        var dateEl = document.getElementById('meeting-date');
+        var lines = [
+          'AZ Learner Team Evaluations',
+          '===========================',
+          'Date: ' + (dateEl ? dateEl.textContent : new Date().toDateString()),
+          ''
+        ];
+
+        document.querySelectorAll('.member-eval').forEach(function (card) {
+          var nameEl = card.querySelector('.eval-member-info h2');
+          var roleEl = card.querySelector('.eval-role-badge');
+          lines.push('## ' + (nameEl ? nameEl.textContent : '') + ' – ' + (roleEl ? roleEl.textContent : ''));
+          lines.push('');
+
+          card.querySelectorAll('.eval-section').forEach(function (section) {
+            var sectionTitleEl = section.querySelector('.eval-section-title');
+            if (sectionTitleEl) {
+              lines.push('### ' + sectionTitleEl.textContent.trim());
+            }
+
+            section.querySelectorAll('.criteria-table tbody tr').forEach(function (row) {
+              var criterion = row.querySelector('td:first-child');
+              var sel = row.querySelector('select.score-select');
+              var score = sel && sel.value ? sel.value + '/5' : 'Not scored';
+              lines.push('  ' + (criterion ? criterion.textContent.trim() : '') + ': ' + score);
+            });
+
+            var responses = section.querySelector('textarea.response-textarea');
+            if (responses && responses.value.trim()) {
+              lines.push('  Responses: ' + responses.value.trim());
+            }
+
+            lines.push('');
+          });
+
+          var notes = card.querySelector('textarea.notes-textarea');
+          if (notes && notes.value.trim()) {
+            lines.push('  Notes: ' + notes.value.trim());
+            lines.push('');
+          }
+
+          lines.push('---');
+          lines.push('');
+        });
+
+        var blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'team-evaluation-' + new Date().toISOString().slice(0, 10) + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    };
   </script>
 
 </body>
