@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AZ Learner Team Evaluations – internal guide for team meeting assessments." />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Team Evaluations | AZ Learner</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../favicon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Team Styles -->
+  <link rel="stylesheet" href="css/team.css" />
+
+  <style>
+    /* ── Password Gate ── */
+    #gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.97);
+      backdrop-filter: blur(8px);
+    }
+    #gate.hidden { display: none; }
+    .gate-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .gate-card .lock-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .gate-card h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .gate-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    .gate-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      text-align: center;
+      outline: none;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.2s;
+    }
+    .gate-input:focus { border-color: var(--brand-blue); }
+    .gate-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--brand-blue), var(--brand-purple));
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .gate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .gate-error {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      min-height: 1.2em;
+    }
+
+    /* ── Page Content ── */
+    #page-content { display: none; }
+    #page-content.visible { display: block; }
+
+    /* ── Evaluation Hero ── */
+    .eval-hero {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+    }
+    .eval-hero .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,171,64,0.12);
+      border: 1px solid rgba(255,171,64,0.25);
+      border-radius: 999px;
+      padding: 0.35rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--brand-orange);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.2rem;
+    }
+    .eval-hero h1 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 0.8rem;
+    }
+    .eval-hero .subtitle {
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 1.5rem;
+      font-size: 1rem;
+    }
+    .meeting-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 10px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.875rem;
+      color: #93c5fd;
+    }
+
+    /* ── How to Use section ── */
+    .how-to-use {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .how-to-use h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .how-to-use ol {
+      padding-left: 1.4rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-size: 0.925rem;
+    }
+    .how-to-use ol li { margin-bottom: 0.4rem; }
+
+    /* ── Rating Key ── */
+    .rating-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 2.5rem;
+    }
+    .rating-key-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+    .r-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .r-dot.r1 { background: #f87171; }
+    .r-dot.r2 { background: #fb923c; }
+    .r-dot.r3 { background: #facc15; }
+    .r-dot.r4 { background: #4ade80; }
+    .r-dot.r5 { background: #60a5fa; }
+
+    /* ── Member Eval Card ── */
+    .eval-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .eval-card-header {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 1.5rem 1.5rem 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      user-select: none;
+    }
+    .eval-card-header:hover { background: rgba(255,255,255,0.02); }
+    .eval-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    .eval-header-info { flex: 1; }
+    .eval-header-info h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+    .eval-header-info .role-tag {
+      font-size: 0.8rem;
+      color: var(--brand-orange);
+      font-weight: 600;
+    }
+    .eval-toggle {
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      transition: transform 0.3s;
+    }
+    .eval-toggle.open { transform: rotate(180deg); }
+
+    .eval-body {
+      display: none;
+      padding: 1.5rem;
+    }
+    .eval-body.open { display: block; }
+
+    /* ── Sections within card ── */
+    .eval-section { margin-bottom: 1.8rem; }
+    .eval-section:last-child { margin-bottom: 0; }
+    .eval-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--brand-blue);
+      margin-bottom: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .eval-section-title.orange { color: var(--brand-orange); }
+    .eval-section-title.purple { color: var(--brand-purple); }
+    .eval-section-title.green { color: #4ade80; }
+    .eval-section-title.red { color: #f87171; }
+
+    /* Criteria table */
+    .criteria-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .criteria-table th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      background: rgba(255,255,255,0.04);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .criteria-table th:last-child { text-align: center; }
+    .criteria-table td {
+      padding: 0.65rem 0.8rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .criteria-table td:last-child { text-align: center; }
+    .criteria-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .criteria-table .weight {
+      background: rgba(255,171,64,0.12);
+      color: var(--brand-orange);
+      border-radius: 6px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .rating-boxes {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+    }
+    .rating-box {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .rating-box:hover { border-color: var(--brand-blue); }
+
+    /* Questions list */
+    .question-list {
+      list-style: none;
+      padding: 0;
+    }
+    .question-list li {
+      display: flex;
+      gap: 0.7rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .question-list li:last-child { border-bottom: none; }
+    .question-list li::before {
+      content: "Q";
+      flex-shrink: 0;
+      background: rgba(59,130,246,0.15);
+      color: #93c5fd;
+      font-weight: 700;
+      font-size: 0.75rem;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      margin-top: 1px;
+    }
+
+    /* Focus areas chips */
+    .focus-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .focus-chip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+    .focus-chip.warn {
+      background: rgba(248,113,113,0.1);
+      border-color: rgba(248,113,113,0.25);
+      color: #fca5a5;
+    }
+    .focus-chip.ok {
+      background: rgba(74,222,128,0.1);
+      border-color: rgba(74,222,128,0.25);
+      color: #86efac;
+    }
+
+    /* Notes textarea */
+    .eval-notes {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.75rem 1rem;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+    .eval-notes:focus { border-color: var(--brand-blue); }
+    .eval-notes::placeholder { color: var(--text-muted); }
+
+    /* Score total bar */
+    .score-bar-wrap {
+      margin-top: 1rem;
+    }
+    .score-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+    .score-bar-track {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-blue), var(--brand-purple));
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* Print button */
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 2rem;
+    }
+    .print-btn:hover { background: rgba(255,255,255,0.1); }
+
+    /* Expand-all toggle */
+    .expand-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 10px;
+      color: #93c5fd;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 2rem;
+      margin-left: 0.5rem;
+    }
+    .expand-btn:hover { background: rgba(59,130,246,0.2); }
+
+    @media print {
+      #gate, .print-btn, .expand-btn, .eval-card-header .eval-toggle { display: none !important; }
+      .eval-body { display: block !important; }
+      .eval-card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-animated" aria-hidden="true"></div>
+
+  <!-- ===== PASSWORD GATE ===== -->
+  <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <div class="gate-card">
+      <div class="lock-icon" aria-hidden="true">🔒</div>
+      <h2 id="gate-title">Internal Access Only</h2>
+      <p>This page contains confidential team evaluation materials. Enter the access password to continue.</p>
+      <input
+        id="gate-input"
+        class="gate-input"
+        type="password"
+        placeholder="Enter password"
+        aria-label="Access password"
+        autocomplete="off"
+        autofocus
+      />
+      <button class="gate-btn" onclick="checkPassword()" aria-label="Unlock page">Unlock</button>
+      <div id="gate-error" class="gate-error" role="alert" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE CONTENT ===== -->
+  <div id="page-content">
+
+    <!-- HEADER -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="site-logo" href="../index.html">AZ LEARNER</a>
+        <nav class="header-nav" aria-label="Site navigation">
+          <a class="nav-back" href="../index.html" aria-label="Back to AZ Learner home">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Home
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+
+        <!-- Back to team -->
+        <a class="btn-back" href="index.html" aria-label="Back to team page">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+          </svg>
+          Back to Team
+        </a>
+
+        <!-- HERO -->
+        <section class="eval-hero">
+          <div class="hero-badge" aria-hidden="true">
+            <span>📋</span>
+            Internal Document
+          </div>
+          <h1>Team <span class="text-gradient">Evaluation Guide</span></h1>
+          <p class="subtitle">
+            Detailed, role-specific evaluation criteria for each team member. Use this guide during the meeting to assess performance, identify strengths, and agree on next steps.
+          </p>
+          <div class="meeting-info">
+            📅 &nbsp;Meeting Evaluation — AZ Learner Core Team
+          </div>
+        </section>
+
+        <!-- HOW TO USE -->
+        <div class="how-to-use">
+          <h2>📌 How to Use This Guide</h2>
+          <ol>
+            <li>Expand each team member's card using the toggle arrow or the <strong>Expand All</strong> button.</li>
+            <li>Work through every evaluation criterion and rate it <strong>1–5</strong> using the rating boxes (click to fill).</li>
+            <li>Ask the listed <strong>Guided Questions</strong> to prompt discussion and gather specific evidence.</li>
+            <li>Record your observations in the <strong>Live Notes</strong> text area for each member.</li>
+            <li>Review <strong>Focus Areas</strong> (red = needs improvement, green = doing well) before wrapping up each member's segment.</li>
+            <li>Use the <strong>Print</strong> button to print or save a PDF of the completed evaluations.</li>
+          </ol>
+        </div>
+
+        <!-- RATING KEY -->
+        <h2 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary);margin-bottom:0.7rem;">Rating Scale</h2>
+        <div class="rating-key" aria-label="Rating scale key">
+          <div class="rating-key-item"><div class="r-dot r1"></div> 1 – Poor / Not evident</div>
+          <div class="rating-key-item"><div class="r-dot r2"></div> 2 – Below expectations</div>
+          <div class="rating-key-item"><div class="r-dot r3"></div> 3 – Meets expectations</div>
+          <div class="rating-key-item"><div class="r-dot r4"></div> 4 – Exceeds expectations</div>
+          <div class="rating-key-item"><div class="r-dot r5"></div> 5 – Outstanding</div>
+        </div>
+
+        <!-- CONTROLS -->
+        <button class="print-btn" onclick="window.print()" aria-label="Print evaluations">
+          🖨️ Print / Save PDF
+        </button>
+        <button class="expand-btn" id="expand-all-btn" onclick="toggleAll()" aria-label="Expand or collapse all member cards">
+          ▾ Expand All
+        </button>
+
+        <!-- ================================================================
+             MEMBER EVALUATIONS
+             ================================================================ -->
+
+        <!-- 1. Francis Pwavwe – Founder & CEO -->
+        <article class="eval-card" id="member-francis">
+          <div class="eval-card-header" onclick="toggleCard('francis')" role="button" aria-expanded="false" aria-controls="body-francis" tabindex="0">
+            <img class="eval-avatar" src="assets/images/francis.jpg" alt="Francis Pwavwe" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Francis Pwavwe</h3>
+              <div class="role-tag">Founder &amp; CEO</div>
+            </div>
+            <span class="eval-toggle" id="toggle-francis" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-francis">
+
+            <!-- Criteria -->
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Francis Pwavwe evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th style="min-width:90px">Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Vision Clarity</strong></td>
+                    <td>Can clearly articulate where AZ Learner is heading in the next 3–6 months, with measurable milestones.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes" data-member="francis" data-criterion="vision">
+                      <div class="rating-box" onclick="setRating(this,1,'francis','vision')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'francis','vision')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'francis','vision')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'francis','vision')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'francis','vision')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Decision-Making Quality</strong></td>
+                    <td>Recent product or operational decisions are well-reasoned, documented, and communicated to the team in a timely manner.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes" data-member="francis" data-criterion="decisions">
+                      <div class="rating-box" onclick="setRating(this,1,'francis','decisions')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'francis','decisions')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'francis','decisions')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'francis','decisions')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'francis','decisions')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Team Leadership &amp; Morale</strong></td>
+                    <td>Team members feel motivated, heard, and supported. Conflicts are resolved constructively. One-on-ones or check-ins happen regularly.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes" data-member="francis" data-criterion="leadership">
+                      <div class="rating-box" onclick="setRating(this,1,'francis','leadership')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'francis','leadership')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'francis','leadership')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'francis','leadership')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'francis','leadership')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Product Ownership</strong></td>
+                    <td>Actively tracks feature progress, user feedback, and platform bugs. Can list the top 3 product priorities right now.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes" data-member="francis" data-criterion="product">
+                      <div class="rating-box" onclick="setRating(this,1,'francis','product')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'francis','product')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'francis','product')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'francis','product')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'francis','product')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Stakeholder Communication</strong></td>
+                    <td>External partners, collaborators, and university contacts are kept informed. Responds promptly and professionally.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes" data-member="francis" data-criterion="comms">
+                      <div class="rating-box" onclick="setRating(this,1,'francis','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'francis','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'francis','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'francis','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'francis','comms')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Guided Questions -->
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>What are the three most important milestones AZ Learner must hit in the next 60 days, and what is the current status of each?</li>
+                <li>Describe a difficult decision you made recently. What data or input informed it, and would you make the same call again?</li>
+                <li>How do you currently measure whether the team is motivated and aligned? What feedback have you received?</li>
+                <li>Which feature on the platform has gotten the best user response recently, and which one is underperforming? What do you plan to do about the underperforming one?</li>
+                <li>How many active users does AZ Learner have right now, and what is the trend over the last month?</li>
+                <li>If you had to name one area where you believe you could improve as a leader, what would it be and what's your plan to improve it?</li>
+              </ul>
+            </div>
+
+            <!-- Focus Areas -->
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">Strategic Planning</span>
+                <span class="focus-chip ok">Product Roadmap</span>
+                <span class="focus-chip warn">Delegation to Team Leads</span>
+                <span class="focus-chip warn">Consistent Check-in Cadence</span>
+                <span class="focus-chip ok">External Partnerships</span>
+                <span class="focus-chip warn">Deadline Accountability</span>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Francis Pwavwe"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+
+        <!-- 2. Andy Anim – Chief of Ambassadors -->
+        <article class="eval-card" id="member-andy">
+          <div class="eval-card-header" onclick="toggleCard('andy')" role="button" aria-expanded="false" aria-controls="body-andy" tabindex="0">
+            <img class="eval-avatar" src="assets/images/andy.png" alt="Andy Anim" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Andy Anim</h3>
+              <div class="role-tag">Chief of Ambassadors</div>
+            </div>
+            <span class="eval-toggle" id="toggle-andy" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-andy">
+
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Andy Anim evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th>Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Ambassador Recruitment</strong></td>
+                    <td>Number of active ambassadors recruited this period compared to target. Quality of onboarding provided.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'andy','recruit')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'andy','recruit')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'andy','recruit')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'andy','recruit')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'andy','recruit')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ambassador Coordination</strong></td>
+                    <td>Ambassadors receive clear briefs, deadlines, and follow-up. Dropouts are identified early and replaced or supported.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'andy','coord')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'andy','coord')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'andy','coord')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'andy','coord')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'andy','coord')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Brand Visibility Outcomes</strong></td>
+                    <td>Can cite concrete results: sign-ups driven, posts shared, events attended, or campuses activated by the ambassador team.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'andy','brand')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'andy','brand')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'andy','brand')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'andy','brand')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'andy','brand')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Interpersonal &amp; Persuasion Skills</strong></td>
+                    <td>Communicates persuasively with both ambassadors and new prospects. Handles pushback calmly and professionally.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'andy','interpersonal')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'andy','interpersonal')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'andy','interpersonal')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'andy','interpersonal')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'andy','interpersonal')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Reporting &amp; Accountability</strong></td>
+                    <td>Provides timely updates to the CEO. Maintains a record of ambassador activities and results (spreadsheet, report, or similar).</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'andy','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'andy','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'andy','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'andy','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'andy','reporting')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>How many ambassadors are currently active, and how many have you onboarded in the last month? What is the retention rate?</li>
+                <li>Walk us through the last ambassador campaign — what was the goal, who was involved, and what was the measurable outcome?</li>
+                <li>What resources or support do ambassadors say they need most? How have you addressed those needs?</li>
+                <li>How do you identify and nurture the best-performing ambassadors? Is there a reward or recognition system in place?</li>
+                <li>What campuses or institutions has the ambassador team activated, and which ones are still untapped?</li>
+                <li>If an ambassador goes silent or underperforms, what is your process for following up or replacing them?</li>
+              </ul>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">People Management</span>
+                <span class="focus-chip ok">Persuasive Communication</span>
+                <span class="focus-chip warn">Structured Activity Tracking</span>
+                <span class="focus-chip warn">Campus Coverage Expansion</span>
+                <span class="focus-chip ok">Onboarding Quality</span>
+                <span class="focus-chip warn">Result Documentation</span>
+              </div>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Andy Anim"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+
+        <!-- 3. Bright Tetteh – Lead Strategic Designer -->
+        <article class="eval-card" id="member-bright">
+          <div class="eval-card-header" onclick="toggleCard('bright')" role="button" aria-expanded="false" aria-controls="body-bright" tabindex="0">
+            <img class="eval-avatar" src="assets/images/bright.png" alt="Bright Tetteh" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Bright Tetteh</h3>
+              <div class="role-tag">Lead Strategic Designer</div>
+            </div>
+            <span class="eval-toggle" id="toggle-bright" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-bright">
+
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Bright Tetteh evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th>Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Design Output Quality</strong></td>
+                    <td>Designs produced are polished, on-brand, and consistent with AZ Learner's visual identity. Ask to view recent work samples during the meeting.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'bright','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'bright','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'bright','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'bright','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'bright','quality')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Strategic Thinking</strong></td>
+                    <td>Design decisions are tied to team goals (e.g., improving user sign-ups, improving podcast discovery). Can explain <em>why</em> visual choices were made.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'bright','strategy')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'bright','strategy')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'bright','strategy')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'bright','strategy')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'bright','strategy')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Podcast Support</strong></td>
+                    <td>Covers/thumbnails for podcast episodes are delivered on time and match the episode's theme. Supports the podcast deployment pipeline.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'bright','podcast')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'bright','podcast')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'bright','podcast')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'bright','podcast')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'bright','podcast')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cross-team Collaboration</strong></td>
+                    <td>Works effectively with marketing (Jude) and comms to align visual materials with campaigns. Responds to design requests within agreed timelines.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'bright','collab')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'bright','collab')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'bright','collab')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'bright','collab')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'bright','collab')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Detail Orientation</strong></td>
+                    <td>Delivered files are production-ready (correct sizes, exported cleanly). Minimal revisions required after handoff.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'bright','detail')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'bright','detail')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'bright','detail')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'bright','detail')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'bright','detail')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>Can you share your most recent design work? Walk us through the brief you received and the decisions you made.</li>
+                <li>How do you ensure your designs align with AZ Learner's brand guidelines and the goals of a specific campaign or feature?</li>
+                <li>How many podcast episode covers or promotional materials have you produced in the last month? Any challenges with turnaround time?</li>
+                <li>When Jude or another team member gives you a design brief, how long does it typically take you to deliver a draft? Is this timeline meeting their needs?</li>
+                <li>What design tools are you using? Are there any tools, subscriptions, or resources that would improve your output?</li>
+                <li>What aspect of the AZ Learner brand do you feel could be visually strengthened, and what would your approach be?</li>
+              </ul>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">Visual Consistency</span>
+                <span class="focus-chip ok">Attention to Detail</span>
+                <span class="focus-chip warn">Design Turnaround Speed</span>
+                <span class="focus-chip warn">Strategic Rationale for Designs</span>
+                <span class="focus-chip ok">Podcast Asset Production</span>
+                <span class="focus-chip warn">Proactive Design Suggestions</span>
+              </div>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Bright Tetteh"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+
+        <!-- 4. Jude Makafui Dzansi – Head of Communications & Marketing -->
+        <article class="eval-card" id="member-jude">
+          <div class="eval-card-header" onclick="toggleCard('jude')" role="button" aria-expanded="false" aria-controls="body-jude" tabindex="0">
+            <img class="eval-avatar" src="https://azlearner.me/team/assets/images/jude.png" alt="Jude Makafui Dzansi" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Jude Makafui Dzansi</h3>
+              <div class="role-tag">Head of Communications &amp; Marketing</div>
+            </div>
+            <span class="eval-toggle" id="toggle-jude" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-jude">
+
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Jude Makafui Dzansi evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th>Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Marketing Campaign Execution</strong></td>
+                    <td>Can describe a campaign run in the last period: objective, audience, channels used, and measurable result (reach, sign-ups, engagement).</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'jude','campaign')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'jude','campaign')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'jude','campaign')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'jude','campaign')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'jude','campaign')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Content Strategy</strong></td>
+                    <td>A consistent posting schedule exists. Content is tailored to student audiences. Key messages are clear and differentiated from competitors.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'jude','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'jude','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'jude','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'jude','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'jude','content')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Social Media Growth</strong></td>
+                    <td>Social media following and engagement metrics (likes, shares, comments, DMs) have trended upward. Knows exact follower counts and growth rate.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'jude','social')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'jude','social')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'jude','social')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'jude','social')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'jude','social')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Internal Communications</strong></td>
+                    <td>Team meeting summaries, announcements, and updates are communicated clearly and on time. Email/message tone is professional and inclusive.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'jude','internal')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'jude','internal')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'jude','internal')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'jude','internal')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'jude','internal')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Brand Voice Consistency</strong></td>
+                    <td>All external messaging (social posts, emails, announcements) uses a consistent, recognisable voice that reflects AZ Learner's student-focused brand.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'jude','voice')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'jude','voice')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'jude','voice')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'jude','voice')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'jude','voice')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>Tell us about the last marketing campaign you ran. What was the goal? What channels did you use? What were the results in numbers?</li>
+                <li>What is our current follower count on each social platform we're active on, and how has that changed in the last 30 days?</li>
+                <li>Do we have a content calendar? If so, how far out is it planned, and what is the posting frequency per platform?</li>
+                <li>How do you decide which messaging or content format performs best? Are you using any analytics tools?</li>
+                <li>How do you coordinate with Andy (ambassadors) and Bright (design) to ensure campaign materials are consistent and on time?</li>
+                <li>What is one communication gap or blind spot you've noticed within the team that you believe we should address?</li>
+              </ul>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">Campaign Planning</span>
+                <span class="focus-chip ok">Student-Oriented Messaging</span>
+                <span class="focus-chip warn">Analytics &amp; Data Use</span>
+                <span class="focus-chip warn">Content Calendar Discipline</span>
+                <span class="focus-chip ok">Internal Comms Clarity</span>
+                <span class="focus-chip warn">Multi-Platform Strategy</span>
+              </div>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Jude Makafui Dzansi"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+
+        <!-- 5. Emmanuel Larbi – Administrative Assistant -->
+        <article class="eval-card" id="member-emmanuel">
+          <div class="eval-card-header" onclick="toggleCard('emmanuel')" role="button" aria-expanded="false" aria-controls="body-emmanuel" tabindex="0">
+            <img class="eval-avatar" src="assets/images/emma.jpg" alt="Emmanuel Larbi" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Emmanuel Larbi</h3>
+              <div class="role-tag">Administrative Assistant</div>
+            </div>
+            <span class="eval-toggle" id="toggle-emmanuel" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-emmanuel">
+
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Emmanuel Larbi evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th>Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>User &amp; Account Management</strong></td>
+                    <td>Issues such as account access problems, user complaints, or data errors are resolved quickly and correctly. Knows how many active users are registered.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'emmanuel','users')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'emmanuel','users')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'emmanuel','users')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'emmanuel','users')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'emmanuel','users')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Content &amp; Resource Administration</strong></td>
+                    <td>Platform resources (schedules, study materials, links) are up-to-date, well-organised, and easily found by students. No outdated content visible to users.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'emmanuel','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'emmanuel','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'emmanuel','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'emmanuel','content')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'emmanuel','content')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>User Engagement Initiatives</strong></td>
+                    <td>Has created or proposed at least one initiative (e.g., weekly challenge, notification campaign, in-app event) to keep students active on the platform.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'emmanuel','engage')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'emmanuel','engage')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'emmanuel','engage')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'emmanuel','engage')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'emmanuel','engage')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Print Order &amp; Service Coordination</strong></td>
+                    <td>Print requests submitted through the platform are tracked, fulfilled, and followed up on. Turnaround times meet stated expectations.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'emmanuel','print')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'emmanuel','print')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'emmanuel','print')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'emmanuel','print')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'emmanuel','print')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Organisation &amp; Reliability</strong></td>
+                    <td>Deadlines are met consistently. Meeting notes, task logs, and admin documentation are maintained and accessible when requested.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'emmanuel','org')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'emmanuel','org')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'emmanuel','org')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'emmanuel','org')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'emmanuel','org')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>How many registered users does AZ Learner currently have? What is the breakdown between active and inactive accounts?</li>
+                <li>In the past month, how many user issues (account problems, access issues, complaints) were raised, and how many were fully resolved? What is the average resolution time?</li>
+                <li>Walk us through how you currently manage and update platform content. Is there a schedule or a checklist you follow?</li>
+                <li>What was the last initiative you drove to improve user engagement? What was the result or user response?</li>
+                <li>How many print orders were placed through the platform recently? Were there any fulfilment issues, and how were they resolved?</li>
+                <li>Are there any administrative processes that are currently manual but could be automated or improved? What would you recommend?</li>
+              </ul>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">User Issue Resolution</span>
+                <span class="focus-chip ok">Content Curation</span>
+                <span class="focus-chip warn">Proactive Engagement Ideas</span>
+                <span class="focus-chip warn">Print Order Follow-through</span>
+                <span class="focus-chip ok">Record Keeping</span>
+                <span class="focus-chip warn">Process Documentation</span>
+              </div>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Emmanuel Larbi"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+
+        <!-- 6. Ibrahim Abaabe – Head of Finance -->
+        <article class="eval-card" id="member-ibrahim">
+          <div class="eval-card-header" onclick="toggleCard('ibrahim')" role="button" aria-expanded="false" aria-controls="body-ibrahim" tabindex="0">
+            <img class="eval-avatar" src="https://azlearner.me/team/assets/images/ibrahim.png" alt="Ibrahim Abaabe" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Ibrahim Abaabe</h3>
+              <div class="role-tag">Head of Finance</div>
+            </div>
+            <span class="eval-toggle" id="toggle-ibrahim" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-ibrahim">
+
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Ibrahim Abaabe evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th>Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Financial Record Accuracy</strong></td>
+                    <td>Income (CV sales, print services, subscriptions) and expenditure records are up-to-date, balanced, and can be presented in the meeting with specific figures.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'ibrahim','records')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'ibrahim','records')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'ibrahim','records')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'ibrahim','records')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'ibrahim','records')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Budget Management</strong></td>
+                    <td>A budget exists for the current period. Spending is tracked against it. Any overspend or underspend is flagged proactively with an explanation.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'ibrahim','budget')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'ibrahim','budget')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'ibrahim','budget')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'ibrahim','budget')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'ibrahim','budget')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Revenue Forecasting</strong></td>
+                    <td>Has a realistic revenue projection for the next quarter based on current trends. Can identify the top 1–2 revenue drivers for AZ Learner.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'ibrahim','forecast')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'ibrahim','forecast')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'ibrahim','forecast')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'ibrahim','forecast')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'ibrahim','forecast')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Risk Identification</strong></td>
+                    <td>Has identified at least one financial risk (e.g., Paystack fee impact, irregular revenue) and proposed a mitigation strategy.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'ibrahim','risk')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'ibrahim','risk')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'ibrahim','risk')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'ibrahim','risk')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'ibrahim','risk')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Financial Reporting to CEO</strong></td>
+                    <td>Regular financial summaries (weekly or bi-weekly) are shared with Francis. Reports are clear, accurate, and include a brief narrative alongside the numbers.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'ibrahim','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'ibrahim','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'ibrahim','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'ibrahim','reporting')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'ibrahim','reporting')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>What is AZ Learner's total revenue to date, and what is the breakdown by revenue stream (CV builder, print services, subscriptions, other)?</li>
+                <li>What are our current monthly operational costs? Are we currently operating at a surplus, break-even, or deficit?</li>
+                <li>What is your revenue projection for the next 3 months, and what assumptions underpin it?</li>
+                <li>Have you identified any financial risks in the near term? What is your mitigation plan?</li>
+                <li>How often do you submit financial reports to Francis, and what format do those reports take?</li>
+                <li>Are there any financial tools (spreadsheets, accounting software) we should be using but aren't? What improvements would you recommend to our financial processes?</li>
+              </ul>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">Numerical Accuracy</span>
+                <span class="focus-chip ok">Detail Orientation</span>
+                <span class="focus-chip warn">Proactive Financial Reporting</span>
+                <span class="focus-chip warn">Budget Creation &amp; Tracking</span>
+                <span class="focus-chip ok">Risk Awareness</span>
+                <span class="focus-chip warn">Revenue Diversification Ideas</span>
+              </div>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Ibrahim Abaabe"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+
+        <!-- 7. Chinedum Okonkwo Udeaja – Developer -->
+        <article class="eval-card" id="member-chinedum">
+          <div class="eval-card-header" onclick="toggleCard('chinedum')" role="button" aria-expanded="false" aria-controls="body-chinedum" tabindex="0">
+            <img class="eval-avatar" src="https://azlearner.me/team/assets/images/chinedum.png" alt="Chinedum Okonkwo Udeaja" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-header-info">
+              <h3>Chinedum Okonkwo Udeaja</h3>
+              <div class="role-tag">Developer</div>
+            </div>
+            <span class="eval-toggle" id="toggle-chinedum" aria-hidden="true">▾</span>
+          </div>
+          <div class="eval-body" id="body-chinedum">
+
+            <div class="eval-section">
+              <div class="eval-section-title">📊 Evaluation Criteria</div>
+              <table class="criteria-table" aria-label="Chinedum Okonkwo Udeaja evaluation criteria">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>What to Look For</th>
+                    <th>Weight</th>
+                    <th style="min-width:120px">Rating (1–5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Feature Delivery</strong></td>
+                    <td>Features or tasks assigned in the last period were delivered on time and fully functional. Count any incomplete or overdue items.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'chinedum','delivery')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'chinedum','delivery')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'chinedum','delivery')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'chinedum','delivery')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'chinedum','delivery')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Code Quality</strong></td>
+                    <td>Code is readable, consistent with existing project conventions (vanilla HTML/CSS/JS, CDN-only), and free from obvious bugs or regressions at the time of delivery.</td>
+                    <td><span class="weight">25%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'chinedum','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'chinedum','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'chinedum','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'chinedum','quality')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'chinedum','quality')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Bug Identification &amp; Fixing</strong></td>
+                    <td>Bugs discovered by users or other team members are diagnosed quickly and resolved with minimal side effects. Has a log or list of known issues.</td>
+                    <td><span class="weight">20%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'chinedum','bugs')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'chinedum','bugs')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'chinedum','bugs')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'chinedum','bugs')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'chinedum','bugs')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Communication with Team</strong></td>
+                    <td>Proactively communicates blockers, progress updates, and technical constraints to Francis and/or Emmanuel. Does not go silent when behind on work.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'chinedum','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'chinedum','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'chinedum','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'chinedum','comms')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'chinedum','comms')"></div>
+                    </div></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Initiative &amp; Self-Learning</strong></td>
+                    <td>Has proactively learned a new technique, proposed an improvement, or implemented something outside the direct task list to enhance the platform.</td>
+                    <td><span class="weight">15%</span></td>
+                    <td><div class="rating-boxes">
+                      <div class="rating-box" onclick="setRating(this,1,'chinedum','initiative')"></div>
+                      <div class="rating-box" onclick="setRating(this,2,'chinedum','initiative')"></div>
+                      <div class="rating-box" onclick="setRating(this,3,'chinedum','initiative')"></div>
+                      <div class="rating-box" onclick="setRating(this,4,'chinedum','initiative')"></div>
+                      <div class="rating-box" onclick="setRating(this,5,'chinedum','initiative')"></div>
+                    </div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title orange">💬 Guided Questions to Ask</div>
+              <ul class="question-list">
+                <li>What features or tasks were you assigned in the last period? Which were completed, which are in progress, and which are blocked — and why?</li>
+                <li>Walk us through a piece of code you wrote recently. What problem does it solve and how does it work?</li>
+                <li>Are there any known bugs in the platform right now? Walk us through each one: severity, root cause, and your fix plan.</li>
+                <li>When you hit a blocker (a feature you don't know how to implement, a bug you can't diagnose), what is your process? Do you ask for help early enough?</li>
+                <li>Have you identified any technical improvements to the AZ Learner codebase that would make development faster or the platform more reliable? What are they?</li>
+                <li>What is one thing you've learned recently (a coding technique, a Firebase feature, a browser API) that you plan to apply to the project?</li>
+              </ul>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title green">🎯 Focus Areas to Watch</div>
+              <div class="focus-chips">
+                <span class="focus-chip ok">Front-end Development</span>
+                <span class="focus-chip ok">Problem Solving</span>
+                <span class="focus-chip warn">Deadline Adherence</span>
+                <span class="focus-chip warn">Proactive Blocker Communication</span>
+                <span class="focus-chip ok">Attention to Detail</span>
+                <span class="focus-chip warn">Code Documentation</span>
+              </div>
+            </div>
+
+            <div class="eval-section">
+              <div class="eval-section-title purple">📝 Live Notes</div>
+              <textarea class="eval-notes" placeholder="Record observations, quotes, and action items here during the meeting…" aria-label="Live notes for Chinedum Okonkwo Udeaja"></textarea>
+            </div>
+
+          </div>
+        </article>
+
+        <!-- FOOTER NOTE -->
+        <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-top:2rem;margin-bottom:3rem;">
+          🔒 This document is confidential. Do not share outside the AZ Learner core team.
+        </p>
+
+      </div><!-- /.container -->
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer" role="contentinfo">
+      <p>Built by the <a href="../index.html">AZ Learner Team</a> &mdash; helping students learn smarter.</p>
+    </footer>
+
+  </div><!-- /#page-content -->
+
+
+  <script>
+    /* ── Ratings state ── */
+    const ratings = {};
+
+    /* ── Password gate ── */
+    const CORRECT_PASSWORD = 'AKWAABA';
+
+    function checkPassword() {
+      const input = document.getElementById('gate-input');
+      const errorEl = document.getElementById('gate-error');
+      const val = input.value.trim().toUpperCase();
+      if (val === CORRECT_PASSWORD) {
+        document.getElementById('gate').classList.add('hidden');
+        document.getElementById('page-content').classList.add('visible');
+        input.value = '';
+        errorEl.textContent = '';
+      } else {
+        errorEl.textContent = 'Incorrect password. Please try again.';
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    /* Allow pressing Enter in the password field */
+    document.getElementById('gate-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkPassword();
+    });
+
+    /* ── Card toggle ── */
+    function toggleCard(id) {
+      const body = document.getElementById('body-' + id);
+      const toggle = document.getElementById('toggle-' + id);
+      const header = body.previousElementSibling;
+      const isOpen = body.classList.contains('open');
+      body.classList.toggle('open', !isOpen);
+      toggle.classList.toggle('open', !isOpen);
+      header.setAttribute('aria-expanded', String(!isOpen));
+    }
+
+    /* Keyboard support for accordion headers */
+    document.querySelectorAll('.eval-card-header').forEach(function(header) {
+      header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
+    });
+
+    /* ── Expand / Collapse All ── */
+    let allExpanded = false;
+    function toggleAll() {
+      const members = ['francis','andy','bright','jude','emmanuel','ibrahim','chinedum'];
+      allExpanded = !allExpanded;
+      members.forEach(id => {
+        const body = document.getElementById('body-' + id);
+        const toggle = document.getElementById('toggle-' + id);
+        const header = body.previousElementSibling;
+        body.classList.toggle('open', allExpanded);
+        toggle.classList.toggle('open', allExpanded);
+        header.setAttribute('aria-expanded', String(allExpanded));
+      });
+      document.getElementById('expand-all-btn').textContent = allExpanded ? '▴ Collapse All' : '▾ Expand All';
+    }
+
+    /* ── Rating boxes ── */
+    const ratingColors = ['','#f87171','#fb923c','#facc15','#4ade80','#60a5fa'];
+
+    function setRating(clickedBox, value, member, criterion) {
+      const key = member + '_' + criterion;
+      ratings[key] = value;
+      const container = clickedBox.parentElement;
+      const boxes = container.querySelectorAll('.rating-box');
+      boxes.forEach((box, idx) => {
+        if (idx < value) {
+          box.style.background = ratingColors[value];
+          box.style.borderColor = ratingColors[value];
+        } else {
+          box.style.background = '';
+          box.style.borderColor = '';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
