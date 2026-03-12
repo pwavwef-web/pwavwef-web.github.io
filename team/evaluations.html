@@ -416,6 +416,127 @@
       .eval-avatar { width: 56px; height: 56px; }
       .criteria-table td:first-child { width: 40%; }
     }
+
+    /* ── Score Inputs ── */
+    .score-input {
+      width: 56px;
+      padding: 4px 6px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 0.82rem;
+      font-weight: 700;
+      font-family: inherit;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      -moz-appearance: textfield;
+    }
+    .score-input::-webkit-inner-spin-button,
+    .score-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .score-input:focus { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+    .score-input.sv-1 { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: #f87171; }
+    .score-input.sv-2 { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); color: #fbbf24; }
+    .score-input.sv-3 { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+    .score-input.sv-4 { background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.4); color: #c084fc; }
+    .score-input.sv-5 { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #4ade80; }
+
+    /* ── Notes / Response Textareas ── */
+    .notes-textarea {
+      width: 100%;
+      min-height: 80px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      font-family: inherit;
+      padding: 12px 14px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      box-sizing: border-box;
+    }
+    .notes-textarea::placeholder { color: #475569; font-style: italic; }
+    .notes-textarea:focus { border-color: #3b82f6; background: rgba(59,130,246,0.04); }
+
+    .response-textarea {
+      display: block;
+      width: 100%;
+      min-height: 52px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 0.82rem;
+      font-family: inherit;
+      padding: 8px 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      margin-top: 8px;
+    }
+    .response-textarea::placeholder { color: #334155; font-style: italic; }
+    .response-textarea:focus { border-color: #3b82f6; }
+
+    /* ── Save Bar ── */
+    .save-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      padding: 12px 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      flex-wrap: wrap;
+    }
+    .save-bar-info { font-size: 0.8rem; color: #475569; }
+    .save-bar-info strong { color: #64748b; }
+    .btn-save {
+      flex-shrink: 0;
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #3b82f6, #a855f7);
+      border: none;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-save:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-save:active { transform: translateY(0); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Toast ── */
+    .eval-toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(15,23,42,0.97);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 12px 24px;
+      color: #f1f5f9;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: inherit;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .eval-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .eval-toast.error { border-color: rgba(239,68,68,0.4); }
+    .eval-toast.success { border-color: rgba(34,197,94,0.3); }
   </style>
 </head>
 <body>
@@ -505,6 +626,12 @@
           <span class="score-pill score-3">3 – Meets Expectations</span>
           <span class="score-pill score-4">4 – Exceeds Expectations</span>
           <span class="score-pill score-5">5 – Outstanding</span>
+        </div>
+
+        <!-- Save Bar -->
+        <div class="save-bar">
+          <span class="save-bar-info">Session: <strong id="session-label">—</strong></span>
+          <button id="btn-save" class="btn-save" onclick="evalManager.save()">💾 Save Evaluation</button>
         </div>
 
         <!-- ────────────────────────────────────────────
@@ -1260,6 +1387,9 @@
 
   </div><!-- /#content -->
 
+  <!-- Toast notification -->
+  <div id="eval-toast" class="eval-toast" role="status" aria-live="polite"></div>
+
   <script>
     // Set today's date
     (function () {
@@ -1285,6 +1415,8 @@
           history.replaceState({ unlocked: true }, '');
           input.value = '';
           error.textContent = '';
+          // Initialize evaluation inputs
+          if (window.evalManager) window.evalManager.init();
         } else {
           error.textContent = 'Incorrect password. Please try again.';
           input.classList.add('error');
@@ -1306,6 +1438,184 @@
         });
       }
     });
+
+    // ── Evaluation form manager ──────────────────────────────────────────────
+    window.evalManager = {
+      storageKey: null,
+      saveTimer: null,
+      _toastTimer: null,
+
+      init: function () {
+        var d = new Date();
+        var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+        this.storageKey = 'az-eval-' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        var label = document.getElementById('session-label');
+        if (label) {
+          label.textContent = d.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        this.transform();
+        this.attachListeners();
+        this.load();
+      },
+
+      // Replace static score pills and notes boxes with interactive inputs
+      transform: function () {
+        var self = this;
+        document.querySelectorAll('.member-eval').forEach(function (card) {
+          var id = card.id;
+          var idx = 0;
+
+          // Replace __/5 score pills in table bodies with number inputs
+          card.querySelectorAll('.criteria-table tbody tr').forEach(function (row) {
+            var pill = row.querySelector('.score-pill');
+            if (!pill) return;
+            var input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            input.max = '5';
+            input.className = 'score-input';
+            input.dataset.key = id + '-s' + idx;
+            input.setAttribute('placeholder', '–');
+            input.setAttribute('aria-label', 'Score 1 to 5');
+            pill.parentNode.replaceChild(input, pill);
+            idx++;
+          });
+
+          // Replace static notes box with a textarea
+          var nb = card.querySelector('.notes-box');
+          if (nb) {
+            var ta = document.createElement('textarea');
+            ta.className = 'notes-textarea';
+            ta.dataset.key = id + '-notes';
+            ta.setAttribute('placeholder', 'Evaluator\'s notes, observations, and action items…');
+            ta.rows = 3;
+            nb.parentNode.replaceChild(ta, nb);
+          }
+
+          // Add a response textarea below each discussion question
+          card.querySelectorAll('.question-list li').forEach(function (li, qi) {
+            var rta = document.createElement('textarea');
+            rta.className = 'response-textarea';
+            rta.dataset.key = id + '-r' + qi;
+            rta.setAttribute('placeholder', 'Enter response…');
+            rta.rows = 2;
+            li.appendChild(rta);
+          });
+        });
+      },
+
+      attachListeners: function () {
+        var self = this;
+        document.getElementById('content').addEventListener('input', function (e) {
+          var el = e.target;
+          if (el.classList.contains('score-input')) {
+            var v = parseInt(el.value, 10);
+            if (!isNaN(v)) {
+              if (v < 1) el.value = 1;
+              if (v > 5) el.value = 5;
+            }
+            self.updateScoreColor(el);
+            self.scheduleSave();
+          } else if (el.classList.contains('notes-textarea') || el.classList.contains('response-textarea')) {
+            self.scheduleSave();
+          }
+        });
+      },
+
+      updateScoreColor: function (input) {
+        input.classList.remove('sv-1', 'sv-2', 'sv-3', 'sv-4', 'sv-5');
+        var v = parseInt(input.value, 10);
+        if (v >= 1 && v <= 5) input.classList.add('sv-' + v);
+      },
+
+      collect: function () {
+        var data = { scores: {}, notes: {}, responses: {} };
+        document.querySelectorAll('.score-input').forEach(function (el) {
+          var v = parseInt(el.value, 10);
+          if (!isNaN(v) && v >= 1 && v <= 5) data.scores[el.dataset.key] = v;
+        });
+        document.querySelectorAll('.notes-textarea').forEach(function (el) {
+          if (el.value.trim()) data.notes[el.dataset.key] = el.value;
+        });
+        document.querySelectorAll('.response-textarea').forEach(function (el) {
+          if (el.value.trim()) data.responses[el.dataset.key] = el.value;
+        });
+        return data;
+      },
+
+      scheduleSave: function () {
+        var self = this;
+        clearTimeout(this.saveTimer);
+        this.saveTimer = setTimeout(function () { self._persist(true); }, 1500);
+      },
+
+      save: function () {
+        this._persist(false);
+      },
+
+      _persist: function (auto) {
+        try {
+          var data = this.collect();
+          localStorage.setItem(this.storageKey, JSON.stringify(data));
+          if (!auto) this.showToast('✅ Evaluation saved!', 'success');
+          else this.showToast('💾 Auto-saved', 'success');
+        } catch (err) {
+          console.error('Save error', err);
+          this.showToast('❌ Save failed: ' + err.message, 'error');
+        }
+      },
+
+      load: function () {
+        var self = this;
+        try {
+          var raw = localStorage.getItem(this.storageKey);
+          if (!raw) return;
+          var data = JSON.parse(raw);
+
+          // Build a single key→element map for efficient lookup
+          var elMap = {};
+          document.querySelectorAll('.score-input, .notes-textarea, .response-textarea').forEach(function (el) {
+            if (el.dataset.key) elMap[el.dataset.key] = el;
+          });
+
+          if (data.scores) {
+            Object.keys(data.scores).forEach(function (key) {
+              var el = elMap[key];
+              if (el && el.classList.contains('score-input')) {
+                el.value = data.scores[key];
+                self.updateScoreColor(el);
+              }
+            });
+          }
+          if (data.notes) {
+            Object.keys(data.notes).forEach(function (key) {
+              var el = elMap[key];
+              if (el && el.classList.contains('notes-textarea')) el.value = data.notes[key];
+            });
+          }
+          if (data.responses) {
+            Object.keys(data.responses).forEach(function (key) {
+              var el = elMap[key];
+              if (el && el.classList.contains('response-textarea')) el.value = data.responses[key];
+            });
+          }
+          self.showToast('📂 Previous session loaded');
+        } catch (err) {
+          console.warn('Load error', err);
+        }
+      },
+
+      showToast: function (msg, type) {
+        var toast = document.getElementById('eval-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.className = 'eval-toast show' + (type ? ' ' + type : '');
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(function () {
+          toast.className = 'eval-toast';
+        }, 2500);
+      }
+    };
 
     // Smooth scroll for TOC links
     document.querySelectorAll('.toc-pill').forEach(function (a) {
