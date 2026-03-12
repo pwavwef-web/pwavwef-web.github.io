@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AZ Learner Team Evaluations – internal use only." />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Team Evaluations | AZ Learner</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../favicon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Team Styles -->
+  <link rel="stylesheet" href="css/team.css" />
+
+  <style>
+    /* ── Password Gate ── */
+    #gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    #gate.hidden { display: none; }
+
+    .gate-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+
+    .gate-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .gate-card h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #3b82f6, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .gate-card p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    .gate-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 1rem;
+      font-family: inherit;
+      text-align: center;
+      letter-spacing: 0.15em;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .gate-input:focus {
+      border-color: #3b82f6;
+    }
+
+    .gate-input.error {
+      border-color: #ef4444;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-6px); }
+      80%      { transform: translateX(6px); }
+    }
+
+    .gate-error {
+      color: #f87171;
+      font-size: 0.82rem;
+      min-height: 1.2em;
+      margin-bottom: 12px;
+    }
+
+    .btn-unlock {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #a855f7);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-unlock:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-unlock:active { transform: translateY(0); }
+
+    /* ── Page Content ── */
+    #content { display: none; }
+    #content.visible { display: block; }
+
+    .eval-header {
+      text-align: center;
+      padding: 64px 24px 32px;
+    }
+
+    .eval-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .eval-header .subtitle {
+      color: #94a3b8;
+      font-size: 1rem;
+      max-width: 600px;
+      margin: 0 auto 24px;
+    }
+
+    .meeting-meta {
+      display: inline-flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .meeting-meta span { display: flex; align-items: center; gap: 6px; }
+
+    /* ── TOC ── */
+    .toc-bar {
+      background: rgba(255,255,255,0.03);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 16px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+    }
+
+    .toc-inner {
+      display: inline-flex;
+      gap: 10px;
+      padding: 0 24px;
+    }
+
+    .toc-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+      cursor: pointer;
+    }
+
+    .toc-pill:hover {
+      background: rgba(59,130,246,0.2);
+      color: #93c5fd;
+      border-color: rgba(59,130,246,0.4);
+    }
+
+    /* ── Member Card ── */
+    .member-eval {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 32px;
+      scroll-margin-top: 80px;
+      transition: box-shadow 0.3s;
+    }
+
+    .member-eval:hover {
+      box-shadow: 0 20px 48px rgba(0,0,0,0.4);
+    }
+
+    .member-eval-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .eval-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+
+    .eval-member-info h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .eval-role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 999px;
+      color: #93c5fd;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* ── Sections inside each eval card ── */
+    .eval-section {
+      margin-bottom: 28px;
+    }
+
+    .eval-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .eval-section-title .icon {
+      font-size: 1rem;
+    }
+
+    /* Criteria table */
+    .criteria-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .criteria-table th {
+      text-align: left;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .criteria-table td {
+      padding: 12px 12px;
+      color: #cbd5e1;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .criteria-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .criteria-table td:first-child {
+      font-weight: 600;
+      color: #e2e8f0;
+      width: 28%;
+    }
+
+    .criteria-table td:last-child {
+      color: #94a3b8;
+      font-size: 0.82rem;
+    }
+
+    /* Score pills */
+    .score-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .score-1 { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .score-2 { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .score-3 { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+    .score-4 { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+    .score-5 { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+
+    /* Question list */
+    .question-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .question-list li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: #cbd5e1;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    .question-list li::before {
+      content: "▸";
+      color: #3b82f6;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Notes box */
+    .notes-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #64748b;
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 0; }
+
+    /* Rating scale legend */
+    .scale-legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    .scale-legend strong { color: #94a3b8; margin-right: 4px; }
+
+    /* ── Overall Summary ── */
+    .overall-card {
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(168,85,247,0.08));
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .overall-card h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .overall-card p {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── Back link ── */
+    .back-row {
+      padding: 24px 0 0;
+    }
+
+    @media (max-width: 640px) {
+      .member-eval { padding: 24px 18px; }
+      .member-eval-header { gap: 14px; }
+      .eval-avatar { width: 56px; height: 56px; }
+      .criteria-table td:first-child { width: 40%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-animated" aria-hidden="true"></div>
+
+  <!-- ===== PASSWORD GATE ===== -->
+  <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <div class="gate-card">
+      <div class="gate-icon">🔒</div>
+      <h2 id="gate-title">Internal Access Only</h2>
+      <p>This page contains confidential team evaluation materials.<br>Enter the access password to continue.</p>
+      <input
+        class="gate-input"
+        id="gate-input"
+        type="password"
+        placeholder="Enter password"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Access password"
+      />
+      <div class="gate-error" id="gate-error" role="alert" aria-live="polite"></div>
+      <button class="btn-unlock" onclick="gateManager.unlock()">Unlock</button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT (hidden until unlocked) ===== -->
+  <div id="content">
+
+    <!-- HEADER -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="site-logo" href="../index.html">AZ LEARNER</a>
+        <nav class="header-nav" aria-label="Site navigation">
+          <a class="nav-back" href="index.html" aria-label="Back to team page">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Team
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ── HERO ── -->
+    <div class="eval-header">
+      <div class="container">
+        <div class="hero-badge" aria-hidden="true" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;">
+          <span></span> Internal Document
+        </div>
+        <h1 class="text-gradient">Team Member Evaluations</h1>
+        <p class="subtitle">
+          Detailed performance evaluation framework for the AZ Learner core team.
+          Use this guide during the meeting to assess each member fairly and constructively.
+        </p>
+        <div class="meeting-meta">
+          <span>📅 Meeting Date: <strong id="meeting-date"></strong></span>
+          <span>👥 Members: <strong>7</strong></span>
+          <span>🔒 Confidential</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RATING SCALE & TOC ── -->
+    <div class="toc-bar">
+      <div class="toc-inner">
+        <a class="toc-pill" href="#eval-francis">Francis (CEO)</a>
+        <a class="toc-pill" href="#eval-andy">Andy (Ambassadors)</a>
+        <a class="toc-pill" href="#eval-bright">Bright (Design)</a>
+        <a class="toc-pill" href="#eval-jude">Jude (Marketing)</a>
+        <a class="toc-pill" href="#eval-emmanuel">Emmanuel (Admin)</a>
+        <a class="toc-pill" href="#eval-ibrahim">Ibrahim (Finance)</a>
+        <a class="toc-pill" href="#eval-chinedum">Chinedum (Dev)</a>
+      </div>
+    </div>
+
+    <!-- ── CONTENT ── -->
+    <main class="team-section" style="padding-top:32px;">
+      <div class="container">
+
+        <!-- Rating Scale -->
+        <div class="scale-legend">
+          <strong>Rating Scale:</strong>
+          <span class="score-pill score-1">1 – Needs Improvement</span>
+          <span class="score-pill score-2">2 – Below Expectations</span>
+          <span class="score-pill score-3">3 – Meets Expectations</span>
+          <span class="score-pill score-4">4 – Exceeds Expectations</span>
+          <span class="score-pill score-5">5 – Outstanding</span>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             1. FRANCIS PWAVWE – Founder & CEO
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-francis">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="assets/images/francis.jpg" alt="Francis Pwavwe" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Francis Pwavwe</h2>
+              <span class="eval-role-badge">Founder &amp; CEO</span>
+            </div>
+          </div>
+
+          <!-- Vision & Strategy -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🎯</span> Vision &amp; Strategic Leadership</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Clarity of Vision</td>
+                  <td>Can Francis articulate a clear, compelling, and specific direction for AZ Learner over the next 3–6 months? Does every team member understand the goal because of his communication?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Goal-Setting</td>
+                  <td>Has Francis defined measurable OKRs or milestones for Q1/Q2? Are team deliverables mapped to those goals? Check whether targets were met from the previous meeting.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Decision-Making Quality</td>
+                  <td>When the team faced blockers (e.g., feature trade-offs, resource constraints), how quickly and decisively did Francis act? Were outcomes of those decisions positive?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Product Prioritization</td>
+                  <td>Does Francis consistently prioritize the right features and tasks for students? Is there evidence of user research influencing product decisions (e.g., new print, CV, GPA tools)?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Team Leadership -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🤝</span> Team Leadership &amp; Culture</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Team Morale</td>
+                  <td>Do team members feel motivated and valued? Ask each person individually. High morale shows up as proactive contributions and low turnover of active members.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Delegation</td>
+                  <td>Is Francis delegating effectively, or is he a bottleneck? Each department head should have clear ownership. Verify that roles aren't overlapping without coordination.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Availability &amp; Responsiveness</td>
+                  <td>Is Francis accessible when team members need guidance? Measure response time on group chats and how often team members mention waiting on Francis before they can proceed.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Conflict Resolution</td>
+                  <td>When disagreements arose (priorities, workload, etc.), did Francis mediate fairly and reach a resolution that the team accepted? Give a specific example if possible.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- External Representation -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🌍</span> External Representation &amp; Growth</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Brand Positioning</td>
+                  <td>How often is Francis publicly promoting AZ Learner (social media, campus events, speaking)? Is the brand perception among UCC students improving?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Partnership Outreach</td>
+                  <td>Has Francis initiated or followed through on any institutional or sponsor partnerships since the last review?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Revenue Thinking</td>
+                  <td>Is there a clear revenue model being actively pursued? (e.g., CV premium sales, print jobs, ambassador program fees, Paystack flows). Were revenue targets hit?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Francis</div>
+            <ul class="question-list">
+              <li>What is the single most important thing AZ Learner must achieve in the next 30 days, and what specifically are you doing to make it happen?</li>
+              <li>Which team member do you think is most under-utilised right now, and what is your plan to change that?</li>
+              <li>What was the hardest decision you made since the last meeting, and what would you do differently?</li>
+              <li>How are you measuring the product's impact on students — and what do the numbers say?</li>
+              <li>What resource (time, money, skills) is the biggest constraint right now, and what is your concrete plan to address it?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             2. ANDY ANIM – Chief of Ambassadors
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-andy">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="assets/images/andy.png" alt="Andy Anim" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Andy Anim</h2>
+              <span class="eval-role-badge">Chief of Ambassadors</span>
+            </div>
+          </div>
+
+          <!-- Ambassador Program -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🏅</span> Ambassador Program Management</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Active Ambassador Count</td>
+                  <td>How many ambassadors are currently active vs. dormant? A healthy program should have a clearly tracked roster with each ambassador's campus, reach, and last activity date.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Onboarding &amp; Training</td>
+                  <td>When new ambassadors join, is there a structured onboarding process (welcome kit, brand guidelines, talking points)? Are new ambassadors functional within 2 weeks of joining?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Ambassador Retention</td>
+                  <td>How many ambassadors from the previous period are still active? Low retention suggests insufficient incentive structure or engagement. What has Andy done to keep ambassadors engaged?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Performance Tracking</td>
+                  <td>Does Andy have data on each ambassador's referral conversions, social media posts, and campus events? Is this tracked in a spreadsheet or the AZ Learner ambassador dashboard?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Geographic Expansion</td>
+                  <td>Is the ambassador network growing beyond UCC to other Ghanaian universities (KNUST, UG, UENR)? How many new campuses have been added since the last review?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Communication & People Skills -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🗣️</span> Communication &amp; People Skills</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Internal Communication</td>
+                  <td>How effectively does Andy communicate ambassador updates to the CEO and full team? Are reports timely and useful, or are updates only given when asked?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Motivating Others</td>
+                  <td>Ambassadors are volunteers — does Andy keep them motivated? Check if ambassadors respond positively when asked. Does he recognise top performers publicly?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Handling Issues</td>
+                  <td>When an ambassador misbehaved or underperformed, how did Andy handle it? Was it addressed swiftly and professionally without damaging morale?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- User Growth Impact -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">📈</span> Impact on User Growth</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Referral Conversions</td>
+                  <td>How many new AZ Learner sign-ups or app downloads can be directly attributed to ambassador activities in the past period? This should be a specific number, not an estimate.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Campus Event Execution</td>
+                  <td>How many campus activations, demos, or tabling events happened? For each one: Was it well-attended? Did it generate leads? Was feedback collected?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Andy</div>
+            <ul class="question-list">
+              <li>Give us the exact number of active ambassadors today, the campuses they represent, and the total student reach.</li>
+              <li>What specific user-growth metric improved most because of ambassador activities last period?</li>
+              <li>Which ambassador is performing best right now — and what are you doing to learn from and replicate their approach?</li>
+              <li>What is the biggest bottleneck preventing the ambassador program from scaling, and what do you need from the team to fix it?</li>
+              <li>How are you personally developing your leadership and people-management skills to lead a growing team?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             3. BRIGHT TETTEH – Lead Strategic Designer
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-bright">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="assets/images/bright.png" alt="Bright Tetteh" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Bright Tetteh</h2>
+              <span class="eval-role-badge">Lead Strategic Designer</span>
+            </div>
+          </div>
+
+          <!-- Design Quality -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🎨</span> Design Quality &amp; Output</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Visual Consistency</td>
+                  <td>Are all AZ Learner assets (social media graphics, app UI elements, podcast artwork, ambassador kits) visually consistent with the brand palette, typography, and tone? Spot-check 3 recent deliverables.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Turnaround Time</td>
+                  <td>When design tasks are assigned, does Bright deliver on time? Check the last 5 design requests and measure the gap between request date and delivery date.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Design Depth</td>
+                  <td>Are designs exploratory (multiple concepts presented) or always first-draft? Does Bright offer rationale for design choices, or simply produce and deliver?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Responsiveness to Feedback</td>
+                  <td>When revisions are requested, are they incorporated accurately and without repeated back-and-forth? Does Bright ask clarifying questions upfront to avoid rework?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Podcast Visual Support</td>
+                  <td>Since Bright is specifically supporting the AZ Podcast: Are episode artwork, audiogram graphics, and social promos produced for every episode? Are they ready before the episode drops?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Strategic Thinking -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🧠</span> Strategic Thinking</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Proactive Design Initiatives</td>
+                  <td>Has Bright proposed any design improvements that weren't asked for — e.g., a refreshed landing page layout, a new icon set, or a cohesive brand guide document?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Understanding the User</td>
+                  <td>Does Bright's design work reflect an understanding of the target users (Ghanaian university students)? Are designs accessible, mobile-first, and culturally appropriate?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Cross-Team Collaboration</td>
+                  <td>When Jude or Andy needs design assets for marketing/ambassador campaigns, does Bright collaborate proactively, or does work get delayed because of siloed communication?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Bright</div>
+            <ul class="question-list">
+              <li>Walk us through the last design project you completed from brief to delivery. What decisions did you make and why?</li>
+              <li>What design assets does AZ Learner urgently need that don't exist yet? What is your plan to create them?</li>
+              <li>How do you keep your design skills current? Have you explored any new tools or design trends recently that could benefit the brand?</li>
+              <li>Has the podcast design support been keeping up with the release schedule? If not, what needs to change?</li>
+              <li>If you could change one thing about the current AZ Learner brand identity, what would it be and why?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             4. JUDE MAKAFUI DZANSI – Head of Communications & Marketing
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-jude">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="https://azlearner.me/team/assets/images/jude.png" alt="Jude Makafui Dzansi" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Jude Makafui Dzansi</h2>
+              <span class="eval-role-badge">Head of Communications &amp; Marketing</span>
+            </div>
+          </div>
+
+          <!-- Content & Social Media -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">📣</span> Content &amp; Social Media</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Posting Frequency</td>
+                  <td>How many posts went out across all AZ Learner social channels (Twitter/X, Instagram, Facebook, TikTok) in the past month? Is there a content calendar, and is it being followed?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Content Quality</td>
+                  <td>Are posts clearly written, on-brand, and engaging? Check the last 10 posts across platforms. Evaluate grammar, tone, visual quality, and call-to-action clarity.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Engagement Rate</td>
+                  <td>What is the average engagement rate (likes + comments + shares / reach) on social posts? Benchmark: ≥3% is good for student-focused content on Instagram. Share actual numbers.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Follower Growth</td>
+                  <td>What is the month-over-month follower growth across all channels? A minimum of 5% growth per month is a reasonable target for an early-stage student startup. Show specific data.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Storytelling &amp; Narrative</td>
+                  <td>Is the brand story being told compellingly? Does the content explain why AZ Learner exists and what it does for students — not just feature announcements?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Campaign Execution -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🚀</span> Campaign Execution</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Campaign Planning</td>
+                  <td>Are marketing campaigns (e.g., sign-up drives, feature launches, semester-start pushes) planned in advance with clear goals, timelines, and success metrics?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Campaign Results</td>
+                  <td>For the last campaign run: What was the goal? What was achieved? How did it impact downloads/sign-ups? Was there a post-campaign retrospective?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Coordination with Andy</td>
+                  <td>Marketing campaigns should feed into the ambassador program (and vice versa). How well does Jude coordinate with Andy to ensure messaging is consistent at both digital and on-campus levels?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- PR & External Comms -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">📰</span> PR &amp; External Communications</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Media &amp; Press Outreach</td>
+                  <td>Has Jude pitched AZ Learner to any student publications, campus radio stations, or tech media? How many press mentions or features have been secured?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Crisis Communication</td>
+                  <td>If any negative user feedback was made public (e.g., a tweet, a post), how was it handled? Was there a timely, professional, and empathetic response?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Jude</div>
+            <ul class="question-list">
+              <li>Show us the exact social media analytics from the past 4 weeks — which post performed best and what does that tell us about our audience?</li>
+              <li>What is the current content calendar for the next 30 days? Walk us through it.</li>
+              <li>What marketing channel is currently most effective at driving new users, and what are we doing to double down on it?</li>
+              <li>Is there a student publication or media outlet we haven't reached yet that you think we should target? What's your plan?</li>
+              <li>How are you building your own communication and marketing knowledge? Have you found any frameworks or strategies from your studies that you've applied to AZ Learner?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             5. EMMANUEL LARBI – Administrative Assistant
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-emmanuel">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="assets/images/emma.jpg" alt="Emmanuel Larbi" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Emmanuel Larbi</h2>
+              <span class="eval-role-badge">Administrative Assistant</span>
+            </div>
+          </div>
+
+          <!-- User & Account Management -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">👤</span> User &amp; Account Management</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Issue Resolution Speed</td>
+                  <td>When users report account problems (locked out, wrong subscription status, missing print order), how quickly does Emmanuel resolve them? Target: same-day resolution for critical issues.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Support Quality</td>
+                  <td>Are user communications professional, warm, and clear? Check the last 5 support interactions (WhatsApp, email, form responses) and evaluate tone, accuracy, and completeness.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Escalation Judgement</td>
+                  <td>Does Emmanuel know which issues to handle independently and which to escalate to Francis or Chinedum? Are escalations done with enough context for quick resolution?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Proactive Issue Detection</td>
+                  <td>Rather than waiting for users to report issues, does Emmanuel regularly audit user accounts for anomalies (e.g., missing XP, failed print submissions, duplicate accounts)?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Content & Resource Administration -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">📂</span> Content &amp; Resource Administration</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Content Accuracy</td>
+                  <td>Is the content on AZ Learner (course info, resources, event listings) current and accurate? How frequently does Emmanuel audit and update content? Were any outdated items found recently?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Data Organisation</td>
+                  <td>Is operational data (user lists, print order logs, ambassador records) well-organised and accessible to the team? Is there a clear filing system that others can use without asking Emmanuel?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Documentation</td>
+                  <td>Are processes documented so that another team member could step in if Emmanuel is unavailable? This is critical for continuity. Ask to see a process doc for at least 2 admin workflows.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Engagement & Scheduling -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">📅</span> Scheduling &amp; Coordination</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Meeting Coordination</td>
+                  <td>Are team meetings scheduled and communicated in advance? Are agendas prepared and circulated before each meeting? Are minutes taken and shared within 24 hours?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Print Order Facilitation</td>
+                  <td>How many print orders were processed last period? Were any orders delayed or lost? What is the average time from order submission to delivery confirmation?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Emmanuel</div>
+            <ul class="question-list">
+              <li>Walk us through the most complex user issue you resolved recently — what happened, what did you do, and what was the outcome?</li>
+              <li>If you were unavailable for a week, which administrative process would break down first, and what can we do to prevent that?</li>
+              <li>How many print orders have been processed in the last 30 days, and what was the average turnaround time?</li>
+              <li>What user feedback have you collected recently, and have you surfaced any insights to the team from that feedback?</li>
+              <li>What one change to the admin workflow would save you the most time and make the team more efficient?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             6. IBRAHIM ABAABE – Head of Finance
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-ibrahim">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="https://azlearner.me/team/assets/images/ibrahim.png" alt="Ibrahim Abaabe" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Ibrahim Abaabe</h2>
+              <span class="eval-role-badge">Head of Finance</span>
+            </div>
+          </div>
+
+          <!-- Financial Oversight -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💰</span> Financial Oversight &amp; Accuracy</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Up-to-Date Books</td>
+                  <td>Are all income and expenses recorded and reconciled? Ask Ibrahim to present the current balance sheet and P&amp;L summary for the period. Data should be current within 7 days.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Revenue Tracking</td>
+                  <td>Can Ibrahim break down revenue by source (CV sales, print jobs, ambassador subscriptions, other)? Are Paystack transactions reconciled against reported income?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Expense Control</td>
+                  <td>Are expenses categorised and within budget? Are any expenses unaccounted for? Has Ibrahim flagged any unusual spend to the CEO in a timely manner?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Forecasting</td>
+                  <td>Has Ibrahim produced a financial forecast for the next quarter? Does the forecast reflect realistic assumptions based on current user growth and revenue trends?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Audit Readiness</td>
+                  <td>If an external audit were required tomorrow, are financial records complete, organised, and traceable? Is there a clear paper trail for every transaction?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Financial Strategy -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">📊</span> Financial Strategy &amp; Analysis</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Cost Optimisation Ideas</td>
+                  <td>Has Ibrahim identified any cost-saving opportunities? For example: lower-cost hosting alternatives, renegotiating service fees, or reducing transaction costs on Paystack payments?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Break-Even Analysis</td>
+                  <td>Does Ibrahim know the break-even point for AZ Learner? How close is the organisation to covering its operating costs from revenue? This should be presented as a specific figure.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Financial Reporting to Team</td>
+                  <td>Is the team kept informed of financial health in regular, easy-to-understand reports (not just raw spreadsheet data)? Does Ibrahim present insights, not just numbers?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Risk Identification</td>
+                  <td>Has Ibrahim flagged any financial risks (e.g., single revenue source dependency, delayed payments, unexpected costs) proactively — before they became problems?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Ibrahim</div>
+            <ul class="question-list">
+              <li>Present the current financial position of AZ Learner: total income this period, total expenses, and net position. Be specific with numbers.</li>
+              <li>Which revenue stream grew fastest last period, and what does your model say that means for next quarter?</li>
+              <li>What is our single biggest financial risk right now, and what is your recommended mitigation?</li>
+              <li>Has every Paystack transaction been reconciled against our books? Were there any discrepancies, and how were they resolved?</li>
+              <li>As an actuarial science student, what specific analytical techniques from your studies have you applied to AZ Learner's financial model?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ────────────────────────────────────────────
+             7. CHINEDUM OKONKWO UDEAJA – Developer
+        ──────────────────────────────────────────── -->
+        <div class="member-eval" id="eval-chinedum">
+          <div class="member-eval-header">
+            <img class="eval-avatar" src="https://azlearner.me/team/assets/images/chinedum.png" alt="Chinedum Okonkwo Udeaja" onerror="this.src='assets/images/placeholder.svg'" />
+            <div class="eval-member-info">
+              <h2 class="text-gradient">Chinedum Okonkwo Udeaja</h2>
+              <span class="eval-role-badge">Developer</span>
+            </div>
+          </div>
+
+          <!-- Technical Output -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💻</span> Technical Output &amp; Code Quality</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Feature Delivery</td>
+                  <td>How many features or fixes were shipped in the last period? Are they deployed and working in production? Cross-reference with GitHub commits and the task backlog.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Code Reliability</td>
+                  <td>Did any of Chinedum's recent changes introduce bugs or regressions in production? What is the ratio of new features introduced to bugs introduced? Lower is better.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Security Awareness</td>
+                  <td>Does Chinedum apply basic web security practices? For example: escaping user input before injecting into innerHTML, not hardcoding secrets, correct Firestore security rule scoping?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Mobile-First &amp; Responsiveness</td>
+                  <td>Since AZ Learner's primary audience uses mobile devices, are all pages developed by Chinedum fully responsive and tested on both Android and iOS? Check 3 recent pages on a phone.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Code Consistency</td>
+                  <td>Does Chinedum's code follow the existing conventions in the codebase (e.g., camelCase variables, window.app pattern, inline event handlers, CDN-only dependencies)? Spot-check recent commits.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Collaboration & Process -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🔧</span> Collaboration &amp; Development Process</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Requirement Clarification</td>
+                  <td>Before starting a development task, does Chinedum ask the right questions to avoid building the wrong thing? Evaluate whether his output typically matches what was requested.</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Status Communication</td>
+                  <td>Does Chinedum give regular development updates without being asked? Are blockers flagged early so the team can adjust timelines? Is he reachable and responsive?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Cross-Functional Support</td>
+                  <td>When Emmanuel reports a user issue that requires a code fix, or when Francis requests a quick feature, how efficiently does Chinedum collaborate and turn it around?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Self-Development</td>
+                  <td>As a hospitality student learning to code, is Chinedum actively improving his technical skills? What has he learned or built on his own initiative since the last review?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Technical Roadmap Input -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">🗺️</span> Technical Roadmap Contribution</div>
+            <table class="criteria-table">
+              <thead><tr><th>Criterion</th><th>What to look for</th><th>Score (1–5)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Technical Proposal Quality</td>
+                  <td>When new features are being planned, does Chinedum contribute technical perspective on feasibility, complexity, and risks? Are his estimates accurate?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+                <tr>
+                  <td>Performance Optimisation</td>
+                  <td>Has Chinedum proactively identified and fixed any performance issues (slow page loads, heavy images, Firebase read costs)? Is the app measurably faster than last period?</td>
+                  <td><span class="score-pill score-3">__/5</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Discussion Prompts -->
+          <div class="eval-section">
+            <div class="eval-section-title"><span class="icon">💬</span> Discussion Questions for Chinedum</div>
+            <ul class="question-list">
+              <li>Walk us through the last feature you built end-to-end: what was the brief, what did you build, what edge cases did you handle, and how did you test it?</li>
+              <li>What is the most technically challenging issue in the current codebase, and what is your proposed solution?</li>
+              <li>Which page or feature has the most user complaints, and what specifically would you change to fix it?</li>
+              <li>How are you balancing your academic workload with your development responsibilities on AZ Learner? What is your realistic capacity per week?</li>
+              <li>If you could rebuild any single part of AZ Learner from scratch, what would it be, and how would you do it differently?</li>
+            </ul>
+          </div>
+
+          <div class="notes-box">📝 Evaluator's notes: ___________________________________________</div>
+        </div>
+
+        <!-- ── Overall Summary Card ── -->
+        <hr class="divider" style="margin-bottom:32px;" />
+        <div class="overall-card">
+          <h2 class="text-gradient">Meeting Wrap-Up Checklist</h2>
+          <p>
+            After completing all individual evaluations, close the meeting by confirming: <br>
+            ✅ Each member has received at least one piece of specific, actionable feedback. <br>
+            ✅ Each member has committed to at least one measurable improvement by the next meeting. <br>
+            ✅ All department heads have updated their action items in the shared task tracker. <br>
+            ✅ The next meeting date has been confirmed and communicated to all members. <br>
+            ✅ Any cross-functional blockers identified during evaluations have been assigned an owner and a resolution deadline.
+          </p>
+        </div>
+
+        <!-- Back to team -->
+        <div class="back-row">
+          <a class="btn-back" href="index.html" aria-label="Back to team page">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Back to Team
+          </a>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer" style="margin-top:48px;">
+      <p>AZ Learner Team Evaluations &mdash; Internal use only.</p>
+    </footer>
+
+  </div><!-- /#content -->
+
+  <script>
+    // Set today's date
+    (function () {
+      var d = new Date();
+      var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      var el = document.getElementById('meeting-date');
+      if (el) el.textContent = d.toLocaleDateString('en-GH', options);
+    })();
+
+    // Password gate – attached to window for consistency with project conventions
+    window.gateManager = {
+      unlock: function () {
+        var input = document.getElementById('gate-input');
+        var error = document.getElementById('gate-error');
+        var gate  = document.getElementById('gate');
+
+        var val = input.value.trim().toUpperCase();
+        if (val === 'AKWAABA') {
+          gate.classList.add('hidden');
+          var content = document.getElementById('content');
+          content.classList.add('visible');
+          // Prevent going back to gate via browser back
+          history.replaceState({ unlocked: true }, '');
+          input.value = '';
+          error.textContent = '';
+        } else {
+          error.textContent = 'Incorrect password. Please try again.';
+          input.classList.add('error');
+          input.value = '';
+          setTimeout(function () {
+            input.classList.remove('error');
+            input.focus();
+          }, 400);
+        }
+      }
+    };
+
+    // Allow Enter key in password field
+    window.addEventListener('DOMContentLoaded', function () {
+      var gateInput = document.getElementById('gate-input');
+      if (gateInput) {
+        gateInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') gateManager.unlock();
+        });
+      }
+    });
+
+    // Smooth scroll for TOC links
+    document.querySelectorAll('.toc-pill').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var target = document.querySelector(a.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+
+</body>
+</html>
