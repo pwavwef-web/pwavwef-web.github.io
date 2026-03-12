@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Learner – Courses</title>
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#3b82f6', dark: '#1d4ed8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .course-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+        .course-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.18);
+        }
+        .btn-google {
+            background: white;
+            color: #1f2937;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .btn-google:hover {
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .tag {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-center px-6">
+        <div class="text-center max-w-sm">
+            <div class="text-6xl mb-6">🎓</div>
+            <h1 class="text-3xl font-black mb-2">AZ Learner <span class="text-blue-400">Courses</span></h1>
+            <p class="text-gray-400 mb-8 text-sm leading-relaxed">
+                AI-powered daily lessons that remember where you left off. Sign in to start or continue your learning journey.
+            </p>
+            <button id="google-signin-btn" class="btn-google mx-auto">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.7-6.7C35.7 2.4 30.2 0 24 0 14.6 0 6.6 5.3 2.6 13.1l7.8 6.1C12.3 13 17.7 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.3z"/>
+                    <path fill="#FBBC05" d="M10.4 28.8A14.5 14.5 0 0 1 9.5 24c0-1.7.3-3.3.9-4.8L2.6 13.1A24 24 0 0 0 0 24c0 3.8.9 7.5 2.6 10.9l7.8-6.1z"/>
+                    <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.3-7.7 2.3-6.3 0-11.7-4.2-13.6-10l-7.8 6.1C6.6 42.7 14.6 48 24 48z"/>
+                </svg>
+                Sign in with Google
+            </button>
+            <p class="text-gray-600 text-xs mt-6">Your progress is saved to your account automatically.</p>
+        </div>
+    </div>
+
+    <!-- Main App (hidden until auth) -->
+    <div id="app" class="hidden">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-20 px-5 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </a>
+                <div>
+                    <span class="font-black text-base text-white">AZ Learner</span>
+                    <span class="text-gray-500 mx-2">/</span>
+                    <span class="font-semibold text-sm text-blue-400">Courses</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="user-badge" class="flex items-center gap-2">
+                    <img id="user-photo" class="w-8 h-8 rounded-full border border-gray-600" src="" alt="Profile" style="display:none">
+                    <span id="user-name" class="text-sm text-gray-300 hidden sm:block"></span>
+                </div>
+                <button id="signout-btn" class="text-xs text-gray-500 hover:text-red-400 transition px-2 py-1 rounded border border-gray-700 hover:border-red-700">
+                    Sign out
+                </button>
+            </div>
+        </header>
+
+        <!-- Hero -->
+        <section class="px-6 pt-16 pb-10 text-center max-w-2xl mx-auto">
+            <div class="inline-flex items-center gap-2 glass text-xs font-semibold px-4 py-2 rounded-full mb-5 text-blue-300">
+                <span class="pulse-dot"></span>
+                AI-Powered Learning — Daily Lessons
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-black mb-4 leading-tight">
+                Learn Something New<br><span class="text-blue-400">Every Day</span>
+            </h1>
+            <p class="text-gray-400 text-base leading-relaxed">
+                Pick a course. Our AI generates a fresh lesson each day, picking up exactly where you left off yesterday.
+            </p>
+        </section>
+
+        <!-- Course Cards -->
+        <section class="px-5 pb-16 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                <!-- HTML & CSS Course -->
+                <a href="./html-css.html" class="course-card rounded-2xl p-6 block group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="text-5xl">🌐</div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="tag bg-orange-500/15 text-orange-400 border border-orange-500/20">Beginner Friendly</span>
+                            <span class="tag bg-blue-500/15 text-blue-400 border border-blue-500/20">HTML · CSS</span>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-bold mb-2 group-hover:text-blue-400 transition">HTML &amp; CSS</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Master web fundamentals — from basic HTML tags to responsive CSS layouts. Daily AI lessons build your skills step by step.
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <i class="fas fa-robot text-blue-400"></i>
+                            <span>AI-generated daily lessons</span>
+                        </div>
+                        <span class="text-blue-400 text-sm font-semibold group-hover:translate-x-1 transition-transform inline-block">
+                            Start <i class="fas fa-arrow-right text-xs"></i>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- Trading with Exness -->
+                <a href="./trading.html" class="course-card rounded-2xl p-6 block group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="text-5xl">📈</div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="tag bg-green-500/15 text-green-400 border border-green-500/20">Intermediate</span>
+                            <span class="tag bg-purple-500/15 text-purple-400 border border-purple-500/20">Forex · Exness</span>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-bold mb-2 group-hover:text-green-400 transition">Trading with Exness</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Learn forex trading from the ground up — market analysis, chart patterns, risk management, and trading on the Exness platform.
+                    </p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <i class="fas fa-robot text-green-400"></i>
+                            <span>AI-generated daily lessons</span>
+                        </div>
+                        <span class="text-green-400 text-sm font-semibold group-hover:translate-x-1 transition-transform inline-block">
+                            Start <i class="fas fa-arrow-right text-xs"></i>
+                        </span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Info panel -->
+            <div class="mt-8 glass rounded-xl p-5 flex items-start gap-4">
+                <i class="fas fa-info-circle text-blue-400 mt-0.5 flex-shrink-0"></i>
+                <div>
+                    <p class="text-sm text-gray-300 font-semibold mb-1">How it works</p>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                        When you open a course, our AI generates a personalised lesson for today — continuing exactly from where yesterday's lesson ended. Your progress is automatically saved to your account. Come back tomorrow for the next lesson!
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Google sign-in
+        document.getElementById('google-signin-btn').addEventListener('click', async () => {
+            try {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            } catch (e) {
+                alert('Sign-in failed: ' + e.message);
+            }
+        });
+
+        // Sign out
+        document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
+
+        // Auth state
+        onAuthStateChanged(auth, (user) => {
+            const overlay = document.getElementById('auth-overlay');
+            const appEl = document.getElementById('app');
+
+            if (user) {
+                overlay.classList.add('hidden');
+                appEl.classList.remove('hidden');
+
+                // Show user info
+                const photo = document.getElementById('user-photo');
+                if (user.photoURL) {
+                    photo.src = user.photoURL;
+                    photo.style.display = 'block';
+                }
+                document.getElementById('user-name').textContent = user.displayName || user.email;
+                document.getElementById('user-name').classList.remove('hidden');
+            } else {
+                overlay.classList.remove('hidden');
+                appEl.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -503,6 +503,18 @@ service cloud.firestore {
     }
 
     // ──────────────────────────────────────────────────────────────
+    // COURSE PROGRESS  (AI-powered daily lesson progress per user)
+    // ──────────────────────────────────────────────────────────────
+    match /course_progress/{progressId} {
+      // Users can only read/write their own progress documents
+      // Document IDs are formatted as "{userId}_{courseSlug}"
+      allow read, write: if isAuthenticated() && (
+        progressId == request.auth.uid + '_html-css' ||
+        progressId == request.auth.uid + '_trading-exness'
+      );
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // ARTIFACTS / CANVAS DATA  (nested public data store)
     // ──────────────────────────────────────────────────────────────
     match /artifacts/{appId}/public/data/{collection}/{docId} {
