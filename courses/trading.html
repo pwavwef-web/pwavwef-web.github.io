@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading with Exness – AZ Learner</title>
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #052e16 0%, #0f172a 50%, #052e16 100%);
+            min-height: 100vh;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+        }
+        .btn-google {
+            background: white;
+            color: #1f2937;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .btn-google:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.3); transform: translateY(-2px); }
+
+        /* Lesson content typography */
+        .lesson-body h2 { font-size: 1.25rem; font-weight: 700; color: #86efac; margin: 1.4rem 0 0.6rem; }
+        .lesson-body h3 { font-size: 1.05rem; font-weight: 600; color: #bbf7d0; margin: 1.2rem 0 0.5rem; }
+        .lesson-body p { color: #cbd5e1; line-height: 1.75; margin-bottom: 0.85rem; font-size: 0.9375rem; }
+        .lesson-body ul, .lesson-body ol { color: #cbd5e1; padding-left: 1.4rem; margin-bottom: 0.85rem; }
+        .lesson-body li { margin-bottom: 0.4rem; line-height: 1.7; font-size: 0.9375rem; }
+        .lesson-body code {
+            background: rgba(34,197,94,0.12);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 1px 6px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #86efac;
+        }
+        .lesson-body pre {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 14px 16px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        .lesson-body pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #86efac;
+            font-size: 0.875rem;
+        }
+        .lesson-body strong { color: #e2e8f0; font-weight: 600; }
+        .lesson-body blockquote {
+            border-left: 3px solid #22c55e;
+            background: rgba(34,197,94,0.07);
+            padding: 10px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 0.85rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .exercise-item {
+            background: rgba(34,197,94,0.07);
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            color: #86efac;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .progress-bar-fill {
+            height: 4px;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px; height: 24px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .topic-pill {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 12px;
+            background: rgba(34,197,94,0.10);
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 20px;
+            color: #86efac;
+        }
+        .disclaimer {
+            background: rgba(234,179,8,0.07);
+            border: 1px solid rgba(234,179,8,0.2);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fde68a;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-center px-6">
+        <div class="text-center max-w-sm">
+            <div class="text-6xl mb-6">📈</div>
+            <h1 class="text-2xl font-black mb-2">Trading with Exness</h1>
+            <p class="text-gray-400 mb-8 text-sm leading-relaxed">
+                Sign in to access your AI-powered daily trading lessons and track your progress.
+            </p>
+            <button id="google-signin-btn" class="btn-google mx-auto">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.7-6.7C35.7 2.4 30.2 0 24 0 14.6 0 6.6 5.3 2.6 13.1l7.8 6.1C12.3 13 17.7 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.3z"/>
+                    <path fill="#FBBC05" d="M10.4 28.8A14.5 14.5 0 0 1 9.5 24c0-1.7.3-3.3.9-4.8L2.6 13.1A24 24 0 0 0 0 24c0 3.8.9 7.5 2.6 10.9l7.8-6.1z"/>
+                    <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.3-7.7 2.3-6.3 0-11.7-4.2-13.6-10l-7.8 6.1C6.6 42.7 14.6 48 24 48z"/>
+                </svg>
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-20 px-5 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="./index.html" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📈</span>
+                    <div>
+                        <p class="font-bold text-sm text-white leading-tight">Trading with Exness</p>
+                        <p class="text-xs text-green-400 leading-tight">Daily AI Lessons</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <img id="user-photo" class="w-8 h-8 rounded-full border border-gray-600" src="" alt="" style="display:none">
+                <button id="signout-btn" class="text-xs text-gray-500 hover:text-red-400 transition px-2 py-1 rounded border border-gray-700">
+                    Sign out
+                </button>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="flex flex-col items-center justify-center py-32 px-6 text-center">
+            <div class="spinner mb-4"></div>
+            <p id="loading-text" class="text-gray-400 text-sm">Checking your progress...</p>
+        </div>
+
+        <!-- Lesson Container -->
+        <div id="lesson-container" class="hidden max-w-3xl mx-auto px-5 py-8 pb-20">
+
+            <!-- Day Badge + Progress -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="badge bg-green-500/15 text-green-400 border border-green-500/20">
+                        <i class="fas fa-calendar-day mr-1"></i>
+                        <span id="day-badge">Day 1</span>
+                    </div>
+                    <div id="new-lesson-badge" class="hidden badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        <i class="fas fa-sparkles mr-1"></i> Fresh lesson
+                    </div>
+                    <div id="saved-lesson-badge" class="hidden badge bg-gray-500/15 text-gray-400 border border-gray-500/20">
+                        <i class="fas fa-bookmark mr-1"></i> Today's lesson
+                    </div>
+                </div>
+                <span id="lesson-date" class="text-xs text-gray-500"></span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="mb-6">
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Course progress</span>
+                    <span id="progress-text">Day 1 of your journey</span>
+                </div>
+                <div class="bg-gray-800 h-1 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="progress-bar-fill" style="width:5%"></div>
+                </div>
+            </div>
+
+            <!-- Risk Disclaimer -->
+            <div class="disclaimer mb-5 flex items-start gap-3">
+                <i class="fas fa-triangle-exclamation mt-0.5 flex-shrink-0"></i>
+                <p><strong>Educational Disclaimer:</strong> This course is for educational purposes only and does not constitute financial advice. Trading involves significant risk of loss. Always practice on a demo account before trading real money. Past performance is not indicative of future results.</p>
+            </div>
+
+            <!-- Lesson Title -->
+            <div class="card p-6 mb-5">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-green-500/15 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-chart-line text-green-400"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-xs text-green-400 font-semibold uppercase tracking-wider mb-1">Today's Lesson</p>
+                        <h1 id="lesson-title" class="text-xl font-bold text-white leading-tight"></h1>
+                        <p id="lesson-objective" class="text-gray-400 text-sm mt-2 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topics covered -->
+            <div id="topics-section" class="card p-5 mb-5">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    <i class="fas fa-list-check mr-1"></i> Topics Covered
+                </p>
+                <div id="topics-list" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Main lesson body -->
+            <div class="card p-6 mb-5">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+                    <i class="fas fa-graduation-cap mr-1"></i> Lesson Content
+                </p>
+                <div id="lesson-content" class="lesson-body"></div>
+            </div>
+
+            <!-- Exercises / Practice tasks -->
+            <div id="exercises-section" class="card p-5 mb-5">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    <i class="fas fa-tasks mr-1"></i> Practice Tasks
+                </p>
+                <div id="exercises-list"></div>
+            </div>
+
+            <!-- Summary / What's Next -->
+            <div class="card p-5 mb-5">
+                <p class="text-xs font-semibold text-green-400 uppercase tracking-wider mb-3">
+                    <i class="fas fa-forward mr-1"></i> Summary &amp; What's Next
+                </p>
+                <p id="lesson-summary" class="text-gray-300 text-sm leading-relaxed"></p>
+            </div>
+
+            <!-- Exness CTA -->
+            <div class="card p-5 mb-5 border-green-900/50" style="background: rgba(34,197,94,0.04);">
+                <p class="text-xs font-semibold text-green-400 uppercase tracking-wider mb-3">
+                    <i class="fas fa-external-link-alt mr-1"></i> Practice on Exness
+                </p>
+                <p class="text-sm text-gray-400 mb-4 leading-relaxed">
+                    Ready to practice what you've learned? Open a free <strong class="text-white">Exness demo account</strong> — trade with virtual money, zero risk.
+                </p>
+                <a href="https://www.exness.com/sign-up/" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition"
+                   style="background: linear-gradient(135deg, #16a34a, #15803d);">
+                    <i class="fas fa-chart-bar"></i>
+                    Open Free Demo Account
+                    <i class="fas fa-external-link-alt text-xs opacity-70"></i>
+                </a>
+            </div>
+
+            <!-- Come back tomorrow CTA -->
+            <div class="glass rounded-xl p-5 flex items-start gap-4">
+                <i class="fas fa-clock text-yellow-400 mt-0.5 flex-shrink-0"></i>
+                <div>
+                    <p class="text-sm font-semibold text-yellow-300 mb-1">Come back tomorrow!</p>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Your AI tutor will generate the next lesson when you return. It will remember today's progress and continue building your trading skills.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden flex flex-col items-center justify-center py-32 px-6 text-center">
+            <div class="text-5xl mb-4">⚠️</div>
+            <p class="text-white font-bold mb-2">Couldn't generate lesson</p>
+            <p id="error-msg" class="text-gray-400 text-sm mb-6">An error occurred. Please try again.</p>
+            <button id="retry-btn" onclick="window.courseApp.retryLesson()" class="px-5 py-2 bg-green-700 hover:bg-green-800 rounded-lg text-sm font-semibold transition">
+                <i class="fas fa-redo mr-1"></i> Retry
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getVertexAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const fbApp = initializeApp(firebaseConfig);
+        const auth = getAuth(fbApp);
+        const db = getFirestore(fbApp);
+
+        const COURSE_SLUG = 'trading-exness';
+
+        // ---- Helpers ----
+        function todayISO() {
+            return new Date().toISOString().slice(0, 10);
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderMarkdown(text) {
+            if (!text) return '';
+            let html = escapeHtml(text);
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+            // Unordered lists — convert runs of "- item" lines into <ul>
+            html = html.replace(/((?:^\- .+$\n?)+)/gm, (match) => {
+                const items = match.trim().split('\n').map(l => `<li>${l.replace(/^\- /, '')}</li>`).join('');
+                return `<ul>${items}</ul>\n`;
+            });
+            // Ordered lists — convert runs of "N. item" lines into <ol>
+            html = html.replace(/((?:^\d+\. .+$\n?)+)/gm, (match) => {
+                const items = match.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+                return `<ol>${items}</ol>\n`;
+            });
+            const parts = html.split(/\n{2,}/);
+            html = parts.map(p => {
+                p = p.trim();
+                if (!p) return '';
+                if (/^<(h[23]|ul|ol|li|pre|blockquote)/.test(p)) return p;
+                return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+            }).join('\n');
+            return html;
+        }
+
+        // ---- AI Lesson Generation ----
+        let aiModel = null;
+
+        async function initAI() {
+            try {
+                const vertexAI = getVertexAI(fbApp);
+                aiModel = getGenerativeModel(vertexAI, { model: 'gemini-2.0-flash' });
+            } catch (e) {
+                console.warn('Vertex AI init failed:', e);
+            }
+        }
+
+        async function generateLesson(dayNumber, previousLesson) {
+            if (!aiModel) throw new Error('AI model not available. Please check that Vertex AI is enabled for this Firebase project.');
+
+            let prompt;
+            if (dayNumber === 1 || !previousLesson) {
+                prompt = `You are an expert forex trading tutor for AZ Learner, a platform for Ghanaian university students.
+
+Generate a structured Day 1 beginner lesson for a "Trading with Exness" course.
+
+The lesson should cover fundamental forex concepts, be practical, and introduce the Exness trading platform where relevant.
+
+Return ONLY valid JSON (no markdown fences, no explanation) in this exact structure:
+{
+  "dayNumber": 1,
+  "title": "short lesson title",
+  "objective": "one-sentence learning objective",
+  "topics": ["topic1", "topic2", "topic3"],
+  "content": "full lesson content in markdown format with headings, explanations, examples",
+  "exercises": ["practice task 1", "practice task 2"],
+  "summary": "2-3 sentence summary of what was learned and a hint about what comes next"
+}
+
+The content must include:
+- An introduction to forex/financial markets
+- Key terminology (currency pairs, pips, spread, leverage, etc.)
+- How the Exness platform works at a high level
+- A reminder to always practice on a demo account first
+- Practical, real-world context for Ghanaian students
+- Educational disclaimer that this is not financial advice`;
+            } else {
+                const prevTitle = String(previousLesson.title || 'previous lesson').replace(/<[^>]*>/g, '').slice(0, 200);
+                const prevSummary = String(previousLesson.summary || '').replace(/<[^>]*>/g, '').slice(0, 500);
+                const prevTopics = Array.isArray(previousLesson.topics)
+                    ? previousLesson.topics.map(t => String(t).replace(/<[^>]*>/g, '').slice(0, 80)).join(', ')
+                    : '';
+                prompt = `You are an expert forex trading tutor for AZ Learner, a platform for Ghanaian university students.
+
+The student just completed Day ${dayNumber - 1}:
+- Title: "${prevTitle}"
+- Topics covered: ${prevTopics}
+- Summary: "${prevSummary}"
+
+Generate Day ${dayNumber} of the "Trading with Exness" course, continuing directly from where yesterday's lesson ended. Build on the previous lesson's concepts and introduce the next logical trading topic.
+
+Return ONLY valid JSON (no markdown fences, no explanation) in this exact structure:
+{
+  "dayNumber": ${dayNumber},
+  "title": "short lesson title",
+  "objective": "one-sentence learning objective",
+  "topics": ["topic1", "topic2", "topic3"],
+  "content": "full lesson content in markdown format with headings, explanations, examples",
+  "exercises": ["practice task 1", "practice task 2"],
+  "summary": "2-3 sentence summary of what was learned today and a hint about what comes next"
+}
+
+The content must:
+- Explicitly build on yesterday's lesson
+- Progress logically through trading concepts (e.g. after basics: chart types → indicators → strategies → risk management → Exness platform features)
+- Include practical examples relevant to Ghanaian students
+- Always remind students to use demo accounts for practice
+- Include an educational disclaimer that this is not financial advice`;
+            }
+
+            const result = await aiModel.generateContent(prompt);
+            const text = result.response.text().trim();
+            const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            return JSON.parse(cleaned);
+        }
+
+        // ---- Firestore Progress ----
+        function progressDocRef(userId) {
+            return doc(db, 'course_progress', `${userId}_${COURSE_SLUG}`);
+        }
+
+        async function loadProgress(userId) {
+            const snap = await getDoc(progressDocRef(userId));
+            return snap.exists() ? snap.data() : null;
+        }
+
+        async function saveProgress(userId, lesson) {
+            await setDoc(progressDocRef(userId), {
+                userId,
+                courseSlug: COURSE_SLUG,
+                todayLessonDate: todayISO(),
+                todayLesson: lesson,
+                lastLesson: lesson,
+                lastLessonDate: todayISO(),
+                dayNumber: lesson.dayNumber,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        }
+
+        // ---- UI Rendering ----
+        function setLoadingText(msg) {
+            document.getElementById('loading-text').textContent = msg;
+        }
+
+        function showError(msg) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('lesson-container').classList.add('hidden');
+            const errEl = document.getElementById('error-state');
+            errEl.classList.remove('hidden');
+            document.getElementById('error-msg').textContent = msg;
+        }
+
+        function renderLesson(lesson, isNew) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+
+            const dayNum = lesson.dayNumber || 1;
+            document.getElementById('day-badge').textContent = `Day ${dayNum}`;
+            document.getElementById('lesson-date').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'short', day:'numeric' });
+            document.getElementById('progress-text').textContent = `Day ${dayNum} of your journey`;
+            const pct = Math.min(95, 5 + (dayNum - 1) * 3);
+            document.getElementById('progress-bar').style.width = pct + '%';
+
+            if (isNew) {
+                document.getElementById('new-lesson-badge').classList.remove('hidden');
+            } else {
+                document.getElementById('saved-lesson-badge').classList.remove('hidden');
+            }
+
+            document.getElementById('lesson-title').textContent = lesson.title || '';
+            document.getElementById('lesson-objective').textContent = lesson.objective || '';
+
+            const topicsList = document.getElementById('topics-list');
+            topicsList.innerHTML = '';
+            (lesson.topics || []).forEach(t => {
+                const pill = document.createElement('span');
+                pill.className = 'topic-pill';
+                pill.textContent = t;
+                topicsList.appendChild(pill);
+            });
+
+            document.getElementById('lesson-content').innerHTML = renderMarkdown(lesson.content || '');
+
+            const exercisesList = document.getElementById('exercises-list');
+            exercisesList.innerHTML = '';
+            (lesson.exercises || []).forEach((ex, i) => {
+                const div = document.createElement('div');
+                div.className = 'exercise-item';
+                div.innerHTML = `<i class="fas fa-chart-bar text-green-400 mt-0.5 flex-shrink-0"></i><span><strong>Task ${i + 1}:</strong> ${escapeHtml(ex)}</span>`;
+                exercisesList.appendChild(div);
+            });
+
+            document.getElementById('lesson-summary').textContent = lesson.summary || '';
+
+            document.getElementById('lesson-container').classList.remove('hidden');
+        }
+
+        // ---- Main Flow ----
+        let currentUser = null;
+
+        async function runCourseFlow(user) {
+            currentUser = user;
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('lesson-container').classList.add('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+
+            try {
+                setLoadingText('Checking your progress...');
+                const progress = await loadProgress(user.uid);
+                const today = todayISO();
+
+                if (progress && progress.todayLessonDate === today && progress.todayLesson) {
+                    renderLesson(progress.todayLesson, false);
+                    return;
+                }
+
+                setLoadingText('Initialising AI tutor...');
+                await initAI();
+
+                const dayNumber = progress ? (progress.dayNumber || 1) + 1 : 1;
+                const previousLesson = progress ? progress.lastLesson : null;
+
+                setLoadingText(`Generating your Day ${dayNumber} lesson...`);
+                const lesson = await generateLesson(dayNumber, previousLesson);
+
+                setLoadingText('Saving your progress...');
+                await saveProgress(user.uid, lesson);
+
+                renderLesson(lesson, true);
+            } catch (e) {
+                console.error('Course flow error:', e);
+                showError(e.message || 'Failed to load lesson. Please try again.');
+            }
+        }
+
+        window.courseApp = {
+            retryLesson() {
+                if (currentUser) runCourseFlow(currentUser);
+            }
+        };
+
+        // ---- Auth ----
+        document.getElementById('google-signin-btn').addEventListener('click', async () => {
+            try {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            } catch (e) {
+                alert('Sign-in failed: ' + e.message);
+            }
+        });
+
+        document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
+
+        onAuthStateChanged(auth, (user) => {
+            const overlay = document.getElementById('auth-overlay');
+            const appEl = document.getElementById('app');
+
+            if (user) {
+                overlay.classList.add('hidden');
+                appEl.classList.remove('hidden');
+                const photo = document.getElementById('user-photo');
+                if (user.photoURL) { photo.src = user.photoURL; photo.style.display = 'block'; }
+                runCourseFlow(user);
+            } else {
+                overlay.classList.remove('hidden');
+                appEl.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
