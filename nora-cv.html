@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nora Nudzor – Curriculum Vitae 2026</title>
+    <meta name="description" content="Professional CV of Nora Nudzor, Tourism Management Student at University of Cape Coast.">
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Base ─────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 16px 48px;
+        }
+
+        /* ── Toolbar (hidden on print) ────────────────────────── */
+        #toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            width: 210mm;
+            max-width: 100%;
+        }
+        #toolbar h2 {
+            flex: 1;
+            color: #e2e8f0;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .btn-print {
+            background: linear-gradient(135deg, #4338ca, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-print:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.45); }
+
+        /* ── Template 8 – Premium Gradient ───────────────────── */
+        .cv-preview {
+            background: white;
+            color: #1a1a1a;
+            font-family: Arial, sans-serif;
+            width: 210mm;
+            max-width: 100%;
+            padding: 20mm;
+            box-sizing: border-box;
+            font-size: 11pt;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .cv-t8 { background: #fafafa; }
+
+        /* Header */
+        .cv-t8 .cv-header {
+            background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed, #a855f7);
+            color: white;
+            padding: 32px 20mm 24px;
+            margin: -20mm -20mm 0 -20mm;
+            position: relative;
+            overflow: hidden;
+        }
+        .cv-t8 .cv-header::before {
+            content: '';
+            position: absolute;
+            top: -30px; right: -30px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.07);
+        }
+        .cv-t8 .cv-header::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: -20px;
+            width: 140px; height: 140px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+        .cv-t8 .cv-header h1 {
+            font-size: 24pt;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+        .cv-t8 .cv-header p {
+            font-size: 11pt;
+            margin: 6px 0 0;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        .cv-header-inner {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Contact chips */
+        .cv-t8 .cv-contact-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 20mm;
+            margin: 0 -20mm 16px -20mm;
+            background: #ede9fe;
+            border-bottom: 2px solid #c4b5fd;
+        }
+        .cv-t8 .cv-chip {
+            background: white;
+            color: #4338ca;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 8.5pt;
+            font-weight: 600;
+            border: 1px solid #c4b5fd;
+        }
+
+        /* Section titles */
+        .cv-t8 .cv-section-title {
+            font-size: 11pt;
+            font-weight: 800;
+            margin-bottom: 10px;
+            margin-top: 18px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+            border-left: 4px solid;
+            border-image: linear-gradient(to bottom, #4338ca, #7c3aed) 1;
+            color: #312e81;
+            border-radius: 0 6px 6px 0;
+        }
+
+        /* Cards */
+        .cv-t8 .cv-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e7ff;
+            box-shadow: 0 1px 3px rgba(67,56,202,0.08);
+        }
+
+        /* Item styles */
+        .cv-body-text { font-size: 10.5pt; line-height: 1.6; color: #333; }
+        .cv-item { margin-bottom: 0; }
+        .cv-item-title { font-weight: bold; font-size: 11pt; color: #1a1a1a; }
+        .cv-item-sub { color: #555; font-size: 10pt; margin-top: 2px; }
+        .cv-item-desc { font-size: 10pt; line-height: 1.65; color: #333; margin-top: 6px; }
+        .cv-item-desc ul { padding-left: 16px; margin: 0; }
+        .cv-item-desc ul li { margin-bottom: 4px; }
+
+        /* Skills badges */
+        .cv-t8-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4338ca, #7c3aed);
+            color: white;
+            padding: 3px 11px;
+            border-radius: 12px;
+            font-size: 8pt;
+            margin: 2px 2px 2px 0;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .cv-t8 .cv-footer {
+            margin: 24px -20mm -20mm -20mm;
+            padding: 12px 20mm;
+            background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed);
+            color: rgba(255,255,255,0.75);
+            font-size: 8pt;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ── Print: repeating mini-header on all pages ────────── */
+        .print-page-header {
+            display: none; /* hidden on screen */
+        }
+
+        /* ── @media print ─────────────────────────────────────── */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            body {
+                background: #fff !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            #toolbar { display: none !important; }
+
+            /* Repeating compact header on every page */
+            .print-page-header {
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 9999;
+                background: linear-gradient(135deg, #312e81, #4338ca, #7c3aed, #a855f7);
+                color: white;
+                padding: 7px 20mm;
+                justify-content: space-between;
+                align-items: center;
+                font-family: Arial, sans-serif;
+                font-size: 8pt;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .print-page-header .pph-name {
+                font-weight: 800;
+                font-size: 10pt;
+                letter-spacing: 0.5px;
+            }
+            .print-page-header .pph-title {
+                opacity: 0.85;
+                font-size: 8pt;
+                font-weight: 500;
+            }
+            .print-page-header .pph-contact {
+                font-size: 8pt;
+                opacity: 0.85;
+                text-align: right;
+            }
+
+            /* CV body offset so page-2+ content clears the fixed header */
+            .cv-preview {
+                box-shadow: none !important;
+                width: 210mm !important;
+                max-width: 210mm !important;
+                margin: 0 !important;
+                padding: 20mm !important;
+                font-family: Arial, sans-serif !important;
+                page-break-inside: auto;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            /* Prevent awkward page breaks */
+            .cv-t8 .cv-card,
+            .cv-item { break-inside: avoid; page-break-inside: avoid; }
+            .cv-t8 .cv-section-title { break-after: avoid; page-break-after: avoid; }
+
+            /* Ensure gradients print */
+            .cv-t8 .cv-header,
+            .cv-t8 .cv-footer,
+            .cv-t8 .cv-section-title,
+            .cv-t8 .cv-contact-chips,
+            .cv-t8-badge,
+            .print-page-header {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toolbar (hidden on print) -->
+    <div id="toolbar">
+        <h2>Nora Nudzor &mdash; Curriculum Vitae 2026</h2>
+        <button class="btn-print" onclick="window.print()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print / Save PDF
+        </button>
+    </div>
+
+    <!-- Compact repeating header (visible only during print on pages 2+) -->
+    <div class="print-page-header" aria-hidden="true">
+        <div>
+            <div class="pph-name">Nora Nudzor</div>
+            <div class="pph-title">Tourism Management Student</div>
+        </div>
+        <div class="pph-contact">
+            +233 20 248 1545 &nbsp;|&nbsp; noranudzor88@gmail.com
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         CV – Template 8 (Premium Gradient)
+         ════════════════════════════════════════════════════════════ -->
+    <main class="cv-preview cv-t8" role="main" id="cv-output">
+
+        <!-- ── Header ─────────────────────────────────────────── -->
+        <header class="cv-header">
+            <div class="cv-header-inner">
+                <div>
+                    <h1>Nora Nudzor</h1>
+                    <p>Tourism Management Student</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── Contact Chips ──────────────────────────────────── -->
+        <div class="cv-contact-chips" role="contentinfo" aria-label="Contact Information">
+            <span class="cv-chip">+233 20 248 1545</span>
+            <span class="cv-chip">noranudzor88@gmail.com</span>
+            <span class="cv-chip">Winneba, Central Region</span>
+        </div>
+
+        <!-- ── Professional Profile ───────────────────────────── -->
+        <section aria-labelledby="sec-profile">
+            <div class="cv-section-title" id="sec-profile">Professional Profile</div>
+            <div class="cv-card cv-body-text">
+                Highly motivated and experienced professional with 2 years in the tourism and hospitality sector.
+                Adept at providing exceptional customer service, managing travel arrangements, and creating engaging
+                experiences for diverse clientele. Proven ability to increase repeat bookings by 20% and resolve
+                customer complaints efficiently. Possesses strong communication, problem-solving, and organisational
+                skills. Eager to leverage expertise to contribute to your company's success by delivering outstanding
+                service and fostering positive relationships with guests.
+            </div>
+        </section>
+
+        <!-- ── Work Experience ────────────────────────────────── -->
+        <section aria-labelledby="sec-experience">
+            <div class="cv-section-title" id="sec-experience">Work Experience</div>
+
+            <div class="cv-card cv-item">
+                <div class="cv-item-title">Sales, Front Desk &amp; Housekeeping</div>
+                <div class="cv-item-sub">
+                    Gloriaka Hotel &nbsp;|&nbsp; Aug 2025 – Oct 2025 &nbsp;|&nbsp; Winneba, Central Region
+                </div>
+                <div class="cv-item-desc">
+                    <ul>
+                        <li>Upsold hotel amenities and services, exceeding targets by 15% monthly, boosting revenue generation.</li>
+                        <li>Managed front desk operations efficiently, resolving guest issues and ensuring seamless check-in/check-out procedures.</li>
+                        <li>Maintained impeccable housekeeping standards, receiving consistently positive guest satisfaction scores and feedback.</li>
+                        <li>Collaborated across departments to optimise guest experience, contributing to a cohesive hotel service environment.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Education ──────────────────────────────────────── -->
+        <section aria-labelledby="sec-education">
+            <div class="cv-section-title" id="sec-education">Education</div>
+
+            <div class="cv-card cv-item">
+                <div class="cv-item-title">Bachelor of Science in Tourism Management</div>
+                <div class="cv-item-sub">
+                    University of Cape Coast &nbsp;|&nbsp; 2022 – 2026
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Skills ─────────────────────────────────────────── -->
+        <section aria-labelledby="sec-skills">
+            <div class="cv-section-title" id="sec-skills">Skills</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;">
+                <span class="cv-t8-badge">Customer Service</span>
+                <span class="cv-t8-badge">Time Management</span>
+                <span class="cv-t8-badge">Communication Skills</span>
+                <span class="cv-t8-badge">Adaptability</span>
+                <span class="cv-t8-badge">Problem Solving</span>
+                <span class="cv-t8-badge">Marketing</span>
+                <span class="cv-t8-badge">Sales</span>
+                <span class="cv-t8-badge">Interpersonal Skills</span>
+                <span class="cv-t8-badge">Event Planning</span>
+                <span class="cv-t8-badge">Organisational Skills</span>
+                <span class="cv-t8-badge">Budgeting</span>
+                <span class="cv-t8-badge">Research Skills</span>
+                <span class="cv-t8-badge">Social Media Management</span>
+            </div>
+        </section>
+
+        <!-- ── Languages ──────────────────────────────────────── -->
+        <section aria-labelledby="sec-languages">
+            <div class="cv-section-title" id="sec-languages">Languages</div>
+            <div class="cv-card cv-body-text">English &nbsp;|&nbsp; Twi &nbsp;|&nbsp; Ewe</div>
+        </section>
+
+        <!-- ── Certifications & Achievements ─────────────────── -->
+        <section aria-labelledby="sec-certs">
+            <div class="cv-section-title" id="sec-certs">Certifications &amp; Achievements</div>
+            <div class="cv-card">
+                <ul class="cv-body-text" style="padding-left:16px;">
+                    <li>Certified Hospitality Professional (CHP)</li>
+                    <li>Foreign Language Proficiency</li>
+                    <li>Tourism Management Professional (TMP)</li>
+                    <li>Project Management Professional (PMP)</li>
+                    <li>Google Analytics Individual Qualification (GAIQ)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ── References ─────────────────────────────────────── -->
+        <section aria-labelledby="sec-refs">
+            <div class="cv-section-title" id="sec-refs">References</div>
+            <div class="cv-card cv-body-text">Available upon request.</div>
+        </section>
+
+        <!-- ── Footer ─────────────────────────────────────────── -->
+        <footer class="cv-footer">
+            <span>Nora Nudzor</span>
+            <span>✦ Curriculum Vitae 2026 ✦</span>
+        </footer>
+
+    </main>
+
+</body>
+</html>
