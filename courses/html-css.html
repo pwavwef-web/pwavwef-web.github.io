@@ -599,6 +599,7 @@
         };
 
         async function populateCertificate(user) {
+            const recipientName = (surveyAnswers && surveyAnswers.fullName) ? surveyAnswers.fullName : (user.displayName || user.email || 'Student');
             const now = new Date();
             const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
             let certId, issuedDate;
@@ -622,7 +623,6 @@
                     uniquePart = Array.from(buf).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
                 }
                 certId = `AZL-${CERT_ACRONYM}-${now.getFullYear()}-${uniquePart}`;
-                const recipientName = (surveyAnswers && surveyAnswers.fullName) ? surveyAnswers.fullName : (user.displayName || user.email || 'Student');
                 try {
                     await setDoc(doc(db, 'certificates', certId), {
                         certId,
@@ -642,7 +642,6 @@
                     console.warn('Could not save certificate:', e);
                 }
             }
-            const recipientName = (surveyAnswers && surveyAnswers.fullName) ? surveyAnswers.fullName : (user.displayName || user.email || 'Student');
             document.getElementById('cert-recipient').textContent = recipientName;
             document.getElementById('cert-course-name').textContent = COURSE_NAME;
             document.getElementById('cert-date').textContent = 'Issued: ' + issuedDate;
