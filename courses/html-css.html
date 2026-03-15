@@ -188,6 +188,11 @@
                 <h2 class="text-xl font-bold text-white">Quick Learning Survey</h2>
                 <p class="text-gray-400 text-sm mt-1">Help our AI personalise your lessons — takes about 1 minute</p>
             </div>
+            <!-- Full Legal Name (for certificate) -->
+            <div class="mb-4">
+                <p class="text-sm font-semibold text-gray-300 mb-1">Full legal name <span class="font-normal text-xs" style="color:#FFAB40;">✦ displayed on your certificate</span></p>
+                <input id="sq-fullname" type="text" maxlength="100" placeholder="e.g. Kwame Asante Boateng" class="w-full rounded-lg px-3 py-2 text-sm text-white focus:outline-none" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);">
+            </div>
             <div class="mb-4">
                 <p class="text-sm font-semibold text-gray-300 mb-2">1. Your current experience level?</p>
                 <div class="grid grid-cols-3 gap-2" id="sq-level">
@@ -279,6 +284,11 @@
                 <div class="cert-footer-bar"></div>
             </div>
             <p class="text-center text-gray-500 text-xs mt-3">Click Download to save as an image.</p>
+            <div id="cert-url-row" class="hidden mt-3 flex items-center gap-2 rounded-xl px-3 py-2" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">
+                <i class="fab fa-linkedin" style="color:#0e76a8;font-size:14px;flex-shrink:0;"></i>
+                <input id="cert-linkedin-url" type="text" readonly class="flex-1 bg-transparent text-xs min-w-0 focus:outline-none" style="color:#94a3b8;">
+                <button onclick="copyCertUrl()" class="text-xs font-bold px-3 py-1 rounded-lg flex-shrink-0 text-white" style="background:#0e76a8;">Copy</button>
+            </div>
         </div>
     </div>
 
@@ -518,6 +528,12 @@
         };
 
         window.submitSurvey = async function() {
+            const fullNameEl = document.getElementById('sq-fullname');
+            const fullName = fullNameEl ? fullNameEl.value.trim() : '';
+            if (!fullName) {
+                alert('Please enter your full legal name for the certificate.');
+                return;
+            }
             const required = ['level', 'goal', 'time', 'style'];
             for (const f of required) {
                 if (!_surveySelections[f]) {
@@ -527,6 +543,7 @@
             }
             const bgEl = document.getElementById('sq-background');
             const answers = {
+                fullName: fullName.slice(0, 100),
                 level: _surveySelections.level,
                 goal: _surveySelections.goal,
                 time: _surveySelections.time,
@@ -556,6 +573,10 @@
                 const snap = await getDoc(surveyRef);
                 if (snap.exists()) {
                     surveyAnswers = snap.data().answers || null;
+                    if (surveyAnswers && surveyAnswers.fullName) {
+                        const fnEl = document.getElementById('sq-fullname');
+                        if (fnEl) fnEl.value = surveyAnswers.fullName;
+                    }
                     return true;
                 }
             } catch (e) {
@@ -568,23 +589,69 @@
         // ---- Certificate ----
         window.openCertModal = function() { document.getElementById('cert-modal').classList.add('visible'); };
         window.closeCertModal = function() { document.getElementById('cert-modal').classList.remove('visible'); };
+        window.copyCertUrl = function() {
+            const urlInput = document.getElementById('cert-linkedin-url');
+            if (!urlInput) return;
+            navigator.clipboard.writeText(urlInput.value).then(() => {
+                const btn = document.querySelector('#cert-url-row button');
+                if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2000); }
+            }).catch(() => { urlInput.select(); document.execCommand('copy'); });
+        };
 
-        function populateCertificate(user) {
+        async function populateCertificate(user) {
             const now = new Date();
             const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-            let uniquePart;
-            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-                uniquePart = crypto.randomUUID().split('-')[0].toUpperCase();
-            } else {
-                const buf = new Uint8Array(4);
-                crypto.getRandomValues(buf);
-                uniquePart = Array.from(buf).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+            let certId, issuedDate;
+            try {
+                const progressSnap = await getDoc(progressDocRef(user.uid));
+                if (progressSnap.exists() && progressSnap.data().certId) {
+                    certId = progressSnap.data().certId;
+                    issuedDate = progressSnap.data().certIssuedDate || `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+                }
+            } catch (e) {
+                console.warn('Could not load existing cert ID:', e);
             }
-            document.getElementById('cert-recipient').textContent = user.displayName || user.email || 'Student';
+            if (!certId) {
+                issuedDate = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+                let uniquePart;
+                if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                    uniquePart = crypto.randomUUID().split('-')[0].toUpperCase();
+                } else {
+                    const buf = new Uint8Array(4);
+                    crypto.getRandomValues(buf);
+                    uniquePart = Array.from(buf).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+                }
+                certId = `AZL-${CERT_ACRONYM}-${now.getFullYear()}-${uniquePart}`;
+                const recipientName = (surveyAnswers && surveyAnswers.fullName) ? surveyAnswers.fullName : (user.displayName || user.email || 'Student');
+                try {
+                    await setDoc(doc(db, 'certificates', certId), {
+                        certId,
+                        recipientName,
+                        courseName: COURSE_NAME,
+                        courseSlug: COURSE_SLUG,
+                        certAcronym: CERT_ACRONYM,
+                        courseEmoji: '🌐',
+                        accentColor: '#3b82f6',
+                        certDescription: 'demonstrating consistent dedication and a solid foundation in web development fundamentals.',
+                        userId: user.uid,
+                        issuedDate,
+                        issuedAt: serverTimestamp()
+                    });
+                    await setDoc(progressDocRef(user.uid), { certId, certIssuedDate: issuedDate }, { merge: true });
+                } catch (e) {
+                    console.warn('Could not save certificate:', e);
+                }
+            }
+            const recipientName = (surveyAnswers && surveyAnswers.fullName) ? surveyAnswers.fullName : (user.displayName || user.email || 'Student');
+            document.getElementById('cert-recipient').textContent = recipientName;
             document.getElementById('cert-course-name').textContent = COURSE_NAME;
-            document.getElementById('cert-date').textContent = 'Issued: ' + dateStr;
-            document.getElementById('cert-id').textContent = 'Certificate ID: AZL-' + CERT_ACRONYM + '-' + now.getFullYear() + '-' + uniquePart;
+            document.getElementById('cert-date').textContent = 'Issued: ' + issuedDate;
+            document.getElementById('cert-id').textContent = 'Certificate ID: ' + certId;
+            const certUrl = `https://azlearner.me/courses/cert.html?id=${encodeURIComponent(certId)}`;
+            const urlRow = document.getElementById('cert-url-row');
+            const urlInput = document.getElementById('cert-linkedin-url');
+            if (urlRow) urlRow.classList.remove('hidden');
+            if (urlInput) urlInput.value = certUrl;
         }
 
         window.downloadCertificate = async function() {

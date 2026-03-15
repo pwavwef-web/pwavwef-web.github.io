@@ -531,6 +531,17 @@ service cloud.firestore {
       );
     }
     // ──────────────────────────────────────────────────────────────
+    // CERTIFICATES  (issued course completion certificates)
+    // Public read so anyone can verify a certificate via its URL.
+    // Only the certificate owner can create/update their certificate.
+    // ──────────────────────────────────────────────────────────────
+    match /certificates/{certId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // ARTIFACTS / CANVAS DATA  (nested public data store)
     // ──────────────────────────────────────────────────────────────
     match /artifacts/{appId}/public/data/{collection}/{docId} {

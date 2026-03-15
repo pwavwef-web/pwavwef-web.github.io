@@ -184,13 +184,13 @@
         .price-badge.premium { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
         .price-badge.luxury { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3); }
         @media print {
-            @page { size: A4 portrait; margin: 0; }
+            @page { size: A4 landscape; margin: 0; }
             body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             /* cv-output-6 is in the download step (step-6) and is the print target */
             #cv-output-6, #cv-output-6 * { visibility: visible; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             #cv-output-6 { position: absolute; top: 0; left: 0; width: 100%; margin: 0; }
-            .cv-preview { box-shadow: none !important; width: 210mm !important; margin: 0 !important; font-family: Arial, sans-serif !important; page-break-inside: auto; }
+            .cv-preview { box-shadow: none !important; width: 297mm !important; margin: 0 !important; font-family: Arial, sans-serif !important; page-break-inside: auto; }
             .cv-section { break-inside: avoid; page-break-inside: avoid; }
             .cv-entry { break-inside: avoid; page-break-inside: avoid; }
             .cv-item { break-inside: avoid; page-break-inside: avoid; }
