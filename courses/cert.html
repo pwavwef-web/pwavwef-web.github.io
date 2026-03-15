@@ -21,10 +21,11 @@
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #cert-paper { width: 794px; min-height: 1123px; display: flex; flex-direction: column; }
+        #cert-paper { width: 794px; min-height: 1123px; display: flex; flex-direction: column; transform-origin: top left; }
         #cert-paper::before { content:''; position:absolute; inset:12px; border:2px solid #b8860b; border-radius:2px; pointer-events:none; z-index:1; }
         #cert-paper::after  { content:''; position:absolute; inset:17px; border:1px solid #d4af37; border-radius:1px; pointer-events:none; z-index:1; }
         .cert-bar { height: 7px; }
+        #cert-paper-wrapper { overflow: hidden; width: 100%; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -54,7 +55,7 @@
 
     <!-- Certificate View -->
     <div id="cert-view" class="hidden flex-1 py-10 px-4">
-        <div class="mx-auto" style="width:fit-content;max-width:100%;overflow-x:auto;">
+        <div class="mx-auto" style="width:794px;max-width:100%;">
             <!-- Verified badge -->
             <div class="flex items-center justify-center gap-2 mb-6">
                 <div class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style="background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.35);color:#4ade80;">
@@ -64,6 +65,7 @@
             </div>
 
             <!-- Certificate Paper -->
+            <div id="cert-paper-wrapper">
             <div id="cert-paper" style="background:#fff;position:relative;overflow:hidden;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                 <!-- Decorative corners -->
                 <div style="position:absolute;top:10px;left:10px;width:50px;height:50px;z-index:2;"><svg viewBox="0 0 56 56" fill="none"><path d="M4 4 L4 28 M4 4 L28 4" stroke="#d4af37" stroke-width="1.5"/><path d="M4 4 L20 20" stroke="#d4af37" stroke-width="1"/><circle cx="4" cy="4" r="3" fill="#FFAB40"/><circle cx="4" cy="28" r="2" fill="#d4af37"/><circle cx="28" cy="4" r="2" fill="#d4af37"/></svg></div>
@@ -117,6 +119,7 @@
 
                 <div id="cert-footer-bar" class="cert-bar"></div>
             </div>
+            </div>
 
             <!-- Actions -->
             <div class="mt-4 flex flex-col sm:flex-row items-center gap-3 justify-center">
@@ -145,6 +148,9 @@
         };
         const fbApp = initializeApp(firebaseConfig);
         const db = getFirestore(fbApp);
+
+        const CERT_WIDTH = 794;
+        const CERT_HEIGHT = 1123;
 
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1,3),16);
@@ -200,6 +206,22 @@
 
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('cert-view').classList.remove('hidden');
+            scaleCert();
+        }
+
+        function scaleCert() {
+            const paper = document.getElementById('cert-paper');
+            const wrapper = document.getElementById('cert-paper-wrapper');
+            if (!paper || !wrapper) return;
+            const wrapperWidth = wrapper.offsetWidth;
+            const scale = wrapperWidth / CERT_WIDTH;
+            if (scale < 1) {
+                paper.style.transform = `scale(${scale})`;
+                wrapper.style.height = `${Math.ceil(CERT_HEIGHT * scale)}px`;
+            } else {
+                paper.style.transform = '';
+                wrapper.style.height = '';
+            }
         }
 
         function showNotFound() {
@@ -211,8 +233,14 @@
             const btn = document.getElementById('dl-btn');
             btn.textContent = 'Generating…';
             btn.disabled = true;
+            const el = document.getElementById('cert-paper');
+            const wrapper = document.getElementById('cert-paper-wrapper');
+            const savedTransform = el.style.transform;
+            const savedHeight = wrapper ? wrapper.style.height : '';
             try {
-                const el = document.getElementById('cert-paper');
+                // Reset scaling so html2canvas captures the full 794×1123px certificate
+                el.style.transform = '';
+                if (wrapper) wrapper.style.height = `${CERT_HEIGHT}px`;
                 await document.fonts.ready;
                 const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, imageTimeout: 0, backgroundColor: '#ffffff', logging: false });
                 const link = document.createElement('a');
@@ -223,6 +251,8 @@
                 console.error('Download error:', e);
                 alert('Download failed. Try right-clicking the certificate and saving the image directly.');
             } finally {
+                el.style.transform = savedTransform;
+                if (wrapper) wrapper.style.height = savedHeight;
                 btn.innerHTML = '<i class="fas fa-download mr-1"></i> Download PNG';
                 btn.disabled = false;
             }
@@ -240,6 +270,7 @@
         };
 
         loadCert();
+        window.addEventListener('resize', scaleCert);
     </script>
 </body>
 </html>
