@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Repository Update Report – March 2026. Comprehensive changelog detailing file deletions, SDK fixes, and repository-wide improvements.">
+    <meta name="robots" content="noindex, nofollow">
+    <title>AZ Learner | Repository Update Report – March 2026</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'], mono: ['Fira Code', 'monospace'] },
+                    colors: {
+                        brand: '#3b82f6',
+                        orange: { accent: '#FFAB40' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0a0f1e;
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #FFAB40 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .badge-delete { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+        .badge-fix    { background: rgba(34,197,94,0.15);  border: 1px solid rgba(34,197,94,0.3);  color: #4ade80; }
+        .badge-update { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; }
+        .badge-new    { background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; }
+
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #3b82f6, #8b5cf6, #FFAB40);
+        }
+
+        .file-tag {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12));
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        /* Illustration boxes */
+        .illustration {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .illustration::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(59,130,246,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .before-after { grid-template-columns: 1fr; }
+        }
+
+        .before-box {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .after-box {
+            background: rgba(34,197,94,0.08);
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        pre {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .toc-link {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color .2s;
+        }
+        .toc-link:hover { color: #60a5fa; }
+
+        /* Animated header background */
+        .hero-bg {
+            background: linear-gradient(-45deg, #0a0f1e, #0d1045, #1a0535, #0a0f1e);
+            background-size: 400% 400%;
+            animation: heroBG 12s ease infinite;
+        }
+        @keyframes heroBG {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .pulse-dot {
+            width: 10px; height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulseDot 1.8s ease infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%       { transform: scale(1.4); opacity: .7; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════ HERO ══════════════════ -->
+<header class="hero-bg px-6 py-16 text-center relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,.18) 0%,transparent 60%);"></div>
+
+    <div class="relative z-10 max-w-3xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-6"
+             style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;">
+            <span class="pulse-dot"></span>
+            Repository Update · March 2026
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl font-extrabold mb-4">
+            <span class="gradient-text">AZ Learner</span><br>
+            Repository Update Report
+        </h1>
+
+        <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+            A comprehensive record of all changes made across the repository —
+            page deletions, SDK version fixes, and structural clean-ups.
+        </p>
+
+        <div class="flex flex-wrap justify-center gap-4">
+            <span class="badge-delete px-4 py-1.5 rounded-full text-sm font-semibold">3 Pages Deleted</span>
+            <span class="badge-fix px-4 py-1.5 rounded-full text-sm font-semibold">7 SDK Files Fixed</span>
+            <span class="badge-update px-4 py-1.5 rounded-full text-sm font-semibold">Dead Links Removed</span>
+            <span class="badge-new px-4 py-1.5 rounded-full text-sm font-semibold">Report Page Added</span>
+        </div>
+    </div>
+</header>
+
+<!-- ══════════════════ STATS BAR ══════════════════ -->
+<section class="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="stat-card">
+        <div class="text-3xl font-extrabold text-red-400">3</div>
+        <div class="text-xs text-slate-400 mt-1">Pages Deleted</div>
+    </div>
+    <div class="stat-card">
+        <div class="text-3xl font-extrabold text-green-400">7</div>
+        <div class="text-xs text-slate-400 mt-1">SDK Files Upgraded</div>
+    </div>
+    <div class="stat-card">
+        <div class="text-3xl font-extrabold text-blue-400">2</div>
+        <div class="text-xs text-slate-400 mt-1">Dead Links Removed</div>
+    </div>
+    <div class="stat-card">
+        <div class="text-3xl font-extrabold text-purple-400">1</div>
+        <div class="text-xs text-slate-400 mt-1">New Report Page</div>
+    </div>
+</section>
+
+<!-- ══════════════════ TABLE OF CONTENTS ══════════════════ -->
+<section class="max-w-4xl mx-auto px-6 pb-8">
+    <div class="card">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-list text-blue-400"></i> Table of Contents
+        </h2>
+        <ol class="space-y-2 text-sm">
+            <li><a href="#deletions" class="toc-link">1. Page Deletions — Personal &amp; Misbehaving Files</a></li>
+            <li><a href="#sdk-fix" class="toc-link">2. Firebase SDK Version Fix (11.6.1 → 11.0.2)</a></li>
+            <li><a href="#dead-links" class="toc-link">3. Dead Link Removal from CEO Command</a></li>
+            <li><a href="#structure" class="toc-link">4. Repository Structure Overview (Before &amp; After)</a></li>
+            <li><a href="#rationale" class="toc-link">5. Decision Rationale</a></li>
+            <li><a href="#whats-next" class="toc-link">6. What's Next</a></li>
+        </ol>
+    </div>
+</section>
+
+<main class="max-w-4xl mx-auto px-6 pb-20 space-y-12">
+
+    <!-- ══════════════════ 1. PAGE DELETIONS ══════════════════ -->
+    <section id="deletions">
+        <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-sm font-bold shrink-0">1</span>
+            Page Deletions
+        </h2>
+        <p class="text-slate-400 mb-6 text-sm">
+            Three pages were removed from the repository. All three were personal/experimental pages
+            that had no functional role in the AZ Learner product.
+        </p>
+
+        <!-- emmanuel.html -->
+        <div class="card mb-4">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="badge-delete px-2 py-0.5 rounded text-xs font-bold">DELETED</span>
+                        <code class="file-tag">emmanuel.html</code>
+                    </div>
+                    <h3 class="font-bold text-lg">Emmanuel Larbi — Personal Portfolio Page</h3>
+                    <p class="text-slate-400 text-sm mt-1">
+                        A personal profile/portfolio page for Emmanuel Larbi, a team member, titled
+                        "Future Tourism." It contained a neon-themed UI unrelated to the AZ Learner
+                        product and used a mismatched Firebase SDK version (11.6.1).
+                    </p>
+                </div>
+                <i class="fa-solid fa-user-secret text-red-400/40 text-4xl shrink-0"></i>
+            </div>
+
+            <!-- Illustration -->
+            <div class="illustration mt-4">
+                <div class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">
+                    <i class="fa-solid fa-eye-slash mr-1"></i> What the page looked like
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(0,243,255,.06);border:1px solid rgba(0,243,255,.15);">
+                        <div class="text-2xl mb-1">🌌</div>
+                        <div class="text-xs font-bold" style="color:#00f3ff;">Neon Cyan Theme</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Custom color scheme</div>
+                    </div>
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(188,19,254,.06);border:1px solid rgba(188,19,254,.15);">
+                        <div class="text-2xl mb-1">✈️</div>
+                        <div class="text-xs font-bold" style="color:#bc13fe;">Tourism Content</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Unrelated to product</div>
+                    </div>
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);">
+                        <div class="text-2xl mb-1">⚠️</div>
+                        <div class="text-xs font-bold text-red-400">SDK 11.6.1</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Wrong version</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-xs text-slate-500">
+                <span class="font-semibold text-slate-400">Previously linked from:</span>
+                <code class="file-tag ml-1">ceo.html</code>
+                <span class="ml-1">(admin panel navigation)</span>
+            </div>
+        </div>
+
+        <!-- narnia.html -->
+        <div class="card mb-4">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="badge-delete px-2 py-0.5 rounded text-xs font-bold">DELETED</span>
+                        <code class="file-tag">narnia.html</code>
+                    </div>
+                    <h3 class="font-bold text-lg">Narnia — Francis's Secret/Fun Page</h3>
+                    <p class="text-slate-400 text-sm mt-1">
+                        A personal experimental page titled "The Wardrobe" with a snow-canvas
+                        animation and parallax effects, created for the CEO's personal use.
+                        It was listed in the CEO Command panel as a "Secret page" and had
+                        no product functionality.
+                    </p>
+                </div>
+                <i class="fa-solid fa-door-open text-red-400/40 text-4xl shrink-0"></i>
+            </div>
+
+            <div class="illustration mt-4">
+                <div class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">
+                    <i class="fa-solid fa-snowflake mr-1"></i> Page characteristics
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);">
+                        <div class="text-lg mb-1">❄️</div>
+                        <div class="text-xs font-semibold text-slate-300">Snow Canvas</div>
+                    </div>
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);">
+                        <div class="text-lg mb-1">🎨</div>
+                        <div class="text-xs font-semibold text-slate-300">Parallax Orbs</div>
+                    </div>
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);">
+                        <div class="text-lg mb-1">🗝️</div>
+                        <div class="text-xs font-semibold text-slate-300">"Secret" Status</div>
+                    </div>
+                    <div class="rounded-lg p-3 text-center" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);">
+                        <div class="text-lg mb-1">🚫</div>
+                        <div class="text-xs font-semibold text-red-400">No Product Value</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-xs text-slate-500">
+                <span class="font-semibold text-slate-400">Previously linked from:</span>
+                <code class="file-tag ml-1">ceo.html</code>
+                <span class="ml-1">(CEO navigation — "Other" section)</span>
+            </div>
+        </div>
+
+        <!-- nora-cv.html -->
+        <div class="card mb-4">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="badge-delete px-2 py-0.5 rounded text-xs font-bold">DELETED</span>
+                        <code class="file-tag">nora-cv.html</code>
+                    </div>
+                    <h3 class="font-bold text-lg">Nora Nudzor — Personal CV Page</h3>
+                    <p class="text-slate-400 text-sm mt-1">
+                        A personal Curriculum Vitae for Nora Nudzor (Tourism Management Student,
+                        University of Cape Coast). This page was a private CV document hosted
+                        in the public repository with no connection to AZ Learner's
+                        CV Builder feature.
+                    </p>
+                </div>
+                <i class="fa-solid fa-file-lines text-red-400/40 text-4xl shrink-0"></i>
+            </div>
+
+            <div class="illustration mt-4">
+                <div class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">
+                    <i class="fa-solid fa-id-card mr-1"></i> Page purpose
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);">
+                        <i class="fa-solid fa-graduation-cap text-blue-400 text-sm"></i>
+                        <span class="text-xs text-slate-300">Tourism Management · UCC</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);">
+                        <i class="fa-solid fa-print text-slate-400 text-sm"></i>
+                        <span class="text-xs text-slate-300">A4 printable CV layout</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);">
+                        <i class="fa-solid fa-triangle-exclamation text-red-400 text-sm"></i>
+                        <span class="text-xs text-red-300">Exposed personal data in public repo</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);">
+                        <i class="fa-solid fa-link-slash text-slate-400 text-sm"></i>
+                        <span class="text-xs text-slate-300">No links from any AZ Learner page</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════ 2. SDK FIX ══════════════════ -->
+    <section id="sdk-fix">
+        <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-sm font-bold shrink-0">2</span>
+            Firebase SDK Version Fix
+        </h2>
+        <p class="text-slate-400 mb-6 text-sm">
+            Seven files were importing Firebase SDK <strong class="text-red-400">11.6.1</strong> instead of
+            the repository-standard <strong class="text-green-400">11.0.2</strong>. All have been updated
+            for consistency and to prevent potential breaking changes from a mixed-version environment.
+        </p>
+
+        <!-- Before/After illustration -->
+        <div class="illustration mb-6">
+            <div class="text-xs text-slate-500 mb-4 font-semibold uppercase tracking-wider">
+                <i class="fa-solid fa-code-compare mr-1"></i> Import statement change (all 7 files)
+            </div>
+            <div class="before-after">
+                <div class="before-box">
+                    <div class="text-xs font-bold text-red-400 mb-2 flex items-center gap-1">
+                        <i class="fa-solid fa-xmark-circle"></i> BEFORE
+                    </div>
+                    <pre class="text-red-300">import { initializeApp }
+  from "https://www.gstatic.com/
+  firebasejs/<span class="text-red-400 font-bold">11.6.1</span>/
+  firebase-app.js";</pre>
+                </div>
+                <div class="after-box">
+                    <div class="text-xs font-bold text-green-400 mb-2 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> AFTER
+                    </div>
+                    <pre class="text-green-300">import { initializeApp }
+  from "https://www.gstatic.com/
+  firebasejs/<span class="text-green-400 font-bold">11.0.2</span>/
+  firebase-app.js";</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- File list -->
+        <div class="card">
+            <div class="text-sm font-bold mb-4 text-slate-300">
+                <i class="fa-solid fa-file-code mr-2 text-green-400"></i>
+                7 Files Updated
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">surveys/survey-1.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">surveys/survey-1-admin.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">surveys/survey-2.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">surveys/sur.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">financial-cmd/form.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">financial-cmd/status.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.03);">
+                    <code class="file-tag">financial-cmd/admin.html</code>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-red-400 line-through">11.6.1</span>
+                        <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 font-bold">11.0.2</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Why it matters -->
+        <div class="card mt-4" style="background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2);">
+            <div class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-info text-green-400 mt-0.5 shrink-0"></i>
+                <div>
+                    <div class="font-semibold text-green-300 text-sm mb-1">Why this matters</div>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        The AZ Learner codebase standardises on Firebase JS SDK <strong class="text-white">11.0.2</strong>.
+                        Mixing versions (11.0.2 and 11.6.1) in the same Firebase project can cause subtle
+                        module resolution conflicts, cache inconsistencies, and unpredictable behaviour
+                        when pages are loaded from a service-worker cache. Standardising the version
+                        across all pages ensures reliable, consistent Firebase behaviour site-wide.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════ 3. DEAD LINKS ══════════════════ -->
+    <section id="dead-links">
+        <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-bold shrink-0">3</span>
+            Dead Link Removal from CEO Command
+        </h2>
+        <p class="text-slate-400 mb-6 text-sm">
+            The <code class="file-tag">ceo.html</code> navigation panel referenced both deleted pages.
+            Those entries have been removed to prevent the CEO from clicking links to non-existent pages.
+        </p>
+
+        <div class="card">
+            <div class="text-sm font-bold mb-4 text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-link-slash text-red-400"></i>
+                Removed Entries from CEO Navigation
+            </div>
+
+            <div class="space-y-3">
+                <div class="before-box flex items-center justify-between gap-4">
+                    <div>
+                        <div class="text-xs font-bold text-red-300 mb-0.5">Section: "Other"</div>
+                        <code class="file-tag">narnia.html</code>
+                        <span class="text-xs text-slate-400 ml-2">— "Secret page"</span>
+                    </div>
+                    <span class="badge-delete px-2 py-0.5 rounded text-xs font-bold shrink-0">REMOVED</span>
+                </div>
+
+                <div class="before-box flex items-center justify-between gap-4">
+                    <div>
+                        <div class="text-xs font-bold text-red-300 mb-0.5">Section: "Admin"</div>
+                        <code class="file-tag">emmanuel.html</code>
+                        <span class="text-xs text-slate-400 ml-2">— "Emmanuel panel"</span>
+                    </div>
+                    <span class="badge-delete px-2 py-0.5 rounded text-xs font-bold shrink-0">REMOVED</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════ 4. STRUCTURE OVERVIEW ══════════════════ -->
+    <section id="structure">
+        <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 text-sm font-bold shrink-0">4</span>
+            Repository Structure Overview
+        </h2>
+        <p class="text-slate-400 mb-6 text-sm">
+            The repository is already well-organised into functional sub-directories.
+            These remain unchanged; the clean-up removed noise from the root level.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Core pages -->
+            <div class="card">
+                <div class="text-xs font-bold text-blue-400 mb-3 uppercase tracking-wider">
+                    <i class="fa-solid fa-house mr-1"></i> Core Pages (root)
+                </div>
+                <div class="space-y-1.5 text-xs">
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">index.html</code><span class="text-slate-400">Landing page</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">home.html</code><span class="text-slate-400">Student dashboard</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">admin.html</code><span class="text-slate-400">Admin command centre</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">ceo.html</code><span class="text-slate-400">CEO control panel</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">ambassador.html</code><span class="text-slate-400">Ambassador portal</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">leaderboard.html</code><span class="text-slate-400">Points leaderboard</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-400 w-3"></i><code class="file-tag">faq.html</code><span class="text-slate-400">FAQ</span></div>
+                </div>
+            </div>
+
+            <!-- Sub-directories -->
+            <div class="card">
+                <div class="text-xs font-bold text-purple-400 mb-3 uppercase tracking-wider">
+                    <i class="fa-solid fa-folder-open mr-1"></i> Sub-directories
+                </div>
+                <div class="space-y-1.5 text-xs">
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">courses/</code><span class="text-slate-400">Course pages + certs</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">cv/</code><span class="text-slate-400">CV builder + admin</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">pwa/</code><span class="text-slate-400">Progressive web app</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">ambassadors/</code><span class="text-slate-400">Ambassador hub pages</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">team/</code><span class="text-slate-400">Team profiles</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">surveys/</code><span class="text-slate-400">Surveys (SDK fixed)</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">financial-cmd/</code><span class="text-slate-400">Financial cmd (SDK fixed)</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">podcast/</code><span class="text-slate-400">Podcast player</span></div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-folder text-yellow-400 w-3"></i><code class="file-tag">advice/</code><span class="text-slate-400">Business advice articles</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deleted files visual -->
+        <div class="illustration mt-6">
+            <div class="text-xs text-slate-500 mb-4 font-semibold uppercase tracking-wider">
+                <i class="fa-solid fa-trash mr-1"></i> Files removed from repository tree
+            </div>
+            <div class="font-mono text-xs leading-relaxed text-slate-400">
+                <div class="text-slate-300 mb-2">azlearner.me/ (root)</div>
+                <div class="ml-4 space-y-1">
+                    <div class="text-slate-400">├── index.html</div>
+                    <div class="text-slate-400">├── home.html</div>
+                    <div class="text-slate-400">├── admin.html</div>
+                    <div class="text-slate-400">├── ceo.html &nbsp;<span class="text-blue-400 font-sans font-normal">← dead links removed</span></div>
+                    <div class="text-red-400 line-through opacity-50">├── emmanuel.html &nbsp;<span class="no-underline">← deleted</span></div>
+                    <div class="text-red-400 line-through opacity-50">├── narnia.html &nbsp;<span class="no-underline">← deleted</span></div>
+                    <div class="text-red-400 line-through opacity-50">├── nora-cv.html &nbsp;<span class="no-underline">← deleted</span></div>
+                    <div class="text-slate-400">├── surveys/</div>
+                    <div class="text-green-400 ml-4">│ &nbsp;├── survey-1.html &nbsp;<span class="font-sans font-normal">← SDK 11.6.1→11.0.2</span></div>
+                    <div class="text-green-400 ml-4">│ &nbsp;├── survey-1-admin.html &nbsp;<span class="font-sans font-normal">← SDK fixed</span></div>
+                    <div class="text-green-400 ml-4">│ &nbsp;├── survey-2.html &nbsp;<span class="font-sans font-normal">← SDK fixed</span></div>
+                    <div class="text-green-400 ml-4">│ &nbsp;└── sur.html &nbsp;<span class="font-sans font-normal">← SDK fixed</span></div>
+                    <div class="text-slate-400">├── financial-cmd/</div>
+                    <div class="text-green-400 ml-4">│ &nbsp;├── form.html &nbsp;<span class="font-sans font-normal">← SDK fixed</span></div>
+                    <div class="text-green-400 ml-4">│ &nbsp;├── status.html &nbsp;<span class="font-sans font-normal">← SDK fixed</span></div>
+                    <div class="text-green-400 ml-4">│ &nbsp;└── admin.html &nbsp;<span class="font-sans font-normal">← SDK fixed</span></div>
+                    <div class="text-purple-400">└── report.html &nbsp;<span class="font-sans font-normal">← this page (new)</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════ 5. RATIONALE ══════════════════ -->
+    <section id="rationale">
+        <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 text-sm font-bold shrink-0">5</span>
+            Decision Rationale
+        </h2>
+        <p class="text-slate-400 mb-6 text-sm">
+            Why each change was made and the guiding principles behind them.
+        </p>
+
+        <div class="space-y-4">
+            <div class="card flex gap-4">
+                <div class="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-trash text-red-400"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm mb-1">Removing personal pages from a public product repo</div>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Personal portfolio and CV pages have no place in a product repository.
+                        They confuse the codebase, may inadvertently expose personal information,
+                        and add maintenance overhead. The AZ Learner brand pages are what should
+                        exist here.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card flex gap-4">
+                <div class="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-code-branch text-green-400"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm mb-1">Standardising the Firebase SDK version</div>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        A mixed-version Firebase setup is a latent risk. The service worker caches
+                        module URLs keyed by version, so a page on 11.6.1 and another on 11.0.2 will
+                        load different bundles — potentially with conflicting auth state or Firestore
+                        semantics. Using 11.0.2 everywhere matches the codebase convention and the
+                        version all other pages already use.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card flex gap-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-link-slash text-blue-400"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm mb-1">Removing dead navigation links</div>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Dead links in the CEO command panel cause 404 errors and are confusing.
+                        Removing the entries keeps the panel clean and accurate.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════ 6. WHAT'S NEXT ══════════════════ -->
+    <section id="whats-next">
+        <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-slate-500/20 flex items-center justify-center text-slate-400 text-sm font-bold shrink-0">6</span>
+            What's Next
+        </h2>
+        <p class="text-slate-400 mb-6 text-sm">
+            Potential future improvements identified during this audit.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="card opacity-70 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-folder-tree text-yellow-400"></i>
+                    <span class="font-semibold text-sm">File Grouping</span>
+                    <span class="ml-auto text-xs text-slate-500">Low priority</span>
+                </div>
+                <p class="text-slate-400 text-xs leading-relaxed">
+                    Move <code class="file-tag">AZ-GPA-Calculator/</code> to a cleaner path like
+                    <code class="file-tag">gpa/</code>. Set up redirect pages to avoid breaking
+                    existing links.
+                </p>
+            </div>
+
+            <div class="card opacity-70 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-arrows-rotate text-blue-400"></i>
+                    <span class="font-semibold text-sm">Legacy Redirects</span>
+                    <span class="ml-auto text-xs text-slate-500">Medium priority</span>
+                </div>
+                <p class="text-slate-400 text-xs leading-relaxed">
+                    Convert <code class="file-tag">ambassador.html</code> and
+                    <code class="file-tag">ambassadorsignup.html</code> at the root to thin
+                    redirects pointing to <code class="file-tag">ambassadors/portal.html</code>
+                    and <code class="file-tag">ambassadors/signup.html</code>.
+                </p>
+            </div>
+
+            <div class="card opacity-70 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-shield text-green-400"></i>
+                    <span class="font-semibold text-sm">Security Audit</span>
+                    <span class="ml-auto text-xs text-slate-500">High priority</span>
+                </div>
+                <p class="text-slate-400 text-xs leading-relaxed">
+                    Ensure all <code class="file-tag">innerHTML</code> assignments use
+                    <code class="file-tag">escapeHtml()</code> or <code class="file-tag">textContent</code>.
+                    The XSS fix already applied to <code class="file-tag">home.html</code> and
+                    <code class="file-tag">pwa/index.html</code> should be verified across all pages.
+                </p>
+            </div>
+
+            <div class="card opacity-70 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-image text-purple-400"></i>
+                    <span class="font-semibold text-sm">Asset Clean-up</span>
+                    <span class="ml-auto text-xs text-slate-500">Low priority</span>
+                </div>
+                <p class="text-slate-400 text-xs leading-relaxed">
+                    Remove loose personal asset files at the repository root:
+                    <code class="file-tag">profile.jpg</code>, <code class="file-tag">profilepic.jpg</code>,
+                    <code class="file-tag">signature.png</code>, <code class="file-tag">resume.pdf</code>,
+                    <code class="file-tag">resume2.pdf</code>. Verify none are needed by live pages first.
+                </p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ══════════════════ FOOTER ══════════════════ -->
+<footer class="border-t border-white/5 px-6 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-center gap-2 mb-3">
+            <img src="favicon1.png" alt="AZ Learner" class="w-5 h-5 rounded">
+            <span class="font-semibold text-slate-400">AZ Learner</span>
+        </div>
+        <p>Repository Update Report · Generated March 2026 · Francis Pwavwe Production</p>
+        <p class="mt-1">
+            <a href="index.html" class="text-blue-400 hover:underline">← Back to AZ Learner</a>
+            &nbsp;·&nbsp;
+            <a href="ceo.html" class="text-blue-400 hover:underline">CEO Command</a>
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>
