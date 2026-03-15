@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AZ Learner Repository — Comprehensive Cleanup & Fixes Report (March 2026)">
+    <title>AZ Learner | Repository Report — March 2026</title>
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'], mono: ['Fira Code', 'monospace'] },
+                    colors: {
+                        brand: { blue: '#448AFF', orange: '#FFAB40', dark: '#0f172a', card: '#1e293b' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1a2744 40%, #0f2a1a 100%); }
+        .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+        .badge-deleted  { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-fixed    { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+        .badge-security { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .badge-update   { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+        .badge-new      { background: rgba(6,182,212,0.15);  color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); }
+        .timeline-line { position: relative; }
+        .timeline-line::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: rgba(99,102,241,0.3); }
+        .timeline-dot { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stat-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; }
+        .code-block { background: #0d1117; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 0.8rem; }
+        .section-title { font-size: 1.4rem; font-weight: 700; color: #f1f5f9; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .toc-link { color: #94a3b8; transition: color 0.2s; text-decoration: none; font-size: 0.875rem; }
+        .toc-link:hover { color: #60a5fa; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        @media print { body { background: white; color: black; } .card { background: #f8fafc; border-color: #e2e8f0; } }
+    </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center gap-3">
+    <a href="../" class="text-slate-400 hover:text-white transition text-sm flex items-center gap-2">
+        <i class="fa fa-arrow-left text-xs"></i> AZ Learner
+    </a>
+    <span class="text-slate-600">/</span>
+    <span class="text-slate-300 text-sm font-semibold">Repository Report</span>
+    <span class="ml-auto text-xs text-slate-500">March 2026</span>
+</nav>
+
+<!-- ── HERO ── -->
+<header class="hero-gradient px-6 py-16 text-center border-b border-white/5">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-6">
+        <i class="fa fa-code-branch"></i> Repository Audit Report
+    </div>
+    <h1 class="text-3xl sm:text-5xl font-extrabold text-white mb-4 leading-tight">
+        AZ Learner<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Cleanup & Fixes</span>
+    </h1>
+    <p class="text-slate-400 max-w-2xl mx-auto text-base sm:text-lg">
+        Comprehensive repository audit covering deleted pages, dependency updates, security fixes, and structural improvements.
+    </p>
+    <div class="mt-8 flex flex-wrap justify-center gap-4 text-sm">
+        <div class="stat-card px-5 py-3 text-center">
+            <div class="text-2xl font-extrabold text-red-400">3</div>
+            <div class="text-slate-400 text-xs mt-1">Pages Deleted</div>
+        </div>
+        <div class="stat-card px-5 py-3 text-center">
+            <div class="text-2xl font-extrabold text-green-400">7</div>
+            <div class="text-slate-400 text-xs mt-1">SDK Versions Fixed</div>
+        </div>
+        <div class="stat-card px-5 py-3 text-center">
+            <div class="text-2xl font-extrabold text-yellow-400">2</div>
+            <div class="text-slate-400 text-xs mt-1">Nav Links Updated</div>
+        </div>
+        <div class="stat-card px-5 py-3 text-center">
+            <div class="text-2xl font-extrabold text-cyan-400">1</div>
+            <div class="text-slate-400 text-xs mt-1">Report Created</div>
+        </div>
+    </div>
+</header>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="max-w-4xl mx-auto px-4 py-12 space-y-14">
+
+    <!-- TABLE OF CONTENTS -->
+    <section class="card p-6">
+        <div class="section-title"><i class="fa fa-list-ul text-indigo-400"></i> Table of Contents</div>
+        <ol class="space-y-2 pl-2">
+            <li><a href="#overview" class="toc-link">1. Overview &amp; Motivation</a></li>
+            <li><a href="#deleted" class="toc-link">2. Deleted Pages</a></li>
+            <li><a href="#sdk" class="toc-link">3. Firebase SDK Version Standardisation</a></li>
+            <li><a href="#nav" class="toc-link">4. Navigation &amp; Quicklink Updates</a></li>
+            <li><a href="#security" class="toc-link">5. Security Notes</a></li>
+            <li><a href="#structure" class="toc-link">6. Repository Structure Overview</a></li>
+            <li><a href="#next" class="toc-link">7. Recommended Next Steps</a></li>
+        </ol>
+    </section>
+
+    <!-- 1 – OVERVIEW -->
+    <section id="overview">
+        <div class="section-title"><i class="fa fa-magnifying-glass text-blue-400"></i> 1 — Overview &amp; Motivation</div>
+        <div class="card p-6 space-y-4 text-slate-300 text-sm leading-relaxed">
+            <p>
+                The AZ Learner repository grew organically and accumulated several pages that no longer served
+                the platform's purpose: personal portfolio pages built for individual team members, dead-end pages
+                with no navigation entry, and files importing an inconsistent version of the Firebase SDK.
+            </p>
+            <p>
+                This audit was conducted to:
+            </p>
+            <ul class="list-disc pl-6 space-y-1">
+                <li>Remove pages that are personal-use only and unrelated to AZ Learner's student utility mission.</li>
+                <li>Standardise the Firebase JavaScript SDK to version <code class="bg-slate-800 px-1 rounded text-xs">11.0.2</code> across the entire codebase.</li>
+                <li>Update CEO/admin quicklink panels to remove broken links to deleted pages.</li>
+                <li>Document all changes in this report for future reference.</li>
+            </ul>
+            <div class="mt-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs">
+                <i class="fa fa-info-circle mr-1"></i>
+                No functional user-facing features were removed. All changes are backwards-compatible. Existing
+                redirect stubs (e.g. <code class="bg-slate-800 px-1 rounded">resume.html → cv/</code>) were left untouched.
+            </div>
+        </div>
+    </section>
+
+    <!-- 2 – DELETED PAGES -->
+    <section id="deleted">
+        <div class="section-title"><i class="fa fa-trash text-red-400"></i> 2 — Deleted Pages</div>
+        <p class="text-slate-400 text-sm mb-4">The following files were removed from the repository. None of them appeared in the public navigation menus of the main application.</p>
+
+        <div class="space-y-4">
+
+            <!-- emmanuel.html -->
+            <div class="card p-5">
+                <div class="flex items-start gap-3">
+                    <div class="timeline-dot bg-red-500/20 text-red-400 text-sm mt-0.5"><i class="fa fa-user-secret"></i></div>
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <code class="text-red-300 font-mono text-sm">emmanuel.html</code>
+                            <span class="badge-deleted text-xs px-2 py-0.5 rounded-full font-semibold">DELETED</span>
+                            <span class="badge-security text-xs px-2 py-0.5 rounded-full font-semibold">MISBEHAVING</span>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">
+                            A personal portfolio/panel page for Emmanuel Larbi (team admin). This page served no platform function and was accessible at the public URL <code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">azlearner.me/emmanuel.html</code>.
+                        </p>
+                        <div class="code-block p-3 text-xs text-slate-400 mb-3">
+                            <span class="text-red-400">─ Issue:</span> Imported Firebase SDK <strong class="text-orange-300">v11.6.1</strong> while the rest of the codebase uses <strong class="text-green-300">v11.0.2</strong><br>
+                            <span class="text-red-400">─ Issue:</span> 714 lines of personal content (blog, goals, social links) not related to AZ Learner<br>
+                            <span class="text-red-400">─ Issue:</span> Hardcoded personal email and admin credentials inside the page
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="text-xs text-slate-500">714 lines removed</span>
+                            <span class="text-xs text-slate-600">•</span>
+                            <span class="text-xs text-slate-500">Firebase 11.6.1 dependency eliminated</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- narnia.html -->
+            <div class="card p-5">
+                <div class="flex items-start gap-3">
+                    <div class="timeline-dot bg-red-500/20 text-red-400 text-sm mt-0.5"><i class="fa fa-door-open"></i></div>
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <code class="text-red-300 font-mono text-sm">narnia.html</code>
+                            <span class="badge-deleted text-xs px-2 py-0.5 rounded-full font-semibold">DELETED</span>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">
+                            An easter-egg "wardrobe" page (<em>The Wardrobe | Francis Pwavwe</em>) featuring animated snow effects and a parallax scene. Entirely personal, not student utility.
+                        </p>
+                        <div class="code-block p-3 text-xs text-slate-400 mb-3">
+                            <span class="text-red-400">─ Issue:</span> Personal vanity page with no AZ Learner functionality<br>
+                            <span class="text-red-400">─ Issue:</span> Listed as "Secret page" in the CEO quicklinks panel<br>
+                            <span class="text-red-400">─ Issue:</span> Heavy dependency on <code>lucide</code> icon library (not used elsewhere)
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="text-xs text-slate-500">200 lines removed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- nora-cv.html -->
+            <div class="card p-5">
+                <div class="flex items-start gap-3">
+                    <div class="timeline-dot bg-red-500/20 text-red-400 text-sm mt-0.5"><i class="fa fa-file-user"></i></div>
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <code class="text-red-300 font-mono text-sm">nora-cv.html</code>
+                            <span class="badge-deleted text-xs px-2 py-0.5 rounded-full font-semibold">DELETED</span>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">
+                            A personal CV page for Nora Nudzor (Tourism Management student, University of Cape Coast). This was hosted on the AZ Learner domain as a convenience but is unrelated to platform functionality.
+                        </p>
+                        <div class="code-block p-3 text-xs text-slate-400 mb-3">
+                            <span class="text-red-400">─ Issue:</span> Personal CV with hardcoded personal information (education, experience, skills)<br>
+                            <span class="text-red-400">─ Issue:</span> Not discoverable from any navigation menu — orphan page<br>
+                            <span class="text-red-400">─ Issue:</span> AZ Learner already provides a CV Builder tool at <code class="text-slate-300">/cv/</code> for this purpose
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="text-xs text-slate-500">430 lines removed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Visual before/after illustration -->
+        <div class="mt-6 card p-5">
+            <div class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Root-Level File Count — Before vs After</div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 rounded-lg bg-red-500/5 border border-red-500/15">
+                    <div class="text-red-400 text-xs font-semibold mb-2">BEFORE</div>
+                    <div class="text-slate-300 text-xs space-y-1 font-mono">
+                        <div>├── emmanuel.html  <span class="text-red-400">✗</span></div>
+                        <div>├── narnia.html    <span class="text-red-400">✗</span></div>
+                        <div>├── nora-cv.html   <span class="text-red-400">✗</span></div>
+                        <div class="text-slate-500">├── index.html</div>
+                        <div class="text-slate-500">├── home.html</div>
+                        <div class="text-slate-600">└── … 30+ other files</div>
+                    </div>
+                </div>
+                <div class="p-4 rounded-lg bg-green-500/5 border border-green-500/15">
+                    <div class="text-green-400 text-xs font-semibold mb-2">AFTER</div>
+                    <div class="text-slate-300 text-xs space-y-1 font-mono">
+                        <div class="text-slate-500">├── index.html     <span class="text-green-400">✓</span></div>
+                        <div class="text-slate-500">├── home.html      <span class="text-green-400">✓</span></div>
+                        <div class="text-slate-500">├── courses.html   <span class="text-green-400">✓</span></div>
+                        <div class="text-slate-500">├── ambassador.html<span class="text-green-400">✓</span></div>
+                        <div class="text-slate-600">└── … purpose-built pages only</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3 – SDK FIX -->
+    <section id="sdk">
+        <div class="section-title"><i class="fa fa-fire text-orange-400"></i> 3 — Firebase SDK Version Standardisation</div>
+        <p class="text-slate-400 text-sm mb-4">
+            Seven files were importing Firebase JavaScript SDK version <strong class="text-orange-300">11.6.1</strong> instead of the project-standard <strong class="text-green-300">11.0.2</strong>.
+            Loading multiple SDK major-versions in the same browser session can cause subtle auth/Firestore state conflicts when users navigate between pages.
+        </p>
+
+        <div class="card p-5 mb-4">
+            <div class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Import Change Applied</div>
+            <div class="code-block p-4 text-xs">
+                <div class="text-red-400 mb-1">// BEFORE — incorrect version</div>
+                <div class="text-slate-400">import &#123; initializeApp &#125; from <span class="text-red-300">"https://www.gstatic.com/firebasejs/<strong>11.6.1</strong>/firebase-app.js"</span>;</div>
+                <div class="mt-3 text-green-400 mb-1">// AFTER — standardised to project version</div>
+                <div class="text-slate-400">import &#123; initializeApp &#125; from <span class="text-green-300">"https://www.gstatic.com/firebasejs/<strong>11.0.2</strong>/firebase-app.js"</span>;</div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead>
+                    <tr class="text-slate-500 border-b border-white/5">
+                        <th class="pb-2 pr-4 font-semibold">File</th>
+                        <th class="pb-2 pr-4 font-semibold">Old Version</th>
+                        <th class="pb-2 font-semibold">New Version</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-400 divide-y divide-white/5">
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">surveys/survey-1.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">surveys/survey-1-admin.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">surveys/survey-2.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">surveys/sur.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">financial-cmd/form.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">financial-cmd/status.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono text-slate-300">financial-cmd/admin.html</td><td class="py-2 pr-4 text-red-400">11.6.1</td><td class="py-2 text-green-400">11.0.2 ✓</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-300 text-xs">
+            <i class="fa fa-circle-check mr-1"></i>
+            <strong>Result:</strong> The entire codebase now uses a single Firebase SDK version (11.0.2) for all CDN imports, eliminating potential cross-page session inconsistencies.
+        </div>
+    </section>
+
+    <!-- 4 – NAV UPDATES -->
+    <section id="nav">
+        <div class="section-title"><i class="fa fa-compass text-purple-400"></i> 4 — Navigation &amp; Quicklink Updates</div>
+        <p class="text-slate-400 text-sm mb-4">
+            The CEO Command page (<code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">ceo.html</code>) contained quicklinks to pages that no longer exist. These were updated:
+        </p>
+        <div class="card p-5 space-y-4">
+            <div class="flex items-start gap-3">
+                <span class="badge-deleted text-xs px-2 py-0.5 rounded-full font-semibold mt-0.5">REMOVED</span>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">"Narnia" quicklink → <code class="text-xs bg-slate-800 px-1 rounded">narnia.html</code></div>
+                    <div class="text-slate-500 text-xs mt-1">Was labelled "Secret page" in the <em>general</em> category. Now replaced with a link to this report page.</div>
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <span class="badge-deleted text-xs px-2 py-0.5 rounded-full font-semibold mt-0.5">REMOVED</span>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">"Emmanuel" quicklink → <code class="text-xs bg-slate-800 px-1 rounded">emmanuel.html</code></div>
+                    <div class="text-slate-500 text-xs mt-1">Was in the <em>admin</em> category. Now replaced with a link to the Team Profiles index.</div>
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <span class="badge-new text-xs px-2 py-0.5 rounded-full font-semibold mt-0.5">ADDED</span>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">"Report" → <code class="text-xs bg-slate-800 px-1 rounded">docs/report.html</code></div>
+                    <div class="text-slate-500 text-xs mt-1">This page, added to the <em>general</em> quicklink category for easy access.</div>
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <span class="badge-new text-xs px-2 py-0.5 rounded-full font-semibold mt-0.5">ADDED</span>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">"Team Profiles" → <code class="text-xs bg-slate-800 px-1 rounded">team/</code></div>
+                    <div class="text-slate-500 text-xs mt-1">Added to the <em>admin</em> quicklink category, replacing the personal Emmanuel panel link.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5 – SECURITY -->
+    <section id="security">
+        <div class="section-title"><i class="fa fa-shield-halved text-yellow-400"></i> 5 — Security Notes</div>
+        <div class="card p-5 space-y-4 text-sm text-slate-400">
+            <p>
+                Previous sessions identified and fixed an XSS vulnerability in <code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">sendSystemNotification()</code>
+                in both <code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">pwa/index.html</code> and <code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">home.html</code>.
+                The fix replaced <code class="text-xs bg-slate-800 px-1 rounded text-orange-300">innerHTML</code> assignment with <code class="text-xs bg-slate-800 px-1 rounded text-green-300">textContent</code>
+                for user-controlled title and body fields. This fix is confirmed present and intact.
+            </p>
+            <p>
+                The <code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">formatBlogText()</code> function correctly HTML-escapes input before applying markdown-like regex transforms, preventing injection through blog post content.
+            </p>
+            <p>
+                Deleting <code class="text-slate-300 text-xs bg-slate-800 px-1 rounded">emmanuel.html</code> also eliminates a page that stored a personal admin email address as a hardcoded JavaScript constant visible in the page source.
+            </p>
+            <div class="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs">
+                <i class="fa fa-triangle-exclamation mr-1"></i>
+                <strong>Outstanding recommendation:</strong> Review all hardcoded email constants across CEO and admin pages. Prefer storing sensitive role-check values in Firestore (e.g. <code class="bg-slate-800 px-1 rounded">users/{uid}.role</code>) rather than as plain-text JS strings in page source.
+            </div>
+        </div>
+    </section>
+
+    <!-- 6 – STRUCTURE -->
+    <section id="structure">
+        <div class="section-title"><i class="fa fa-folder-tree text-cyan-400"></i> 6 — Repository Structure Overview</div>
+        <p class="text-slate-400 text-sm mb-4">Current logical grouping of the repository after cleanup:</p>
+        <div class="card p-5">
+            <div class="code-block p-4 text-xs text-slate-400 leading-relaxed">
+<pre>azlearner.me/
+├── <span class="text-blue-400">index.html</span>          ← Landing / marketing homepage
+├── <span class="text-blue-400">home.html</span>           ← Main authenticated student hub
+├── <span class="text-blue-400">pwa/</span>                ← Progressive Web App shell
+│   └── index.html      ← Full-featured PWA entry point
+│
+├── <span class="text-green-400">courses/</span>            ← Course pages &amp; certificate viewer
+├── <span class="text-green-400">ambassadors/</span>        ← Ambassador portal, modules, resources
+├── <span class="text-green-400">cv/</span>                 ← CV Builder (ATS, builder, admin)
+├── <span class="text-green-400">az-labs/</span>            ← Experimental tools (mood tracker, study timer…)
+├── <span class="text-green-400">podcast/</span>            ← Podcast player &amp; admin
+├── <span class="text-green-400">team/</span>               ← Team profiles, role briefs, evaluations
+├── <span class="text-green-400">admin/</span>              ← Role-based admin dashboards
+├── <span class="text-green-400">surveys/</span>            ← Student survey pages (SDK now 11.0.2)
+├── <span class="text-green-400">financial-cmd/</span>      ← Finance management tools (SDK now 11.0.2)
+├── <span class="text-green-400">advice/</span>             ← Business advice articles
+├── <span class="text-green-400">ambassadors/</span>        ← Ambassador portal
+├── <span class="text-green-400">letters/</span>            ← Official letters (dean, SRC)
+├── <span class="text-green-400">AZ-GPA-Calculator/</span> ← GPA calculator tool
+│
+├── <span class="text-purple-400">docs/</span>               ← Documentation &amp; reports
+│   ├── README.md
+│   ├── ADVICE_README.md
+│   ├── AMBASSADOR_README.md
+│   └── report.html     ← ✨ This file
+│
+├── <span class="text-yellow-400">firebase.json</span>       ← Firebase Hosting config
+├── <span class="text-yellow-400">firestore.rules</span>    ← Firestore security rules
+├── <span class="text-yellow-400">firestore.indexes.json</span>
+└── <span class="text-yellow-400">storage.rules</span></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7 – NEXT STEPS -->
+    <section id="next">
+        <div class="section-title"><i class="fa fa-road text-emerald-400"></i> 7 — Recommended Next Steps</div>
+        <div class="space-y-3">
+            <div class="card p-4 flex items-start gap-3">
+                <i class="fa fa-circle-check text-slate-600 mt-0.5"></i>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">Add 404 redirect page</div>
+                    <div class="text-slate-500 text-xs mt-1">Create a custom <code class="bg-slate-800 px-1 rounded">404.html</code> that redirects visitors who followed old links to <code class="bg-slate-800 px-1 rounded">emmanuel.html</code> etc. back to the homepage.</div>
+                </div>
+            </div>
+            <div class="card p-4 flex items-start gap-3">
+                <i class="fa fa-circle-check text-slate-600 mt-0.5"></i>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">Move root-level HTML pages into subdirectories</div>
+                    <div class="text-slate-500 text-xs mt-1">Pages like <code class="bg-slate-800 px-1 rounded">ambassador.html</code>, <code class="bg-slate-800 px-1 rounded">leaderboard.html</code> should ideally live at <code class="bg-slate-800 px-1 rounded">ambassadors/portal.html</code>, <code class="bg-slate-800 px-1 rounded">leaderboard/index.html</code>. Leave redirect stubs at old URLs.</div>
+                </div>
+            </div>
+            <div class="card p-4 flex items-start gap-3">
+                <i class="fa fa-circle-check text-slate-600 mt-0.5"></i>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">Audit duplicate pages</div>
+                    <div class="text-slate-500 text-xs mt-1"><code class="bg-slate-800 px-1 rounded">certificate.html</code> (standalone) vs <code class="bg-slate-800 px-1 rounded">courses/cert.html</code> (course certificates) serve different purposes — confirm both are still needed and add clear titles to distinguish them.</div>
+                </div>
+            </div>
+            <div class="card p-4 flex items-start gap-3">
+                <i class="fa fa-circle-check text-slate-600 mt-0.5"></i>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">Move binary assets out of repo</div>
+                    <div class="text-slate-500 text-xs mt-1">Files like <code class="bg-slate-800 px-1 rounded">app.apk</code>, <code class="bg-slate-800 px-1 rounded">appv2.0.apk</code>, <code class="bg-slate-800 px-1 rounded">resume.pdf</code>, <code class="bg-slate-800 px-1 rounded">resume2.pdf</code>, <code class="bg-slate-800 px-1 rounded">learn-your-way.wav</code> inflate repository size. Consider hosting these on Firebase Storage instead.</div>
+                </div>
+            </div>
+            <div class="card p-4 flex items-start gap-3">
+                <i class="fa fa-circle-check text-slate-600 mt-0.5"></i>
+                <div>
+                    <div class="text-slate-300 text-sm font-semibold">Upgrade Firebase SDK globally to latest stable</div>
+                    <div class="text-slate-500 text-xs mt-1">Once stable with 11.0.2, consider a planned upgrade to the latest Firebase SDK. Update all CDN imports uniformly, then test auth, Firestore, Storage, and Vertex AI integrations.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="text-center text-slate-600 text-xs pt-8 pb-4 border-t border-white/5">
+        <p>AZ Learner Repository Report — Generated March 2026</p>
+        <p class="mt-1">This page lives at <code class="bg-slate-800 px-1 rounded text-slate-500">docs/report.html</code></p>
+        <a href="../" class="text-slate-500 hover:text-slate-300 transition mt-2 inline-block">← Back to AZ Learner</a>
+    </footer>
+
+</main>
+
+</body>
+</html>
