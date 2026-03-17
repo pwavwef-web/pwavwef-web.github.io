@@ -930,7 +930,7 @@ The content must:
 
         // Handle Google redirect result on page load
         getRedirectResult(auth).catch(e => {
-            if (e.code) _authMsg(e.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.?/, ''));
+            _authMsg(e.message.replace('Firebase: ', '').replace(/ \(auth\/.*\)\.?/, ''));
         });
 
         // Google sign-in (popup with redirect fallback)
