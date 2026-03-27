@@ -966,7 +966,7 @@
         try {
             const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
             const vertexAI = getVertexAI(appInstance);
-            aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+            aiModel = getGenerativeModel(vertexAI, { model: "gemini-3.1-pro" });
             window._aiModel = aiModel;
         } catch (e) {
             console.warn("Vertex AI not available:", e);
