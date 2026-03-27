@@ -392,7 +392,7 @@
         try {
             const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-vertexai.js");
             const vertexAI = getVertexAI(appInstance);
-            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-1.5-pro" });
+            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
             window._aiModel = aiModel;
             const imageModel = getGenerativeModel(vertexAI, {
                 model: "gemini-2.0-flash-preview-image-generation",
