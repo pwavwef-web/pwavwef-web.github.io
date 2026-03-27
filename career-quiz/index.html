@@ -392,15 +392,15 @@
         try {
             const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-vertexai.js");
             const vertexAI = getVertexAI(appInstance);
-            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-3.1-pro" });
+            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
             window._aiModel = aiModel;
             const imageModel = getGenerativeModel(vertexAI, {
-                model: "virtual-try-on-001",
+                model: "imagen-3.0-generate-001",
                 generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
             });
             window._imageModel = imageModel;
             const videoModel = getGenerativeModel(vertexAI, {
-                model: "veo-3.1-generate-001"
+                model: "veo-2.0-generate-001"
             });
             window._videoModel = videoModel;
         } catch (e) {

@@ -2034,7 +2034,7 @@ showNotifications() {
                 const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
                 const vertexAI = getVertexAI(appInstance);
                 this._azAIModel = getGenerativeModel(vertexAI, {
-                    model: "gemini-3.1-pro",
+                    model: "gemini-2.0-flash",
                     systemInstruction: "You are AZ AI, a friendly and knowledgeable study buddy for university students in Ghana using the AZ Learner app. Be concise, encouraging, and use simple language. Keep responses under 300 words unless the student asks for a detailed explanation. Use emojis sparingly."
                 });
                 return this._azAIModel;
