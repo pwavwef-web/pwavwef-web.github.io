@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HRM3JQT9T0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HRM3JQT9T0');
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Career Quiz – AZ Learner</title>
@@ -100,6 +110,24 @@
             display: flex; align-items: center; gap: 12px;
             background: #1e293b; border: 1px solid #334155;
             border-radius: 12px; padding: 12px 16px;
+        }
+
+        .career-image-card {
+            border-radius: 16px; overflow: hidden; border: 1px solid #334155;
+            background: #1e293b; position: relative;
+        }
+        .career-image-card img {
+            width: 100%; height: 220px; object-fit: cover; display: block;
+        }
+        .career-image-placeholder {
+            width: 100%; height: 220px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+            color: #818cf8; font-size: 3rem;
+        }
+        .career-image-loading {
+            width: 100%; height: 220px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 12px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08));
         }
 
         /* Screens */
@@ -255,6 +283,21 @@
                 <p id="result-summary" class="text-white text-base leading-relaxed"></p>
             </div>
 
+            <!-- Career Vision Image -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">🎨 Your Career Vision</h3>
+                <div id="career-image-card" class="career-image-card">
+                    <div class="career-image-loading">
+                        <div class="flex gap-1.5">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                        <p class="text-slate-400 text-sm">Generating your career vision…</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Top Careers -->
             <div class="mb-6">
                 <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">🎯 Top Career Matches</h3>
@@ -332,7 +375,8 @@
 
     <!-- Firebase + Vertex AI initialisation -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // Note: 11.6.1 required for image generation (responseModalities + inlineData response support)
 
         const firebaseConfig = {
             apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
@@ -346,13 +390,19 @@
         const appInstance = initializeApp(firebaseConfig);
 
         try {
-            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-vertexai.js");
             const vertexAI = getVertexAI(appInstance);
-            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-1.5-pro" });
             window._aiModel = aiModel;
+            const imageModel = getGenerativeModel(vertexAI, {
+                model: "gemini-2.0-flash-preview-image-generation",
+                generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
+            });
+            window._imageModel = imageModel;
         } catch (e) {
             console.warn("Vertex AI unavailable:", e);
             window._aiModel = null;
+            window._imageModel = null;
         }
 
         window._callAI = async function(prompt) {
@@ -360,6 +410,34 @@
             if (!model) throw new Error("AI model not initialised. Please ensure Vertex AI is enabled for this Firebase project.");
             const result = await model.generateContent(prompt);
             return result.response.text();
+        };
+
+        window._generateCareerImage = async function(careerTitle, environment) {
+            const model = window._imageModel;
+            if (!model) return null;
+            const envDescriptions = {
+                corporate: 'modern corporate office with glass walls and city views',
+                remote: 'cozy home office with a laptop and natural light',
+                outdoors: 'outdoor fieldwork environment',
+                healthcare: 'clean and professional hospital or clinic setting',
+                academic: 'university research lab or library',
+                startup: 'vibrant open-plan startup workspace',
+                creative_studio: 'bright creative studio with design tools'
+            };
+            const envDesc = envDescriptions[environment] || 'professional work environment';
+            const prompt = `A realistic, professional photograph of a person working as a ${careerTitle} in a ${envDesc}. The scene is bright, inspiring, and positive. No text overlays.`;
+            try {
+                const result = await model.generateContent(prompt);
+                const parts = result.response.candidates?.[0]?.content?.parts || [];
+                for (const part of parts) {
+                    if (part.inlineData) {
+                        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                    }
+                }
+            } catch (e) {
+                console.warn("Image generation failed:", e);
+            }
+            return null;
         };
     </script>
 
@@ -832,6 +910,32 @@ Return ONLY valid JSON in this exact format (no markdown, no extra text):
                     if (!match) throw new Error('Could not parse AI report');
                     const report = JSON.parse(match[0]);
                     this.renderReport(report, name);
+                    // Generate career vision image asynchronously after showing results
+                    const topCareer = (report.topCareers || [])[0];
+                    if (topCareer) {
+                        window._generateCareerImage(topCareer.title, state.answers.environment).then(dataUrl => {
+                            const card = document.getElementById('career-image-card');
+                            if (!card) return;
+                            if (dataUrl && /^data:image\/[a-z]+;base64,/.test(dataUrl)) {
+                                const img = document.createElement('img');
+                                img.src = dataUrl;
+                                img.alt = 'Career vision: ' + escapeHtml(topCareer.title);
+                                img.loading = 'lazy';
+                                const caption = document.createElement('div');
+                                caption.className = 'px-4 py-3';
+                                caption.innerHTML = `<p class="text-xs text-slate-400 text-center">AI-generated vision of your top career: <span class="text-indigo-300 font-semibold">${escapeHtml(topCareer.title)}</span></p>`;
+                                card.innerHTML = '';
+                                card.appendChild(img);
+                                card.appendChild(caption);
+                            } else {
+                                card.innerHTML = `<div class="career-image-placeholder">🌟</div>
+                                    <div class="px-4 py-3"><p class="text-xs text-slate-400 text-center">Career vision: <span class="text-indigo-300 font-semibold">${escapeHtml(topCareer.title)}</span></p></div>`;
+                            }
+                        });
+                    } else {
+                        const card = document.getElementById('career-image-card');
+                        if (card) card.innerHTML = `<div class="career-image-placeholder">🌟</div>`;
+                    }
                 } catch (e) {
                     console.error('Report generation failed:', e);
                     showScreen('quiz');
