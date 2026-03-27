@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Quiz – AZ Learner</title>
+    <meta name="description" content="Discover your ideal career path with this AI-powered career quiz. Answer a few questions and get a personalized career guidance report.">
+    <link rel="icon" type="image/png" href="../favicon1.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
+
+        /* Progress bar */
+        .progress-fill { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Question card animation */
+        .question-card { animation: slideUp 0.35s ease-out; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white; font-weight: 700; padding: 12px 28px;
+            border-radius: 12px; border: none; cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem; transition: opacity 0.2s, transform 0.15s;
+        }
+        .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-secondary {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #1e293b; color: #94a3b8; font-weight: 600;
+            padding: 11px 22px; border-radius: 12px; border: 1.5px solid #334155;
+            cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-secondary:hover { border-color: #6366f1; color: white; }
+
+        /* Inputs */
+        .quiz-input {
+            width: 100%; background: #1e293b; border: 1.5px solid #334155;
+            border-radius: 12px; color: white; padding: 12px 16px;
+            font-size: 0.95rem; font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+        }
+        .quiz-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+        .quiz-input::placeholder { color: #475569; }
+        textarea.quiz-input { resize: vertical; min-height: 96px; }
+
+        /* Choice options */
+        .choice-option {
+            display: flex; align-items: center; gap: 12px;
+            background: #1e293b; border: 1.5px solid #334155;
+            border-radius: 12px; padding: 13px 16px; cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            user-select: none;
+        }
+        .choice-option:hover { border-color: #6366f1; background: #1e2d4a; }
+        .choice-option.selected { border-color: #6366f1; background: rgba(99,102,241,0.12); }
+        .choice-option input { accent-color: #6366f1; width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+        .choice-label { font-size: 0.9rem; line-height: 1.4; color: #e2e8f0; }
+
+        /* AI typing indicator */
+        .typing-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #6366f1;
+            animation: typing 1.2s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+        /* Results */
+        .career-card {
+            background: linear-gradient(135deg, #1e293b, #162033);
+            border: 1px solid #334155; border-radius: 16px; padding: 20px;
+        }
+        .career-card-rank {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1rem; flex-shrink: 0;
+        }
+        .objective-item {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 10px 14px; background: #1e293b;
+            border-radius: 10px; border-left: 3px solid;
+        }
+        .skill-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+            color: #a5b4fc; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+        }
+        .resource-card {
+            display: flex; align-items: center; gap: 12px;
+            background: #1e293b; border: 1px solid #334155;
+            border-radius: 12px; padding: 12px 16px;
+        }
+
+        /* Screens */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8, #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #1e293b; border: 1px solid #334155; color: white;
+            padding: 12px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 600;
+            z-index: 9999; transition: transform 0.3s ease; white-space: nowrap;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Print / download */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            #screen-results { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 sticky top-0 z-50 bg-slate-900/90 backdrop-blur-sm no-print">
+        <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="../index.html" class="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
+                <img src="../favicon1.png" alt="AZ Learner" class="w-8 h-8 rounded-lg">
+                <span class="font-bold text-white">AZ Learner</span>
+            </a>
+            <span class="text-xs font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+                🎯 Career Quiz
+            </span>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+
+        <!-- ── INTRO SCREEN ── -->
+        <div id="screen-intro" class="screen active question-card">
+            <div class="text-center mb-10 mt-4">
+                <div class="text-6xl mb-5">🧭</div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold gradient-text mb-3">Discover Your Career Path</h1>
+                <p class="text-slate-400 text-base leading-relaxed max-w-lg mx-auto">
+                    Answer a few questions and our AI will generate a personalised career guidance report — including career suggestions, skills to build, and step-by-step objectives tailored just for you.
+                </p>
+            </div>
+
+            <div class="grid sm:grid-cols-3 gap-4 mb-10">
+                <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-center">
+                    <div class="text-2xl mb-2">📋</div>
+                    <p class="text-sm font-semibold text-white">~10 Questions</p>
+                    <p class="text-xs text-slate-400 mt-1">Takes about 5 minutes</p>
+                </div>
+                <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-center">
+                    <div class="text-2xl mb-2">🤖</div>
+                    <p class="text-sm font-semibold text-white">AI-Powered</p>
+                    <p class="text-xs text-slate-400 mt-1">Personalised follow-ups</p>
+                </div>
+                <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-center">
+                    <div class="text-2xl mb-2">🗺️</div>
+                    <p class="text-sm font-semibold text-white">Your Roadmap</p>
+                    <p class="text-xs text-slate-400 mt-1">Goals & next steps</p>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button class="btn-primary text-lg px-10 py-4" onclick="quiz.start()">
+                    Start Quiz <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <p class="text-xs text-slate-500 mt-4">No sign-in required · Your answers stay on this page</p>
+            </div>
+        </div>
+
+        <!-- ── QUIZ SCREEN ── -->
+        <div id="screen-quiz" class="screen">
+            <!-- Progress -->
+            <div class="mb-6 no-print">
+                <div class="flex justify-between text-xs font-medium text-slate-400 mb-2">
+                    <span id="progress-label">Question 1 of 10</span>
+                    <span id="progress-pct">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div id="progress-bar" class="progress-fill bg-indigo-500 h-2 rounded-full" style="width:0%"></div>
+                </div>
+            </div>
+
+            <!-- AI typing indicator -->
+            <div id="ai-typing" class="hidden flex items-center gap-3 mb-6 bg-slate-800/60 border border-slate-700 rounded-2xl p-4">
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+                <div class="flex gap-1.5">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span class="text-slate-400 text-sm">AI is thinking of your next question…</span>
+            </div>
+
+            <!-- Question card -->
+            <div id="question-card" class="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 sm:p-8 question-card">
+                <!-- AI badge for follow-up questions -->
+                <div id="ai-badge" class="hidden mb-4 inline-flex items-center gap-2 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+                    🤖 AI Follow-up
+                </div>
+                <h2 id="question-text" class="text-lg sm:text-xl font-bold text-white mb-6 leading-snug"></h2>
+                <div id="question-body"></div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex justify-between items-center mt-6 no-print">
+                <button id="btn-back" class="btn-secondary" onclick="quiz.back()" style="display:none;">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </button>
+                <div></div>
+                <button id="btn-next" class="btn-primary" onclick="quiz.next()" disabled>
+                    Next <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── GENERATING SCREEN ── -->
+        <div id="screen-generating" class="screen text-center py-16">
+            <div class="text-5xl mb-6">✨</div>
+            <h2 class="text-2xl font-extrabold text-white mb-3">Building Your Career Report</h2>
+            <p id="gen-status" class="text-slate-400 text-sm mb-8">Analysing your answers…</p>
+            <div class="flex justify-center gap-2">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- ── RESULTS SCREEN ── -->
+        <div id="screen-results" class="screen">
+            <!-- Header -->
+            <div class="text-center mb-8 mt-2">
+                <div class="text-5xl mb-3">🌟</div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Your Career Report</h2>
+                <p id="result-name" class="text-slate-400 text-sm"></p>
+            </div>
+
+            <!-- Summary -->
+            <div class="bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 rounded-2xl p-6 mb-6">
+                <p id="result-summary" class="text-white text-base leading-relaxed"></p>
+            </div>
+
+            <!-- Top Careers -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">🎯 Top Career Matches</h3>
+                <div id="result-careers" class="space-y-3"></div>
+            </div>
+
+            <!-- Skills to Build -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">🛠️ Skills to Develop</h3>
+                <div id="result-skills" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Objectives -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">🗓️ Your Objectives</h3>
+                <div class="space-y-4">
+                    <!-- Short term -->
+                    <div>
+                        <p class="text-sm font-semibold text-emerald-400 mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Short-term (Next 3 months)
+                        </p>
+                        <div id="result-short" class="space-y-2"></div>
+                    </div>
+                    <!-- Medium term -->
+                    <div>
+                        <p class="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Medium-term (By end of year)
+                        </p>
+                        <div id="result-medium" class="space-y-2"></div>
+                    </div>
+                    <!-- Long term -->
+                    <div>
+                        <p class="text-sm font-semibold text-purple-400 mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-purple-400 inline-block"></span> Long-term (5 years)
+                        </p>
+                        <div id="result-long" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resources -->
+            <div class="mb-8">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">📚 Recommended Resources</h3>
+                <div id="result-resources" class="space-y-2"></div>
+            </div>
+
+            <!-- Motivation -->
+            <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 mb-8 text-center">
+                <p id="result-motivation" class="text-slate-300 text-base italic leading-relaxed"></p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center no-print">
+                <button class="btn-secondary" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Print Report
+                </button>
+                <button class="btn-primary" onclick="quiz.restart()">
+                    <i class="fa-solid fa-rotate-right"></i> Retake Quiz
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-auto py-6 text-center no-print">
+        <p class="text-slate-500 text-xs">
+            Powered by <span class="text-indigo-400 font-semibold">AZ Learner</span> &amp; Google Gemini AI · 
+            <a href="../index.html" class="text-indigo-400 hover:underline">Back to Home</a>
+        </p>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Firebase + Vertex AI initialisation -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+            authDomain: "az-learner.firebaseapp.com",
+            projectId: "az-learner",
+            storageBucket: "az-learner.firebasestorage.app",
+            messagingSenderId: "12958795950",
+            appId: "1:12958795950:web:326411293864571040453f"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+
+        try {
+            const { getVertexAI, getGenerativeModel } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-vertexai.js");
+            const vertexAI = getVertexAI(appInstance);
+            const aiModel = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+            window._aiModel = aiModel;
+        } catch (e) {
+            console.warn("Vertex AI unavailable:", e);
+            window._aiModel = null;
+        }
+
+        window._callAI = async function(prompt) {
+            const model = window._aiModel;
+            if (!model) throw new Error("AI model not initialised. Please ensure Vertex AI is enabled for this Firebase project.");
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+        };
+    </script>
+
+    <!-- Quiz Logic -->
+    <script>
+        // ── Utility ──────────────────────────────────────────────────────
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showToast(msg, duration = 3500) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + id).classList.add('active');
+        }
+
+        // ── Fixed Questions ───────────────────────────────────────────────
+        const FIXED_QUESTIONS = [
+            {
+                id: 'name',
+                text: "Let's start with your name — what should we call you?",
+                type: 'text',
+                placeholder: 'e.g. Ama, Kwame, Fatima…',
+                hint: 'First name or nickname is fine.'
+            },
+            {
+                id: 'field',
+                text: "What are you currently studying, or what field are you most interested in?",
+                type: 'text',
+                placeholder: 'e.g. Computer Science, Business, Medicine, Arts…',
+                hint: 'You can mention your program or just your general interests.'
+            },
+            {
+                id: 'excites',
+                text: "Which of these best describes what excites you most?",
+                type: 'single',
+                options: [
+                    { value: 'people', label: '🤝 Working with people & helping them grow' },
+                    { value: 'creative', label: '🎨 Creating things — art, writing, design, or code' },
+                    { value: 'data', label: '🔍 Analysing data, solving puzzles & finding patterns' },
+                    { value: 'business', label: '💼 Building & running businesses or organisations' },
+                    { value: 'science', label: '🔬 Research, science & discovering new things' },
+                    { value: 'teaching', label: '📚 Teaching, training & sharing knowledge' },
+                    { value: 'tech', label: '⚙️ Technology, systems & making things work better' },
+                ]
+            },
+            {
+                id: 'strengths',
+                text: "What do people say you're good at? Pick all that apply.",
+                type: 'multi',
+                options: [
+                    { value: 'communication', label: '🗣️ Communication & presenting ideas' },
+                    { value: 'problemsolving', label: '🧩 Problem-solving & critical thinking' },
+                    { value: 'creativity', label: '💡 Creativity & coming up with new ideas' },
+                    { value: 'leadership', label: '🏆 Leadership & inspiring others' },
+                    { value: 'technical', label: '🖥️ Technical skills (coding, engineering, etc.)' },
+                    { value: 'empathy', label: '❤️ Empathy & understanding people' },
+                    { value: 'organisation', label: '📋 Organisation & attention to detail' },
+                    { value: 'learning', label: '⚡ Learning quickly & adapting' },
+                ]
+            },
+            {
+                id: 'environment',
+                text: "What kind of work environment appeals to you most?",
+                type: 'single',
+                options: [
+                    { value: 'corporate', label: '🏢 Corporate / structured office environment' },
+                    { value: 'remote', label: '🏠 Remote & flexible — work from anywhere' },
+                    { value: 'outdoors', label: '🌿 Outdoors / hands-on fieldwork' },
+                    { value: 'healthcare', label: '🏥 Healthcare / clinic / community setting' },
+                    { value: 'academic', label: '🎓 Academic / research institution' },
+                    { value: 'startup', label: '🚀 Startup / entrepreneurial environment' },
+                    { value: 'creative_studio', label: '🎭 Creative studio or media house' },
+                ]
+            },
+            {
+                id: 'career_goal',
+                text: "Which of these best matches your career goal?",
+                type: 'single',
+                options: [
+                    { value: 'income', label: '💰 Earning a high income and financial freedom' },
+                    { value: 'impact', label: '🌍 Making a meaningful difference in society' },
+                    { value: 'boss', label: '👑 Being my own boss & building something mine' },
+                    { value: 'stability', label: '🛡️ Job security, stability & work-life balance' },
+                    { value: 'passion', label: '🔥 Doing something I am deeply passionate about' },
+                    { value: 'recognition', label: '🌟 Gaining recognition & becoming well-known in my field' },
+                    { value: 'balance', label: '⚖️ A healthy mix of all of the above' },
+                ]
+            },
+            {
+                id: 'dream',
+                text: "In your own words — what do you dream of doing or achieving professionally? There's no wrong answer.",
+                type: 'textarea',
+                placeholder: 'e.g. I want to build tech solutions for African farmers, or I want to become a doctor who also teaches…',
+                hint: 'A sentence or two is fine. Be as honest as you like.'
+            }
+        ];
+
+        // ── State ─────────────────────────────────────────────────────────
+        const state = {
+            phase: 'fixed',         // 'fixed' | 'followup' | 'done'
+            currentIndex: 0,        // index within current phase
+            answers: {},            // keyed by question id
+            followUpQuestions: [],  // AI-generated follow-up question strings
+            followUpAnswers: [],    // answers to follow-up questions
+            totalQuestions: 10,     // 7 fixed + 3 AI follow-ups
+        };
+
+        // ── Quiz Controller ───────────────────────────────────────────────
+        window.quiz = {
+
+            start() {
+                showScreen('quiz');
+                state.phase = 'fixed';
+                state.currentIndex = 0;
+                state.answers = {};
+                state.followUpQuestions = [];
+                state.followUpAnswers = [];
+                this.renderQuestion();
+            },
+
+            restart() {
+                showScreen('intro');
+            },
+
+            // Current question descriptor
+            currentQuestion() {
+                if (state.phase === 'fixed') {
+                    return FIXED_QUESTIONS[state.currentIndex] || null;
+                }
+                if (state.phase === 'followup') {
+                    const txt = state.followUpQuestions[state.currentIndex];
+                    if (!txt) return null;
+                    return { id: 'followup_' + state.currentIndex, text: txt, type: 'textarea', placeholder: 'Share your thoughts…' };
+                }
+                return null;
+            },
+
+            // Which question number are we on globally (1-based)
+            globalIndex() {
+                if (state.phase === 'fixed') return state.currentIndex;
+                return FIXED_QUESTIONS.length + state.currentIndex;
+            },
+
+            updateProgress() {
+                const total = state.totalQuestions;
+                const done  = this.globalIndex();
+                const pct   = Math.round((done / total) * 100);
+                const lbl   = `Question ${done + 1} of ${total}`;
+                document.getElementById('progress-bar').style.width  = pct + '%';
+                document.getElementById('progress-pct').textContent  = pct + '%';
+                document.getElementById('progress-label').textContent = lbl;
+            },
+
+            renderQuestion() {
+                const q = this.currentQuestion();
+                if (!q) return;
+
+                this.updateProgress();
+
+                // Show/hide AI badge
+                const badge = document.getElementById('ai-badge');
+                badge.classList.toggle('hidden', state.phase !== 'followup');
+
+                // Set question text
+                document.getElementById('question-text').textContent = q.text;
+
+                // Build body
+                const body = document.getElementById('question-body');
+                body.innerHTML = '';
+
+                if (q.hint) {
+                    const hint = document.createElement('p');
+                    hint.className = 'text-slate-500 text-sm mb-4';
+                    hint.textContent = q.hint;
+                    body.appendChild(hint);
+                }
+
+                if (q.type === 'text') {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.className = 'quiz-input';
+                    inp.placeholder = q.placeholder || '';
+                    const saved = state.answers[q.id] || '';
+                    inp.value = saved;
+                    inp.addEventListener('input', () => this.onTextChange(q.id, inp.value));
+                    inp.addEventListener('keydown', e => { if (e.key === 'Enter') this.next(); });
+                    body.appendChild(inp);
+                    setTimeout(() => inp.focus(), 50);
+                    this.setNextEnabled(!!saved.trim());
+
+                } else if (q.type === 'textarea') {
+                    const ta = document.createElement('textarea');
+                    ta.className = 'quiz-input';
+                    ta.placeholder = q.placeholder || '';
+                    const saved = state.answers[q.id] || '';
+                    ta.value = saved;
+                    ta.addEventListener('input', () => this.onTextChange(q.id, ta.value));
+                    body.appendChild(ta);
+                    setTimeout(() => ta.focus(), 50);
+                    this.setNextEnabled(!!saved.trim());
+
+                } else if (q.type === 'single') {
+                    const saved = state.answers[q.id] || '';
+                    q.options.forEach(opt => {
+                        const div = document.createElement('div');
+                        div.className = 'choice-option mb-2' + (saved === opt.value ? ' selected' : '');
+                        div.innerHTML = `<input type="radio" name="q_${q.id}" value="${escapeHtml(opt.value)}" ${saved === opt.value ? 'checked' : ''}><span class="choice-label">${escapeHtml(opt.label)}</span>`;
+                        const radio = div.querySelector('input');
+                        div.addEventListener('click', () => {
+                            body.querySelectorAll('.choice-option').forEach(d => d.classList.remove('selected'));
+                            div.classList.add('selected');
+                            radio.checked = true;
+                            state.answers[q.id] = opt.value;
+                            this.setNextEnabled(true);
+                        });
+                        body.appendChild(div);
+                    });
+                    this.setNextEnabled(!!saved);
+
+                } else if (q.type === 'multi') {
+                    const saved = state.answers[q.id] || [];
+                    q.options.forEach(opt => {
+                        const div = document.createElement('div');
+                        const checked = saved.includes(opt.value);
+                        div.className = 'choice-option mb-2' + (checked ? ' selected' : '');
+                        div.innerHTML = `<input type="checkbox" name="q_${q.id}" value="${escapeHtml(opt.value)}" ${checked ? 'checked' : ''}><span class="choice-label">${escapeHtml(opt.label)}</span>`;
+                        const cb = div.querySelector('input');
+                        div.addEventListener('click', () => {
+                            cb.checked = !cb.checked;
+                            div.classList.toggle('selected', cb.checked);
+                            const vals = Array.from(body.querySelectorAll('input:checked')).map(i => i.value);
+                            state.answers[q.id] = vals;
+                            this.setNextEnabled(vals.length > 0);
+                        });
+                        body.appendChild(div);
+                    });
+                    this.setNextEnabled(saved.length > 0);
+                }
+
+                // Show/hide back button
+                const btnBack = document.getElementById('btn-back');
+                btnBack.style.display = (this.globalIndex() > 0) ? 'inline-flex' : 'none';
+
+                // Re-animate card
+                const card = document.getElementById('question-card');
+                card.classList.remove('question-card');
+                void card.offsetWidth;
+                card.classList.add('question-card');
+            },
+
+            onTextChange(id, val) {
+                state.answers[id] = val;
+                this.setNextEnabled(!!val.trim());
+            },
+
+            setNextEnabled(enabled) {
+                document.getElementById('btn-next').disabled = !enabled;
+            },
+
+            async next() {
+                const q = this.currentQuestion();
+                if (!q) return;
+
+                // For text/textarea, save current value
+                if (q.type === 'text' || q.type === 'textarea') {
+                    const el = document.querySelector('.quiz-input');
+                    if (el && !state.answers[q.id]) {
+                        state.answers[q.id] = el.value.trim();
+                    }
+                    if (q.type === 'textarea' && state.phase === 'followup') {
+                        state.followUpAnswers[state.currentIndex] = state.answers[q.id] || '';
+                    }
+                }
+
+                if (state.phase === 'fixed') {
+                    if (state.currentIndex < FIXED_QUESTIONS.length - 1) {
+                        state.currentIndex++;
+                        this.renderQuestion();
+                    } else {
+                        // All fixed questions done — get AI follow-ups
+                        await this.loadFollowUps();
+                    }
+                } else if (state.phase === 'followup') {
+                    state.followUpAnswers[state.currentIndex] = state.answers[q.id] || '';
+                    if (state.currentIndex < state.followUpQuestions.length - 1) {
+                        state.currentIndex++;
+                        this.renderQuestion();
+                    } else {
+                        // All follow-ups done — generate report
+                        await this.generateReport();
+                    }
+                }
+            },
+
+            back() {
+                if (state.phase === 'fixed' && state.currentIndex > 0) {
+                    state.currentIndex--;
+                    this.renderQuestion();
+                } else if (state.phase === 'followup') {
+                    if (state.currentIndex > 0) {
+                        state.currentIndex--;
+                        this.renderQuestion();
+                    } else {
+                        // Go back to last fixed question
+                        state.phase = 'fixed';
+                        state.currentIndex = FIXED_QUESTIONS.length - 1;
+                        this.renderQuestion();
+                    }
+                }
+            },
+
+            buildAnswerSummary() {
+                const a = state.answers;
+                const lines = [];
+                lines.push(`Name: ${a.name || 'Unknown'}`);
+                lines.push(`Field/Study: ${a.field || 'Not specified'}`);
+
+                const excitesMap = {
+                    people: 'Working with people & helping them grow',
+                    creative: 'Creating things (art, writing, design, code)',
+                    data: 'Analysing data & solving puzzles',
+                    business: 'Building & running businesses',
+                    science: 'Research & science',
+                    teaching: 'Teaching & sharing knowledge',
+                    tech: 'Technology & systems'
+                };
+                lines.push(`What excites them: ${excitesMap[a.excites] || a.excites || 'Not specified'}`);
+
+                const strengthLabels = {
+                    communication: 'Communication', problemsolving: 'Problem-solving',
+                    creativity: 'Creativity', leadership: 'Leadership',
+                    technical: 'Technical skills', empathy: 'Empathy',
+                    organisation: 'Organisation', learning: 'Quick learning'
+                };
+                const strengths = (a.strengths || []).map(s => strengthLabels[s] || s);
+                lines.push(`Strengths: ${strengths.length ? strengths.join(', ') : 'Not specified'}`);
+
+                const envMap = {
+                    corporate: 'Corporate office', remote: 'Remote & flexible',
+                    outdoors: 'Outdoors/fieldwork', healthcare: 'Healthcare/clinic',
+                    academic: 'Academic/research', startup: 'Startup/entrepreneurial',
+                    creative_studio: 'Creative studio'
+                };
+                lines.push(`Preferred environment: ${envMap[a.environment] || a.environment || 'Not specified'}`);
+
+                const goalMap = {
+                    income: 'High income', impact: 'Making a difference',
+                    boss: 'Being own boss', stability: 'Stability & work-life balance',
+                    passion: 'Doing what they love', recognition: 'Recognition in their field',
+                    balance: 'A healthy balance of everything'
+                };
+                lines.push(`Career goal: ${goalMap[a.career_goal] || a.career_goal || 'Not specified'}`);
+                lines.push(`Professional dream: ${a.dream || 'Not specified'}`);
+
+                if (state.followUpQuestions.length) {
+                    lines.push('');
+                    lines.push('--- AI Follow-up Questions & Answers ---');
+                    state.followUpQuestions.forEach((q, i) => {
+                        lines.push(`Q: ${q}`);
+                        lines.push(`A: ${state.followUpAnswers[i] || 'No answer given'}`);
+                    });
+                }
+
+                return lines.join('\n');
+            },
+
+            async loadFollowUps() {
+                // Show typing indicator
+                const typing = document.getElementById('ai-typing');
+                const card   = document.getElementById('question-card');
+                typing.classList.remove('hidden');
+                card.classList.add('opacity-0');
+
+                const summary = this.buildAnswerSummary();
+                const prompt = `You are a thoughtful career counselor helping a Ghanaian university student discover their career path.
+
+Based on the following quiz answers from the student:
+${summary}
+
+Generate exactly 3 thoughtful follow-up questions that will help you better understand their ideal career direction.
+These questions should:
+- Be conversational and friendly (not clinical)
+- Dig deeper into specific aspects of their answers that need more context
+- Be specific to what they've shared, not generic
+- Help reveal career-relevant insights
+
+Return ONLY a valid JSON array of exactly 3 strings, nothing else. No markdown, no explanation.
+Example format: ["Question 1?", "Question 2?", "Question 3?"]`;
+
+                try {
+                    const raw = await window._callAI(prompt);
+                    // Extract JSON array from response
+                    const match = raw.match(/\[[\s\S]*\]/);
+                    if (!match) throw new Error('Could not parse AI response');
+                    const questions = JSON.parse(match[0]);
+                    if (!Array.isArray(questions) || questions.length < 1) throw new Error('Invalid questions array');
+                    state.followUpQuestions = questions.slice(0, 3);
+                    state.totalQuestions = FIXED_QUESTIONS.length + state.followUpQuestions.length;
+                } catch (e) {
+                    console.warn('Follow-up generation failed, using defaults:', e);
+                    state.followUpQuestions = [
+                        "What has been the biggest challenge you've faced in figuring out your career direction so far?",
+                        "Are there any specific people in your life or public figures whose careers you admire, and why?",
+                        "If money and status were not factors at all, what would you spend your days doing?"
+                    ];
+                    state.totalQuestions = FIXED_QUESTIONS.length + state.followUpQuestions.length;
+                }
+
+                typing.classList.add('hidden');
+                card.classList.remove('opacity-0');
+
+                state.phase = 'followup';
+                state.currentIndex = 0;
+                this.renderQuestion();
+            },
+
+            async generateReport() {
+                showScreen('generating');
+                const genStatus = document.getElementById('gen-status');
+
+                const summary = this.buildAnswerSummary();
+                const name = escapeHtml(state.answers.name || 'there');
+
+                const prompt = `You are an expert career counselor helping a Ghanaian university student chart their career path.
+
+Here is a summary of their quiz answers:
+${summary}
+
+Generate a detailed and personalised career guidance report for this student. Be encouraging, realistic, and specific to their context as a student in Ghana.
+
+Return ONLY valid JSON in this exact format (no markdown, no extra text):
+{
+  "summary": "2-3 sentences personalised to the student, acknowledging their specific interests and strengths",
+  "topCareers": [
+    { "title": "Career Title", "why": "1-2 sentences on why this fits their profile", "outlook": "Brief note on job market outlook in Ghana/Africa" },
+    { "title": "Career Title", "why": "...", "outlook": "..." },
+    { "title": "Career Title", "why": "...", "outlook": "..." }
+  ],
+  "skills": ["skill 1", "skill 2", "skill 3", "skill 4", "skill 5"],
+  "objectives": {
+    "shortTerm": ["Specific 3-month goal 1", "Specific 3-month goal 2", "Specific 3-month goal 3"],
+    "mediumTerm": ["Specific 1-year goal 1", "Specific 1-year goal 2", "Specific 1-year goal 3"],
+    "longTerm": ["Specific 5-year goal 1", "Specific 5-year goal 2"]
+  },
+  "resources": [
+    { "name": "Resource name", "type": "Online Course / Book / Platform / Community", "description": "1 sentence on what it is and why it helps" },
+    { "name": "Resource name", "type": "...", "description": "..." },
+    { "name": "Resource name", "type": "...", "description": "..." }
+  ],
+  "motivation": "A 2-3 sentence personalised motivational closing message for this specific student"
+}`;
+
+                try {
+                    genStatus.textContent = 'Generating your career roadmap…';
+                    const raw = await window._callAI(prompt);
+                    const match = raw.match(/\{[\s\S]*\}/);
+                    if (!match) throw new Error('Could not parse AI report');
+                    const report = JSON.parse(match[0]);
+                    this.renderReport(report, name);
+                } catch (e) {
+                    console.error('Report generation failed:', e);
+                    showScreen('quiz');
+                    showToast('⚠️ Could not generate report. Please check your connection and try again.', 5000);
+                }
+            },
+
+            renderReport(report, name) {
+                // Name
+                const nameEl = document.getElementById('result-name');
+                nameEl.textContent = `Personalised report for ${name}`;
+
+                // Summary
+                document.getElementById('result-summary').textContent = report.summary || '';
+
+                // Careers
+                const careersEl = document.getElementById('result-careers');
+                careersEl.innerHTML = '';
+                const rankColors = ['#6366f1', '#8b5cf6', '#a78bfa'];
+                const rankBg     = ['rgba(99,102,241,0.15)', 'rgba(139,92,246,0.15)', 'rgba(167,139,250,0.15)'];
+                (report.topCareers || []).forEach((c, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'career-card flex gap-4';
+                    div.innerHTML = `
+                        <div class="career-card-rank" style="background:${rankBg[i]};color:${rankColors[i]}">#${i + 1}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-white text-base">${escapeHtml(c.title || '')}</p>
+                            <p class="text-slate-400 text-sm mt-1 leading-relaxed">${escapeHtml(c.why || '')}</p>
+                            ${c.outlook ? `<p class="text-xs text-emerald-400 mt-2 font-medium">📈 ${escapeHtml(c.outlook)}</p>` : ''}
+                        </div>`;
+                    careersEl.appendChild(div);
+                });
+
+                // Skills
+                const skillsEl = document.getElementById('result-skills');
+                skillsEl.innerHTML = '';
+                (report.skills || []).forEach(s => {
+                    const span = document.createElement('span');
+                    span.className = 'skill-badge';
+                    span.innerHTML = `<i class="fa-solid fa-check text-xs"></i>${escapeHtml(s)}`;
+                    skillsEl.appendChild(span);
+                });
+
+                // Objectives
+                const shortColors  = ['#10b981', '#34d399', '#6ee7b7'];
+                const mediumColors = ['#f59e0b', '#fbbf24', '#fcd34d'];
+                const longColors   = ['#a78bfa', '#c4b5fd', '#ddd6fe'];
+
+                this.renderObjectives('result-short',  report.objectives?.shortTerm  || [], shortColors[0]);
+                this.renderObjectives('result-medium', report.objectives?.mediumTerm || [], mediumColors[0]);
+                this.renderObjectives('result-long',   report.objectives?.longTerm   || [], longColors[0]);
+
+                // Resources
+                const resEl = document.getElementById('result-resources');
+                resEl.innerHTML = '';
+                (report.resources || []).forEach(r => {
+                    const typeIcons = {
+                        'Online Course': 'fa-laptop', 'Book': 'fa-book', 'Platform': 'fa-globe',
+                        'Community': 'fa-users', 'Book / Resource': 'fa-book'
+                    };
+                    const icon = typeIcons[r.type] || 'fa-link';
+                    const div = document.createElement('div');
+                    div.className = 'resource-card';
+                    div.innerHTML = `
+                        <div class="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid ${escapeHtml(icon)} text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-semibold text-white text-sm">${escapeHtml(r.name || '')}</p>
+                            <p class="text-xs text-indigo-300 font-medium">${escapeHtml(r.type || '')}</p>
+                            ${r.description ? `<p class="text-xs text-slate-400 mt-0.5">${escapeHtml(r.description)}</p>` : ''}
+                        </div>`;
+                    resEl.appendChild(div);
+                });
+
+                // Motivation
+                document.getElementById('result-motivation').textContent = report.motivation || '';
+
+                showScreen('results');
+            },
+
+            renderObjectives(containerId, items, color) {
+                const el = document.getElementById(containerId);
+                el.innerHTML = '';
+                items.forEach((item, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'objective-item';
+                    div.style.borderLeftColor = color;
+                    div.innerHTML = `
+                        <span class="text-xs font-bold mt-0.5 flex-shrink-0" style="color:${escapeHtml(color)}">${i + 1}.</span>
+                        <p class="text-slate-300 text-sm leading-relaxed">${escapeHtml(item)}</p>`;
+                    el.appendChild(div);
+                });
+            }
+        };
+    </script>
+</body>
+</html>
