@@ -323,7 +323,7 @@
 
     try {
         const vertexAI = getVertexAI(app);
-        const model = getGenerativeModel(vertexAI, { model: "gemini-3.1-pro" });
+        const model = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
         window._atsAiModel = model;
     } catch (e) {
         console.warn("Vertex AI init failed:", e);
