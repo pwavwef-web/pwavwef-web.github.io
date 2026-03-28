@@ -376,18 +376,7 @@
   <!-- ── SHAREABLE CAPTION ──────────────────────────────────── -->
   <div class="caption-section">
     <h2>📋 Copy &amp; Share Caption</h2>
-    <div class="caption-box" id="caption-text">🎂 Happy Birthday Francis Pwavwe! 🎉
-
-Today we celebrate the brilliant mind and generous heart behind AZ Learner — Francis Pwavwe, our Founder &amp; CEO.
-
-From building tools that help students print, learn, grow, and thrive — Francis has poured his vision into every corner of this platform. Today, we pour our love and best wishes back into him. 🥂
-
-May your 28th March be as colourful, joyful, and extraordinary as the impact you create every day! 🚀✨
-
-Many happy returns of the day, boss! 🙌🎈
-
-— The AZ Learner Team 💙
-#HappyBirthday #FrancisPwavwe #AZLearner #BirthdayCelebration</div>
+    <div class="caption-box" id="caption-text"></div>
 
     <button class="copy-btn" id="copy-btn" onclick="copyCaption()" aria-label="Copy birthday caption to clipboard">
       <i class="fa-regular fa-copy"></i>
@@ -418,6 +407,24 @@ Many happy returns of the day, boss! 🙌🎈
 </div><!-- .page-wrap -->
 
 <script>
+  /* ── Shareable caption text ──────────────────────────────── */
+  const BIRTHDAY_CAPTION = [
+    '🎂 Happy Birthday Francis Pwavwe! 🎉',
+    '',
+    'Today we celebrate the brilliant mind and generous heart behind AZ Learner — Francis Pwavwe, our Founder & CEO.',
+    '',
+    'From building tools that help students print, learn, grow, and thrive — Francis has poured his vision into every corner of this platform. Today, we pour our love and best wishes back into him. 🥂',
+    '',
+    'May your 28th March be as colourful, joyful, and extraordinary as the impact you create every day! 🚀✨',
+    '',
+    'Many happy returns of the day, boss! 🙌🎈',
+    '',
+    '— The AZ Learner Team 💙',
+    '#HappyBirthday #FrancisPwavwe #AZLearner #BirthdayCelebration'
+  ].join('\n');
+
+  document.getElementById('caption-text').textContent = BIRTHDAY_CAPTION;
+
   /* ── Confetti generator ──────────────────────────────────── */
   (function createConfetti() {
     const wrap = document.getElementById('confetti');
@@ -442,7 +449,7 @@ Many happy returns of the day, boss! 🙌🎈
 
   /* ── Copy caption ────────────────────────────────────────── */
   function copyCaption() {
-    const text = document.getElementById('caption-text').innerText;
+    const text = BIRTHDAY_CAPTION;
     const btn  = document.getElementById('copy-btn');
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => showCopied(btn));
