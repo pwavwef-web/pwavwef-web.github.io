@@ -32,6 +32,9 @@
 
   <link rel="icon" type="image/png" href="../favicon.png" />
 
+  <!-- html2canvas for flyer snapshot -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -273,6 +276,21 @@
     .share-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
     .share-btn i { font-size: .9rem; }
 
+    /* ── Save as Video button ─────────────────────────────────── */
+    .save-video-btn {
+      margin-top: 10px; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(135deg, #ff5ec8, #ffa94d);
+      color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .9rem; font-weight: 700; letter-spacing: .5px;
+      border: none; border-radius: 12px; padding: 13px 20px;
+      cursor: pointer; transition: opacity .2s, transform .1s;
+    }
+    .save-video-btn:hover  { opacity: .9; transform: translateY(-1px); }
+    .save-video-btn:active { transform: translateY(0); opacity: 1; }
+    .save-video-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    @keyframes recPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
     /* ── Back to team link ────────────────────────────────────── */
     .back-link {
       margin-top: 28px; text-align: center;
@@ -383,6 +401,11 @@
       Copy Caption
     </button>
 
+    <button class="save-video-btn" id="save-video-btn" onclick="saveAsVideo()" aria-label="Save birthday flyer as a video to share on your status">
+      <i class="fa-solid fa-video"></i>
+      Save as Video
+    </button>
+
     <div class="share-row">
       <button class="share-btn" onclick="shareNative()" aria-label="Share via device share sheet">
         <i class="fa-solid fa-share-nodes"></i> Share
@@ -483,6 +506,137 @@
       }).catch(() => {});
     } else {
       copyCaption();
+    }
+  }
+
+  /* ── Save as Video ───────────────────────────────────────── */
+  async function saveAsVideo() {
+    const card = document.getElementById('flyer-card');
+    const btn  = document.getElementById('save-video-btn');
+
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+      alert('Video recording is not supported in your browser. Please try a modern browser like Chrome, Edge, or Firefox.');
+      return;
+    }
+
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Capturing flyer…';
+    btn.disabled  = true;
+
+    try {
+      // 1. Snapshot the flyer card with html2canvas
+      const snapshot = await html2canvas(card, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#0a0a1a',
+        scale: 1,
+        logging: false
+      });
+
+      const W = snapshot.width;
+      const H = snapshot.height;
+
+      // 2. Create the recording canvas
+      const canvas = document.createElement('canvas');
+      canvas.width  = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // 3. Animated confetti particles to overlay on the snapshot
+      const COLORS = ['#ff5ec8','#ffa94d','#ffe066','#5ce0ff','#7c5cfc','#22c55e','#fb7185'];
+      const particles = Array.from({length: 70}, () => ({
+        x:        Math.random() * W,
+        y:        -10 - Math.random() * H,
+        w:        4 + Math.random() * 8,
+        h:        4 + Math.random() * 14,
+        color:    COLORS[Math.floor(Math.random() * COLORS.length)],
+        speed:    1 + Math.random() * 2.5,
+        rot:      Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        isCircle: Math.random() > 0.5
+      }));
+
+      // 4. Pick the best supported MIME type (prefer mp4, fall back to webm)
+      const TYPES = [
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      const mimeType = TYPES.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+      const ext      = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+
+      // 5. Start recording
+      const stream  = canvas.captureStream(30);
+      // 2.5 Mbps bitrate balances quality and file size for a 6-second status video
+      const VIDEO_BITRATE        = 2_500_000;
+      // Collect chunks every 200 ms to avoid large in-memory buffers
+      const RECORDER_TIMESLICE_MS = 200;
+      let   recorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: VIDEO_BITRATE });
+      } catch (_) {
+        recorder = new MediaRecorder(stream);
+      }
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `happy-birthday-francis.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        btn.innerHTML = '<i class="fa-solid fa-video"></i> Save as Video';
+        btn.disabled  = false;
+      };
+
+      recorder.start(RECORDER_TIMESLICE_MS);
+      btn.innerHTML = '<i class="fa-solid fa-circle" style="animation:recPulse 1s infinite;color:#ff4444"></i> Recording…';
+
+      // 6 seconds shows the full confetti animation without making the file too large
+      const DURATION  = 6000;
+      const startTime = performance.now();
+
+      function drawFrame() {
+        ctx.drawImage(snapshot, 0, 0, W, H);
+
+        particles.forEach(p => {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle  = p.color;
+          ctx.globalAlpha = 0.85;
+          if (p.isCircle) {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          }
+          ctx.restore();
+          p.y   += p.speed;
+          p.rot += p.rotSpeed;
+          if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
+        });
+
+        if (performance.now() - startTime < DURATION) {
+          requestAnimationFrame(drawFrame);
+        } else {
+          recorder.stop();
+        }
+      }
+      drawFrame();
+
+    } catch (err) {
+      console.error('Video export failed:', err);
+      btn.innerHTML = '<i class="fa-solid fa-video"></i> Save as Video';
+      btn.disabled  = false;
+      alert('Could not export video. Please try a different browser.');
     }
   }
 </script>
