@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HRM3JQT9T0"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HRM3JQT9T0');
+  </script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Happy Birthday Francis Pwavwe! 🎉 Celebrating the Founder & CEO of AZ Learner on his special day — 28th March. From the AZ Learner Team." />
+  <meta name="author" content="AZ Learner" />
+  <title>Happy Birthday Francis Pwavwe 🎂 | AZ Learner</title>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AZ Learner" />
+  <meta property="og:title" content="Happy Birthday Francis Pwavwe 🎂 | AZ Learner" />
+  <meta property="og:description" content="Celebrating the Founder & CEO of AZ Learner on his special day — 28th March 🎉" />
+  <meta property="og:image" content="https://azlearner.me/team/assets/images/francis.jpg" />
+  <meta property="og:url" content="https://azlearner.me/birthday/francis.html" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Happy Birthday Francis Pwavwe 🎂 | AZ Learner" />
+  <meta name="twitter:description" content="Celebrating the Founder & CEO of AZ Learner on his special day — 28th March 🎉" />
+  <meta name="twitter:image" content="https://azlearner.me/team/assets/images/francis.jpg" />
+
+  <link rel="icon" type="image/png" href="../favicon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0a0a1a;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated gradient background ────────────────────────── */
+    .bg-glow {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 20% 20%, rgba(255,80,200,.25) 0%, transparent 55%),
+                  radial-gradient(ellipse at 80% 75%, rgba(80,120,255,.25) 0%, transparent 55%),
+                  radial-gradient(ellipse at 55% 50%, rgba(255,200,40,.12) 0%, transparent 55%),
+                  #0a0a1a;
+      animation: bgShift 10s ease-in-out infinite alternate;
+    }
+    @keyframes bgShift {
+      0%   { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
+
+    /* ── Confetti particles ───────────────────────────────────── */
+    .confetti-wrap { position: fixed; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+    .confetti-wrap span {
+      position: absolute; top: -20px; border-radius: 2px;
+      animation: fall linear infinite;
+      opacity: .85;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: .9; }
+      100% { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
+    }
+
+    /* ── Page layout ──────────────────────────────────────────── */
+    .page-wrap {
+      position: relative; z-index: 2;
+      max-width: 520px; margin: 0 auto;
+      padding: 24px 16px 56px;
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+    }
+
+    /* ── Top nav ──────────────────────────────────────────────── */
+    .top-nav {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .logo-link { font-family: 'Pacifico', cursive; font-size: 1.25rem; color: #fff; text-decoration: none; letter-spacing: .5px; }
+    .logo-link span { background: linear-gradient(90deg,#ff5ec8,#7c5cfc,#5ce0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .home-btn {
+      display: flex; align-items: center; gap: 6px;
+      color: rgba(255,255,255,.7); font-size: .85rem; text-decoration: none;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px; padding: 6px 16px; transition: all .2s;
+    }
+    .home-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+    /* ── Flyer card ───────────────────────────────────────────── */
+    .flyer-card {
+      width: 100%; border-radius: 28px; overflow: hidden; position: relative;
+      background: linear-gradient(145deg, #1a0832, #0d1a40, #1a0826);
+      border: 2px solid rgba(255,255,255,.08);
+      box-shadow: 0 8px 60px rgba(124,92,252,.4), 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    /* rainbow top stripe */
+    .flyer-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 6px;
+      background: linear-gradient(90deg, #ff5ec8, #ffa94d, #ffe066, #5ce0ff, #7c5cfc, #ff5ec8);
+      background-size: 200% 100%;
+      animation: rainbowSlide 3s linear infinite;
+    }
+    @keyframes rainbowSlide { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+
+    /* ── "IT'S A BIRTHDAY" banner ─────────────────────────────── */
+    .banner {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 18px 20px 8px;
+      font-size: .78rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+      color: rgba(255,255,255,.55);
+    }
+    .banner i { color: #ffe066; font-size: 1rem; animation: wiggle .9s ease-in-out infinite alternate; }
+    @keyframes wiggle { 0%{transform:rotate(-12deg)} 100%{transform:rotate(12deg)} }
+
+    /* ── Hero section ─────────────────────────────────────────── */
+    .hero { display: flex; flex-direction: column; align-items: center; padding: 8px 24px 0; }
+
+    /* avatar ring */
+    .avatar-ring {
+      width: 190px; height: 190px; border-radius: 50%; padding: 5px;
+      background: linear-gradient(135deg, #ff5ec8, #ffa94d, #ffe066, #7c5cfc, #5ce0ff);
+      background-size: 300% 300%;
+      animation: ringSpin 4s linear infinite;
+      box-shadow: 0 0 40px rgba(124,92,252,.6), 0 0 80px rgba(255,94,200,.3);
+      flex-shrink: 0;
+    }
+    @keyframes ringSpin { 0%{background-position:0% 0%} 100%{background-position:300% 300%} }
+    .avatar-inner {
+      width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+      border: 4px solid #0d1a40;
+    }
+    .avatar-inner img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+
+    /* name */
+    .name-wrap { margin-top: 20px; text-align: center; }
+    .name-wrap h1 {
+      font-family: 'Pacifico', cursive;
+      font-size: clamp(1.7rem, 7vw, 2.4rem);
+      line-height: 1.15;
+      background: linear-gradient(90deg, #ff5ec8, #ffa94d, #ffe066, #5ce0ff, #7c5cfc);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: textSlide 4s linear infinite;
+    }
+    @keyframes textSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+    .role-tag {
+      display: inline-block; margin-top: 8px;
+      background: rgba(124,92,252,.2); border: 1px solid rgba(124,92,252,.45);
+      color: #c9b6ff; font-size: .8rem; font-weight: 700; letter-spacing: 1.5px;
+      padding: 4px 16px; border-radius: 999px;
+    }
+
+    /* big cake emoji */
+    .cake-emoji {
+      font-size: 3.5rem; margin-top: 14px;
+      animation: cakeBounce 1.2s ease-in-out infinite alternate;
+      filter: drop-shadow(0 4px 12px rgba(255,200,40,.5));
+    }
+    @keyframes cakeBounce { 0%{transform:translateY(0) scale(1)} 100%{transform:translateY(-10px) scale(1.08)} }
+
+    /* ── Birthday date badge ──────────────────────────────────── */
+    .date-badge {
+      margin-top: 18px;
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(90deg,rgba(255,94,200,.18),rgba(124,92,252,.18));
+      border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+      padding: 8px 22px; font-size: .9rem; font-weight: 700; color: #fff;
+    }
+    .date-badge i { color: #ffe066; }
+
+    /* ── Decorative balloons strip ────────────────────────────── */
+    .balloons {
+      display: flex; justify-content: center; gap: 12px; margin-top: 22px;
+      font-size: 2rem;
+    }
+    .balloons span { display: inline-block; animation: float 2.4s ease-in-out infinite alternate; }
+    .balloons span:nth-child(2) { animation-delay: .4s; }
+    .balloons span:nth-child(3) { animation-delay: .8s; }
+    .balloons span:nth-child(4) { animation-delay: 1.2s; }
+    .balloons span:nth-child(5) { animation-delay: 1.6s; }
+    @keyframes float { 0%{transform:translateY(0)} 100%{transform:translateY(-10px)} }
+
+    /* ── Wish message ─────────────────────────────────────────── */
+    .wish-box {
+      margin: 24px 20px 0;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; padding: 20px 22px; text-align: center;
+    }
+    .wish-box p {
+      font-size: 1.02rem; line-height: 1.65; color: rgba(255,255,255,.88);
+      font-weight: 500;
+    }
+    .wish-box p strong { color: #fff; font-weight: 800; }
+    .wish-box p em { color: #ffa94d; font-style: normal; font-weight: 700; }
+
+    /* ── "From the AZ Learner Team" footer ───────────────────── */
+    .from-team {
+      margin: 22px 20px 0;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: linear-gradient(90deg,rgba(92,224,255,.12),rgba(124,92,252,.12),rgba(255,94,200,.12));
+      border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+      padding: 14px 20px;
+    }
+    .from-team .az-logo { font-family: 'Pacifico', cursive; font-size: 1.1rem; color: #fff; }
+    .from-team .az-logo span { background: linear-gradient(90deg,#5ce0ff,#7c5cfc,#ff5ec8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .from-team p { font-size: .82rem; color: rgba(255,255,255,.65); font-weight: 600; }
+    .from-team .heart { color: #ff5ec8; font-size: 1.1rem; animation: heartbeat .8s ease-in-out infinite alternate; }
+    @keyframes heartbeat { 0%{transform:scale(1)} 100%{transform:scale(1.25)} }
+
+    /* ── Stars sparkle divider ────────────────────────────────── */
+    .stars {
+      margin: 20px 0 0; font-size: 1.4rem; letter-spacing: 6px;
+      color: #ffe066; text-align: center;
+      animation: sparkle 2s ease-in-out infinite alternate;
+    }
+    @keyframes sparkle { 0%{opacity:.6} 100%{opacity:1} }
+
+    /* ── Caption copy section (outside card) ─────────────────── */
+    .caption-section { width: 100%; margin-top: 32px; }
+    .caption-section h2 {
+      font-size: .78rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(255,255,255,.45); text-align: center; margin-bottom: 12px;
+    }
+    .caption-box {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px; padding: 18px 20px;
+      font-size: .92rem; line-height: 1.7; color: rgba(255,255,255,.82);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .copy-btn {
+      margin-top: 10px; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(135deg,#7c5cfc,#ff5ec8);
+      color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .9rem; font-weight: 700; letter-spacing: .5px;
+      border: none; border-radius: 12px; padding: 13px 20px;
+      cursor: pointer; transition: opacity .2s, transform .1s;
+    }
+    .copy-btn:hover  { opacity: .9; transform: translateY(-1px); }
+    .copy-btn:active { transform: translateY(0); opacity: 1; }
+    .copy-btn.copied { background: linear-gradient(135deg,#22c55e,#16a34a); }
+
+    /* ── Share row ────────────────────────────────────────────── */
+    .share-row {
+      width: 100%; margin-top: 14px;
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    }
+    .share-btn {
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.8); font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .82rem; font-weight: 600;
+      border-radius: 999px; padding: 9px 18px;
+      cursor: pointer; text-decoration: none; transition: all .2s;
+    }
+    .share-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+    .share-btn i { font-size: .9rem; }
+
+    /* ── Back to team link ────────────────────────────────────── */
+    .back-link {
+      margin-top: 28px; text-align: center;
+      font-size: .82rem; color: rgba(255,255,255,.4); text-decoration: none;
+    }
+    .back-link:hover { color: rgba(255,255,255,.7); }
+  </style>
+</head>
+<body>
+
+<!-- Glowing background -->
+<div class="bg-glow" aria-hidden="true"></div>
+
+<!-- Animated confetti -->
+<div class="confetti-wrap" id="confetti" aria-hidden="true"></div>
+
+<div class="page-wrap">
+
+  <!-- Top navigation -->
+  <nav class="top-nav">
+    <a class="logo-link" href="../index.html"><span>AZ</span> Learner</a>
+    <a class="home-btn" href="../index.html">
+      <i class="fa-solid fa-house" style="font-size:.8rem"></i> Home
+    </a>
+  </nav>
+
+  <!-- ── BIRTHDAY FLYER CARD ─────────────────────────────────── -->
+  <div class="flyer-card" id="flyer-card">
+
+    <div class="banner">
+      <i class="fa-solid fa-star"></i>
+      It's a Special Day
+      <i class="fa-solid fa-star"></i>
+    </div>
+
+    <div class="hero">
+
+      <!-- Photo -->
+      <div class="avatar-ring">
+        <div class="avatar-inner">
+          <img
+            src="../team/assets/images/francis.jpg"
+            alt="Francis Pwavwe — Founder & CEO, AZ Learner"
+            onerror="this.src='../team/assets/images/placeholder.svg'"
+          />
+        </div>
+      </div>
+
+      <!-- Name & role -->
+      <div class="name-wrap">
+        <h1>Francis Pwavwe</h1>
+        <span class="role-tag">Founder &amp; CEO · AZ Learner</span>
+      </div>
+
+      <!-- Cake -->
+      <div class="cake-emoji" aria-hidden="true">🎂</div>
+
+      <!-- Date badge -->
+      <div class="date-badge">
+        <i class="fa-regular fa-calendar-heart"></i>
+        28th March &nbsp;·&nbsp; Happy Birthday!
+      </div>
+
+      <!-- Balloons -->
+      <div class="balloons" aria-hidden="true">
+        <span>🎈</span><span>🎉</span><span>✨</span><span>🎊</span><span>🎈</span>
+      </div>
+
+      <!-- Wish message -->
+      <div class="wish-box">
+        <p>
+          Today we celebrate <strong>Francis</strong> — the visionary behind
+          <em>AZ Learner</em>, whose passion for education and innovation continues
+          to inspire every student who uses this platform. 🚀
+          <br /><br />
+          May this birthday mark the beginning of your greatest chapter yet —
+          filled with <em>joy, growth, health,</em> and every success you deserve.
+          <br /><br />
+          <strong>Happy Birthday, Francis! 🎂🎉🙌</strong>
+        </p>
+      </div>
+
+      <!-- Stars divider -->
+      <div class="stars" aria-hidden="true">★ ★ ★ ★ ★</div>
+
+    </div><!-- .hero -->
+
+    <!-- From the AZ Learner Team -->
+    <div class="from-team">
+      <span class="az-logo"><span>AZ</span></span>
+      <div>
+        <p style="color:#fff;font-size:.95rem;font-weight:800;margin-bottom:2px">From the AZ Learner Team</p>
+        <p>We've got you always &nbsp;<span class="heart">❤️</span></p>
+      </div>
+    </div>
+
+    <div style="height:22px"></div>
+
+  </div><!-- .flyer-card -->
+
+  <!-- ── SHAREABLE CAPTION ──────────────────────────────────── -->
+  <div class="caption-section">
+    <h2>📋 Copy &amp; Share Caption</h2>
+    <div class="caption-box" id="caption-text">🎂 Happy Birthday Francis Pwavwe! 🎉
+
+Today we celebrate the brilliant mind and generous heart behind AZ Learner — Francis Pwavwe, our Founder &amp; CEO.
+
+From building tools that help students print, learn, grow, and thrive — Francis has poured his vision into every corner of this platform. Today, we pour our love and best wishes back into him. 🥂
+
+May your 28th March be as colourful, joyful, and extraordinary as the impact you create every day! 🚀✨
+
+Many happy returns of the day, boss! 🙌🎈
+
+— The AZ Learner Team 💙
+#HappyBirthday #FrancisPwavwe #AZLearner #BirthdayCelebration</div>
+
+    <button class="copy-btn" id="copy-btn" onclick="copyCaption()" aria-label="Copy birthday caption to clipboard">
+      <i class="fa-regular fa-copy"></i>
+      Copy Caption
+    </button>
+
+    <div class="share-row">
+      <button class="share-btn" onclick="shareNative()" aria-label="Share via device share sheet">
+        <i class="fa-solid fa-share-nodes"></i> Share
+      </button>
+      <a class="share-btn"
+         href="https://wa.me/?text=🎂%20Happy%20Birthday%20Francis%20Pwavwe!%20🎉%20Celebrating%20the%20Founder%20%26%20CEO%20of%20AZ%20Learner%20on%20his%20special%20day%20—%2028th%20March%20✨%20https%3A%2F%2Fazlearner.me%2Fbirthday%2Ffrancis.html"
+         target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp">
+        <i class="fa-brands fa-whatsapp" style="color:#25d366"></i> WhatsApp
+      </a>
+      <a class="share-btn"
+         href="https://twitter.com/intent/tweet?text=🎂%20Happy%20Birthday%20Francis%20Pwavwe%2C%20Founder%20%26%20CEO%20of%20AZ%20Learner!%20%F0%9F%8E%89%20Wishing%20you%20an%20incredible%2028th%20March%20✨%20%40azlearnergh%20%23HappyBirthday%20%23AZLearner&url=https%3A%2F%2Fazlearner.me%2Fbirthday%2Ffrancis.html"
+         target="_blank" rel="noopener noreferrer" aria-label="Share on X (Twitter)">
+        <i class="fa-brands fa-x-twitter"></i> X / Twitter
+      </a>
+    </div>
+  </div><!-- .caption-section -->
+
+  <a class="back-link" href="../team/profiles/francis-pwavwe.html">
+    ← View Francis's profile
+  </a>
+
+</div><!-- .page-wrap -->
+
+<script>
+  /* ── Confetti generator ──────────────────────────────────── */
+  (function createConfetti() {
+    const wrap = document.getElementById('confetti');
+    const colors = ['#ff5ec8','#ffa94d','#ffe066','#5ce0ff','#7c5cfc','#22c55e','#fb7185'];
+    const shapes = [4, 6, 8, 10]; // widths
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('span');
+      const w  = shapes[Math.floor(Math.random() * shapes.length)];
+      el.style.cssText = [
+        `left:${Math.random() * 100}%`,
+        `width:${w}px`,
+        `height:${w * (Math.random() > .5 ? 1 : 2.5)}px`,
+        `background:${colors[Math.floor(Math.random() * colors.length)]}`,
+        `animation-duration:${4 + Math.random() * 8}s`,
+        `animation-delay:${Math.random() * 6}s`,
+        `border-radius:${Math.random() > .5 ? '50%' : '2px'}`,
+        `opacity:${.6 + Math.random() * .4}`
+      ].join(';');
+      wrap.appendChild(el);
+    }
+  })();
+
+  /* ── Copy caption ────────────────────────────────────────── */
+  function copyCaption() {
+    const text = document.getElementById('caption-text').innerText;
+    const btn  = document.getElementById('copy-btn');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showCopied(btn));
+    } else {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showCopied(btn); } catch(e) {}
+      document.body.removeChild(ta);
+    }
+  }
+  function showCopied(btn) {
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Caption';
+      btn.classList.remove('copied');
+    }, 2500);
+  }
+
+  /* ── Native share ────────────────────────────────────────── */
+  function shareNative() {
+    if (navigator.share) {
+      navigator.share({
+        title: '🎂 Happy Birthday Francis Pwavwe!',
+        text: '🎂 Happy Birthday Francis Pwavwe, Founder & CEO of AZ Learner! Wishing you an incredible 28th March ✨',
+        url: 'https://azlearner.me/birthday/francis.html'
+      }).catch(() => {});
+    } else {
+      copyCaption();
+    }
+  }
+</script>
+</body>
+</html>
