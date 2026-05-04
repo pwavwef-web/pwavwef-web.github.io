@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HRM3JQT9T0"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-HRM3JQT9T0');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Page not found – AZ Learner">
+    <meta name="robots" content="noindex, nofollow">
+    <title>404 – Page Not Found | AZ Learner</title>
+    <link rel="icon" type="image/png" href="favicon1.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --brand-blue: #3b82f6;
+            --brand-orange: #FFAB40;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: white;
+        }
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #172554);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-text {
+            text-shadow: 0 0 40px rgba(59, 130, 246, 0.6);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.14);
+        }
+        .float-anim {
+            animation: floatUpDown 3s ease-in-out infinite;
+        }
+        @keyframes floatUpDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div class="bg-animated"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 left-0 px-4 sm:px-6 py-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2">
+                <img src="favicon1.png" alt="AZ Learner" class="w-8 h-8 rounded-lg">
+                <span class="font-bold text-lg text-white">AZ Learner</span>
+            </a>
+            <a href="/" class="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                <i class="fa-solid fa-house mr-1"></i> Home
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-1 flex items-center justify-center px-4 pt-20 pb-12">
+        <div class="max-w-lg w-full text-center">
+
+            <!-- Floating icon -->
+            <div class="float-anim mb-6 inline-block">
+                <div class="w-28 h-28 mx-auto rounded-full glass-panel flex items-center justify-center">
+                    <i class="fa-solid fa-map-location-dot text-5xl text-blue-400"></i>
+                </div>
+            </div>
+
+            <!-- 404 heading -->
+            <h1 class="text-8xl font-extrabold glow-text mb-2" style="color: var(--brand-blue);">404</h1>
+            <p class="text-2xl font-semibold text-white mb-2">Page Not Found</p>
+            <p class="text-slate-400 mb-8 leading-relaxed">
+                Looks like this page took a detour.<br>
+                The link may be broken, or the page may have been moved.
+            </p>
+
+            <!-- Action buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/" class="btn-primary rounded-xl px-6 py-3 font-semibold text-white inline-flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house"></i> Go Home
+                </a>
+                <button onclick="history.back()" class="btn-secondary rounded-xl px-6 py-3 font-semibold text-white inline-flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Go Back
+                </button>
+            </div>
+
+            <!-- Quick links -->
+            <div class="mt-10 glass-panel rounded-2xl p-6">
+                <p class="text-sm text-slate-400 mb-4 font-semibold uppercase tracking-wider">Quick Links</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <a href="home.html" class="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors">
+                        <i class="fa-solid fa-graduation-cap text-blue-400 w-4"></i> Dashboard
+                    </a>
+                    <a href="courses.html" class="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors">
+                        <i class="fa-solid fa-book text-blue-400 w-4"></i> Courses
+                    </a>
+                    <a href="leaderboard.html" class="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors">
+                        <i class="fa-solid fa-trophy text-yellow-400 w-4"></i> Leaderboard
+                    </a>
+                    <a href="cv/index.html" class="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors">
+                        <i class="fa-solid fa-file-lines text-blue-400 w-4"></i> CV Builder
+                    </a>
+                    <a href="podcast/index.html" class="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors">
+                        <i class="fa-solid fa-podcast text-purple-400 w-4"></i> Podcasts
+                    </a>
+                    <a href="faq.html" class="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors">
+                        <i class="fa-solid fa-circle-question text-blue-400 w-4"></i> FAQ
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-slate-500 text-xs pb-6">
+        &copy; <span id="year"></span> AZ Learner &mdash; Francis Pwavwe Production
+    </footer>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

@@ -11,6 +11,9 @@
   ],
   "hosting": {
     "public": ".",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "404": "404.html",
     "ignore": [
       "firebase.json",
       ".firebaserc",
