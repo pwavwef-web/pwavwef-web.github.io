@@ -215,7 +215,7 @@
             </div>
             <!-- Full Legal Name (for certificate) -->
             <div class="mb-4">
-                <p class="text-sm font-semibold text-gray-300 mb-1">Full legal name <span class="font-normal text-xs" style="color:#FFAB40;">✦ displayed on your certificate</span></p>
+                <p class="text-sm font-semibold text-gray-300 mb-1">Full legal name <span class="font-normal text-xs" style="color:#FFAB40;"><span aria-hidden="true">✦</span> displayed on your certificate</span></p>
                 <input id="sq-fullname" type="text" maxlength="100" placeholder="e.g. Kwame Asante Boateng" class="w-full rounded-lg px-3 py-2 text-sm text-white focus:outline-none" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);">
             </div>
             <div class="mb-4">
@@ -540,14 +540,16 @@
 
         // ---- Survey ----
         let surveyAnswers = null;
-        const _surveySelections = {};
+        const surveySelections = {};
 
         window.selectSurveyOption = function(field, value) {
-            _surveySelections[field] = value;
+            surveySelections[field] = value;
             const container = document.getElementById('sq-' + field);
             if (container) {
                 container.querySelectorAll('.survey-option').forEach(btn => {
-                    const oc = btn.getAttribute('onclick') || ''; const m = oc.match(/selectSurveyOption\('([^']*)'\s*,\s*'([^']*)'\)/); btn.classList.toggle('selected', m !== null && m[1] === field && m[2] === value);
+                    const onclickValue = btn.getAttribute('onclick') || '';
+                    const match = onclickValue.match(/selectSurveyOption\('([^']*)'\s*,\s*'([^']*)'\)/);
+                    btn.classList.toggle('selected', match !== null && match[1] === field && match[2] === value);
                 });
             }
         };
@@ -561,7 +563,7 @@
             }
             const required = ['level', 'goal', 'time', 'style'];
             for (const f of required) {
-                if (!_surveySelections[f]) {
+                if (!surveySelections[f]) {
                     alert('Please answer all required questions before continuing.');
                     return;
                 }
@@ -569,10 +571,10 @@
             const bgEl = document.getElementById('sq-background');
             const answers = {
                 fullName: fullName.slice(0, 100),
-                level: _surveySelections.level,
-                goal: _surveySelections.goal,
-                time: _surveySelections.time,
-                style: _surveySelections.style,
+                level: surveySelections.level,
+                goal: surveySelections.goal,
+                time: surveySelections.time,
+                style: surveySelections.style,
                 background: bgEl ? bgEl.value.slice(0, 300) : ''
             };
             try {
@@ -620,7 +622,14 @@
             navigator.clipboard.writeText(urlInput.value).then(() => {
                 const btn = document.querySelector('#cert-url-row button');
                 if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2000); }
-            }).catch(() => { urlInput.select(); document.execCommand('copy'); });
+            }).catch(() => {
+                try {
+                    urlInput.select();
+                    document.execCommand('copy');
+                } catch (error) {
+                    console.warn('Clipboard fallback failed:', error);
+                }
+            });
         };
 
         async function populateCertificate(user) {
@@ -711,7 +720,9 @@
         async function generateLesson(dayNumber, previousLesson) {
             if (!aiModel) throw new Error('AI model not available. Please check that Vertex AI is enabled for this Firebase project.');
 
-            const surveyCtx = surveyAnswers ? `\n\nStudent profile from pre-course survey:\n- Experience level: ${escapeHtml(surveyAnswers.level || '')}\n- Learning goal: ${escapeHtml(surveyAnswers.goal || '')}\n- Daily time available: ${escapeHtml(surveyAnswers.time || '')}\n- Preferred learning style: ${escapeHtml(surveyAnswers.style || '')}${surveyAnswers.background ? `\n- Background: ${escapeHtml(surveyAnswers.background)}` : ''}\n\nPlease tailor the lesson depth, examples, and exercises to match this student's profile.` : '';
+            const surveyCtx = surveyAnswers ? `\n\nStudent profile from pre-course survey:\n- Experience level: ${escapeHtml(surveyAnswers.level || '')}\n- Learning goal: ${escapeHtml(surveyAnswers.goal || '')}\n- Daily time available: ${escapeHtml(surveyAnswers.time || '')}\n- Preferred learning style: ${escapeHtml(surveyAnswers.style || '')}${
+                surveyAnswers.background ? `\n- Background: ${escapeHtml(surveyAnswers.background)}` : ''
+            }\n\nPlease tailor the lesson depth, examples, and exercises to match this student's profile.` : '';
 
             let prompt;
             if (dayNumber === 1 || !previousLesson) {
@@ -774,7 +785,7 @@ The content must:
 
             const result = await aiModel.generateContent(prompt);
             const text = result.response.text().trim();
-            // Strip any markdown fences if present
+            // The AI sometimes wraps JSON in markdown code fences; remove them before parsing.
             const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
             return JSON.parse(cleaned);
         }
