@@ -55,8 +55,11 @@
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch((error) => {
-      console.warn('Courses service worker registration failed:', error);
-    });
+    navigator.serviceWorker
+      .getRegistration('./')
+      .then((registration) => registration || navigator.serviceWorker.register('./sw.js'))
+      .catch((error) => {
+        console.warn('Courses service worker registration failed:', error);
+      });
   });
 })();
