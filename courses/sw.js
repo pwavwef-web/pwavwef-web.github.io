@@ -67,7 +67,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() =>
-          caches.match('./index.html').then(
+          caches.match('/courses/index.html').then(
             (cached) =>
               cached ||
               new Response('You are currently offline. Please reconnect to access this page.', {
