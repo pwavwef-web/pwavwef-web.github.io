@@ -46,7 +46,7 @@
     event.preventDefault();
     installPrompt = event;
     if (isStandalone) return;
-    ensureInstallButton().style.display = 'inline-flex';
+    ensureInstallButton().style.display = 'flex';
   });
 
   window.addEventListener('appinstalled', () => {

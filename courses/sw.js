@@ -68,7 +68,11 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() =>
           caches.match('./index.html').then(
-            (cached) => cached || new Response('Offline – reconnect to continue.', { status: 503 })
+            (cached) =>
+              cached ||
+              new Response('You are currently offline. Please reconnect to access this page.', {
+                status: 503
+              })
           )
         )
     );
