@@ -1,0 +1,59 @@
+{
+  "name": "AZ Learner Courses",
+  "short_name": "AZ Courses",
+  "description": "Install AZ Learner Courses to access lessons faster and continue learning from any device.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "lang": "en",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "../pwa/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../pwa/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "../pwa/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../pwa/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "All Courses",
+      "short_name": "Courses",
+      "description": "Browse all AZ Learner courses",
+      "url": "./index.html"
+    },
+    {
+      "name": "HTML & CSS",
+      "short_name": "HTML/CSS",
+      "description": "Continue your HTML and CSS lessons",
+      "url": "./html-css.html"
+    },
+    {
+      "name": "AI Prompting",
+      "short_name": "AI",
+      "description": "Continue your AI prompting lessons",
+      "url": "./ai-prompting.html"
+    }
+  ]
+}
