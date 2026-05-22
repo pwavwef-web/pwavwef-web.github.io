@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AZ Learner | CEO Meeting Booking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at top, rgba(59,130,246,.18), transparent 35%), #020617; }
+    .glass { background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(18px); border: 1px solid rgba(148, 163, 184, 0.14); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100">
+  <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 px-4">
+    <div class="glass w-full max-w-sm rounded-3xl p-8 shadow-2xl shadow-slate-950/60">
+      <p class="text-xs font-bold uppercase tracking-[0.35em] text-blue-300">Restricted Access</p>
+      <h2 class="mt-3 text-3xl font-black tracking-tight">Admin Sign In</h2>
+      <p class="mt-2 text-sm text-slate-400">Use an admin account to book a session with Francis.</p>
+      <input id="login-email" type="email" placeholder="Admin email" class="mt-6 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400">
+      <input id="login-pass" type="password" placeholder="Password" class="mt-3 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400">
+      <button id="login-btn" type="button" class="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3.5 font-bold text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110">Enter</button>
+      <p id="login-msg" class="mt-3 min-h-5 text-sm text-red-300"></p>
+    </div>
+  </div>
+
+  <main id="app-content" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+    <div class="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-8 items-start">
+      <section class="glass rounded-3xl p-8 sm:p-10 shadow-2xl shadow-blue-950/30 lg:sticky lg:top-8">
+        <span class="inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.28em] text-blue-200">Private Booking</span>
+        <h1 class="mt-6 text-4xl sm:text-5xl font-black tracking-tight">Book a 1:1 with CEO Francis Pwavwe</h1>
+        <p class="mt-4 text-slate-300 text-base sm:text-lg leading-relaxed">
+          Use this form to request a one-on-one session with Francis. Choose any day from Sunday to Saturday, add your preferred time, and send the details straight to the team.
+        </p>
+
+        <div class="mt-8 grid sm:grid-cols-3 gap-4">
+          <div class="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase tracking-widest text-slate-500">Target</p>
+            <p class="mt-2 font-semibold">Francis Pwavwe</p>
+          </div>
+          <div class="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase tracking-widest text-slate-500">Day Range</p>
+            <p class="mt-2 font-semibold">Sunday → Saturday</p>
+          </div>
+          <div class="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase tracking-widest text-slate-500">Inbox</p>
+            <p class="mt-2 font-semibold">apply@azlearner.me</p>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="glass rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-950/40">
+        <form action="https://formsubmit.co/apply@azlearner.me" method="POST" class="space-y-5">
+          <input type="hidden" name="_subject" value="New CEO meeting request">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_captcha" value="true">
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-200 mb-2" for="fullName">Full name</label>
+            <input id="fullName" name="Full Name" type="text" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400" placeholder="Your full name">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-200 mb-2" for="email">Email address</label>
+            <input id="email" name="Email" type="email" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400" placeholder="name@example.com">
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-200 mb-2" for="phone">Phone number</label>
+              <input id="phone" name="Phone Number" type="tel" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400" placeholder="+233 55 123 4567">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-200 mb-2" for="day">Preferred day</label>
+              <select id="day" name="Preferred Day" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400">
+                <option value="">Choose a day</option>
+                <option>Sunday</option>
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-200 mb-2" for="time">Preferred time</label>
+              <input id="time" name="Preferred Time" type="time" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-200 mb-2" for="duration">Meeting length</label>
+              <select id="duration" name="Meeting Length" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400">
+                <option value="">Select duration</option>
+                <option>15 minutes</option>
+                <option>30 minutes</option>
+                <option>45 minutes</option>
+                <option>1 hour</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-200 mb-2" for="topic">Meeting topic</label>
+            <input id="topic" name="Meeting Topic" type="text" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400" placeholder="What should Francis prepare for?">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-200 mb-2" for="reason">Why do you want this session?</label>
+            <textarea id="reason" name="Reason" rows="4" required class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400 resize-none" placeholder="Give a short summary of the discussion."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-200 mb-2" for="notes">Extra notes</label>
+            <textarea id="notes" name="Additional Notes" rows="3" class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 outline-none focus:border-blue-400 resize-none" placeholder="Anything else Francis should know?"></textarea>
+          </div>
+
+          <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3.5 font-bold text-white shadow-lg shadow-blue-900/30 transition hover:brightness-110">
+            Send booking request
+          </button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKpJ7YzuHMTaTC3jXFWiEPmuwdTU4h96Y",
+      authDomain: "az-learner.firebaseapp.com",
+      projectId: "az-learner",
+      storageBucket: "az-learner.firebasestorage.app",
+      messagingSenderId: "12958795950",
+      appId: "1:12958795950:web:326411293864571040453f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const authOverlay = document.getElementById('auth-overlay');
+    const appContent = document.getElementById('app-content');
+    const loginMsg = document.getElementById('login-msg');
+
+    window.meetPage = {
+      async login() {
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-pass').value;
+        if (!email || !pass) {
+          loginMsg.textContent = 'Enter your admin email and password.';
+          return;
+        }
+        try {
+          await signInWithEmailAndPassword(auth, email, pass);
+        } catch (error) {
+          loginMsg.textContent = error.message;
+        }
+      },
+      logout() {
+        signOut(auth);
+      },
+      async init() {
+        document.getElementById('login-btn').addEventListener('click', () => this.login());
+        onAuthStateChanged(auth, async (user) => {
+          if (!user) {
+            authOverlay.classList.remove('hidden');
+            appContent.classList.add('hidden');
+            return;
+          }
+
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+            loginMsg.textContent = 'Admin access only.';
+            signOut(auth);
+            return;
+          }
+
+          authOverlay.classList.add('hidden');
+          appContent.classList.remove('hidden');
+        });
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => window.meetPage.init());
+  </script>
+
+</body>
+</html>
