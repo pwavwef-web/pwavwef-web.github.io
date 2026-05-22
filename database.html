@@ -253,12 +253,12 @@
 
         const CEO_EMAIL = "pwavwef@gmail.com";
 
-        const USER_EXPORT_FIELD_ORDER = [
+        const userExportFieldOrder = [
             'id', 'userId', 'name', 'email', 'phone', 'school', 'program', 'role',
             'weeklyXp', 'userRank', 'streak', 'lastLogin', 'lastStreakDate', 'activeDays'
         ];
 
-        const USER_EXPORT_FIELD_LABELS = {
+        const userExportFieldLabels = {
             id: 'Document ID',
             userId: 'User ID',
             weeklyXp: 'Weekly XP',
@@ -278,7 +278,7 @@
             const fieldSet = new Set();
             const fields = [];
 
-            USER_EXPORT_FIELD_ORDER.forEach(field => {
+            userExportFieldOrder.forEach(field => {
                 if (users.some(user => Object.prototype.hasOwnProperty.call(user, field))) {
                     fieldSet.add(field);
                     fields.push(field);
@@ -294,7 +294,7 @@
                 });
             });
 
-            const rows = [fields.map(field => csvEscape(USER_EXPORT_FIELD_LABELS[field] || field)).join(',')];
+            const rows = [fields.map(field => csvEscape(userExportFieldLabels[field] || field)).join(',')];
             users.forEach(user => {
                 rows.push(fields.map(field => csvEscape(user[field])).join(','));
             });
