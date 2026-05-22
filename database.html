@@ -493,6 +493,10 @@
 
             async exportUsers() {
                 try {
+                    if (!currentUser || currentUser.email !== CEO_EMAIL) {
+                        alert("CEO access only.");
+                        return;
+                    }
                     const snap = await getDocs(collection(db, "users"));
                     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     if (users.length === 0) { alert("No data found."); return; }
