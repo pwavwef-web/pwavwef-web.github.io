@@ -253,6 +253,46 @@
 
         const CEO_EMAIL = "pwavwef@gmail.com";
 
+        const userExportFieldOrder = [
+            'id', 'userId', 'name', 'email', 'phone', 'school', 'program', 'role',
+            'weeklyXp', 'userRank', 'streak', 'lastLogin', 'lastStreakDate', 'activeDays'
+        ];
+
+        const userExportFieldLabels = {
+            id: 'Document ID',
+            userId: 'User ID',
+            weeklyXp: 'Weekly XP',
+            userRank: 'User Rank',
+            lastLogin: 'Last Login',
+            lastStreakDate: 'Last Streak Date',
+            activeDays: 'Active Days'
+        };
+
+        const csvEscape = (value) => {
+            if (value === null || value === undefined) return '""';
+            const normalized = typeof value === 'object' ? JSON.stringify(value) : String(value);
+            return `"${normalized.replace(/"/g, '""')}"`;
+        };
+
+        const buildUserCsv = (users) => {
+            const fieldSet = new Set();
+            users.forEach(user => {
+                Object.keys(user).forEach(field => fieldSet.add(field));
+            });
+
+            const fields = [
+                ...userExportFieldOrder.filter(field => fieldSet.has(field)),
+                ...[...fieldSet].filter(field => !userExportFieldOrder.includes(field)).sort()
+            ];
+
+            const rows = [fields.map(field => csvEscape(userExportFieldLabels[field] || field)).join(',')];
+            users.forEach(user => {
+                rows.push(fields.map(field => csvEscape(user[field])).join(','));
+            });
+
+            return rows.join('\n');
+        };
+
         window.authManager = {
             async login() {
                 const email = document.getElementById('login-email').value.trim();
@@ -442,15 +482,26 @@
                 await this.loadUsers();
             },
 
-            exportUsers() {
-                if (allUsersCache.length === 0) { alert("No data loaded."); return; }
-                const rows = [["Name", "Email", "Phone", "Role"]];
-                allUsersCache.forEach(u => rows.push([u.name || '', u.email || '', u.phone || '', u.role || 'student']));
-                const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-                a.download = `az-users-${Date.now()}.csv`; a.click();
-                this.logAction('DATA_EXPORT', 'User list exported as CSV');
+            async exportUsers() {
+                try {
+                    if (!currentUser || currentUser.email !== CEO_EMAIL) {
+                        alert("CEO access only.");
+                        return;
+                    }
+                    const snap = await getDocs(collection(db, "users"));
+                    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (users.length === 0) { alert("No data found."); return; }
+                    const csv = buildUserCsv(users);
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `az-users-${Date.now()}.csv`;
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+                    await this.logAction('DATA_EXPORT', 'Full user database exported as CSV');
+                } catch (err) {
+                    alert(`Export failed: ${err.message}`);
+                }
             }
         };
 
