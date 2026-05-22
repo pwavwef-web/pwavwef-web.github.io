@@ -276,19 +276,14 @@
 
         const buildUserCsv = (users) => {
             const fieldSet = new Set();
-            const fields = [];
-
-            userExportFieldOrder.forEach(field => {
-                if (users.some(user => Object.prototype.hasOwnProperty.call(user, field))) {
-                    fieldSet.add(field);
-                    fields.push(field);
-                }
+            users.forEach(user => {
+                Object.keys(user).forEach(field => fieldSet.add(field));
             });
 
+            const fields = userExportFieldOrder.filter(field => fieldSet.has(field));
             users.forEach(user => {
                 Object.keys(user).forEach(field => {
-                    if (!fieldSet.has(field)) {
-                        fieldSet.add(field);
+                    if (!fields.includes(field)) {
                         fields.push(field);
                     }
                 });
