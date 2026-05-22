@@ -480,14 +480,10 @@
                 Object.keys(user).forEach(field => fieldSet.add(field));
             });
 
-            const fields = userExportFieldOrder.filter(field => fieldSet.has(field));
-            users.forEach(user => {
-                Object.keys(user).forEach(field => {
-                    if (!fields.includes(field)) {
-                        fields.push(field);
-                    }
-                });
-            });
+            const fields = [
+                ...userExportFieldOrder.filter(field => fieldSet.has(field)),
+                ...[...fieldSet].filter(field => !userExportFieldOrder.includes(field)).sort()
+            ];
 
             const rows = [fields.map(field => csvEscape(userExportFieldLabels[field] || field)).join(',')];
             users.forEach(user => {
