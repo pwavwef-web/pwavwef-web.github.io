@@ -210,6 +210,28 @@
                 transition-duration: 0.001ms !important;
             }
         }
+
+        .mesh-bg {
+            background:
+                radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.2), transparent 35%),
+                radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.18), transparent 30%),
+                radial-gradient(circle at 75% 80%, rgba(168, 85, 247, 0.16), transparent 40%);
+        }
+
+        .showcase-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.5);
+        }
+
+        .feature-visual {
+            background: linear-gradient(160deg, rgba(59,130,246,0.25), rgba(15,23,42,0.2));
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .floating-shot {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+        }
         
         /* Toast Animation */
         .toast-enter { transform: translateY(-20px); opacity: 0; }
@@ -369,165 +391,115 @@
         <div id="blog-feed-full" class="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full"></div>
     </div>
 
-    <!-- Hero Section (Mobile Optimized Text) -->
-    <section id="hero-section" class="relative pt-40 pb-20 px-6 min-h-screen flex flex-col justify-center items-center text-center">
-        <div class="max-w-4xl mx-auto space-y-8 z-10">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/10 text-xs font-semibold tracking-wide uppercase text-blue-300 mb-4 animate-fade-in-up">
-                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                v3.0 · Now with AI ✨
+    <!-- Hero Section -->
+    <section id="hero-section" class="relative pt-32 sm:pt-40 pb-16 sm:pb-24 px-6 mesh-bg">
+        <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
+            <div class="text-center lg:text-left">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-blue-400/20 text-xs font-semibold tracking-wide uppercase text-blue-200 mb-6">
+                   <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                   Built for students in Ghana
+                </div>
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight mb-5">
+                   A cleaner way to <span class="text-gradient">organize campus life</span>.
+                </h1>
+                <p class="text-gray-300 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 mb-8">
+                   AZ Learner brings your print queue, course circles, timetable tools, and campus essentials into one calm, modern dashboard.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                   <a href="https://play.google.com/store/apps/details?id=com.francis.azlearner&pcampaignid=web_share" class="hoverable px-6 py-4 bg-white text-slate-900 rounded-2xl font-bold transition hover:scale-105 flex items-center justify-center gap-2">
+                       <span class="material-symbols-outlined">download</span>
+                       Download App
+                   </a>
+                   <a href="pwa/index.html" class="hoverable px-6 py-4 glass-panel rounded-2xl font-bold transition hover:bg-white/10 flex items-center justify-center gap-2 text-white border border-white/20">
+                       <span class="material-symbols-outlined">public</span>
+                       Open Web App
+                   </a>
+                   <button onclick="window.openFeature('support')" class="hoverable px-6 py-4 rounded-2xl font-bold transition bg-emerald-500/10 text-emerald-200 border border-emerald-400/30 hover:bg-emerald-500/20 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">payments</span>
+                        Support
+                   </button>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mt-8 text-left">
+                   <div class="glass-panel rounded-xl p-3 border border-white/10">
+                       <div class="text-xl font-extrabold text-blue-300">10K+</div>
+                       <p class="text-xs text-gray-400">Active students</p>
+                   </div>
+                   <div class="glass-panel rounded-xl p-3 border border-white/10">
+                       <div class="text-xl font-extrabold text-green-300">7K+</div>
+                       <p class="text-xs text-gray-400">Print deliveries</p>
+                   </div>
+                   <div class="glass-panel rounded-xl p-3 border border-white/10">
+                       <div class="text-xl font-extrabold text-purple-300">4.8★</div>
+                       <p class="text-xs text-gray-400">Play rating</p>
+                   </div>
+                </div>
             </div>
-            
-            <h1 class="text-4xl sm:text-5xl md:text-7xl font-black leading-tight tracking-tight">
-                The Squad <br>
-                <span class="text-gradient">Companion.</span>
-            </h1>
-            
-            <p class="text-base sm:text-lg md:text-2xl text-gray-400 max-w-2xl mx-auto font-light px-4">
-                Print, Chat, Grind, Shine. The AI-powered student super-app built for the academic weapon.
-            </p>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-                <a href="https://play.google.com/store/apps/details?id=com.francis.azlearner&pcampaignid=web_share" class="hoverable px-6 sm:px-8 py-4 bg-white text-blue-900 rounded-full font-bold text-base sm:text-lg transition hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined">download</span>
-                    Download APP
-                </a>
-                <a href="pwa/index.html" class="hoverable px-6 sm:px-8 py-4 glass-panel rounded-full font-bold text-base sm:text-lg transition hover:bg-white/10 flex items-center justify-center gap-2 text-white border border-white/20">
-                    <span class="material-symbols-outlined">public</span>
-                    Web App / iOS
-                </a>
-                <button onclick="window.openFeature('support')" class="hoverable px-6 sm:px-8 py-4 glass-panel rounded-full font-bold text-base sm:text-lg transition hover:bg-green-500/10 flex items-center justify-center gap-2 text-green-300 border border-green-500/30">
-                     <span class="material-symbols-outlined">payments</span>
-                     Support Project
-                </button>
-            </div>
-            
-            <div class="text-xs text-gray-500 mt-4 opacity-70 px-4">
-                <span class="block">iPhone Users: Cannot download APK?</span>
-                <span class="block">Use the Web App to create your account & set timetables.</span>
+            <div class="relative">
+                <div class="showcase-card rounded-3xl p-4 sm:p-6">
+                   <div class="feature-visual rounded-2xl p-4 mb-4">
+                       <div class="flex items-center gap-3 mb-3">
+                           <img src="brand.png" alt="AZ Learner logo" class="w-10 h-10 rounded-xl object-cover" loading="lazy">
+                           <div>
+                               <p class="text-sm text-blue-200 font-semibold">AZ Learner</p>
+                               <p class="text-xs text-slate-300">Your all-in-one student companion</p>
+                           </div>
+                       </div>
+                       <img src="screen1.jpg" alt="AZ Learner dashboard preview" class="w-full h-52 object-cover rounded-xl floating-shot" loading="lazy">
+                   </div>
+                   <div class="grid grid-cols-2 gap-3">
+                       <img src="screen2.jpg" alt="Timetable and productivity tools" class="h-44 w-full object-cover rounded-xl floating-shot" loading="lazy">
+                       <img src="screen3.jpg" alt="Campus events and updates feed" class="h-44 w-full object-cover rounded-xl floating-shot" loading="lazy">
+                   </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Stats / Social Proof -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 text-center">
-            <div class="glass-panel rounded-2xl p-5 sm:p-8 border border-white/10">
-                <div class="text-3xl sm:text-5xl font-black text-blue-400 mb-1">10K+</div>
-                <div class="text-xs sm:text-sm text-gray-400 font-medium">Active Students</div>
+    <!-- Key Highlights -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 mb-24" id="features-overview">
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="glass-panel rounded-2xl p-6 border border-white/10">
+                <span class="material-symbols-outlined text-blue-400 text-3xl mb-4">print</span>
+                <h3 class="text-xl font-bold mb-2">Smart Print Queue</h3>
+                <p class="text-sm text-gray-400">Upload and track print jobs with delivery updates directly from your phone.</p>
             </div>
-            <div class="glass-panel rounded-2xl p-5 sm:p-8 border border-white/10">
-                <div class="text-3xl sm:text-5xl font-black text-green-400 mb-1">7K+</div>
-                <div class="text-xs sm:text-sm text-gray-400 font-medium">Print Jobs Delivered</div>
+            <div class="glass-panel rounded-2xl p-6 border border-white/10">
+                <span class="material-symbols-outlined text-purple-400 text-3xl mb-4">groups</span>
+                <h3 class="text-xl font-bold mb-2">Course Circles</h3>
+                <p class="text-sm text-gray-400">Automatically join class chats and keep all course conversations in one place.</p>
             </div>
-            <div class="glass-panel rounded-2xl p-5 sm:p-8 border border-white/10">
-                <div class="text-3xl sm:text-5xl font-black text-orange-400 mb-1">50+</div>
-                <div class="text-xs sm:text-sm text-gray-400 font-medium">Campus Ambassadors</div>
-            </div>
-            <div class="glass-panel rounded-2xl p-5 sm:p-8 border border-white/10">
-                <div class="text-3xl sm:text-5xl font-black text-purple-400 mb-1">4.8&starf;</div>
-                <div class="text-xs sm:text-sm text-gray-400 font-medium">Play Store Rating</div>
+            <div class="glass-panel rounded-2xl p-6 border border-white/10">
+                <span class="material-symbols-outlined text-green-400 text-3xl mb-4">event</span>
+                <h3 class="text-xl font-bold mb-2">Campus Life Feed</h3>
+                <p class="text-sm text-gray-400">Discover events, announcements, and opportunities without missing key dates.</p>
             </div>
         </div>
     </section>
 
-    <!-- Infinite Marquee -->
-    <div class="py-6 glass-panel border-y border-white/5 transform -rotate-1 scale-105 mb-20 overflow-hidden">
-        <div class="marquee-container">
-            <div class="marquee-content text-2xl sm:text-3xl md:text-4xl font-black uppercase text-transparent stroke-text opacity-50">
-                <span class="mx-4 sm:mx-8 text-outline">JOIN THE AZ AMBASSADOR PROGRAM TODAY</span> • 
-                <span class="mx-4 sm:mx-8 text-white">BECOME THE BEST STUDENT YOU CAN BE WITH THE TOOLS AT YOUR DISPOSAL</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">NO ONE CARES LIKE AZ LEARNER</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Squad Goals ARE ACHIEVED AS A SQUAD</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">ARE YOU Future Ready? WE CAN HELP YOU GET THERE</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Print & Deliver</span> •
-                <span class="mx-4 sm:mx-8 text-outline">Learn in Style</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Academic Weapon</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">Main Character Energy</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Squad Goals</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">Future Ready</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Print & Deliver</span> •
-                <span class="mx-4 sm:mx-8 text-outline">JOIN THE AZ AMBASSADOR PROGRAM TODAY</span> • 
-                <span class="mx-4 sm:mx-8 text-white">BECOME THE BEST STUDENT YOU CAN BE WITH THE TOOLS AT YOUR DISPOSAL</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">NO ONE CARES LIKE AZ LEARNER</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Squad Goals ARE ACHIEVED AS A SQUAD</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">ARE YOU Future Ready? WE CAN HELP YOU GET THERE</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Print & Deliver</span> •
-                <span class="mx-4 sm:mx-8 text-outline">Learn in Style</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Academic Weapon</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">Main Character Energy</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Squad Goals</span> • 
-                <span class="mx-4 sm:mx-8 text-outline">Future Ready</span> • 
-                <span class="mx-4 sm:mx-8 text-white">Print & Deliver</span> •
-            </div>
-        </div>
-    </div>
-
-    <!-- YouTube Video Section -->
-    <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-32">
-        <div class="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl">
+    <!-- App Video -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-24">
+        <div class="glass-panel p-3 rounded-2xl border border-white/10 shadow-2xl">
             <div class="video-wrapper aspect-video bg-black rounded-xl overflow-hidden hoverable relative cursor-pointer" id="yt-facade" tabindex="0" role="button" aria-label="Play AZ Learner app overview video" onclick="window.loadYTVideo(this, 'nZT9cQlxx1o')" onkeydown="if(event.key==='Enter'||event.key===' '){window.loadYTVideo(this,'nZT9cQlxx1o')}">
                 <img src="https://i.ytimg.com/vi/nZT9cQlxx1o/hqdefault.jpg" alt="AZ Learner app overview — click to play video" class="w-full h-full object-cover" loading="lazy">
-                <div class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/20 transition">
-                    <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition">
-                        <svg class="w-7 h-7 fill-white ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    </div>
+                <div class="absolute inset-0 flex items-center justify-center bg-black/35 hover:bg-black/25 transition">
+                   <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition">
+                       <svg class="w-7 h-7 fill-white ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                   </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Upcoming Events (Horizontal) -->
+    <!-- Upcoming Events -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 mb-32" id="home-events">
-        <div class="text-center mb-12 px-4">
-             <h2 class="text-2xl sm:text-3xl font-bold mb-4">Upcoming Events 🎟️</h2>
-             <p class="text-gray-400 text-sm sm:text-base">See what's popping on campus.</p>
+        <div class="text-center mb-10 px-4">
+             <h2 class="text-2xl sm:text-3xl font-bold mb-3">Upcoming Events</h2>
+             <p class="text-gray-400 text-sm sm:text-base">Stay in sync with what is happening around campus.</p>
         </div>
         <div id="home-events-feed" class="flex gap-4 overflow-x-auto no-scrollbar pb-8 snap-x snap-mandatory px-4">
-            <!-- Loaded via JS -->
             <div class="min-w-[280px] sm:min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
             <div class="min-w-[280px] sm:min-w-[300px] h-[200px] bg-white/5 rounded-2xl animate-pulse"></div>
-        </div>
-    </section>
-
-    <!-- UI Screenshot Gallery -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 mb-32 overflow-hidden">
-        <div class="text-center mb-12 px-4">
-            <h2 class="text-3xl sm:text-4xl font-bold mb-4">The Interface</h2>
-            <p class="text-gray-400 text-sm sm:text-base">Clean. Calm. Control.</p>
-        </div>
-        
-        <!-- Staggered Phone Layout -->
-        <div class="flex gap-6 overflow-x-auto snap-x snap-mandatory px-6 pb-8 md:justify-center no-scrollbar">
-            <!-- Screen 1 -->
-            <div class="snap-center shrink-0 w-[280px]">
-                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
-                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
-                        <img src="screen1.jpg" alt="Home Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" loading="lazy">
-                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
-                    </div>
-                </div>
-            </div>
-            <!-- Screen 2 (Offset) -->
-            <div class="snap-center shrink-0 w-[280px] md:mt-16">
-                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
-                    <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
-                        <img src="screen2.jpg" alt="Timetable Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" loading="lazy">
-                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
-                    </div>
-                </div>
-            </div>
-            <!-- Screen 3 -->
-            <div class="snap-center shrink-0 w-[280px]">
-                <div class="group relative hoverable transition-all duration-500 hover:-translate-y-4">
-                    <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-green-600 rounded-[3rem] blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative w-full h-[580px] bg-black rounded-[3rem] border-[8px] border-gray-900 overflow-hidden shadow-2xl">
-                        <img src="screen3.jpg" alt="Events Interface" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" loading="lazy">
-                        <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none"></div>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
