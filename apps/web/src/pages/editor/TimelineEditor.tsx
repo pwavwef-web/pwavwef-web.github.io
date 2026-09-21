@@ -379,11 +379,11 @@ export default function TimelineEditor() {
         <Notice tone="neutral" className="m-2 text-xs">The timeline editor is optimised for desktop. Playback, trimming and the inspector work on mobile, with less room.</Notice>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_320px]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 max-lg:overflow-y-auto lg:grid-cols-[260px_minmax(0,1fr)_320px]">
         <aside className="hidden min-h-0 border-r border-line lg:block">
           <MediaBin projectId={projectId} onAdd={(a) => addAsset(a)} onAddText={addText} />
         </aside>
-        <section className="flex min-h-0 flex-col items-center justify-center gap-3 p-4">
+        <section className="flex min-h-0 flex-col items-center justify-center gap-3 p-4 max-lg:justify-start">
           <Preview state={view} time={time} playing={playing} className="max-h-[46vh] w-full max-w-[min(100%,calc(46vh*1.78))]" />
           <div className="flex items-center gap-2">
             <IconButton label="Go to start" onClick={() => setTime(0)}>
@@ -406,7 +406,7 @@ export default function TimelineEditor() {
         </aside>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-line bg-ink px-3 py-1.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line bg-ink px-3 py-1.5">
         <Tip label="Snap to clips, beats and playhead">
           <Button size="sm" variant={snapOn ? 'subtle' : 'ghost'} onClick={() => setSnapOn((v) => !v)} icon={<Magnet className="size-3.5" />}>
             Snap
@@ -424,7 +424,7 @@ export default function TimelineEditor() {
             {k}
           </Button>
         ))}
-        <span className="ml-auto text-[11px] text-faint">
+        <span className="ml-auto hidden text-[11px] text-faint md:inline">
           {view.clips.length} clips · {view.tracks.map((t) => `${t.name.split(' ')[0]}:${clipsOnTrack(view, t.id).length}`).join(' ')}
         </span>
       </div>
