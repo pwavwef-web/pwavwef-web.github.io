@@ -77,6 +77,7 @@ describe('Firestore rules — creative documents and server records', () => {
       await setDoc(doc(db, 'projects/p1'), project());
       await setDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { status: 'completed', rating: 0, notes: '', approved: false, assetId: 'a1' });
       await setDoc(doc(db, 'jobs/j1'), { ownerUid: OWNER, status: 'queued' });
+      await setDoc(doc(db, 'jobs/foreign'), { ownerUid: 'someone-else', status: 'queued' });
       await setDoc(doc(db, 'assets/a1'), { ownerUid: OWNER, title: 'Clip', favorite: false, storagePath: 'users/x/a.mp4' });
       await setDoc(doc(db, 'runtime/owner-test-uid_slots'), { active: {} });
       await setDoc(doc(db, 'users/owner-test-uid'), { settings: { dailyLimitUsd: 25 } });
@@ -109,6 +110,16 @@ describe('Firestore rules — creative documents and server records', () => {
     await assertFails(getDoc(doc(db, 'runtime/owner-test-uid_slots')));
     await assertFails(updateDoc(doc(db, 'users/owner-test-uid'), { settings: { dailyLimitUsd: 99999 } }));
     await assertSucceeds(getDoc(doc(db, 'users/owner-test-uid')));
+  });
+
+  it('reads missing records as not-found for the owner only, and never exposes foreign records', async () => {
+    const db = owner().firestore();
+    await assertSucceeds(getDoc(doc(db, 'usageDaily/owner-test-uid_2026-09-21')));
+    await assertFails(getDoc(doc(intruder().firestore(), 'usageDaily/owner-test-uid_2026-09-21')));
+    await assertFails(getDoc(doc(anon().firestore(), 'jobs/missing')));
+    await assertFails(getDoc(doc(db, 'jobs/foreign')));
+    await assertSucceeds(getDocs(query(collection(db, 'jobs'), where('ownerUid', '==', OWNER))));
+    await assertFails(getDocs(collection(db, 'jobs')));
   });
 
   it('limits asset edits to metadata', async () => {

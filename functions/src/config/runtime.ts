@@ -8,9 +8,9 @@ export const PROJECT_ID = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD
 export const REGION = 'us-central1';
 export const FIRESTORE_DATABASE = process.env.AZS_FIRESTORE_DATABASE || 'az-studio';
 export const MEDIA_BUCKET = process.env.AZS_MEDIA_BUCKET || 'az-studio-media-az-learner';
-/** Expanded by Firebase to az-studio-api@<project>.iam.gserviceaccount.com. */
-export const RUNTIME_SERVICE_ACCOUNT = 'az-studio-api@';
+/** Dedicated runtime identity (full email: the `name@` shorthand is rejected by Secret Manager IAM). */
 export const RUNTIME_SERVICE_ACCOUNT_EMAIL = `az-studio-api@${PROJECT_ID}.iam.gserviceaccount.com`;
+export const RUNTIME_SERVICE_ACCOUNT = RUNTIME_SERVICE_ACCOUNT_EMAIL;
 export const RENDER_JOB_NAME = process.env.AZS_RENDER_JOB || 'az-studio-renderer';
 export const WORKER_FUNCTION = 'azsJobWorker';
 
