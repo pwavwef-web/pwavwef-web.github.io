@@ -58,7 +58,7 @@ export function DirectionsEditor({ value, onChange, compact }: { value: ShotDire
           </div>
         )}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Ambient sound & effects">
           <Input value={value.ambientSound} onChange={(e) => set('ambientSound', e.target.value)} placeholder="e.g. market chatter, distant highlife guitar" />
         </Field>
@@ -110,7 +110,14 @@ export function ReferenceSlots({ caps, media, onChange, projectId, allowSource }
             <Info className="size-3.5 text-faint" aria-label={opts.hint} />
           </Tip>
         </p>
-        <Button size="sm" variant="ghost" disabled={opts.disabled || (!opts.single && count(role) >= opts.max)} onClick={() => setPicker({ role, kinds: opts.kinds, max: opts.single ? 1 : opts.max - count(role) })} icon={<Plus className="size-3.5" />}>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label={`${opts.single && count(role) ? 'Replace' : 'Add'} ${label.toLowerCase()}`}
+          disabled={opts.disabled || (!opts.single && count(role) >= opts.max)}
+          onClick={() => setPicker({ role, kinds: opts.kinds, max: opts.single ? 1 : opts.max - count(role) })}
+          icon={<Plus className="size-3.5" />}
+        >
           {opts.single && count(role) ? 'Replace' : 'Add'}
         </Button>
       </div>
@@ -131,7 +138,7 @@ export function ReferenceSlots({ caps, media, onChange, projectId, allowSource }
   const hasFirst = count('first_frame') > 0;
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {slot('first_frame', 'First frame', <ImageIcon className="size-3.5" />, { kinds: ['image'], max: 1, single: true, hint: 'The video starts on exactly this image (image-to-video).' })}
         {slot('last_frame', 'Last frame', <ImageIcon className="size-3.5" />, { kinds: ['image'], max: 1, single: true, disabled: !hasFirst, hint: 'The video ends on this image. Requires a first frame.' })}
       </div>
@@ -170,7 +177,7 @@ export interface VideoSettings {
 
 export function VideoModelControls({ caps, value, onChange, showDuration = true, showTakes = true, durationLabel = 'Duration' }: { caps: VideoCapabilities; value: VideoSettings; onChange: (v: VideoSettings) => void; showDuration?: boolean; showTakes?: boolean; durationLabel?: string }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Field label="Aspect ratio">
         <Segmented label="Aspect ratio" value={value.aspectRatio} onChange={(v) => onChange({ ...value, aspectRatio: v })} options={caps.aspectRatios.map((a) => ({ value: a, label: a === '16:9' ? '16:9 landscape' : a === '9:16' ? '9:16 vertical' : a }))} />
       </Field>

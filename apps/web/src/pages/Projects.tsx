@@ -53,7 +53,7 @@ export default function Projects() {
       {projects.error ? (
         <ErrorState error={projects.error} />
       ) : projects.loading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="aspect-[16/10] rounded-2xl" />
           ))}
@@ -66,7 +66,7 @@ export default function Projects() {
           action={!search && status === 'active' ? <Button variant="primary" onClick={() => setOpen(true)}>New project</Button> : undefined}
         />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {filtered.map((p) => (
             <ProjectCard key={p.id} project={p} />
           ))}

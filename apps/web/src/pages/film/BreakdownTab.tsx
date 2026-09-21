@@ -41,7 +41,7 @@ function SceneRow({ project, scene, index, count, sequences, characters, onMove 
         </button>
       </div>
       {open && (
-        <div className="grid gap-3 border-t border-line p-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 border-t border-line p-4 md:grid-cols-2">
           <Field label="Heading">
             <Input value={scene.heading} onChange={(e) => set({ heading: e.target.value.toUpperCase() })} className="font-mono" />
           </Field>

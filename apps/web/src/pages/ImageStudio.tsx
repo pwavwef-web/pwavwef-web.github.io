@@ -90,7 +90,7 @@ export default function ImageStudio({ project }: { project?: WithId<ProjectDoc> 
   return (
     <div className="space-y-8">
       {project ? <ProjectHeader project={project} /> : <SectionHeader eyebrow="Create" title={<span className="text-5xl">Image Studio</span>} sub={`${caps.displayName} · generation and iterative editing up to 4K.`} />}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           <Card className="space-y-5 p-5">
             <Field label="Purpose">
@@ -147,7 +147,7 @@ export default function ImageStudio({ project }: { project?: WithId<ProjectDoc> 
               <p className="eyebrow">Output</p>
               <Badge tone="accent">{caps.displayName}</Badge>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Aspect ratio">
                 <Select value={aspect} onChange={(e) => setAspect(e.target.value)} aria-label="Aspect ratio">
                   {caps.aspectRatios.map((a) => (

@@ -60,7 +60,7 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved }: { projectId
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Render" description="FFmpeg on Cloud Run renders the saved timeline. Draft is fast; final uses full quality and loudness normalisation." size="lg">
       <Segmented label="Quality" value={quality} onChange={setQuality} options={[{ value: 'draft', label: 'Draft' }, { value: 'final', label: 'Final' }]} />
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {(Object.values(EXPORT_PRESETS) as ExportPreset[]).map((p) => {
           const Icon = icons[p.id];
           const d = quality === 'final' ? p.final : p.draft;

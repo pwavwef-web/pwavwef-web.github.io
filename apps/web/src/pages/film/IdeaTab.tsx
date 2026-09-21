@@ -38,13 +38,13 @@ export function IdeaTab({ project }: { project: WithId<ProjectDoc> }) {
   };
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <Card className="space-y-4 p-5">
         <p className="eyebrow">The idea</p>
         <Field label="Premise">
           <Textarea rows={5} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="What is the story? Who wants what, what stands in the way, why now?" />
         </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Genre">
             <Input value={genre} onChange={(e) => setGenre(e.target.value)} placeholder="Drama, thriller, afrofuturist fable…" />
           </Field>

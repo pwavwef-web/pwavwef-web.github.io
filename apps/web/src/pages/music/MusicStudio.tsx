@@ -197,7 +197,7 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
         </Notice>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card className="space-y-3 p-5">
           <div className="flex items-center justify-between">
             <p className="eyebrow">Sections</p>
@@ -313,7 +313,7 @@ function ConceptTab({ project, song }: { project: WithId<ProjectDoc>; song: With
   };
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <Card className="space-y-4 p-5">
         <Field label="Artist brief" hint="Vision, references, brand world (e.g. Indigen World), must-have moments.">
           <Textarea rows={3} value={brief} onChange={(e) => setBrief(e.target.value)} />

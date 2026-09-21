@@ -1,10 +1,11 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useRouteError } from 'react-router';
 import { Tooltip } from 'radix-ui';
 import { Toaster } from 'sonner';
 import { AppShell } from './components/shell';
 import { AuthGate } from './pages/SignIn';
 import { ErrorState, Spinner } from './components/ui';
+import { isStaleChunkError, reloadForNewBuild } from './lib/build-refresh';
 
 const Home = lazy(() => import('./pages/Home'));
 const Projects = lazy(() => import('./pages/Projects'));
@@ -38,9 +39,17 @@ function Page({ children }: { children: ReactNode }) {
 
 function RouteError() {
   const error = useRouteError();
+  const stale = isStaleChunkError(error);
+  useEffect(() => {
+    if (stale) reloadForNewBuild();
+  }, [stale]);
   return (
     <div className="mx-auto max-w-xl p-8">
-      <ErrorState title="This page failed to load" error={error} onRetry={() => window.location.reload()} />
+      <ErrorState
+        title={stale ? 'AZ Studio has been updated' : 'This page failed to load'}
+        error={stale ? new Error('This tab was opened on an earlier version. Reloading to get the latest one…') : error}
+        onRetry={() => window.location.reload()}
+      />
     </div>
   );
 }

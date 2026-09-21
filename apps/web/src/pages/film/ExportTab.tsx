@@ -22,7 +22,7 @@ export function ExportTab({ project }: { project: WithId<ProjectDoc> }) {
   const script = scripts.data[0];
   const base = safeFileName(project.title || 'project');
   return (
-    <div className="grid gap-5 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
       <Card className="space-y-3 p-5">
         <FileText className="size-5 text-accent-2" />
         <p className="display text-2xl">Screenplay</p>

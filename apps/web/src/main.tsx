@@ -8,7 +8,9 @@ import '@fontsource/eb-garamond/700.css';
 import './styles.css';
 import { App } from './App';
 import { startSession } from './lib/session';
+import { watchForNewBuilds } from './lib/build-refresh';
 
+watchForNewBuilds();
 startSession();
 
 createRoot(document.getElementById('root')!).render(

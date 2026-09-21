@@ -138,7 +138,7 @@ export default function Remix({ project }: { project?: WithId<ProjectDoc> }) {
   return (
     <div className="space-y-8">
       {project ? <ProjectHeader project={project} /> : <SectionHeader eyebrow="Create" title={<span className="text-5xl">Video Remix</span>} sub={`${caps.displayName} · edit an existing video conversationally, turn by turn.`} />}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between">
@@ -214,7 +214,7 @@ export default function Remix({ project }: { project?: WithId<ProjectDoc> }) {
             )}
           </Card>
           <Card className="space-y-4 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Output resolution">
                 <Select value={resolution} onChange={(e) => setResolution(e.target.value)} aria-label="Resolution">
                   {caps.resolutions.map((r) => (

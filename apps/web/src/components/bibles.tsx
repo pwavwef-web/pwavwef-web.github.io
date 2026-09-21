@@ -99,7 +99,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
       }
     >
       <div className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Name">
             <Input value={draft.name} onChange={(ev) => set({ name: ev.target.value })} />
           </Field>
@@ -132,7 +132,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
             <Field label="Wardrobe">
               <Textarea rows={2} value={c.wardrobe} onChange={(ev) => set({ wardrobe: ev.target.value })} />
             </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Personality">
                 <Textarea rows={2} value={c.personality} onChange={(ev) => set({ personality: ev.target.value })} />
               </Field>
@@ -155,7 +155,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
             <Field label="Description">
               <Textarea rows={3} value={l.description} onChange={(ev) => set({ description: ev.target.value })} />
             </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Atmosphere">
                 <Input value={l.atmosphere} onChange={(ev) => set({ atmosphere: ev.target.value })} />
               </Field>

@@ -23,6 +23,7 @@ function capture(cmd, cmdArgs, mustInclude) {
   } catch (e) {
     const out = String(e.stdout ?? '');
     if (out.includes(mustInclude)) return out;
+    // eslint-disable-next-line preserve-caught-error -- the caught error holds CLI stdout, which can contain API keys
     throw new Error(`${cmd} ${cmdArgs[0]} failed with exit code ${e.status}`);
   }
 }

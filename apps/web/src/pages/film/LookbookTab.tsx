@@ -44,7 +44,7 @@ export function LookbookTab({ project }: { project: WithId<ProjectDoc> }) {
     );
   };
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-5">
         <Card className="flex flex-wrap items-end gap-4 p-5">
           <Field label="Lookbook direction" className="min-w-64 flex-1">
@@ -70,7 +70,7 @@ export function LookbookTab({ project }: { project: WithId<ProjectDoc> }) {
         {frames.data.length === 0 ? (
           <EmptyState icon={<Palette className="size-5" />} title="No lookbook frames yet" body="Generate frames that define palette, lensing, lighting and texture — they become the film’s visual contract." />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {frames.data.map((a) => (
               <AssetThumb key={a.id} asset={a} aspect="aspect-[21/9]" />
             ))}

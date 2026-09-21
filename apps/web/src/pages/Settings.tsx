@@ -35,13 +35,13 @@ export default function Settings() {
   return (
     <div className="space-y-8">
       <SectionHeader eyebrow="Studio" title={<span className="text-5xl">Settings</span>} />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="space-y-5 p-6">
           <div>
             <p className="eyebrow">Cost controls</p>
             <p className="mt-1 text-sm text-dim">Enforced server-side on every submission (projected spend includes jobs still running).</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Daily limit (USD)" hint={`Today so far ≈ ${formatUsd(boot.spend.today.costUsd)}`}>
               <Input type="number" min={0} step={1} value={draft.dailyLimitUsd} onChange={(e) => set('dailyLimitUsd', num(e.target.value))} />
             </Field>

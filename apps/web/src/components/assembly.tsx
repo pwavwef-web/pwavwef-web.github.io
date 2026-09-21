@@ -62,7 +62,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="space-y-5">
         <Card className="space-y-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -118,7 +118,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
                   ]}
                 />
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {(Object.values(EXPORT_PRESETS) as ExportPreset[]).map((p) => {
                   const Icon = PRESET_ICON[p.id];
                   const dims = quality === 'final' ? p.final : p.draft;

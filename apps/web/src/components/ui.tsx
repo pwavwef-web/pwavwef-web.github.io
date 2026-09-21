@@ -1,4 +1,4 @@
-import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { Children, cloneElement, forwardRef, isValidElement, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { Dialog as RDialog, Slider as RSlider, Switch as RSwitch, Tabs as RTabs, Tooltip as RTooltip, Progress as RProgress } from 'radix-ui';
 import { CircleAlert, LoaderCircle, X } from 'lucide-react';
 
@@ -191,14 +191,31 @@ export function Kbd({ children }: { children: ReactNode }) {
 // Form controls
 // ---------------------------------------------------------------------------
 
+type ControlProps = { id?: string; 'aria-describedby'?: string };
+
+/** Labels its control: pass `htmlFor`, or a single Input/Textarea/Select child, which gets a generated id. */
 export function Field({ label, hint, error, children, className, htmlFor }: { label: ReactNode; hint?: ReactNode; error?: string | null; children: ReactNode; className?: string; htmlFor?: string }) {
+  const autoId = useId();
+  const noteId = useId();
+  const note = error || hint;
+  const only = Children.count(children) === 1 && isValidElement(children) ? (children as ReactElement<ControlProps>) : null;
+  const control = !htmlFor && only && (only.type === Input || only.type === Textarea || only.type === Select || only.type === 'input' || only.type === 'textarea' || only.type === 'select') ? only : null;
+  const controlId = htmlFor ?? (control ? (control.props.id ?? autoId) : undefined);
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
-      <label htmlFor={htmlFor} className="text-[12.5px] font-medium text-dim">
+      <label htmlFor={controlId} className="text-[12.5px] font-medium text-dim">
         {label}
       </label>
-      {children}
-      {error ? <p className="text-xs text-[#ff9b9b]">{error}</p> : hint ? <p className="text-xs text-faint">{hint}</p> : null}
+      {control ? cloneElement(control, { id: controlId, 'aria-describedby': control.props['aria-describedby'] ?? (note ? noteId : undefined) }) : children}
+      {error ? (
+        <p id={noteId} className="text-xs text-[#ff9b9b]">
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={noteId} className="text-xs text-faint">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -274,13 +291,12 @@ export function Slider({ value, onChange, min, max, step, label, className, onCo
       step={step}
       onValueChange={(v) => onChange(v[0] ?? min)}
       onValueCommit={(v) => onCommit?.(v[0] ?? min)}
-      aria-label={label}
       className={cx('relative flex h-5 w-full touch-none items-center select-none', className)}
     >
       <RSlider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-white/10">
         <RSlider.Range className="absolute h-full bg-gradient-to-r from-accent to-accent-2" />
       </RSlider.Track>
-      <RSlider.Thumb className="block size-4 cursor-grab rounded-full border-2 border-white bg-accent shadow-[0_0_0_4px_rgba(76,141,255,0.2)] focus:outline-none focus-visible:shadow-[0_0_0_5px_rgba(76,141,255,0.45)]" />
+      <RSlider.Thumb aria-label={label} className="block size-4 cursor-grab rounded-full border-2 border-white bg-accent shadow-[0_0_0_4px_rgba(76,141,255,0.2)] focus:outline-none focus-visible:shadow-[0_0_0_5px_rgba(76,141,255,0.45)]" />
     </RSlider.Root>
   );
 }

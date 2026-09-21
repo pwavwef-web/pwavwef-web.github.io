@@ -23,7 +23,7 @@ export default function Create() {
   return (
     <div className="space-y-8">
       <SectionHeader eyebrow="Create" title={<span className="text-5xl">Choose a mode</span>} sub="Every result is saved to your library; studios keep full generation history." />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {modes.map((m, i) => {
           const inner = (
             <>

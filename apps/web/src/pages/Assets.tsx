@@ -60,7 +60,7 @@ function AssetDetail({ asset, onClose }: { asset: Asset; onClose: () => void }) 
         </>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div>
           {asset.kind === 'video' ? (
             <VideoPlayer assetId={asset.id} />

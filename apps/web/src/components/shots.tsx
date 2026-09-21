@@ -318,9 +318,9 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
         </>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div className="space-y-5">
-          <div className="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
             <Field label="No.">
               <Input value={draft.number} onChange={(e) => setDraft({ ...draft, number: e.target.value })} />
             </Field>
@@ -340,7 +340,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
             <MultiPick label="Characters" items={ctx.characters} value={draft.refs.characterIds} onChange={(v) => setRefs({ characterIds: v })} />
             <MultiPick label="Locations" items={ctx.locations} value={draft.refs.locationIds} onChange={(v) => setRefs({ locationIds: v })} />
             <MultiPick label="Props & costumes" items={ctx.elements} value={draft.refs.elementIds} onChange={(v) => setRefs({ elementIds: v })} />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FrameSlot label="First frame" assetId={draft.refs.firstFrameAssetId} onPick={() => setPicker('first')} onClear={() => setRefs({ firstFrameAssetId: null, lastFrameAssetId: null })} />
               <FrameSlot label="Last frame" assetId={draft.refs.lastFrameAssetId} onPick={() => setPicker('last')} onClear={() => setRefs({ lastFrameAssetId: null })} disabled={!draft.refs.firstFrameAssetId} />
             </div>
@@ -364,7 +364,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
             {dropped > 0 && <Notice tone="warning">{dropped} reference image(s) exceed Omni’s {caps.maxImageInputs}-image limit and will be left out.</Notice>}
             {!draft.lockRefs && <p className="text-xs text-faint">Unlocked: characters and locations are described in words only.</p>}
           </Card>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label={`Duration ${draft.durationSec}s`}>
               <Slider label="Duration" min={caps.durationSec.min} max={caps.durationSec.max} step={1} value={draft.durationSec} onChange={(v) => setDraft({ ...draft, durationSec: v })} className="mt-2" />
             </Field>

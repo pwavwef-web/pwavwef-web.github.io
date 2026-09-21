@@ -104,7 +104,7 @@ function StructureView({ report }: { report: StructureReport }) {
   return (
     <div className="space-y-5 text-sm">
       <p className="text-dim">{report.summary}</p>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {report.acts.map((a) => (
           <Card key={a.name} className="p-4">
             <p className="eyebrow">
@@ -137,7 +137,7 @@ function StructureView({ report }: { report: StructureReport }) {
           ))}
         </ul>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {(['strengths', 'issues', 'suggestions'] as const).map((k) => (
           <div key={k}>
             <p className="eyebrow mb-2">{k}</p>

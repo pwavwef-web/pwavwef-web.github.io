@@ -48,7 +48,7 @@ export function NotesTab({ project }: { project: WithId<ProjectDoc> }) {
       {sorted.length === 0 ? (
         <EmptyState icon={<NotebookPen className="size-5" />} title="No production notes" body="Capture decisions, schedules, feedback and continuity reminders." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {sorted.map((n) => (
             <NoteCard key={n.id} projectId={project.id} note={n} />
           ))}

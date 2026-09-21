@@ -117,7 +117,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-12">
           <section>
             <SectionHeader
@@ -138,7 +138,7 @@ export default function Home() {
               {projects.error ? (
                 <ErrorState error={projects.error} />
               ) : projects.loading ? (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 3 }, (_, i) => (
                     <Skeleton key={i} className="aspect-[16/10] rounded-2xl" />
                   ))}
@@ -146,7 +146,7 @@ export default function Home() {
               ) : projects.data.length === 0 ? (
                 <EmptyState icon={<Clapperboard className="size-5" />} title="Your slate is empty" body="Start a film, a music video or a quick clip. Everything you make is saved here." action={<Button variant="primary" onClick={() => setNewOpen(true)}>Create your first project</Button>} />
               ) : (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {projects.data.slice(0, 6).map((p) => (
                     <ProjectCard key={p.id} project={p} />
                   ))}

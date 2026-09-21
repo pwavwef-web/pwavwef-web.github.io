@@ -79,7 +79,7 @@ export default function QuickVideo({ project }: { project?: WithId<ProjectDoc> }
   return (
     <div className="space-y-8">
       {project ? <ProjectHeader project={project} /> : <SectionHeader eyebrow="Create" title={<span className="text-5xl">Quick Video</span>} sub={`${caps.displayName} · text, frames and references to a finished clip with sound.`} />}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           <Card className="space-y-5 p-5">
             <Field label="What happens in the shot?" htmlFor="qv-desc">

@@ -30,7 +30,7 @@ function UsageHistory() {
   if (!data) return <Skeleton className="h-64" />;
   const models = Object.entries(data.month.byModel).sort((a, b) => b[1] - a[1]);
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <Card className="p-5">
         <div className="flex items-end justify-between">
           <div>
@@ -127,7 +127,7 @@ export default function Jobs() {
         ) : jobs.data.length === 0 ? (
           <EmptyState icon={<ListChecks className="size-5" />} title={tab === 'active' ? 'Nothing running' : tab === 'failed' ? 'No failures' : 'No jobs yet'} body={tab === 'active' ? 'Queued and running generations appear here in real time.' : undefined} />
         ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {jobs.data.map((j) => (
               <JobCard key={j.id} job={j} showProject />
             ))}
