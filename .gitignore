@@ -16,6 +16,8 @@ GoogleService-Info*.plist
 **/.env.*
 !**/.env.example
 .runtimeconfig.json
+.secret.local
+**/.secret.local
 
 # Generated at deploy time from Secret Manager (owner-specific rules)
 firebase/generated/

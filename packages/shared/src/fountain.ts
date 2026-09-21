@@ -49,7 +49,7 @@ export interface FountainDocument {
 }
 
 const HEADING_RE = /^(?:\.(?!\.)|(?:int|ext|est|int\.?\/ext|i\/e)[. ])/i;
-const TRANSITION_RE = /^[A-Z0-9 .'’\-]+TO:$/;
+const TRANSITION_RE = /^[A-Z0-9 .'’-]+TO:$/;
 const SCENE_NUMBER_RE = /\s*#([\w.-]+)#\s*$/;
 const LINES_PER_PAGE = 55;
 

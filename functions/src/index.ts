@@ -14,7 +14,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { ZodError } from 'zod';
 import { apiRequestSchema, type ApiRequest } from '@az-studio/shared';
-import { ALLOWED_ORIGINS, IS_EMULATOR, MEDIA_BUCKET, OWNER_EMAIL, OWNER_UID, REGION, RUNTIME_SERVICE_ACCOUNT } from './config/runtime';
+import { ALLOWED_ORIGINS, IS_EMULATOR, MEDIA_BUCKET, OWNER_EMAIL, OWNER_UID, REGION, RUNTIME_SERVICE_ACCOUNT, RUNTIME_SERVICE_ACCOUNT_EMAIL } from './config/runtime';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
 import { handleTask } from './workers/worker';
@@ -85,6 +85,9 @@ export const azsApi = onCall(
 
 export const azsJobWorker = onTaskDispatched<WorkerPayload>(
   {
+    // Tasks are enqueued by the API with an OIDC token for the runtime service account, so that
+    // account (only) may invoke the worker and enqueue to its queue.
+    invoker: RUNTIME_SERVICE_ACCOUNT_EMAIL,
     secrets: [OWNER_UID, OWNER_EMAIL],
     retryConfig: { maxAttempts: 5, minBackoffSeconds: 20, maxBackoffSeconds: 600 },
     rateLimits: { maxConcurrentDispatches: 20, maxDispatchesPerSecond: 10 },

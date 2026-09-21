@@ -84,11 +84,14 @@ export async function audioPeaks(input: string, bins = 1600): Promise<{ min: num
     p.on('error', reject);
     p.on('close', (code) => {
       clearTimeout(timer);
-      code === 0 ? resolve() : reject(new Error(`ffmpeg exited with ${code}`));
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg exited with ${code}`));
     });
   });
   const buf = Buffer.concat(chunks);
-  const samples = new Float32Array(buf.buffer, buf.byteOffset, Math.floor(buf.byteLength / 4));
+  // Copy into an aligned ArrayBuffer: pooled Buffers can start at offsets that are not multiples of 4.
+  const aligned = buf.buffer.slice(buf.byteOffset, buf.byteOffset + (buf.byteLength - (buf.byteLength % 4)));
+  const samples = new Float32Array(aligned);
   return computePeaks(samples, bins);
 }
 

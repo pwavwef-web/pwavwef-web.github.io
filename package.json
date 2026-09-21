@@ -19,7 +19,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "node scripts/render-rules.mjs --test && firebase emulators:exec --project demo-az-studio --only auth,firestore,storage,functions \"vitest run --config tests/vitest.config.ts\"",
+    "test:integration": "node scripts/render-rules.mjs --test && npm run build -w functions && firebase emulators:exec --project demo-az-studio --only auth,firestore,storage,functions,tasks \"vitest run --config tests/vitest.config.ts\"",
     "build": "npm run build -w functions && npm run build -w services/renderer && npm run build -w apps/web",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "rules:render": "node scripts/render-rules.mjs",

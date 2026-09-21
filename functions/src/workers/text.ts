@@ -69,9 +69,10 @@ async function callReasoning(parts: Part[], config: GenerateContentConfig, think
   return { json, text, modelId, usedFallback, res, latencyMs };
 }
 
+/** AI results are persisted so they survive refreshes: per project, or in the owner's top-level `aiRuns`. */
 async function saveRun(job: JobDoc, task: string, modelId: string, output: unknown, text: string): Promise<string> {
-  const ref = job.projectId ? col.projects().doc(job.projectId).collection('aiRuns').doc() : col.runtime().doc(`${job.ownerUid}_airuns`).collection('runs').doc();
-  await ref.set({ task, jobId: job.id, status: 'completed', modelId, output, outputText: text.length < 200_000 ? text : null, createdAt: FieldValue.serverTimestamp() });
+  const ref = job.projectId ? col.projects().doc(job.projectId).collection('aiRuns').doc() : col.aiRuns().doc();
+  await ref.set({ ownerUid: job.ownerUid, task, jobId: job.id, status: 'completed', modelId, output, outputText: text.length < 200_000 ? text : null, createdAt: FieldValue.serverTimestamp() });
   return ref.id;
 }
 

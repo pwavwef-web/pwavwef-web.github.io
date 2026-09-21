@@ -1,5 +1,26 @@
 {
   "projects": {
     "default": "az-learner"
+  },
+  "targets": {
+    "az-learner": {
+      "hosting": {
+        "studio": [
+          "az-studio"
+        ]
+      },
+      "storage": {
+        "media": [
+          "az-studio-media-az-learner"
+        ]
+      }
+    },
+    "demo-az-studio": {
+      "storage": {
+        "media": [
+          "az-studio-media-az-learner"
+        ]
+      }
+    }
   }
 }

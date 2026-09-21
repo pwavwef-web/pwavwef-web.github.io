@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// AZ Studio — bucket `az-studio-media-az-learner` (private, public access prevention enforced).
+// {{OWNER_UID}} is rendered at deploy time from Secret Manager by scripts/render-rules.mjs.
+// Media is normally served through short-lived V4 signed URLs issued by the owner-only API.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isOwner() {
+      return request.auth != null
+        && request.auth.uid == '{{OWNER_UID}}'
+        && request.auth.token.email_verified == true;
+    }
+
+    // Owner uploads go to a path reserved by the API (users/{uid}/uploads/{assetId}/{file}).
+    // Every upload is re-validated server-side (size per kind, magic-byte sniffing, ffprobe).
+    match /users/{uid}/uploads/{assetId}/{fileName} {
+      allow read: if isOwner() && request.auth.uid == uid;
+      allow create: if isOwner() && request.auth.uid == uid
+        && request.resource.size > 0
+        && request.resource.size <= 2 * 1024 * 1024 * 1024
+        && request.resource.contentType.matches('^(image|video|audio)/[-+.a-zA-Z0-9]+$|^text/plain$|^application/pdf$|^application/octet-stream$');
+      allow update, delete: if false;
+    }
+
+    // Generated media, derivatives and renders are written by the backend only.
+    match /users/{uid}/{rest=**} {
+      allow read: if isOwner() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

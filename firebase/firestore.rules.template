@@ -1,0 +1,108 @@
+rules_version = '2';
+
+// AZ Studio — database `az-studio`. Private, single-owner studio.
+// {{OWNER_UID}} is rendered at deploy time from Secret Manager (AZ_STUDIO_OWNER_UID) by
+// scripts/render-rules.mjs; this template is never deployed directly.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null
+        && request.auth.uid == '{{OWNER_UID}}'
+        && request.auth.token.email_verified == true;
+    }
+    function ownsExisting() {
+      return isOwner() && resource.data.ownerUid == request.auth.uid;
+    }
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function validTitle(t) {
+      return t is string && t.size() > 0 && t.size() <= 160;
+    }
+
+    // Owner profile, settings and aggregates are written by the backend only.
+    match /users/{uid} {
+      allow read: if isOwner() && uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /projects/{projectId} {
+      allow read: if ownsExisting();
+      allow create: if isOwner()
+        && request.resource.data.ownerUid == request.auth.uid
+        && validTitle(request.resource.data.title)
+        && request.resource.data.type in ['quick_video', 'music_video', 'film', 'image', 'remix']
+        && request.resource.data.status in ['active', 'archived']
+        && !('usage' in request.resource.data);
+      allow update: if ownsExisting()
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.type == resource.data.type
+        && validTitle(request.resource.data.title)
+        && request.resource.data.status in ['active', 'archived']
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage']);
+      // Deletion goes through the API (keeps media, removes subcollections).
+      allow delete: if false;
+
+      // Creative documents edited directly by the owner.
+      match /{sub}/{docId} {
+        allow read: if isOwner();
+        allow create, update, delete: if isOwner()
+          && sub in ['scripts', 'sequences', 'scenes', 'shots', 'characters', 'locations', 'elements', 'notes', 'songs', 'timelines'];
+      }
+      match /scripts/{scriptId}/versions/{versionId} {
+        allow read, create: if isOwner();
+        allow update, delete: if false;
+      }
+      match /timelines/{timelineId}/versions/{versionId} {
+        allow read, create: if isOwner();
+        allow update, delete: if false;
+      }
+      // Takes are created by generation jobs; the owner may rate, annotate and approve them.
+      match /shots/{shotId}/takes/{takeId} {
+        allow read: if isOwner();
+        allow update: if isOwner() && changedOnly(['rating', 'notes', 'label', 'approved']);
+        allow create, delete: if false;
+      }
+      // AI results are written by the backend.
+      match /aiRuns/{runId} {
+        allow read: if isOwner();
+        allow write: if false;
+      }
+    }
+
+    match /assets/{assetId} {
+      allow read: if ownsExisting();
+      allow update: if ownsExisting()
+        && changedOnly(['favorite', 'tags', 'title', 'collections', 'projectId', 'updatedAt'])
+        && (!('title' in request.resource.data) || validTitle(request.resource.data.title));
+      allow create, delete: if false;
+    }
+
+    match /chains/{chainId} {
+      allow read: if ownsExisting();
+      allow update: if ownsExisting() && changedOnly(['title']);
+      allow create, delete: if false;
+      match /turns/{turnId} {
+        allow read: if isOwner();
+        allow write: if false;
+      }
+    }
+
+    // Server-managed, owner-readable records.
+    match /jobs/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /batches/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /renders/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /usage/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /usageDaily/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /usageMonthly/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /interactions/{id} { allow read: if ownsExisting(); allow write: if false; }
+    match /aiRuns/{id} { allow read: if ownsExisting(); allow write: if false; }
+
+    // Internal state (rate limits, concurrency slots) is never exposed.
+    match /runtime/{document=**} { allow read, write: if false; }
+
+    // Deny everything else.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

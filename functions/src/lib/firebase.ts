@@ -27,6 +27,7 @@ export const col = {
   usageDaily: () => db.collection('usageDaily'),
   usageMonthly: () => db.collection('usageMonthly'),
   interactions: () => db.collection('interactions'),
+  aiRuns: () => db.collection('aiRuns'),
   runtime: () => db.collection('runtime'),
 };
 
