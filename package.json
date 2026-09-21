@@ -1,0 +1,42 @@
+{
+  "name": "az-studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AZ Studio — private AI filmmaking portal (Gemini Omni, Nano Banana Pro, Gemini Pro on Vertex AI).",
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "functions",
+    "services/renderer",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "node scripts/render-rules.mjs --test && firebase emulators:exec --project demo-az-studio --only auth,firestore,storage,functions \"vitest run --config tests/vitest.config.ts\"",
+    "build": "npm run build -w functions && npm run build -w services/renderer && npm run build -w apps/web",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "rules:render": "node scripts/render-rules.mjs",
+    "web:env": "node scripts/write-web-env.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "firebase": "^12.19.0",
+    "globals": "^17.12.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.1"
+  }
+}

@@ -1,1 +1,47 @@
 nohup.out
+
+# Credentials and environment — never commit
+.credentials/
+*.pem
+*.p12
+*.jks
+*.keystore
+service-account*.json
+google-services*.json
+GoogleService-Info*.plist
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+.runtimeconfig.json
+
+# Generated at deploy time from Secret Manager (owner-specific rules)
+firebase/generated/
+
+# Dependencies and build output
+node_modules/
+dist/
+functions/lib/
+coverage/
+*.tsbuildinfo
+.vite/
+services/renderer/dist/
+
+# Firebase local state
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+emulator-data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json

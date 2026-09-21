@@ -1,0 +1,8 @@
+# Upload only what the Docker build needs (dist is prebuilt locally by `npm run build`).
+.gcloudignore
+node_modules/
+src/
+test/
+*.map
+tsconfig.json
+build.mjs

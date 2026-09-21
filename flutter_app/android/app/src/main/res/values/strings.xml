@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">AZ Learner</string>
-    <!-- FCM default notification channel -->
-    <string name="default_notification_channel_id">az_learner_channel</string>
-    <color name="notification_color">#4F9CF9</color>
-</resources>
