@@ -1,7 +1,13 @@
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import ffmpegPath from 'ffmpeg-static';
 import { deleteApp, initializeApp, type FirebaseApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { connectFirestoreEmulator, doc, getDoc, initializeFirestore, onSnapshot, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
+import { connectStorageEmulator, getStorage, ref, uploadBytes } from 'firebase/storage';
 
 const PROJECT = 'demo-az-studio';
 const AUTH = 'http://127.0.0.1:9099';
@@ -148,12 +154,13 @@ describe('job submission', () => {
     expect(first.ownerUid).toBe(OWNER.uid);
     expect(first.modelId).toBe('gemini-3.1-pro-preview');
     expect(first.estimate.basis).toBe('published_rate');
-    // In the emulator the demo project has no Vertex AI access, so the worker must fail cleanly.
-    const done = await waitFor<{ status: string; error?: { message: string } }>(owner.db, `jobs/${jobId}`, (d) => ['completed', 'failed', 'cancelled'].includes(d.status));
+    // In the emulator the demo project has no Vertex AI access, so the worker must fail cleanly. That
+    // denial is a real network round trip to Vertex AI (and its fallback model), so allow for latency.
+    const done = await waitFor<{ status: string; error?: { message: string } }>(owner.db, `jobs/${jobId}`, (d) => ['completed', 'failed', 'cancelled'].includes(d.status), 100_000);
     expect(['failed', 'completed']).toContain(done.status);
     if (done.status === 'failed') expect(done.error?.message.length).toBeGreaterThan(5);
     await expect(getDoc(doc(intruder.db, 'jobs', jobId))).rejects.toMatchObject({ code: 'permission-denied' });
-  });
+  }, 120_000);
 
   it('cancels a queued job before any paid request', async () => {
     const job = { type: 'video.generate', prompt: 'A slow push-in on a kora player', resolution: '360p', durationSec: 3 };
@@ -182,4 +189,54 @@ describe('job submission', () => {
     expect(ok.error).toBeUndefined();
     expect(ok.result.storagePath).toMatch(/^users\/owner-test-uid\/uploads\/[\w-]+\/still\.png$/);
   });
+});
+
+/** 16-bit mono PCM WAV with a 440 Hz tone. */
+function wav(seconds: number, rate = 8000): Uint8Array {
+  const n = seconds * rate;
+  const buf = Buffer.alloc(44 + n * 2);
+  buf.write('RIFF', 0);
+  buf.writeUInt32LE(36 + n * 2, 4);
+  buf.write('WAVEfmt ', 8);
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20);
+  buf.writeUInt16LE(1, 22);
+  buf.writeUInt32LE(rate, 24);
+  buf.writeUInt32LE(rate * 2, 28);
+  buf.writeUInt16LE(2, 32);
+  buf.writeUInt16LE(16, 34);
+  buf.write('data', 36);
+  buf.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) buf.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / rate) * 12000), 44 + i * 2);
+  return new Uint8Array(buf);
+}
+
+describe('uploads', () => {
+  // Server-side validation reads large media with range requests (moov-at-end MP4s force seeking).
+  it('validates uploaded audio and video on the server and marks them ready', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'azs-it-'));
+    try {
+      const mp4File = path.join(dir, 'take.mp4');
+      execFileSync(ffmpegPath as unknown as string, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=24:duration=2', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', mp4File]);
+      const storage = getStorage(owner.app, 'gs://az-studio-media-az-learner');
+      connectStorageEmulator(storage, '127.0.0.1', 9199);
+      const files = [
+        { kind: 'audio', fileName: 'song.wav', mimeType: 'audio/wav', data: wav(2) },
+        { kind: 'video', fileName: 'take.mp4', mimeType: 'video/mp4', data: new Uint8Array(readFileSync(mp4File)) },
+      ];
+      for (const f of files) {
+        const r = await call(owner.token, 'createUpload', { kind: f.kind, fileName: f.fileName, mimeType: f.mimeType, sizeBytes: f.data.length, projectId: 'it-project' });
+        expect(r.error).toBeUndefined();
+        await uploadBytes(ref(storage, r.result.storagePath), f.data, { contentType: f.mimeType });
+        const asset = await waitFor<{ status: string; durationSec: number | null; waveformPath: string | null; posterPath: string | null; rejection: { reason: string } | null }>(owner.db, `assets/${r.result.assetId}`, (d) => d.status === 'ready' || d.status === 'rejected', 60_000);
+        expect(asset.rejection?.reason ?? null).toBeNull();
+        expect(asset.status).toBe('ready');
+        expect(asset.durationSec).toBeGreaterThan(1.5);
+        if (f.kind === 'audio') expect(asset.waveformPath).toBeTruthy();
+        else expect(asset.posterPath).toBeTruthy();
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 120_000);
 });

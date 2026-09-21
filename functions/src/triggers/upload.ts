@@ -4,7 +4,8 @@ import { fileTypeFromBuffer } from 'file-type';
 import { parseUploadPath, UPLOAD_POLICY, type AssetDoc, type AssetKind } from '@az-studio/shared';
 import { deriveFiles, withTmpDir } from '../lib/assets';
 import { bucket, col, db, FieldValue } from '../lib/firebase';
-import { readHead, signedReadUrl } from '../lib/storage';
+import { readHead } from '../lib/storage';
+import { mediaInputUrl } from '../lib/media-proxy';
 
 const MIME_BY_EXT: Record<string, string> = {
   png: 'image/png',
@@ -106,8 +107,8 @@ export async function handleUpload(obj: FinalizedObject): Promise<void> {
         input = path.join(dir, 'source');
         await file.download({ destination: input });
       } else {
-        // Large audio/video is probed through a short-lived signed URL using range requests.
-        input = (await signedReadUrl(obj.name, { ttlSeconds: 1800 })).url;
+        // Large audio/video is read with range requests through the loopback media proxy (never downloaded whole).
+        input = await mediaInputUrl(obj.name);
       }
       const derived = await deriveFiles(asset.ownerUid, asset.id, asset.kind, input, dir, head);
       const batch = db.batch();

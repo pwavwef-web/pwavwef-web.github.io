@@ -39,7 +39,7 @@ export interface DerivedFiles {
 
 /**
  * Probes media and uploads thumbnail / poster / waveform derivatives. `input` is a local path or a
- * short-lived signed URL (large uploads are read with HTTP range requests instead of downloaded).
+ * loopback media-proxy URL (large uploads are read with HTTP range requests instead of downloaded).
  */
 export async function deriveFiles(uid: string, assetId: string, kind: AssetKind, input: string, dir: string, head?: Buffer): Promise<DerivedFiles> {
   const localFile = input;

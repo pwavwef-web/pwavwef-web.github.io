@@ -26,6 +26,7 @@ import { trimVideo, videoFrame } from '../lib/media';
 import type { Owner } from '../lib/owner';
 import { prepareJob, type PreparedJob } from '../lib/prepare';
 import { deletePrefix, signedReadUrl } from '../lib/storage';
+import { mediaInputUrl } from '../lib/media-proxy';
 import { assertRateLimit, assertWithinLimits, getSettings, spendSnapshot } from '../lib/usage';
 import { genai } from '../lib/vertex';
 import { cancelExecution } from '../workers/render';
@@ -349,7 +350,7 @@ export async function deriveClip(owner: Owner, p: Payload<'deriveClip'>) {
   if (a.kind !== 'video' || a.status !== 'ready') throw new HttpsError('invalid-argument', 'Choose a ready video to trim.');
   const dur = a.durationSec ?? 0;
   if (p.startSec + p.durationSec > dur + 0.05) throw new HttpsError('invalid-argument', 'The selected window runs past the end of the video.');
-  const input = (await signedReadUrl(a.storagePath, { ttlSeconds: 1800 })).url;
+  const input = await mediaInputUrl(a.storagePath);
   const newId = col.assets().doc().id;
   const storagePath = storagePaths.derived(owner.uid, newId, 'clip.mp4');
   await withTmpDir(async (dir) => {
@@ -380,7 +381,7 @@ export async function extractFrame(owner: Owner, p: Payload<'extractFrame'>) {
   const a = await ownedAsset(owner.uid, p.assetId);
   if (a.kind !== 'video' || a.status !== 'ready') throw new HttpsError('invalid-argument', 'Choose a ready video.');
   const at = Math.min(Math.max(0, p.atSec), Math.max(0, (a.durationSec ?? 0) - 0.05));
-  const input = (await signedReadUrl(a.storagePath, { ttlSeconds: 1800 })).url;
+  const input = await mediaInputUrl(a.storagePath);
   const newId = col.assets().doc().id;
   const storagePath = storagePaths.derived(owner.uid, newId, 'frame.png');
   await withTmpDir(async (dir) => {
