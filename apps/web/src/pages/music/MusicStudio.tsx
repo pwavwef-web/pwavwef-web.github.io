@@ -40,6 +40,7 @@ import { AssetPicker, useWaveform, Waveform } from '../../components/media';
 import { ProjectHeader } from '../../components/project-header';
 import { ShotQueue, useShotContext, type Shot } from '../../components/shots';
 import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, Notice, SectionHeader, Select, Skeleton, Tabs, Textarea, Toggle } from '../../components/ui';
+import { sameData } from '../../lib/compare';
 
 const SECTION_COLORS: Record<string, string> = {
   intro: 'rgba(120,140,180,0.16)',
@@ -287,11 +288,11 @@ function ConceptTab({ project, song }: { project: WithId<ProjectDoc>; song: With
   const debTreat = useDebounced(treatment, 1200);
   const debStyle = useDebounced(style, 1200);
   useEffect(() => {
-    if (JSON.stringify(debTreat) !== JSON.stringify(project.treatment ?? {})) void updateProject(project.id, { treatment: debTreat });
+    if (!sameData(debTreat, project.treatment ?? {})) void updateProject(project.id, { treatment: debTreat });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debTreat]);
   useEffect(() => {
-    if (JSON.stringify(debStyle) !== JSON.stringify(project.styleBible ?? {})) void updateProject(project.id, { styleBible: debStyle });
+    if (!sameData(debStyle, project.styleBible ?? {})) void updateProject(project.id, { styleBible: debStyle });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debStyle]);
 

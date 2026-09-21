@@ -22,10 +22,11 @@ import {
   type VideoCapabilities,
 } from '@az-studio/shared';
 import { api, errorMessage } from '../lib/api';
+import { sameData } from '../lib/compare';
 import { db } from '../lib/firebase';
 import { useDoc, useQuery, type WithId } from '../lib/data';
 import { useBoot } from '../lib/session';
-import { addShots, deleteSubDoc, newShot, updateShot, useSub } from '../lib/studio';
+import { addShots, deleteSubDoc, newShot, updateShot, updateSubDoc, useSub } from '../lib/studio';
 import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetPicker, AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { DirectionsEditor, PromptPreview } from './video-controls';
@@ -248,10 +249,36 @@ function FrameSlot({ label, assetId, onPick, onClear, disabled }: { label: strin
   );
 }
 
+/**
+ * Jobs and take actions own a shot's status, take selection, approval and take count, and storyboard
+ * jobs set its storyboard frame. The editor always shows their live values and never writes them, so
+ * saving (or generating another take) cannot undo an approval or a finished take.
+ */
+function withLiveFields(edits: Shot, live: Shot): Shot {
+  return {
+    ...edits,
+    status: live.status,
+    selectedTakeId: live.selectedTakeId,
+    approvedTakeId: live.approvedTakeId,
+    takeCount: live.takeCount,
+    refs: { ...edits.refs, storyboardAssetId: live.refs.storyboardAssetId },
+  };
+}
+
+/** The fields the editor writes, with refs as dotted paths so the storyboard frame is left untouched. */
+function editorPatch(s: Shot): Record<string, unknown> {
+  const { id, status, selectedTakeId, approvedTakeId, takeCount, createdAt, updatedAt, refs, ...rest } = s;
+  void [id, status, selectedTakeId, approvedTakeId, takeCount, createdAt, updatedAt];
+  const { storyboardAssetId, ...editableRefs } = refs;
+  void storyboardAssetId;
+  return { ...rest, ...Object.fromEntries(Object.entries(editableRefs).map(([k, v]) => [`refs.${k}`, v])) };
+}
+
 export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext; shot: Shot; onClose: () => void; timedCues?: string[] }) {
   const boot = useBoot();
   const caps = boot!.capabilities.video;
-  const [draft, setDraft] = useState<Shot>(shot);
+  const [edits, setDraft] = useState<Shot>(shot);
+  const draft = withLiveFields(edits, shot);
   const [takes, setTakes] = useState(1);
   const [picker, setPicker] = useState<'first' | 'last' | 'refs' | null>(null);
   const [editing, setEditing] = useState<WithId<TakeDoc> | null>(null);
@@ -264,12 +291,10 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
   const prompt = useMemo(() => shotPrompt(draft, ctx, media, timedCues), [draft, ctx, media, timedCues]);
   const imageInputs = planOmniMedia(media).media.length;
   const estimate = boot ? (takes > 1 ? sumEstimates(Array(takes).fill(estimateShot(draft, boot.pricing, imageInputs)), boot.pricing) : estimateShot(draft, boot.pricing, imageInputs)) : null;
-  const dirty = JSON.stringify(draft) !== JSON.stringify(shot);
+  const dirty = !sameData(editorPatch(edits), editorPatch(shot));
 
   const save = async () => {
-    const { id, ...rest } = draft;
-    void id;
-    await updateShot(ctx.project.id, shot.id, { ...rest, updatedAt: serverTimestamp() as never });
+    await updateSubDoc(ctx.project.id, 'shots', shot.id, { ...editorPatch(edits), updatedAt: serverTimestamp() });
     toast.success('Shot saved');
   };
   const generate = async () => {
@@ -418,7 +443,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
           {takeDocs.data.length === 0 ? (
             <EmptyState icon={<Clapperboard className="size-5" />} title="No takes yet" body="Generate a take; approve the best one for the edit." />
           ) : (
-            takeDocs.data.map((t) => <TakeCard key={t.id} projectId={ctx.project.id} shot={{ ...shot, ...draft }} take={t} onEdit={setEditing} />)
+            takeDocs.data.map((t) => <TakeCard key={t.id} projectId={ctx.project.id} shot={draft} take={t} onEdit={setEditing} />)
           )}
         </div>
       </div>

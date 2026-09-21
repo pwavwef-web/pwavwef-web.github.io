@@ -6,6 +6,7 @@ import { useAiRun } from '../../lib/ai';
 import { useDebounced, type WithId } from '../../lib/data';
 import { addDocs, newCharacter, newLocation, updateProject } from '../../lib/studio';
 import { Badge, Button, Card, Field, Input, Textarea } from '../../components/ui';
+import { sameData } from '../../lib/compare';
 
 export function IdeaTab({ project }: { project: WithId<ProjectDoc> }) {
   const ai = useAiRun(project.id);
@@ -17,7 +18,7 @@ export function IdeaTab({ project }: { project: WithId<ProjectDoc> }) {
   const [t, setT] = useState<Treatment>(project.treatment ?? {});
   const deb = useDebounced({ idea, genre, t }, 1200);
   useEffect(() => {
-    const changed = deb.idea !== (project.idea ?? '') || deb.genre !== (project.genre ?? '') || JSON.stringify(deb.t) !== JSON.stringify(project.treatment ?? {});
+    const changed = deb.idea !== (project.idea ?? '') || deb.genre !== (project.genre ?? '') || !sameData(deb.t, project.treatment ?? {});
     if (changed) void updateProject(project.id, { idea: deb.idea, genre: deb.genre, treatment: deb.t, ...(deb.t.logline ? { logline: deb.t.logline } : {}) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deb]);

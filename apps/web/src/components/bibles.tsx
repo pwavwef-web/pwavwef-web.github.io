@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { arrayRemove, arrayUnion } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { ImagePlus, Lock, MapPin, Package, Plus, Shirt, Sparkles, Trash2, UserRound } from 'lucide-react';
 import type { CharacterDoc, ElementDoc, ElementKind, ImagePurpose, JobRequest, LocationDoc, ProjectDoc } from '@az-studio/shared';
+import { errorMessage } from '../lib/api';
 import type { WithId } from '../lib/data';
 import { useBoot } from '../lib/session';
 import { addDocs, deleteSubDoc, newCharacter, newElement, newLocation, updateSubDoc, useSub } from '../lib/studio';
@@ -46,11 +48,24 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
   const c = draft as WithId<CharacterDoc>;
   const l = draft as WithId<LocationDoc>;
   const e = draft as WithId<ElementDoc>;
-  const primary = kind === 'elements' ? e.referenceAssetIds[0] ?? null : (draft as WithId<CharacterDoc>).primaryRefAssetId;
+  // Reference images are shared with generation jobs, which append to them when they finish, so they
+  // are read live and written immediately (arrayUnion/arrayRemove) instead of going through the draft.
+  const refs = item.referenceAssetIds;
+  const primary = kind === 'elements' ? (refs[0] ?? null) : (item as WithId<CharacterDoc>).primaryRefAssetId;
+  const turnaround = kind === 'characters' ? (item as WithId<CharacterDoc>).turnaroundAssetId : null;
+  const updateRefs = (patch: Record<string, unknown>) => {
+    updateSubDoc(project.id, kind, item.id, patch).catch((err: unknown) => toast.error('Could not update reference images', { description: errorMessage(err) }));
+  };
+  const addRefs = (ids: string[]) => {
+    if (ids.length) updateRefs({ referenceAssetIds: arrayUnion(...ids), ...(kind !== 'elements' && !primary ? { primaryRefAssetId: ids[0] } : {}) });
+  };
+  const removeRef = (id: string) => updateRefs({ referenceAssetIds: arrayRemove(id), ...(kind !== 'elements' && primary === id ? { primaryRefAssetId: null } : {}), ...(turnaround === id ? { turnaroundAssetId: null } : {}) });
+  const makePrimary = (id: string) => updateRefs(kind === 'elements' ? { referenceAssetIds: [id, ...refs.filter((x) => x !== id)] } : { primaryRefAssetId: id });
 
   const save = async () => {
-    const { id, ...rest } = draft;
-    await updateSubDoc(project.id, kind, id, rest);
+    const { id, referenceAssetIds, primaryRefAssetId, turnaroundAssetId, ...fields } = draft as AnyDoc & { primaryRefAssetId?: unknown; turnaroundAssetId?: unknown };
+    void [referenceAssetIds, primaryRefAssetId, turnaroundAssetId];
+    await updateSubDoc(project.id, kind, id, fields);
     toast.success('Saved');
   };
   const describe = () => {
@@ -60,7 +75,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
   };
   const gen = async (purpose: ImagePurpose) => {
     await save();
-    const refs = draft.referenceAssetIds.slice(0, 6);
+    const sources = refs.slice(0, 6);
     const job: JobRequest = {
       type: 'image.generate',
       projectId: project.id,
@@ -68,7 +83,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
       purpose,
       aspectRatio: purpose === 'turnaround' ? '16:9' : kind === 'locations' ? '16:9' : '4:5',
       imageSize: boot?.settings.defaultImageSize ?? '2K',
-      referenceAssetIds: purpose === 'character' && !refs.length ? [] : refs,
+      referenceAssetIds: purpose === 'character' && !sources.length ? [] : sources,
       grounding: false,
       applyStyleBible: true,
       characterIds: kind === 'characters' ? [draft.id] : [],
@@ -185,7 +200,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
         <Toggle checked={draft.locked} onChange={(v) => set({ locked: v })} label={<span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" /> Continuity locked</span>} description="Locked entries are the reference of record — keep their look consistent across shots." />
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="eyebrow">Reference images ({draft.referenceAssetIds.length})</p>
+            <p className="eyebrow">Reference images ({refs.length})</p>
             <div className="flex flex-wrap gap-1.5">
               <Button size="sm" variant="ghost" icon={<Plus className="size-3.5" />} onClick={() => setPicker(true)}>
                 Add
@@ -195,7 +210,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
                   <Button size="sm" variant="subtle" loading={busy} disabled={blocked} icon={<Sparkles className="size-3.5" />} onClick={() => void gen('character')}>
                     Portrait
                   </Button>
-                  <Button size="sm" variant="subtle" loading={busy} disabled={blocked || !draft.referenceAssetIds.length} icon={<ImagePlus className="size-3.5" />} onClick={() => void gen('turnaround')}>
+                  <Button size="sm" variant="subtle" loading={busy} disabled={blocked || !refs.length} icon={<ImagePlus className="size-3.5" />} onClick={() => void gen('turnaround')}>
                     Turnaround
                   </Button>
                   <Button size="sm" variant="subtle" loading={busy} disabled={blocked} icon={<Shirt className="size-3.5" />} onClick={() => void gen('costume')}>
@@ -215,22 +230,16 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
               )}
             </div>
           </div>
-          {draft.referenceAssetIds.length === 0 ? (
+          {refs.length === 0 ? (
             <p className="rounded-xl border border-dashed border-line p-4 text-center text-xs text-faint">Add or generate reference images. The primary image is sent to Omni as a locked reference in every shot that uses this {kind === 'characters' ? 'character' : kind === 'locations' ? 'location' : 'item'}.</p>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {draft.referenceAssetIds.map((id) => (
-                <RefImage
-                  key={id}
-                  id={id}
-                  primary={primary === id}
-                  onPrimary={() => (kind === 'elements' ? set({ referenceAssetIds: [id, ...draft.referenceAssetIds.filter((x) => x !== id)] }) : set({ primaryRefAssetId: id }))}
-                  onRemove={() => set({ referenceAssetIds: draft.referenceAssetIds.filter((x) => x !== id), ...(kind !== 'elements' && primary === id ? { primaryRefAssetId: null } : {}) })}
-                />
+              {refs.map((id) => (
+                <RefImage key={id} id={id} primary={primary === id} onPrimary={() => makePrimary(id)} onRemove={() => removeRef(id)} />
               ))}
             </div>
           )}
-          <p className="mt-2 text-xs text-faint">Generated references are added automatically when their job completes (reopen to see them).</p>
+          <p className="mt-2 text-xs text-faint">Generated references appear here automatically when their job completes.</p>
         </div>
       </div>
       <AssetPicker
@@ -240,10 +249,7 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
         projectId={project.id}
         multiple
         max={14}
-        onPick={(a) => {
-          const ids = [...new Set([...draft.referenceAssetIds, ...a.map((x) => x.id)])];
-          set({ referenceAssetIds: ids, ...(kind !== 'elements' && !primary && ids[0] ? { primaryRefAssetId: ids[0] } : {}) });
-        }}
+        onPick={(a) => addRefs(a.map((x) => x.id).filter((id) => !refs.includes(id)))}
       />
       {dialog}
     </Modal>

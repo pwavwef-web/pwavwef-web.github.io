@@ -4,6 +4,7 @@ import type { ProjectDoc, StyleBible } from '@az-studio/shared';
 import { useDebounced, type WithId } from '../lib/data';
 import { updateProject } from '../lib/studio';
 import { Card, Field, Textarea } from './ui';
+import { sameData } from '../lib/compare';
 
 const LABELS: Record<keyof StyleBible, string> = {
   visualStyle: 'Visual style',
@@ -19,7 +20,7 @@ export function StyleBibleEditor({ project }: { project: WithId<ProjectDoc> }) {
   const [style, setStyle] = useState<StyleBible>(project.styleBible ?? {});
   const deb = useDebounced(style, 1000);
   useEffect(() => {
-    if (JSON.stringify(deb) !== JSON.stringify(project.styleBible ?? {})) void updateProject(project.id, { styleBible: deb });
+    if (!sameData(deb, project.styleBible ?? {})) void updateProject(project.id, { styleBible: deb });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deb]);
   return (
