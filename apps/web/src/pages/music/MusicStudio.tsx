@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { AudioWaveform, Clapperboard, Film, GalleryHorizontal, ImagePlus, Music2, Palette, Pause, Play, Plus, Scissors, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
+import { AudioWaveform, CheckCheck, Clapperboard, Film, GalleryHorizontal, ImagePlus, Music2, Palette, Pause, Play, Plus, Scissors, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
 import {
   addAudioBed,
   assemblePicture,
@@ -403,6 +403,7 @@ function ConceptTab({ project, song }: { project: WithId<ProjectDoc>; song: With
   const [brief, setBrief] = useState(project.idea ?? '');
   const [treatment, setTreatment] = useState<Treatment>(project.treatment ?? {});
   const [style, setStyle] = useState<StyleBible>(project.styleBible ?? {});
+  const approved = Boolean(treatment.approvedAt);
   const debTreat = useDebounced(treatment, 1200);
   const debStyle = useDebounced(style, 1200);
   useEffect(() => {
@@ -437,14 +438,26 @@ function ConceptTab({ project, song }: { project: WithId<ProjectDoc>; song: With
         <Field label="Artist brief" hint="Vision, references, brand world (e.g. Indigen World), must-have moments.">
           <Textarea rows={3} value={brief} onChange={(e) => setBrief(e.target.value)} />
         </Field>
-        <Button variant="primary" loading={ai.busy} onClick={() => void generate()} icon={<Wand2 className="size-4" />}>
-          {treatment.body ? 'Regenerate treatment' : 'Generate treatment'}
-        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Button variant="primary" loading={ai.busy} disabled={approved} onClick={() => void generate()} icon={<Wand2 className="size-4" />}>
+            {treatment.body ? 'Regenerate treatment' : 'Generate treatment'}
+          </Button>
+          {treatment.body && (
+            <div className="flex min-w-0 items-center gap-3">
+              {approved && (
+                <Badge tone="success" icon={<CheckCheck className="size-3" />}>
+                  Approved
+                </Badge>
+              )}
+              <Toggle checked={approved} onChange={(v) => setTreatment({ ...treatment, approvedAt: v ? Date.now() : null })} label="Approved for production" description={approved ? 'Locked — shot planning follows this treatment.' : 'Edit freely, then approve it before planning shots.'} />
+            </div>
+          )}
+        </div>
         <Field label="Logline">
-          <Input value={treatment.logline ?? ''} onChange={(e) => setTreatment({ ...treatment, logline: e.target.value })} />
+          <Input value={treatment.logline ?? ''} disabled={approved} onChange={(e) => setTreatment({ ...treatment, logline: e.target.value })} />
         </Field>
         <Field label="Concept">
-          <Textarea rows={10} value={treatment.body ?? ''} onChange={(e) => setTreatment({ ...treatment, body: e.target.value })} />
+          <Textarea rows={10} value={treatment.body ?? ''} disabled={approved} onChange={(e) => setTreatment({ ...treatment, body: e.target.value })} />
         </Field>
         {treatment.sectionIdeas?.length ? (
           <div>
@@ -465,7 +478,7 @@ function ConceptTab({ project, song }: { project: WithId<ProjectDoc>; song: With
         </p>
         {(['visualStyle', 'palette', 'lighting', 'cameraLanguage', 'texture', 'continuityNotes'] as const).map((k) => (
           <Field key={k} label={{ visualStyle: 'Visual style', palette: 'Colour palette', lighting: 'Lighting', cameraLanguage: 'Camera language', texture: 'Texture & grain', continuityNotes: 'Continuity rules' }[k]}>
-            <Textarea rows={2} value={style[k] ?? ''} onChange={(e) => setStyle({ ...style, [k]: e.target.value })} />
+            <Textarea rows={2} value={style[k] ?? ''} disabled={approved} onChange={(e) => setStyle({ ...style, [k]: e.target.value })} />
           </Field>
         ))}
       </Card>
@@ -546,6 +559,7 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
   if (!song) return <EmptyState title="Add the song first" body="Shots are planned against the song’s sections and beats." />;
   return (
     <div className="space-y-5">
+      {project.treatment?.body && !project.treatment.approvedAt && <Notice tone="warning">Approve the treatment on the Concept tab first — the shot plan is written from it.</Notice>}
       <Card className="flex flex-wrap items-end gap-4 p-5">
         <div className="min-w-0 flex-1">
           <p className="eyebrow">Beat-aligned shot plan</p>

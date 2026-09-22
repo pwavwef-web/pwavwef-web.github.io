@@ -39,6 +39,8 @@ export interface Treatment {
   wardrobe?: string;
   performanceVsNarrative?: string;
   sectionIdeas?: { sectionLabel: string; idea: string }[];
+  /** Set when the creator approves the treatment for production (ms); editing is locked until cleared. */
+  approvedAt?: number | null;
   updatedAt?: Time;
 }
 
