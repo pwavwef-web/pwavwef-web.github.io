@@ -142,7 +142,7 @@ function PresenterCard() {
       <p className="eyebrow flex items-center gap-1.5">
         <MonitorPlay className="size-3.5" /> Presenter mode
       </p>
-      <Toggle checked={on} onChange={setPresenterEnabled} label="Record tutorials and demos" description="Shows a smooth cursor with click highlights and blurs your email and recorded spend. Saved on this device only." />
+      <Toggle checked={on} onChange={setPresenterEnabled} label="Record tutorials and demos" description="Shows a smooth cursor with click highlights, and blurs your email, recorded spend and any project, media or job created before you switched it on. Saved on this device only." />
       <ul className="space-y-1.5 text-xs text-dim">
         <li>
           <Kbd>Alt</Kbd> + <Kbd>Shift</Kbd> + <Kbd>Z</Kbd> zoom toward the cursor · <Kbd>Alt</Kbd> + <Kbd>Shift</Kbd> + <Kbd>X</Kbd> or <Kbd>Esc</Kbd> zoom out

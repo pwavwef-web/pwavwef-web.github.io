@@ -18,6 +18,7 @@ import {
 import { api, errorMessage, estimateJobs, submitJobsRaw, type EstimateResponse } from '../lib/api';
 import type { WithId } from '../lib/data';
 import { useSession } from '../lib/session';
+import { usePresenterPrivacy } from '../lib/presenter';
 import { Badge, Button, ConfirmDialog, cx, Modal, Notice, ProgressBar, Tip } from './ui';
 import { AssetThumb, useAsset } from './media';
 
@@ -236,6 +237,7 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
   const active = !isTerminal(job.status);
   const assetId = job.result?.assetIds?.[0] ?? null;
   const asset = useAsset(job.status === 'completed' ? assetId : null);
+  const privacy = usePresenterPrivacy();
 
   const cancel = async () => {
     setWorking(true);
@@ -262,7 +264,7 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
   };
 
   return (
-    <div className={cx('card flex gap-3 p-3.5 animate-rise', job.error?.safety && 'border-warning/30')}>
+    <div className={cx('card flex gap-3 p-3.5 animate-rise', job.error?.safety && 'border-warning/30')} {...privacy(job.createdAt)}>
       {asset.data && !compact ? (
         <div className="w-28 shrink-0 sm:w-36">
           <AssetThumb asset={asset.data} showMeta={false} />

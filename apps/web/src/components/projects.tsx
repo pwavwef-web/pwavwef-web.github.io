@@ -7,6 +7,7 @@ import type { WithId } from '../lib/data';
 import { useMediaUrls } from '../lib/media';
 import { useBoot, useUid } from '../lib/session';
 import { createProject } from '../lib/studio';
+import { usePresenterPrivacy } from '../lib/presenter';
 import { Badge, Button, cx, Field, Input, Modal, Segmented, Textarea } from './ui';
 
 export const PROJECT_ICON: Record<ProjectType, ReactNode> = {
@@ -37,10 +38,11 @@ export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): strin
 }
 
 export function ProjectCard({ project, className }: { project: WithId<ProjectDoc>; className?: string }) {
+  const privacy = usePresenterPrivacy();
   const cover = useMediaUrls(project.coverAssetId ?? null);
   const img = cover?.poster ?? cover?.thumb ?? cover?.file;
   return (
-    <Link to={projectPath(project)} className={cx('group block animate-rise', className)}>
+    <Link to={projectPath(project)} className={cx('group block animate-rise', className)} {...privacy(project.createdAt)}>
       <div className={cx('cinema-thumb aspect-[16/10] rounded-2xl border border-line bg-gradient-to-br transition-all duration-300 group-hover:border-line-strong group-hover:shadow-[var(--shadow-float)]', GRADIENT[project.type])}>
         {img ? (
           <img src={img} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" />

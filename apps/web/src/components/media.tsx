@@ -6,6 +6,7 @@ import { db } from '../lib/firebase';
 import { useDoc, useQuery, type WithId } from '../lib/data';
 import { uploadFile, useMediaUrls } from '../lib/media';
 import { useUid } from '../lib/session';
+import { usePresenterPrivacy } from '../lib/presenter';
 import { Badge, Button, cx, EmptyState, Modal, ProgressBar, Segmented, Skeleton, Tip } from './ui';
 
 export type Asset = WithId<AssetDoc>;
@@ -26,10 +27,12 @@ export function useAsset(assetId: string | null | undefined) {
 export function AssetThumb({ asset, className, aspect = 'aspect-video', showMeta = true, onClick, selected, overlay, hoverPlay = true }: { asset: Asset; className?: string; aspect?: string; showMeta?: boolean; onClick?: () => void; selected?: boolean; overlay?: ReactNode; hoverPlay?: boolean }) {
   const urls = useMediaUrls(asset.id, asset.status === 'ready' ? undefined : asset.status);
   const [hover, setHover] = useState(false);
+  const privacy = usePresenterPrivacy();
   const img = asset.kind === 'image' ? urls?.thumb ?? urls?.file : urls?.thumb ?? urls?.poster;
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
+      {...privacy(asset.createdAt)}
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}

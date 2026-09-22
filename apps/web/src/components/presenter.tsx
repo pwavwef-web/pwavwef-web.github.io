@@ -12,13 +12,16 @@ const CURSOR_SVG =
  * - elements marked `data-private` (email, recorded spend) are blurred.
  * The cursor lives outside <body> so zooming the page never scales or offsets it.
  */
+/** Physical key when the browser reports it (`code`), else the character — synthetic input often omits `code`. */
+const isKey = (e: KeyboardEvent, letter: string) => e.code === `Key${letter.toUpperCase()}` || e.key.toLowerCase() === letter;
+
 export function Presenter() {
   const [on, setOn] = useState(presenterEnabled);
 
   useEffect(() => {
     const sync = () => setOn(presenterEnabled());
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey && e.shiftKey && e.code === 'KeyP') {
+      if (e.altKey && e.shiftKey && isKey(e, 'p')) {
         e.preventDefault();
         setPresenterEnabled(!presenterEnabled());
       }
@@ -85,13 +88,13 @@ export function Presenter() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && zoomed) return zoomTo(1);
       if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey) return;
-      if (e.code === 'KeyZ') {
+      if (isKey(e, 'z')) {
         e.preventDefault();
         zoomTo(zoomed ? 1 : 1.8);
-      } else if (e.code === 'KeyX') {
+      } else if (isKey(e, 'x')) {
         e.preventDefault();
         zoomTo(1);
-      } else if (e.code === 'KeyF') {
+      } else if (isKey(e, 'f')) {
         e.preventDefault();
         if (document.fullscreenElement) void document.exitFullscreen();
         else void root.requestFullscreen().catch(() => undefined);

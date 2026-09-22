@@ -5,6 +5,7 @@ import type { AssetDoc } from '@az-studio/shared';
 import { db } from '../../lib/firebase';
 import { useQuery } from '../../lib/data';
 import { useUid } from '../../lib/session';
+import { usePresenterPrivacy } from '../../lib/presenter';
 import { acceptFor, AssetThumb, UploadZone } from '../../components/media';
 import { Button, Input, Segmented, Skeleton } from '../../components/ui';
 import { ASSET_MIME, type DroppedAsset } from './Tracks';
@@ -33,6 +34,7 @@ export function MediaBin({
     () => (uid ? (scope === 'project' ? query(collection(db, 'assets'), where('ownerUid', '==', uid), where('projectId', '==', projectId), where('kind', '==', kind), orderBy('createdAt', 'desc')) : query(collection(db, 'assets'), where('ownerUid', '==', uid), where('kind', '==', kind), orderBy('createdAt', 'desc'))) : null),
     [uid, projectId, kind, scope],
   );
+  const privacy = usePresenterPrivacy();
   const items = useMemo(() => live.data.filter((a) => a.status === 'ready' && (!search || a.title.toLowerCase().includes(search.toLowerCase()))), [live.data, search]);
   return (
     <div className="flex h-full flex-col">
@@ -81,7 +83,7 @@ export function MediaBin({
             return (
               <div key={a.id} draggable onDragStart={(e) => e.dataTransfer.setData(ASSET_MIME, JSON.stringify(payload))} className="group relative">
                 {a.kind === 'audio' ? (
-                  <div className="rounded-xl border border-line bg-violet/10 px-3 py-2.5">
+                  <div className="rounded-xl border border-line bg-violet/10 px-3 py-2.5" {...privacy(a.createdAt)}>
                     <p className="truncate text-xs text-fg">{a.title}</p>
                     <p className="text-[10px] text-faint">{a.durationSec ? `${a.durationSec.toFixed(1)}s` : ''}</p>
                   </div>
