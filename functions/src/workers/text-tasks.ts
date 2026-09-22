@@ -1,6 +1,10 @@
 import type { TextTask } from '@az-studio/shared';
 
-/** JSON Schema subset accepted by Gemini structured output. */
+/**
+ * JSON Schema subset accepted by Gemini structured output. Do not put `maxItems` on arrays of
+ * objects: Vertex AI rejects such schemas with a bare 400 INVALID_ARGUMENT. Limit counts in the
+ * prompt and trim the result instead.
+ */
 type Schema = Record<string, unknown>;
 
 const str = (description?: string): Schema => ({ type: 'string', ...(description ? { description } : {}) });
@@ -181,7 +185,6 @@ export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
           characterNames: arr(str()),
           transition: str('Transition into the next shot, e.g. cut, dissolve'),
         }),
-        { maxItems: 24 },
       ),
     }),
     prompt: (i) =>

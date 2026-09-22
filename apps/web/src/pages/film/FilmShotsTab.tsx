@@ -45,7 +45,7 @@ export function FilmShotsTab({ project }: { project: WithId<ProjectDoc> }) {
     );
     if (!out?.shots?.length) return;
     const existing = shots.data.filter((s) => s.sceneId === scene.id).length;
-    const docs = out.shots.map((s, i) =>
+    const docs = out.shots.slice(0, maxShots).map((s, i) =>
       newShot({
         sceneId: scene.id,
         order: scene.order * 1000 + existing + i,

@@ -7,6 +7,7 @@ import { buildInteractionRequest, type VideoParams } from '../src/workers/video'
 import { buildImageParts, type ImageParams } from '../src/workers/image';
 import { sniffUpload } from '../src/triggers/upload';
 import { normaliseSongAnalysis } from '../src/workers/text';
+import { SONG_ANALYSIS_SCHEMA, TEXT_TASK_SPECS } from '../src/workers/text-tasks';
 import { IMAGE_CAPABILITIES, MODEL_REGISTRY, VIDEO_CAPABILITIES } from '../src/config/models';
 import { PRICING } from '../src/config/pricing';
 import { detectC2pa } from '../src/lib/media';
@@ -195,5 +196,19 @@ describe('model registry', () => {
     const registrySrc = readFileSync(path.resolve(import.meta.dirname, '../src/config/models.ts'), 'utf8');
     const ids = [...registrySrc.matchAll(/id: '([^']+)'|fallbackId: '([^']+)'/g)].map((m) => m[1] ?? m[2]);
     for (const forbidden of ['gemini-omni-flash-preview', 'gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'imagen-4.0-generate-001']) expect(ids).not.toContain(forbidden);
+  });
+});
+
+describe('structured output schemas', () => {
+  // Vertex AI answers 400 INVALID_ARGUMENT for maxItems on arrays of objects (found in production).
+  const offending = (schema: unknown, path = '$'): string[] => {
+    if (!schema || typeof schema !== 'object') return [];
+    const s = schema as Record<string, unknown>;
+    const here = s.type === 'array' && 'maxItems' in s && (s.items as Record<string, unknown> | undefined)?.type === 'object' ? [path] : [];
+    return [...here, ...Object.entries(s).flatMap(([k, v]) => offending(v, `${path}.${k}`))];
+  };
+  it('never limit the length of object arrays', () => {
+    for (const [task, spec] of Object.entries(TEXT_TASK_SPECS)) expect(offending(spec.schema), task).toEqual([]);
+    expect(offending(SONG_ANALYSIS_SCHEMA)).toEqual([]);
   });
 });
