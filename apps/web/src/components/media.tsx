@@ -121,6 +121,7 @@ export function Waveform({
   height = 96,
   regions,
   beats,
+  range,
   className,
 }: {
   peaks: { min: number[]; max: number[] } | null;
@@ -130,6 +131,8 @@ export function Waveform({
   height?: number;
   regions?: { start: number; end: number; color: string; label?: string }[];
   beats?: number[];
+  /** Highlights a production range; the rest of the song is dimmed. */
+  range?: { start: number; end: number } | null;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -176,6 +179,8 @@ export function Waveform({
     }
   }, [peaks, width, height, duration, regions, beats]);
   const pct = duration && playhead !== undefined ? Math.min(100, (playhead / duration) * 100) : null;
+  const showRange = Boolean(range && duration > 0 && (range.start > 0.05 || range.end < duration - 0.05));
+  const at = (t: number) => `${Math.min(100, Math.max(0, (t / duration) * 100))}%`;
   return (
     <div
       ref={wrapRef}
@@ -193,6 +198,15 @@ export function Waveform({
       aria-valuenow={playhead}
     >
       <canvas ref={canvasRef} style={{ width, height }} className="block" />
+      {showRange && range && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 left-0 bg-black/60" style={{ width: at(range.start) }} />
+          <div className="pointer-events-none absolute inset-y-0 right-0 bg-black/60" style={{ left: at(range.end) }} />
+          <div className="pointer-events-none absolute inset-y-0 border-x-2 border-accent-2" style={{ left: at(range.start), width: `calc(${at(range.end)} - ${at(range.start)})` }}>
+            <span className="absolute top-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-accent-2">Production range</span>
+          </div>
+        </>
+      )}
       {pct !== null && <div className="pointer-events-none absolute inset-y-0 w-px bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" style={{ left: `${pct}%` }} />}
       {!peaks && <div className="absolute inset-0 grid place-items-center text-xs text-faint">Waveform unavailable</div>}
     </div>

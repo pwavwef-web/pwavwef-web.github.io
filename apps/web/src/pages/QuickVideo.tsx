@@ -20,7 +20,7 @@ export default function QuickVideo({ project }: { project?: WithId<ProjectDoc> }
   const [showDirections, setShowDirections] = useState(true);
   const [media, setMedia] = useState<OmniMediaRef[]>([]);
   const [override, setOverride] = useState<string | null>(null);
-  const [settings, setSettings] = useState<VideoSettings>({ aspectRatio: project?.format.aspectRatio === '9:16' ? '9:16' : '16:9', resolution: boot?.settings.defaultVideoResolution ?? '720p', durationSec: 6, takes: 1 });
+  const [settings, setSettings] = useState<VideoSettings>({ aspectRatio: project?.format.aspectRatio === '9:16' ? '9:16' : '16:9', resolution: project?.format.videoResolution ?? boot?.settings.defaultVideoResolution ?? '720p', durationSec: 6, takes: 1 });
   const [selected, setSelected] = useState<string | null>(null);
   const chains = useChains('video', projectId);
   const { submit, busy, dialog } = useJobSubmitter();

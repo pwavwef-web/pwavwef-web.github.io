@@ -26,7 +26,7 @@ export function AssemblyTab({ project }: { project: WithId<ProjectDoc> }) {
     try {
       const sceneOrder = new Map(scenes.data.map((s) => [s.id, s.order]));
       const ordered = [...approved].sort((a, b) => (sceneOrder.get(a.sceneId ?? '') ?? 1e9) - (sceneOrder.get(b.sceneId ?? '') ?? 1e9) || a.order - b.order);
-      let state = emptyTimeline(project.format.aspectRatio);
+      let state = emptyTimeline(project.format.aspectRatio, project.format.fps);
       if (title) {
         const ov = state.tracks.find((t) => t.kind === 'overlay')!;
         state = { ...state, clips: [makeClip({ trackId: ov.id, kind: 'title', start: 0, duration: 4, text: project.title, fadeIn: 0.8, fadeOut: 0.8, label: 'Main title', style: { font: 'EB Garamond', sizePct: 9, color: '#FFFFFF', background: '#05070B', bold: false, italic: false, uppercase: false, outline: 0, shadow: false } })] };

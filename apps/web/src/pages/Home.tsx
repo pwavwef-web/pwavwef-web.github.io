@@ -40,7 +40,7 @@ function UsageCard() {
   return (
     <Card className="p-5">
       <p className="eyebrow">Vertex usage estimate</p>
-      <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="mt-3 grid grid-cols-2 gap-4" data-private>
         <div>
           <p className="text-xs text-faint">Today</p>
           <p className="display text-3xl">{formatUsd(t)}</p>
@@ -55,7 +55,7 @@ function UsageCard() {
         </div>
       </div>
       {byModel.length > 0 && (
-        <ul className="mt-4 space-y-1.5 border-t border-line pt-3 text-xs">
+        <ul className="mt-4 space-y-1.5 border-t border-line pt-3 text-xs" data-private>
           {byModel.map(([model, usd]) => (
             <li key={model} className="flex justify-between gap-2">
               <span className="truncate text-dim">{model}</span>

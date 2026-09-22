@@ -48,7 +48,7 @@ export function useSub<T>(projectId: string | undefined, sub: SubCollection, ord
 // Projects
 // ---------------------------------------------------------------------------
 
-export async function createProject(uid: string, input: { title: string; type: ProjectType; logline?: string; aspectRatio?: FrameAspect; idea?: string; genre?: string }): Promise<string> {
+export async function createProject(uid: string, input: { title: string; type: ProjectType; logline?: string; aspectRatio?: FrameAspect; fps?: 24 | 25 | 30; videoResolution?: string; idea?: string; genre?: string }): Promise<string> {
   const data: Omit<ProjectDoc, 'id'> = {
     ownerUid: uid,
     title: input.title.trim().slice(0, 160),
@@ -57,7 +57,7 @@ export async function createProject(uid: string, input: { title: string; type: P
     idea: input.idea?.trim() ?? '',
     genre: input.genre?.trim() ?? '',
     status: 'active',
-    format: { aspectRatio: input.aspectRatio ?? '16:9', fps: 24 },
+    format: { aspectRatio: input.aspectRatio ?? '16:9', fps: input.fps ?? 24, ...(input.videoResolution ? { videoResolution: input.videoResolution } : {}) },
     coverAssetId: null,
     styleBible: {},
   };
@@ -154,8 +154,8 @@ export async function createSong(projectId: string, audioAssetId: string, title:
 
 // Timelines --------------------------------------------------------------------------------------
 
-export async function createTimeline(uid: string, projectId: string, name: string, state?: TimelineState, aspect: FrameAspect = '16:9'): Promise<string> {
-  const s = state ?? emptyTimeline(aspect);
+export async function createTimeline(uid: string, projectId: string, name: string, state?: TimelineState, aspect: FrameAspect = '16:9', fps: 24 | 25 | 30 = 24): Promise<string> {
+  const s = state ?? emptyTimeline(aspect, fps);
   const data: Omit<TimelineDoc, 'id'> = {
     ownerUid: uid,
     projectId,

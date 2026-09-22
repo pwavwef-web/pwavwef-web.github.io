@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { collection, orderBy, query, where } from 'firebase/firestore';
-import { Captions, Plus, Type } from 'lucide-react';
+import { ArrowRightToLine, Captions, FileDown, FileUp, Plus, Type } from 'lucide-react';
 import type { AssetDoc } from '@az-studio/shared';
 import { db } from '../../lib/firebase';
 import { useQuery } from '../../lib/data';
@@ -9,7 +9,22 @@ import { acceptFor, AssetThumb, UploadZone } from '../../components/media';
 import { Button, Input, Segmented, Skeleton } from '../../components/ui';
 import { ASSET_MIME, type DroppedAsset } from './Tracks';
 
-export function MediaBin({ projectId, onAdd, onAddText }: { projectId: string; onAdd: (a: DroppedAsset) => void; onAddText: (kind: 'caption' | 'title') => void }) {
+export function MediaBin({
+  projectId,
+  onAdd,
+  onAddText,
+  onImportCaptions,
+  onExportCaptions,
+  captionCount,
+}: {
+  projectId: string;
+  /** `append` places the clip after the last clip on its track instead of at the playhead. */
+  onAdd: (a: DroppedAsset, append: boolean) => void;
+  onAddText: (kind: 'caption' | 'title') => void;
+  onImportCaptions: (text: string) => void;
+  onExportCaptions: () => void;
+  captionCount: number;
+}) {
   const uid = useUid();
   const [kind, setKind] = useState<'video' | 'image' | 'audio'>('video');
   const [scope, setScope] = useState<'project' | 'all'>('project');
@@ -35,6 +50,24 @@ export function MediaBin({ projectId, onAdd, onAddText }: { projectId: string; o
             Title card
           </Button>
         </div>
+        <div className="flex gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-dim hover:bg-white/[0.06] hover:text-fg">
+            <FileUp className="size-3.5" /> Import .srt
+            <input
+              type="file"
+              accept=".srt,.vtt,text/vtt,application/x-subrip"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f) void f.text().then(onImportCaptions);
+              }}
+            />
+          </label>
+          <Button size="sm" variant="ghost" disabled={!captionCount} icon={<FileDown className="size-3.5" />} onClick={onExportCaptions}>
+            Export .srt
+          </Button>
+        </div>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         <UploadZone compact accept={acceptFor([kind])} kind={kind} projectId={projectId} label={`Upload ${kind}`} />
@@ -55,9 +88,14 @@ export function MediaBin({ projectId, onAdd, onAddText }: { projectId: string; o
                 ) : (
                   <AssetThumb asset={a} hoverPlay={false} />
                 )}
-                <button type="button" onClick={() => onAdd(payload)} aria-label={`Add ${a.title} at playhead`} className="absolute top-1.5 right-1.5 z-20 grid size-7 cursor-pointer place-items-center rounded-lg bg-black/70 text-fg opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100">
-                  <Plus className="size-4" />
-                </button>
+                <div className="absolute top-1.5 right-1.5 z-20 flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                  <button type="button" onClick={() => onAdd(payload, false)} aria-label={`Add ${a.title} at playhead`} title="Add at playhead" className="grid size-7 cursor-pointer place-items-center rounded-lg bg-black/70 text-fg hover:bg-black/90">
+                    <Plus className="size-4" />
+                  </button>
+                  <button type="button" onClick={() => onAdd(payload, true)} aria-label={`Append ${a.title} to the end of its track`} title="Append to end of track" className="grid size-7 cursor-pointer place-items-center rounded-lg bg-black/70 text-fg hover:bg-black/90">
+                    <ArrowRightToLine className="size-4" />
+                  </button>
+                </div>
               </div>
             );
           })

@@ -5,7 +5,7 @@ import { Clapperboard, Film, Image as ImageIcon, Music2, Scissors } from 'lucide
 import { formatUsd, PROJECT_TYPE_LABELS, relativeTime, toMillis, type FrameAspect, type ProjectDoc, type ProjectType } from '@az-studio/shared';
 import type { WithId } from '../lib/data';
 import { useMediaUrls } from '../lib/media';
-import { useUid } from '../lib/session';
+import { useBoot, useUid } from '../lib/session';
 import { createProject } from '../lib/studio';
 import { Badge, Button, cx, Field, Input, Modal, Segmented, Textarea } from './ui';
 
@@ -61,7 +61,7 @@ export function ProjectCard({ project, className }: { project: WithId<ProjectDoc
       </div>
       <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-faint">
         <span>Updated {relativeTime(toMillis(project.updatedAt))}</span>
-        {project.usage?.costUsd ? <span>≈ {formatUsd(project.usage.costUsd)} used</span> : null}
+        {project.usage?.costUsd ? <span data-private>≈ {formatUsd(project.usage.costUsd)} used</span> : null}
       </div>
     </Link>
   );
@@ -74,12 +74,17 @@ export function NewProjectDialog({ open, onOpenChange, defaultType = 'film' }: {
   const [title, setTitle] = useState('');
   const [logline, setLogline] = useState('');
   const [aspect, setAspect] = useState<FrameAspect>('16:9');
+  const boot = useBoot();
+  const [fps, setFps] = useState<24 | 25 | 30>(24);
+  const [quality, setQuality] = useState<string | null>(null);
+  const shotQuality = quality ?? boot?.settings.defaultVideoResolution ?? boot?.capabilities.video.defaultResolution ?? '720p';
+  const makesVideo = type !== 'image';
   const [busy, setBusy] = useState(false);
   const create = async () => {
     if (!title.trim()) return;
     setBusy(true);
     try {
-      const id = await createProject(uid, { title, type, logline, aspectRatio: aspect });
+      const id = await createProject(uid, { title, type, logline, aspectRatio: aspect, fps, ...(makesVideo ? { videoResolution: shotQuality } : {}) });
       onOpenChange(false);
       setTitle('');
       setLogline('');
@@ -134,6 +139,16 @@ export function NewProjectDialog({ open, onOpenChange, defaultType = 'film' }: {
             ]}
           />
         </Field>
+        {makesVideo && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Frame rate" hint="Timelines and exports use this rate; generated clips are conformed.">
+              <Segmented label="Frame rate" value={String(fps) as '24' | '25' | '30'} onChange={(v) => setFps(Number(v) as 24 | 25 | 30)} options={[{ value: '24', label: '24 fps' }, { value: '25', label: '25' }, { value: '30', label: '30' }]} />
+            </Field>
+            <Field label="Shot quality" hint="Default Omni resolution for new shots; change it per shot.">
+              <Segmented label="Shot quality" value={shotQuality} onChange={setQuality} options={(boot?.capabilities.video.resolutions ?? ['720p']).map((r) => ({ value: r, label: r.toUpperCase() }))} />
+            </Field>
+          </div>
+        )}
       </div>
     </Modal>
   );

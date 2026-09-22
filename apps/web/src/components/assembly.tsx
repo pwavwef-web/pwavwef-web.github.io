@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { Link } from 'react-router';
-import { Clapperboard, Download, Monitor, Plus, Smartphone, Square } from 'lucide-react';
+import { Clapperboard, Download, Monitor, Play, Plus, Smartphone, Square } from 'lucide-react';
 import { EXPORT_PRESETS, estimateRender, formatDuration, relativeTime, toMillis, type ExportPreset, type ProjectDoc, type RenderDoc, type RenderQuality, type TimelineDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery, type WithId } from '../lib/data';
@@ -9,13 +9,14 @@ import { downloadUrl } from '../lib/media';
 import { useBoot, useUid } from '../lib/session';
 import { useSub } from '../lib/studio';
 import { EstimateText, useJobSubmitter } from './jobs';
-import { AssetThumb, useAsset, type Asset } from './media';
+import { AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { Badge, Button, Card, EmptyState, ProgressBar, Segmented, Select } from './ui';
 
 const PRESET_ICON = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square };
 
 function RenderRow({ render }: { render: WithId<RenderDoc> }) {
   const asset = useAsset(render.outputAssetId);
+  const [watching, setWatching] = useState(false);
   const active = !['completed', 'failed', 'cancelled'].includes(render.status);
   const download = async () => {
     if (!render.outputAssetId) return;
@@ -23,7 +24,8 @@ function RenderRow({ render }: { render: WithId<RenderDoc> }) {
     if (url) window.open(url, '_blank', 'noopener');
   };
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-line p-2.5">
+    <li className="rounded-xl border border-line p-2.5">
+      <div className="flex items-center gap-3">
       <div className="w-28 shrink-0">{asset.data ? <AssetThumb asset={asset.data as Asset} showMeta={false} /> : <div className="grid aspect-video place-items-center rounded-lg bg-black/30 text-faint"><Clapperboard className="size-4" /></div>}</div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -38,10 +40,17 @@ function RenderRow({ render }: { render: WithId<RenderDoc> }) {
         {render.error && <p className="mt-1 text-xs text-[#ff9b9b]">{render.error.message}</p>}
       </div>
       {render.status === 'completed' && (
-        <Button size="sm" variant="secondary" icon={<Download className="size-3.5" />} onClick={() => void download()}>
-          MP4
-        </Button>
+        <div className="flex shrink-0 gap-1.5">
+          <Button size="sm" variant={watching ? 'subtle' : 'ghost'} icon={<Play className="size-3.5" />} onClick={() => setWatching((w) => !w)}>
+            {watching ? 'Close' : 'Play'}
+          </Button>
+          <Button size="sm" variant="secondary" icon={<Download className="size-3.5" />} onClick={() => void download()}>
+            MP4
+          </Button>
+        </div>
       )}
+      </div>
+      {watching && render.outputAssetId && <VideoPlayer assetId={render.outputAssetId} autoPlay className="mt-3 rounded-lg" />}
     </li>
   );
 }

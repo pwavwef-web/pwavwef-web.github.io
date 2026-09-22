@@ -295,7 +295,7 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
           <span>{relativeTime(toMillis(job.createdAt))}</span>
           <span>{elapsed(job)}</span>
           <EstimateText estimate={job.estimate} />
-          {job.usageUsd !== null && job.usageUsd !== undefined && <span>recorded {formatUsd(job.usageUsd, { precise: true })}</span>}
+          {job.usageUsd !== null && job.usageUsd !== undefined && <span data-private>recorded {formatUsd(job.usageUsd, { precise: true })}</span>}
           {showProject && job.projectId && (
             <Link to={`/projects/${job.projectId}`} className="text-accent-2 hover:underline">
               Open project

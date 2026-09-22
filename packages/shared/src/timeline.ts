@@ -386,10 +386,16 @@ export function lyricsToCaptions(state: TimelineState, lines: LyricLine[], style
   return addClips(state, clips);
 }
 
-export function addAudioBed(state: TimelineState, assetId: string, durationSec: number, label = 'Song'): TimelineState {
+/** Lays the song on the first audio track; `inPoint` starts it part-way (a production range). */
+export function addAudioBed(state: TimelineState, assetId: string, durationSec: number, label = 'Song', opts: { inPoint?: number; sourceDuration?: number } = {}): TimelineState {
   const track = state.tracks.find((t) => t.kind === 'audio');
   if (!track) throw new Error('Timeline has no audio track');
-  return addClip(state, makeClip({ trackId: track.id, kind: 'audio', start: 0, duration: durationSec, assetId, sourceDuration: durationSec, label, useSourceAudio: false }));
+  return addClip(state, makeClip({ trackId: track.id, kind: 'audio', start: 0, duration: durationSec, assetId, inPoint: opts.inPoint ?? 0, sourceDuration: opts.sourceDuration ?? durationSec, label, useSourceAudio: false }));
+}
+
+/** Where the next clip goes when appending to a track: the end of its last clip. */
+export function trackEnd(state: Pick<TimelineState, 'clips'>, trackId: string): number {
+  return timelineDuration(clipsOnTrack(state, trackId));
 }
 
 /** Structural validation before saving or rendering. Returns human-readable problems. */

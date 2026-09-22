@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Cpu, LogOut, Save, ShieldCheck } from 'lucide-react';
+import { Cpu, LogOut, MonitorPlay, Save, ShieldCheck } from 'lucide-react';
 import { formatUsd, type StudioSettings } from '@az-studio/shared';
 import { api, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
-import { Badge, Button, Card, Field, Input, SectionHeader, Select, Skeleton } from '../components/ui';
+import { PRESENTER_EVENT, presenterEnabled, setPresenterEnabled } from '../lib/presenter';
+import { Badge, Button, Card, Field, Input, Kbd, SectionHeader, Select, Skeleton, Toggle } from '../components/ui';
 
 export default function Settings() {
   const { boot, user, setSettings, signOut } = useSession();
@@ -42,10 +43,10 @@ export default function Settings() {
             <p className="mt-1 text-sm text-dim">Enforced server-side on every submission (projected spend includes jobs still running).</p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Daily limit (USD)" hint={`Today so far ≈ ${formatUsd(boot.spend.today.costUsd)}`}>
+            <Field label="Daily limit (USD)" hint={<span data-private>Today so far ≈ {formatUsd(boot.spend.today.costUsd)}</span>}>
               <Input type="number" min={0} step={1} value={draft.dailyLimitUsd} onChange={(e) => set('dailyLimitUsd', num(e.target.value))} />
             </Field>
-            <Field label="Monthly limit (USD)" hint={`This month ≈ ${formatUsd(boot.spend.month.costUsd)}`}>
+            <Field label="Monthly limit (USD)" hint={<span data-private>This month ≈ {formatUsd(boot.spend.month.costUsd)}</span>}>
               <Input type="number" min={0} step={5} value={draft.monthlyLimitUsd} onChange={(e) => set('monthlyLimitUsd', num(e.target.value))} />
             </Field>
             <Field label="Confirm batches above (USD)" hint="Batches with two or more videos always ask first.">
@@ -81,6 +82,7 @@ export default function Settings() {
           </Button>
         </Card>
         <div className="space-y-6">
+          <PresenterCard />
           <Card className="space-y-4 p-6">
             <p className="eyebrow flex items-center gap-1.5">
               <Cpu className="size-3.5" /> Model registry (server-side)
@@ -116,7 +118,7 @@ export default function Settings() {
               <ShieldCheck className="size-3.5" /> Access
             </p>
             <p className="text-sm text-dim">
-              Signed in as <span className="text-fg">{user?.email}</span>. Only the configured owner can read or write studio data; App Check protects the API.
+              Signed in as <span className="text-fg" data-private>{user?.email}</span>. Only the configured owner can read or write studio data; App Check protects the API.
             </p>
             <Button onClick={() => void signOut()} icon={<LogOut className="size-4" />}>
               Sign out
@@ -125,5 +127,30 @@ export default function Settings() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PresenterCard() {
+  const [on, setOn] = useState(presenterEnabled);
+  useEffect(() => {
+    const sync = () => setOn(presenterEnabled());
+    window.addEventListener(PRESENTER_EVENT, sync);
+    return () => window.removeEventListener(PRESENTER_EVENT, sync);
+  }, []);
+  return (
+    <Card className="space-y-4 p-6">
+      <p className="eyebrow flex items-center gap-1.5">
+        <MonitorPlay className="size-3.5" /> Presenter mode
+      </p>
+      <Toggle checked={on} onChange={setPresenterEnabled} label="Record tutorials and demos" description="Shows a smooth cursor with click highlights and blurs your email and recorded spend. Saved on this device only." />
+      <ul className="space-y-1.5 text-xs text-dim">
+        <li>
+          <Kbd>Alt</Kbd> + <Kbd>Shift</Kbd> + <Kbd>Z</Kbd> zoom toward the cursor · <Kbd>Alt</Kbd> + <Kbd>Shift</Kbd> + <Kbd>X</Kbd> or <Kbd>Esc</Kbd> zoom out
+        </li>
+        <li>
+          <Kbd>Alt</Kbd> + <Kbd>Shift</Kbd> + <Kbd>F</Kbd> full screen · <Kbd>Alt</Kbd> + <Kbd>Shift</Kbd> + <Kbd>P</Kbd> presenter mode on or off
+        </li>
+      </ul>
+    </Card>
   );
 }

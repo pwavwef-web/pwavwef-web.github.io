@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { AudioWaveform, Clapperboard, Film, Music2, Palette, Pause, Play, Plus, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
+import { AudioWaveform, Clapperboard, Film, GalleryHorizontal, ImagePlus, Music2, Palette, Pause, Play, Plus, Scissors, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
 import {
   addAudioBed,
   assemblePicture,
+  beatsInRange,
   emptyTimeline,
+  formatDuration,
   formatTimecode,
+  isWholeSong,
+  lyricsInRange,
   lyricsToCaptions,
   makeClip,
   planShotSlots,
+  productionRange,
   SECTION_LABELS,
+  sectionsInRange,
   snapToBeat,
   type AudioAnalysisResult,
   type LyricLine,
@@ -21,6 +27,7 @@ import {
   type SongSection,
   type StyleBible,
   type TakeDoc,
+  type TimeRange,
   type Treatment,
 } from '@az-studio/shared';
 import { doc, getDoc } from 'firebase/firestore';
@@ -41,6 +48,8 @@ import { ProjectHeader } from '../../components/project-header';
 import { ShotQueue, useShotContext, type Shot } from '../../components/shots';
 import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, Notice, SectionHeader, Select, Skeleton, Tabs, Textarea, Toggle } from '../../components/ui';
 import { sameData } from '../../lib/compare';
+import { LookbookTab } from '../film/LookbookTab';
+import ImageStudio from '../ImageStudio';
 
 const SECTION_COLORS: Record<string, string> = {
   intro: 'rgba(120,140,180,0.16)',
@@ -70,6 +79,7 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   const audioRef = useRef<HTMLAudioElement>(null);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const stopAt = useRef<number | null>(null);
   const urls = useMediaUrls(song?.audioAssetId ?? null);
   const serverPeaks = useWaveform(song?.audioAssetId ?? null);
   const { submit, busy, dialog } = useJobSubmitter();
@@ -123,6 +133,10 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
     let raf = 0;
     const tick = () => {
       setTime(a.currentTime);
+      if (stopAt.current !== null && a.currentTime >= stopAt.current) {
+        a.pause();
+        stopAt.current = null;
+      }
       raf = requestAnimationFrame(tick);
     };
     if (playing) raf = requestAnimationFrame(tick);
@@ -141,6 +155,14 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   const shownPeaks = peaks ?? serverPeaks;
   const aiSections = (song as unknown as { aiSections?: SongSection[] }).aiSections ?? [];
   const current = analysis?.sections.find((s) => time >= s.start && time < s.end);
+  const range = productionRange(song.range, duration);
+  const playRange = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = range.start;
+    stopAt.current = range.end;
+    void a.play();
+  };
 
   return (
     <div className="space-y-5">
@@ -175,6 +197,7 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
           playhead={time}
           height={120}
           beats={analysis?.downbeats}
+          range={range}
           regions={analysis?.sections.map((s) => ({ start: s.start, end: s.end, color: SECTION_COLORS[s.label] ?? SECTION_COLORS.other!, label: s.name }))}
           onSeek={(t) => {
             if (audioRef.current) audioRef.current.currentTime = t;
@@ -191,6 +214,8 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
           </div>
         )}
       </Card>
+
+      <RangeCard project={project} song={song} time={time} onPlay={playRange} />
 
       {song.ai && (
         <Notice tone="accent" icon={<Sparkles className="size-4" />}>
@@ -273,6 +298,99 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
       </div>
       {dialog}
     </div>
+  );
+}
+
+/** The part of the song being produced. Shot planning, assembly and lyric captions follow it. */
+function RangeCard({ project, song, time, onPlay }: { project: WithId<ProjectDoc>; song: WithId<SongDoc>; time: number; onPlay: () => void }) {
+  const duration = song.durationSec;
+  const range = productionRange(song.range, duration);
+  const whole = isWholeSong(range, duration);
+  const sections = song.analysis?.sections ?? [];
+  const bars = song.analysis?.downbeats?.length ? song.analysis.downbeats : (song.analysis?.beats ?? []);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [startText, setStartText] = useState<string | null>(null);
+  const [endText, setEndText] = useState<string | null>(null);
+  const snap = (t: number) => (bars.length ? snapToBeat(t, bars) : Math.round(t * 10) / 10);
+  const save = (r: TimeRange | null) => {
+    const next = r ? productionRange(r, duration) : null;
+    void updateSubDoc(project.id, 'songs', song.id, { range: next && !isWholeSong(next, duration) ? { start: Math.round(next.start * 1000) / 1000, end: Math.round(next.end * 1000) / 1000 } : null });
+  };
+  const useSections = () => {
+    const a = sections.find((s) => s.id === (from || sections[0]?.id));
+    const b = sections.find((s) => s.id === (to || from || sections[0]?.id));
+    if (a && b) save({ start: Math.min(a.start, b.start), end: Math.max(a.end, b.end) });
+  };
+  const commit = (which: 'start' | 'end', text: string | null) => {
+    if (text === null) return;
+    const v = Number(text);
+    if (Number.isFinite(v)) save(which === 'start' ? { start: v, end: Math.max(range.end, v + 1) } : { start: range.start, end: v });
+    if (which === 'start') setStartText(null);
+    else setEndText(null);
+  };
+  return (
+    <Card className="space-y-4 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="eyebrow flex items-center gap-1.5">
+            <Scissors className="size-3.5" /> Production range
+          </p>
+          <p className="mt-1 text-sm text-dim">
+            <span className="timecode text-fg">{whole ? 'Whole song' : `${formatTimecode(range.start)} – ${formatTimecode(range.end)}`}</span> · {formatDuration(range.end - range.start)}. Shot planning, assembly and lyric captions use this part of the song — widen it any time to cover more.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="subtle" icon={<Play className="size-3.5" />} onClick={onPlay}>
+            Play range
+          </Button>
+          {!whole && (
+            <Button size="sm" variant="ghost" onClick={() => save(null)}>
+              Use whole song
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        {sections.length > 0 && (
+          <>
+            <Field label="From section" className="w-44">
+              <Select value={from || sections[0]!.id} onChange={(e) => setFrom(e.target.value)}>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} · {formatTimecode(s.start, 0)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="To section" className="w-44">
+              <Select value={to || from || sections[0]!.id} onChange={(e) => setTo(e.target.value)}>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} · {formatTimecode(s.end, 0)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Button size="sm" onClick={useSections}>
+              Use these sections
+            </Button>
+          </>
+        )}
+        <Field label="Start (s)" className="w-28">
+          <Input type="number" step={0.1} min={0} value={startText ?? String(Math.round(range.start * 10) / 10)} onChange={(e) => setStartText(e.target.value)} onBlur={() => commit('start', startText)} onKeyDown={(e) => e.key === 'Enter' && commit('start', startText)} />
+        </Field>
+        <Field label="End (s)" className="w-28">
+          <Input type="number" step={0.1} min={0} value={endText ?? String(Math.round(range.end * 10) / 10)} onChange={(e) => setEndText(e.target.value)} onBlur={() => commit('end', endText)} onKeyDown={(e) => e.key === 'Enter' && commit('end', endText)} />
+        </Field>
+        <Button size="sm" variant="ghost" onClick={() => save({ start: snap(time), end: Math.max(range.end, snap(time) + 1) })}>
+          Start at playhead
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => save({ start: range.start, end: snap(time) })}>
+          End at playhead
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -368,7 +486,11 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
   const [minLen, setMinLen] = useState(3);
   const [maxLen, setMaxLen] = useState(7);
   const analysis = song?.analysis;
-  const slots = useMemo(() => (analysis ? analysis.sections.flatMap((sec) => planShotSlots(sec, analysis.downbeats, minLen, maxLen).map((s) => ({ ...s, sectionId: sec.id, sectionName: sec.name }))) : []), [analysis, minLen, maxLen]);
+  const range = song ? productionRange(song.range, song.durationSec) : null;
+  const rangeKey = range ? `${range.start}-${range.end}` : '';
+  const inRange = useMemo(() => (analysis && range ? sectionsInRange(analysis.sections, range) : []), [analysis, rangeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const slots = useMemo(() => (analysis ? inRange.flatMap((sec) => planShotSlots(sec, analysis.downbeats, minLen, maxLen).map((s) => ({ ...s, sectionId: sec.id, sectionName: sec.name }))) : []), [analysis, inRange, minLen, maxLen]);
+  const whole = !range || !song || isWholeSong(range, song.durationSec);
 
   const timedCuesFor = (s: Shot) => {
     if (!s.timing || !analysis) return undefined;
@@ -388,8 +510,8 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
       {
         treatment: project.treatment ?? {},
         slots: slots.map((s, i) => ({ slotIndex: i, start: s.start, end: s.end, section: s.sectionName })),
-        sections: analysis.sections.map((s) => ({ id: s.id, name: s.name, label: s.label, start: s.start, end: s.end })),
-        lyrics: song?.lyrics?.lines.map((l) => ({ start: l.start, end: l.end, text: l.text })) ?? [],
+        sections: inRange.map((s) => ({ id: s.id, name: s.name, label: s.label, start: s.start, end: s.end })),
+        lyrics: (song?.lyrics?.lines ?? []).filter((l) => !range || (l.end > range.start && l.start < range.end)).map((l) => ({ start: l.start, end: l.end, text: l.text })),
         characters: ctx.characters.map((c) => ({ name: c.name, description: c.appearance })),
         locations: ctx.locations.map((l) => ({ name: l.name, description: l.description })),
         styleBible: project.styleBible ?? {},
@@ -412,7 +534,7 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
           timing: { start: slot.start, end: slot.end },
           durationSec: Math.min(10, Math.max(3, Math.ceil(slot.end - slot.start))),
           aspectRatio: project.format.aspectRatio === '9:16' ? '9:16' : '16:9',
-          resolution: boot?.settings.defaultVideoResolution ?? '720p',
+          resolution: project.format.videoResolution ?? boot?.settings.defaultVideoResolution ?? '720p',
           directions: { framing: s.framing, cameraMovement: s.cameraMovement, lens: s.lens, lighting: s.lighting, mood: s.mood, style: '', performance: s.performance, action: s.action, dialogue: [], ambientSound: s.ambientSound, avoid: 'text, subtitles or watermarks on screen' },
           refs: { characterIds: byName(ctx.characters, s.characterNames ?? []), locationIds: loc ? [loc.id] : [], elementIds: [], assetIds: [], firstFrameAssetId: null, lastFrameAssetId: null, storyboardAssetId: null },
         });
@@ -427,7 +549,11 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
       <Card className="flex flex-wrap items-end gap-4 p-5">
         <div className="min-w-0 flex-1">
           <p className="eyebrow">Beat-aligned shot plan</p>
-          <p className="mt-1 text-sm text-dim">{analysis ? `${slots.length} slots across ${analysis.sections.length} sections, cut on bar lines. Each slot becomes one Omni clip (3–10 s).` : 'Detect beats & sections on the Song tab first.'}</p>
+          <p className="mt-1 text-sm text-dim">
+            {analysis
+              ? `${slots.length} slots across ${inRange.length} sections${whole || !range ? '' : ` in the production range (${formatTimecode(range.start)} – ${formatTimecode(range.end)})`}, cut on bar lines. Each slot becomes one Omni clip (3–10 s).`
+              : 'Detect beats & sections on the Song tab first.'}
+          </p>
         </div>
         <Field label={`Shortest ${minLen}s`} className="w-32">
           <Input type="number" min={3} max={maxLen} value={minLen} onChange={(e) => setMinLen(Math.max(3, Math.min(maxLen, Number(e.target.value))))} />
@@ -439,7 +565,7 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
           Plan {slots.length} shots with AI
         </Button>
       </Card>
-      <ShotQueue ctx={ctx} shots={shots.data} timedCuesFor={timedCuesFor} emptyAction={<Button onClick={() => void addShots(project.id, [newShot({ aspectRatio: project.format.aspectRatio === '9:16' ? '9:16' : '16:9' })])}>Add a shot manually</Button>} />
+      <ShotQueue ctx={ctx} shots={shots.data} timedCuesFor={timedCuesFor} emptyAction={<Button onClick={() => void addShots(project.id, [newShot({ aspectRatio: project.format.aspectRatio === '9:16' ? '9:16' : '16:9', resolution: project.format.videoResolution ?? boot?.settings.defaultVideoResolution ?? '720p' })])}>Add a shot manually</Button>} />
       {ai.dialog}
     </div>
   );
@@ -457,10 +583,11 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   const [title, setTitle] = useState(true);
   const [keepOmniAudio, setKeepOmniAudio] = useState(false);
   const [busy, setBusy] = useState(false);
-  const approved = shots.data.filter((s) => s.approvedTakeId || s.selectedTakeId);
+  const range = song ? productionRange(song.range, song.durationSec) : null;
+  const approved = shots.data.filter((s) => (s.approvedTakeId || s.selectedTakeId) && (!range || !s.timing || (s.timing.end > range.start + 0.05 && s.timing.start < range.end - 0.05)));
 
   const assemble = async () => {
-    if (!song) return;
+    if (!song || !range) return;
     setBusy(true);
     try {
       const items = [];
@@ -469,20 +596,22 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
         const take = (await getDoc(doc(db, 'projects', project.id, 'shots', s.id, 'takes', takeId))).data() as TakeDoc | undefined;
         if (!take?.assetId) continue;
         const asset = (await getDoc(doc(db, 'assets', take.assetId))).data() as { durationSec?: number } | undefined;
-        const len = s.timing ? s.timing.end - s.timing.start : s.durationSec;
-        items.push({ assetId: take.assetId, kind: 'video' as const, durationSec: len, sourceDuration: asset?.durationSec ?? s.durationSec, label: s.title, shotId: s.id, takeId, at: s.timing?.start ?? null });
+        // Shots sit at their song position relative to the production range.
+        const start = s.timing ? Math.max(s.timing.start, range.start) : null;
+        const len = s.timing ? Math.min(s.timing.end, range.end) - start! : s.durationSec;
+        items.push({ assetId: take.assetId, kind: 'video' as const, durationSec: len, sourceDuration: asset?.durationSec ?? s.durationSec, label: s.title, shotId: s.id, takeId, at: start === null ? null : start - range.start });
       }
       if (!items.length) throw new Error('Approve or select at least one take first.');
-      let state = emptyTimeline(project.format.aspectRatio);
+      let state = emptyTimeline(project.format.aspectRatio, project.format.fps);
       state = assemblePicture(state, items);
       state = { ...state, clips: state.clips.map((c) => (c.kind === 'video' ? { ...c, useSourceAudio: keepOmniAudio, volume: keepOmniAudio ? 0.2 : 1 } : c)) };
-      state = addAudioBed(state, song.audioAssetId, song.durationSec, song.title);
-      if (captions && song.lyrics?.lines.length) state = lyricsToCaptions(state, song.lyrics.lines);
+      state = addAudioBed(state, song.audioAssetId, range.end - range.start, song.title, { inPoint: range.start, sourceDuration: song.durationSec });
+      if (captions && song.lyrics?.lines.length) state = lyricsToCaptions(state, lyricsInRange(song.lyrics.lines, range));
       if (title) {
         const ov = state.tracks.find((t) => t.kind === 'overlay')!;
         state = { ...state, clips: [...state.clips, makeClip({ trackId: ov.id, kind: 'title', start: 0, duration: 3.5, text: project.title, fadeIn: 0.6, fadeOut: 0.8, label: 'Title card' })] };
       }
-      if (song.analysis) state = { ...state, beatGrid: { bpm: song.analysis.bpm, beats: song.analysis.beats } };
+      if (song.analysis) state = { ...state, beatGrid: { bpm: song.analysis.bpm, beats: beatsInRange(song.analysis.beats, range) } };
       const id = await createTimeline(uid, project.id, `${project.title} — cut ${new Date().toLocaleDateString()}`, state, project.format.aspectRatio);
       navigate(`/projects/${project.id}/timeline/${id}`);
     } catch (e) {
@@ -499,7 +628,7 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
         <Toggle checked={title} onChange={setTitle} label="Opening title card" />
         <Toggle checked={keepOmniAudio} onChange={setKeepOmniAudio} label="Keep Omni ambience at 20%" description="Off: the song carries all audio." />
       </Card>
-      <EditAndExport project={project} onAssemble={() => void assemble()} assembling={busy} assembleLabel={`Assemble ${approved.length} approved shots`} assembleHint="Shots are placed at their song positions over the full track; gaps show black until filled." />
+      <EditAndExport project={project} onAssemble={() => void assemble()} assembling={busy} assembleLabel={`Assemble ${approved.length} approved shots`} assembleHint={range && !isWholeSong(range, song!.durationSec) ? `Shots are placed at their song positions within the production range (${formatTimecode(range.start)} – ${formatTimecode(range.end)}); gaps show black until filled.` : 'Shots are placed at their song positions over the full track; gaps show black until filled.'} />
     </div>
   );
 }
@@ -519,8 +648,10 @@ export default function MusicStudio() {
     { value: 'song', label: 'Song', icon: <Music2 className="size-4" /> },
     { value: 'concept', label: 'Concept', icon: <Wand2 className="size-4" /> },
     { value: 'cast', label: 'Cast & places', icon: <UserRound className="size-4" /> },
+    { value: 'look', label: 'Lookbook', icon: <GalleryHorizontal className="size-4" /> },
     { value: 'shots', label: 'Storyboard & shots', icon: <Film className="size-4" /> },
     { value: 'edit', label: 'Edit & export', icon: <Clapperboard className="size-4" /> },
+    { value: 'images', label: 'Images', icon: <ImagePlus className="size-4" /> },
   ];
   return (
     <div className="space-y-6">
@@ -544,8 +675,10 @@ export default function MusicStudio() {
           </section>
         </div>
       )}
+      {tab === 'look' && <LookbookTab project={project.data} />}
       {tab === 'shots' && <ShotsTab project={project.data} song={song} />}
       {tab === 'edit' && <EditTab project={project.data} song={song} />}
+      {tab === 'images' && <ImageStudio project={project.data} embedded />}
     </div>
   );
 }

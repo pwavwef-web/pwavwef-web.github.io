@@ -85,15 +85,17 @@ export function AppShell() {
         </nav>
         <div className="mt-auto space-y-3">
           <ActiveJobsPill />
-          <div className="rounded-xl border border-line px-3 py-2.5 text-xs">
+          <div className="rounded-xl border border-line px-3 py-2.5 text-xs" data-private>
             <p className="text-faint">Vertex usage today (est.)</p>
             <p className="timecode mt-0.5 text-sm text-fg">
               {formatUsd(today)} <span className="text-faint">/ {formatUsd(boot?.settings.dailyLimitUsd ?? 0)}</span>
             </p>
           </div>
           <div className="flex items-center gap-2 px-1">
-            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent to-violet text-xs font-semibold text-white">{(user?.email ?? '?').slice(0, 1).toUpperCase()}</div>
-            <p className="min-w-0 flex-1 truncate text-xs text-dim">{user?.email}</p>
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent to-violet text-xs font-semibold text-white"><span data-private>{(user?.email ?? '?').slice(0, 1).toUpperCase()}</span></div>
+            <p className="min-w-0 flex-1 truncate text-xs text-dim" data-private>
+              {user?.email}
+            </p>
             <Tip label="Sign out">
               <button type="button" onClick={() => void signOut()} aria-label="Sign out" className="grid size-8 cursor-pointer place-items-center rounded-lg text-faint hover:bg-white/5 hover:text-fg">
                 <LogOut className="size-4" />

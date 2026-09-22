@@ -54,7 +54,7 @@ export function FilmShotsTab({ project }: { project: WithId<ProjectDoc> }) {
         description: s.description,
         durationSec: Math.min(10, Math.max(3, Math.round(s.durationSec || 6))),
         aspectRatio: aspect,
-        resolution: boot?.settings.defaultVideoResolution ?? '720p',
+        resolution: project.format.videoResolution ?? boot?.settings.defaultVideoResolution ?? '720p',
         directions: { framing: s.framing, cameraMovement: s.cameraMovement, lens: s.lens, lighting: s.lighting, mood: s.mood, style: '', performance: s.performance, action: s.action, dialogue: s.dialogue ?? [], ambientSound: s.ambientSound, avoid: 'on-screen text or subtitles' },
         refs: {
           characterIds: (s.characterNames ?? []).map((n) => ctx.characters.find((c) => c.name.toUpperCase() === n.toUpperCase())?.id).filter((x): x is string => Boolean(x)),

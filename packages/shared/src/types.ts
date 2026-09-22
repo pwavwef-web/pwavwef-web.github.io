@@ -61,7 +61,8 @@ export interface ProjectDoc {
   idea?: string;
   genre?: string;
   status: 'active' | 'archived';
-  format: { aspectRatio: FrameAspect; fps: 24 | 25 | 30 };
+  /** `videoResolution` is the default Omni resolution for new shots in this project. */
+  format: { aspectRatio: FrameAspect; fps: 24 | 25 | 30; videoResolution?: string };
   coverAssetId?: string | null;
   treatment?: Treatment;
   styleBible?: StyleBible;
@@ -486,6 +487,8 @@ export interface SongDoc {
   analysis: SongAnalysis | null;
   lyrics: { source: 'upload' | 'ai' | 'manual'; lines: LyricLine[] } | null;
   ai: { genre?: string; mood?: string; instrumentation?: string; tempoFeel?: string; summary?: string } | null;
+  /** Part of the song being produced (seconds); null or missing means the whole song. */
+  range?: { start: number; end: number } | null;
   createdAt?: Time;
   updatedAt?: Time;
 }

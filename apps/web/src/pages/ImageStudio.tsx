@@ -25,7 +25,7 @@ function Ref({ id, onRemove }: { id: string; onRemove: () => void }) {
 
 const COLLECTION_FOR: Partial<Record<ImagePurpose, string>> = { lookbook: 'lookbook', storyboard: 'storyboard', poster: 'posters', thumbnail: 'thumbnails', character: 'characters', turnaround: 'characters', costume: 'costumes', location: 'locations' };
 
-export default function ImageStudio({ project }: { project?: WithId<ProjectDoc> }) {
+export default function ImageStudio({ project, embedded = false }: { project?: WithId<ProjectDoc>; embedded?: boolean }) {
   const boot = useBoot();
   const caps = boot?.capabilities.image;
   const projectId = project?.id ?? null;
@@ -89,7 +89,7 @@ export default function ImageStudio({ project }: { project?: WithId<ProjectDoc> 
 
   return (
     <div className="space-y-8">
-      {project ? <ProjectHeader project={project} /> : <SectionHeader eyebrow="Create" title={<span className="text-5xl">Image Studio</span>} sub={`${caps.displayName} · generation and iterative editing up to 4K.`} />}
+      {embedded ? null : project ? <ProjectHeader project={project} /> : <SectionHeader eyebrow="Create" title={<span className="text-5xl">Image Studio</span>} sub={`${caps.displayName} · generation and iterative editing up to 4K.`} />}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           <Card className="space-y-5 p-5">

@@ -10,3 +10,5 @@ export * from './audio';
 export * from './fountain';
 export * from './schemas';
 export * from './format';
+export * from './range';
+export * from './subtitles';

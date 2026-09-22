@@ -207,7 +207,9 @@ function Denied() {
         </div>
         <h1 className="display mt-5 text-3xl">Private studio</h1>
         <p className="mt-2 text-sm text-dim">{error ?? 'This account does not have access.'}</p>
-        <p className="mt-1 text-xs text-faint">Signed in as {user?.email}</p>
+        <p className="mt-1 text-xs text-faint">
+          Signed in as <span data-private>{user?.email}</span>
+        </p>
         <Button className="mt-6" onClick={() => void signOut()} icon={<LogOut className="size-4" />}>
           Sign out
         </Button>

@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { forwardRef, useMemo, useRef, useState } from 'react';
 import { collection, doc, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { CheckCheck, CircleCheck, Clapperboard, Copy, Film, ImagePlus, Lock, LockOpen, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
+import { CheckCheck, CircleCheck, Clapperboard, Columns2, Copy, Film, ImagePlus, Lock, LockOpen, Play, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
 import {
   compileShotPrompt,
   estimateImage,
@@ -24,13 +24,14 @@ import {
 import { api, errorMessage } from '../lib/api';
 import { sameData } from '../lib/compare';
 import { db } from '../lib/firebase';
+import { useMediaUrls } from '../lib/media';
 import { useDoc, useQuery, type WithId } from '../lib/data';
 import { useBoot } from '../lib/session';
 import { addShots, deleteSubDoc, newShot, updateShot, updateSubDoc, useSub } from '../lib/studio';
 import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetPicker, AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { DirectionsEditor, PromptPreview } from './video-controls';
-import { Badge, Button, Card, cx, EmptyState, Field, IconButton, Input, Modal, Notice, Segmented, Select, Slider, Textarea, Toggle } from './ui';
+import { Badge, Button, Card, cx, EmptyState, Field, IconButton, Input, Modal, Notice, Segmented, Select, Skeleton, Slider, Textarea, Toggle } from './ui';
 
 export type Shot = WithId<ShotDoc>;
 export type Character = WithId<CharacterDoc>;
@@ -140,16 +141,85 @@ export function estimateShot(shot: ShotDoc, pricing: PricingTable, imageInputs: 
 // Take card
 // ---------------------------------------------------------------------------
 
+/** Approves one take for the edit (a shot has at most one) or withdraws the approval. */
+async function approveTake(projectId: string, shot: Shot, takeId: string, approve: boolean) {
+  const takeDoc = (id: string) => doc(db, 'projects', projectId, 'shots', shot.id, 'takes', id);
+  if (approve && shot.approvedTakeId && shot.approvedTakeId !== takeId) await updateDoc(takeDoc(shot.approvedTakeId), { approved: false }).catch(() => undefined);
+  await updateDoc(takeDoc(takeId), { approved: approve });
+  await updateShot(projectId, shot.id, approve ? { approvedTakeId: takeId, selectedTakeId: takeId, status: 'approved' } : { approvedTakeId: null, status: 'ready' });
+}
+
+const CompareVideo = forwardRef<HTMLVideoElement, { assetId: string }>(function CompareVideo({ assetId }, ref) {
+  const urls = useMediaUrls(assetId);
+  if (!urls?.file) return <Skeleton className="aspect-video w-full rounded-xl" />;
+  return <video ref={ref} src={urls.file} poster={urls.poster} controls muted playsInline preload="auto" className="aspect-video w-full rounded-xl bg-black" />;
+});
+
+/** Two takes side by side, restarted together, so the stronger one can be approved. */
+function TakeCompare({ projectId, shot, takes, onClose }: { projectId: string; shot: Shot; takes: WithId<TakeDoc>[]; onClose: () => void }) {
+  const done = takes.filter((t) => t.status === 'completed' && t.assetId);
+  // Takes arrive newest first: default to the original on the left and the latest revision on the right.
+  const [left, setLeft] = useState(done[done.length - 1]?.id ?? '');
+  const [right, setRight] = useState(done[0]?.id ?? '');
+  const leftRef = useRef<HTMLVideoElement>(null);
+  const rightRef = useRef<HTMLVideoElement>(null);
+  const playBoth = () => {
+    for (const v of [leftRef.current, rightRef.current]) {
+      if (!v) continue;
+      v.currentTime = 0;
+      void v.play();
+    }
+  };
+  const side = (id: string, setId: (v: string) => void, ref: typeof leftRef, name: string) => {
+    const take = done.find((t) => t.id === id);
+    const approved = take ? shot.approvedTakeId === take.id : false;
+    return (
+      <div className="min-w-0 space-y-2">
+        <Select value={id} onChange={(e) => setId(e.target.value)} aria-label={`${name} take`}>
+          {done.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+              {t.parentTakeId ? ' · conversational edit' : ''}
+            </option>
+          ))}
+        </Select>
+        {take?.assetId ? <CompareVideo key={take.assetId} ref={ref} assetId={take.assetId} /> : <Skeleton className="aspect-video w-full rounded-xl" />}
+        {take && (
+          <Button size="sm" variant={approved ? 'subtle' : 'secondary'} icon={<CircleCheck className="size-3.5" />} disabled={approved} onClick={() => void approveTake(projectId, shot, take.id, true)}>
+            {approved ? `${take.label} approved` : `Approve ${take.label}`}
+          </Button>
+        )}
+      </div>
+    );
+  };
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && onClose()}
+      size="xl"
+      title="Compare takes"
+      description="Restart both together, judge them side by side, and approve the stronger take for the edit."
+      footer={
+        <Button variant="primary" icon={<Play className="size-4" />} onClick={playBoth}>
+          Play both from the start
+        </Button>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {side(left, setLeft, leftRef, 'Left')}
+        {side(right, setRight, rightRef, 'Right')}
+      </div>
+    </Modal>
+  );
+}
+
 function TakeCard({ projectId, shot, take, onEdit }: { projectId: string; shot: Shot; take: WithId<TakeDoc>; onEdit: (take: WithId<TakeDoc>) => void }) {
   const [notes, setNotes] = useState(take.notes);
   const [busy, setBusy] = useState(false);
   const takeRef = doc(db, 'projects', projectId, 'shots', shot.id, 'takes', take.id);
   const approved = shot.approvedTakeId === take.id;
   const selected = shot.selectedTakeId === take.id;
-  const approve = async () => {
-    await updateDoc(takeRef, { approved: !approved });
-    await updateShot(projectId, shot.id, approved ? { approvedTakeId: null, status: 'ready' } : { approvedTakeId: take.id, selectedTakeId: take.id, status: 'approved' });
-  };
+  const approve = () => approveTake(projectId, shot, take.id, !approved);
   const saveLastFrame = async () => {
     if (!take.assetId) return;
     setBusy(true);
@@ -282,6 +352,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
   const [takes, setTakes] = useState(1);
   const [picker, setPicker] = useState<'first' | 'last' | 'refs' | null>(null);
   const [editing, setEditing] = useState<WithId<TakeDoc> | null>(null);
+  const [comparing, setComparing] = useState(false);
   const [editPrompt, setEditPrompt] = useState('');
   const [editMode, setEditMode] = useState<'edit' | 'extend'>('edit');
   const [extendSec, setExtendSec] = useState(4);
@@ -419,7 +490,15 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
           </Field>
         </div>
         <div className="space-y-4">
-          <p className="eyebrow">Takes ({takeDocs.data.length})</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="eyebrow">Takes ({takeDocs.data.length})</p>
+            {takeDocs.data.filter((t) => t.status === 'completed' && t.assetId).length >= 2 && (
+              <Button size="sm" variant="subtle" icon={<Columns2 className="size-3.5" />} onClick={() => setComparing(true)}>
+                Compare takes
+              </Button>
+            )}
+          </div>
+          {comparing && <TakeCompare projectId={ctx.project.id} shot={draft} takes={takeDocs.data} onClose={() => setComparing(false)} />}
           {editing && (
             <Card className="space-y-3 border-violet/40 p-4">
               <p className="text-sm text-fg">Conversational edit of {editing.label}</p>

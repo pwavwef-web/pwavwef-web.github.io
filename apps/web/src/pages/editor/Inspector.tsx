@@ -1,4 +1,4 @@
-import { Scissors, Trash2 } from 'lucide-react';
+import { Replace, Scissors, Trash2 } from 'lucide-react';
 import { DEFAULT_TEXT_STYLE, formatTimecode, TEXT_FONTS, TRANSITION_TYPES, type Clip, type FitMode, type TextPosition, type TextStyle, type TimelineState, type TransitionType } from '@az-studio/shared';
 import { Button, Field, Input, Segmented, Select, Slider, Textarea, Toggle } from '../../components/ui';
 
@@ -11,6 +11,7 @@ export function Inspector({
   onTiming,
   onSplit,
   onDelete,
+  onReplace,
   time,
 }: {
   state: TimelineState;
@@ -19,6 +20,8 @@ export function Inspector({
   onTiming: (patch: { start?: number; duration?: number; inPoint?: number }) => void;
   onSplit: () => void;
   onDelete: () => void;
+  /** Swaps the clip's media while keeping its timing, trims, transitions and levels. */
+  onReplace: () => void;
   time: number;
 }) {
   if (!clip) {
@@ -61,6 +64,11 @@ export function Inspector({
           <p className="truncate text-sm text-fg">{clip.label || clip.text || track?.name}</p>
         </div>
         <div className="flex gap-1">
+          {(clip.kind === 'video' || clip.kind === 'image' || clip.kind === 'audio') && (
+            <Button size="sm" variant="ghost" onClick={onReplace} icon={<Replace className="size-3.5" />}>
+              Replace
+            </Button>
+          )}
           <Button size="sm" variant="ghost" disabled={!canSplit} onClick={onSplit} icon={<Scissors className="size-3.5" />}>
             Split
           </Button>

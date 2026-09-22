@@ -77,7 +77,7 @@ export default function Remix({ project }: { project?: WithId<ProjectDoc> }) {
   const [sourceId, setSourceId] = useState<string | null>(null);
   const source = useAsset(sourceId);
   const [prompt, setPrompt] = useState('');
-  const [resolution, setResolution] = useState(boot?.settings.defaultVideoResolution ?? '720p');
+  const [resolution, setResolution] = useState(project?.format.videoResolution ?? boot?.settings.defaultVideoResolution ?? '720p');
   const [reframe, setReframe] = useState<string | null>(null);
   const [picker, setPicker] = useState<'video' | 'audio' | null>(null);
   const [audioId, setAudioId] = useState<string | null>(null);
@@ -125,7 +125,7 @@ export default function Remix({ project }: { project?: WithId<ProjectDoc> }) {
   const openScored = async () => {
     if (!project || !sourceId || !audio.data) return;
     try {
-      let state = emptyTimeline(project.format.aspectRatio);
+      let state = emptyTimeline(project.format.aspectRatio, project.format.fps);
       state = assemblePicture(state, [{ assetId: sourceId, kind: 'video', durationSec: srcDur, sourceDuration: srcDur, label: source.data?.title ?? 'Remix' }]);
       state = addAudioBed(state, audio.data.id, Math.min(audio.data.durationSec ?? srcDur, srcDur || 10), audio.data.title);
       const tid = await createTimeline(uid, project.id, `Remix + ${audio.data.title}`, state, project.format.aspectRatio);

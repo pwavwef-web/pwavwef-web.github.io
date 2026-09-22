@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { AppShell } from './components/shell';
 import { AuthGate } from './pages/SignIn';
 import { ErrorState, Spinner } from './components/ui';
+import { Presenter } from './components/presenter';
 import { isStaleChunkError, reloadForNewBuild } from './lib/build-refresh';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -108,6 +109,7 @@ export function App() {
   return (
     <Tooltip.Provider delayDuration={300}>
       <RouterProvider router={router} />
+      <Presenter />
       <Toaster theme="dark" position="bottom-right" richColors closeButton toastOptions={{ style: { background: '#0f1726', border: '1px solid rgba(150,172,214,0.2)', color: '#e9eef7' } }} />
     </Tooltip.Provider>
   );

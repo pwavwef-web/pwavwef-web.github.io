@@ -5,20 +5,26 @@ import { toast } from 'sonner';
 import { ArrowLeft, Clapperboard, Download, History as HistoryIcon, Magnet, Monitor, Pause, Play, Plus, Redo2, RotateCcw, Save, SkipBack, SkipForward, Smartphone, Square, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import {
   addClip,
+  addClips,
   addTrack,
   clipsOnTrack,
   createHistory,
+  DEFAULT_CAPTION_POSITION,
+  DEFAULT_TEXT_STYLE,
   deleteClips,
   EXPORT_PRESETS,
   estimateRender,
+  formatSrt,
   formatTimecode,
   makeClip,
   moveClip,
+  parseSubtitles,
   pushHistory,
   redo,
   setClipDuration,
   splitClip,
   timelineDuration,
+  trackEnd,
   undo,
   updateClip,
   validateTimeline,
@@ -33,10 +39,11 @@ import {
 import { db } from '../../lib/firebase';
 import { useDebounced, useDoc, useQuery, type WithId } from '../../lib/data';
 import { downloadUrl } from '../../lib/media';
+import { AssetPicker, VideoPlayer, type Asset } from '../../components/media';
 import { useBoot, useUid } from '../../lib/session';
 import { saveTimeline, snapshotTimeline, updateSubDoc, useProject } from '../../lib/studio';
 import { EstimateText, useJobSubmitter } from '../../components/jobs';
-import { Badge, Button, EmptyState, ErrorState, IconButton, Input, Modal, Notice, ProgressBar, Segmented, Spinner, Tip } from '../../components/ui';
+import { Badge, Button, EmptyState, ErrorState, IconButton, Input, Modal, Notice, ProgressBar, Segmented, Select, Spinner, Tip } from '../../components/ui';
 import { Preview } from './Preview';
 import { HEADER_W, TimelineLanes, type DroppedAsset } from './Tracks';
 import { Inspector } from './Inspector';
@@ -51,6 +58,7 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved }: { projectId
   const uid = useUid();
   const [quality, setQuality] = useState<RenderQuality>('draft');
   const { submit, busy, dialog } = useJobSubmitter();
+  const [watching, setWatching] = useState<string | null>(null);
   const renders = useQuery<RenderDoc>(() => (uid ? query(collection(db, 'renders'), where('ownerUid', '==', uid), where('timelineId', '==', timeline.id), orderBy('createdAt', 'desc'), limit(8)) : null), [uid, timeline.id]);
   const icons = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square };
   const run = async (preset: ExportPreset['id']) => {
@@ -85,11 +93,17 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved }: { projectId
               <Badge tone={r.status === 'completed' ? 'success' : r.status === 'failed' ? 'danger' : 'accent'}>{r.status}</Badge>
               <span className="text-xs text-faint">{r.stage}</span>
               {r.status === 'completed' && r.outputAssetId && (
-                <Button size="sm" className="ml-auto" icon={<Download className="size-3.5" />} onClick={() => void downloadUrl(r.outputAssetId!).then((u) => u && window.open(u, '_blank', 'noopener'))}>
-                  Download
-                </Button>
+                <div className="ml-auto flex gap-1.5">
+                  <Button size="sm" variant={watching === r.id ? 'subtle' : 'ghost'} icon={<Play className="size-3.5" />} onClick={() => setWatching(watching === r.id ? null : r.id)}>
+                    {watching === r.id ? 'Close' : 'Play'}
+                  </Button>
+                  <Button size="sm" icon={<Download className="size-3.5" />} onClick={() => void downloadUrl(r.outputAssetId!).then((u) => u && window.open(u, '_blank', 'noopener'))}>
+                    Download
+                  </Button>
+                </div>
               )}
             </div>
+            {watching === r.id && r.outputAssetId && <VideoPlayer assetId={r.outputAssetId} autoPlay className="mt-3 rounded-lg" />}
             {!['completed', 'failed', 'cancelled'].includes(r.status) && <ProgressBar value={r.progress} className="mt-2" />}
             {r.error && <p className="mt-1 text-xs text-[#ff9b9b]">{r.error.message}</p>}
           </li>
@@ -156,6 +170,7 @@ export default function TimelineEditor() {
   const [snapOn, setSnapOn] = useState(true);
   const [selection, setSelection] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState<'render' | 'versions' | null>(null);
+  const [replacing, setReplacing] = useState(false);
   const baseVersion = useRef(0);
   const savedJson = useRef('');
   const lastEdit = useRef<{ label: string; at: number } | null>(null);
@@ -289,13 +304,14 @@ export default function TimelineEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [doSplit, doDelete, fps]);
 
-  const addAsset = (a: DroppedAsset, trackId?: string, at?: number) => {
+  const addAsset = (a: DroppedAsset, trackId?: string, at?: number, append = false) => {
     if (!present) return;
     const want: TrackKind = a.kind === 'audio' ? 'audio' : 'video';
     const track = (trackId && present.tracks.find((t) => t.id === trackId && (t.kind === want || (want === 'video' && t.kind === 'overlay')))) || present.tracks.find((t) => t.kind === want);
     if (!track) return toast.error(`Add a ${want} track first.`);
     const dur = a.kind === 'image' ? 4 : Math.max(0.5, a.durationSec ?? 5);
-    const clip = makeClip({ trackId: track.id, kind: a.kind === 'image' ? 'image' : a.kind, start: at ?? time, duration: dur, assetId: a.assetId, sourceDuration: a.kind === 'image' ? null : a.durationSec, label: a.title, useSourceAudio: a.kind === 'video' });
+    const start = append ? trackEnd(present, track.id) : (at ?? time);
+    const clip = makeClip({ trackId: track.id, kind: a.kind === 'image' ? 'image' : a.kind, start, duration: dur, assetId: a.assetId, sourceDuration: a.kind === 'image' ? null : a.durationSec, label: a.title, useSourceAudio: a.kind === 'video' });
     try {
       commit(addClip(present, clip), 'Add clip');
       setSelection([clip.id]);
@@ -310,6 +326,42 @@ export default function TimelineEditor() {
     const clip = makeClip({ trackId: track.id, kind, start: time, duration: kind === 'title' ? 4 : 3, text: kind === 'title' ? 'Title' : 'Caption', label: kind === 'title' ? 'Title card' : 'Caption' });
     commit(addClip(present, clip), 'Add text');
     setSelection([clip.id]);
+  };
+  const captionClips = view ? view.clips.filter((c) => c.kind === 'caption' && !view.tracks.find((t) => t.id === c.trackId)?.muted).sort((a, b) => a.start - b.start) : [];
+  const importCaptions = (text: string) => {
+    if (!present) return;
+    const cues = parseSubtitles(text);
+    if (!cues.length) return toast.error('No captions found', { description: 'Use a SubRip (.srt) or WebVTT (.vtt) file.' });
+    // Fill the first empty caption track, or add one, so existing captions are never disturbed.
+    let state = present;
+    let track = state.tracks.find((t) => t.kind === 'caption' && !clipsOnTrack(state, t.id).length);
+    if (!track) {
+      state = addTrack(state, 'caption');
+      track = state.tracks.filter((t) => t.kind === 'caption').pop()!;
+    }
+    const clips = cues.map((c) => makeClip({ trackId: track.id, kind: 'caption', start: c.start, duration: Math.max(0.2, c.end - c.start), text: c.text, style: { ...DEFAULT_TEXT_STYLE }, position: DEFAULT_CAPTION_POSITION, label: 'Caption' }));
+    commit(addClips(state, clips), 'Import captions');
+    toast.success(`${clips.length} captions imported`, { description: `On ${track.name}.` });
+  };
+  const exportCaptions = () => {
+    if (!captionClips.length) return;
+    const srt = formatSrt(captionClips.map((c) => ({ start: c.start, end: c.start + c.duration, text: c.text })));
+    const url = URL.createObjectURL(new Blob([srt], { type: 'application/x-subrip' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(remote.data?.name ?? 'captions').replace(/[^\w\- ]+/g, '').trim() || 'captions'}.srt`;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const replaceMedia = (a: Asset) => {
+    if (!present || !selected) return;
+    const source = selected.kind === 'image' ? null : (a.durationSec ?? null);
+    const duration = source !== null ? Math.min(selected.duration, source) : selected.duration;
+    const inPoint = source !== null ? Math.min(selected.inPoint, Math.max(0, source - duration)) : 0;
+    let next = updateClip(present, selected.id, { assetId: a.id, label: a.title, sourceDuration: source, inPoint, takeId: null });
+    if (duration < selected.duration) next = setClipDuration(next, selected.id, duration);
+    commit(next, 'Replace media');
+    toast.success('Media replaced', { description: 'Timing, trims, transitions and levels were kept.' });
   };
   const onTiming = (patch: { start?: number; duration?: number; inPoint?: number }) => {
     if (!present || !selected) return;
@@ -347,6 +399,13 @@ export default function TimelineEditor() {
           <Input defaultValue={remote.data.name} onBlur={(e) => e.target.value.trim() && e.target.value !== remote.data!.name && void updateSubDoc(projectId, 'timelines', timelineId, { name: e.target.value.trim() })} className="!border-transparent !bg-transparent !px-0 !py-0 text-sm font-medium" aria-label="Timeline name" />
         </div>
         <Badge tone={status === 'saved' ? 'success' : status === 'conflict' ? 'danger' : status === 'saving' ? 'accent' : 'warning'}>{status === 'saved' ? 'All changes saved' : status === 'saving' ? 'Saving…' : status === 'conflict' ? 'Changed elsewhere' : 'Unsaved'}</Badge>
+        <Select value={String(view.fps)} onChange={(e) => commit({ ...present, fps: Number(e.target.value) as 24 | 25 | 30 }, 'Frame rate')} aria-label="Frame rate" className="!w-auto !py-1 text-xs">
+          {[24, 25, 30].map((f) => (
+            <option key={f} value={f}>
+              {f} fps
+            </option>
+          ))}
+        </Select>
         <div className="ml-auto flex items-center gap-1">
           <IconButton label="Undo (Ctrl+Z)" disabled={!history?.past.length} onClick={() => setHistory((h) => (h ? undo(h) : h))}>
             <Undo2 className="size-4" />
@@ -381,7 +440,7 @@ export default function TimelineEditor() {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 max-lg:overflow-y-auto lg:grid-cols-[260px_minmax(0,1fr)_320px]">
         <aside className="hidden min-h-0 border-r border-line lg:block">
-          <MediaBin projectId={projectId} onAdd={(a) => addAsset(a)} onAddText={addText} />
+          <MediaBin projectId={projectId} onAdd={(a, append) => addAsset(a, undefined, undefined, append)} onAddText={addText} onImportCaptions={importCaptions} onExportCaptions={exportCaptions} captionCount={captionClips.length} />
         </aside>
         <section className="flex min-h-0 flex-col items-center justify-center gap-3 p-4 max-lg:justify-start">
           <Preview state={view} time={time} playing={playing} className="max-h-[46vh] w-full max-w-[min(100%,calc(46vh*1.78))]" />
@@ -402,7 +461,7 @@ export default function TimelineEditor() {
           {problems.length > 0 && <p className="text-xs text-warning">{problems[0]}</p>}
         </section>
         <aside className="min-h-0 overflow-y-auto border-l border-line">
-          <Inspector state={view} clip={selected} time={time} onChange={(patch, label) => selected && present && commit(updateClip(present, selected.id, patch), label)} onTiming={onTiming} onSplit={doSplit} onDelete={doDelete} />
+          <Inspector state={view} clip={selected} time={time} onChange={(patch, label) => selected && present && commit(updateClip(present, selected.id, patch), label)} onTiming={onTiming} onSplit={doSplit} onDelete={doDelete} onReplace={() => setReplacing(true)} />
         </aside>
       </div>
 
@@ -446,6 +505,9 @@ export default function TimelineEditor() {
         />
       </div>
 
+      {replacing && selected && (
+        <AssetPicker open onOpenChange={(o) => !o && setReplacing(false)} kinds={[selected.kind === 'audio' ? 'audio' : selected.kind === 'image' ? 'image' : 'video']} projectId={projectId} onPick={(a) => a[0] && replaceMedia(a[0])} title="Replace media" />
+      )}
       {dialogOpen === 'render' && <RenderDialog projectId={projectId} timeline={{ ...remote.data, ...present }} onClose={() => setDialogOpen(null)} ensureSaved={() => save(present)} />}
       {dialogOpen === 'versions' && (
         <VersionsDialog

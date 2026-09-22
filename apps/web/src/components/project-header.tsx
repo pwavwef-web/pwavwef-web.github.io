@@ -44,7 +44,7 @@ export function ProjectHeader({ project, actions, eyebrow }: { project: WithId<P
         <div className="flex items-center gap-2">
           <Badge icon={PROJECT_ICON[project.type]}>{eyebrow ?? PROJECT_TYPE_LABELS[project.type]}</Badge>
           {project.status === 'archived' && <Badge tone="warning">Archived</Badge>}
-          {project.usage?.costUsd ? <span className="text-xs text-faint">≈ {formatUsd(project.usage.costUsd)} used</span> : null}
+          {project.usage?.costUsd ? <span className="text-xs text-faint" data-private>≈ {formatUsd(project.usage.costUsd)} used</span> : null}
         </div>
         {editing ? (
           <Input

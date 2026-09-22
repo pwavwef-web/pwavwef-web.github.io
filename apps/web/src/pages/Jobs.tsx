@@ -141,7 +141,9 @@ export default function Jobs() {
       </section>
       <section className="space-y-4">
         <SectionHeader eyebrow="Costs" title="Usage history" />
-        <UsageHistory />
+        <div data-private>
+          <UsageHistory />
+        </div>
       </section>
     </div>
   );
