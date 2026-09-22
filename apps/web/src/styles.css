@@ -236,8 +236,14 @@ html[data-presenter] [data-private] {
   filter: blur(7px) !important;
   user-select: none;
 }
-/* Keep recordings to the product itself: hide overlays other browser extensions inject at <html> level. */
-html[data-presenter] > :not(head):not(body):not(.presenter-cursor):not(.presenter-ripple) {
+/* Keep recordings to the product itself: hide overlays browser extensions inject (the browser's own
+   "being controlled" bar stays visible on screen; it sits outside the page and is not recorded). */
+html[data-presenter] > :not(head):not(body):not(.presenter-cursor):not(.presenter-ripple),
+html[data-presenter] #claude-agent-glow-border,
+html[data-presenter] #claude-phantom-cursor,
+html[data-presenter] sider-quick-compose-btn,
+html[data-presenter] grammarly-extension,
+html[data-presenter] grammarly-popups {
   display: none !important;
 }
 html[data-presenter] body {
