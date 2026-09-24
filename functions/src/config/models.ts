@@ -1,4 +1,4 @@
-import type { ImageCapabilities, MusicCapabilities, ReasoningCapabilities, SpeechCapabilities, StudioCapabilities, TranscriptionCapabilities, VideoCapabilities } from '@az-studio/shared';
+import type { ImageCapabilities, MusicCapabilities, ReasoningCapabilities, SeparationCapabilities, SpeechCapabilities, StudioCapabilities, TranscriptionCapabilities, VideoCapabilities, VisionCapabilities } from '@az-studio/shared';
 import { REGION } from './runtime';
 
 /**
@@ -38,6 +38,23 @@ import { REGION } from './runtime';
  *               lyria-3-pro-preview and lyria-3-clip-preview exist there. AZ Studio does not
  *               substitute an older music model: music jobs fail fast (no charge) with this exact
  *               limitation until Google enables Lyria 3.5 on Vertex AI for the project.
+ *
+ * Re-verified 2026-09-24 for the Continuity Director upgrade (live calls from `az-learner`, `global`):
+ *  - reasoning: `gemini-3.8-flash` is GA on Vertex AI (released 2026-09-02; 1M context, structured
+ *               output, thinking levels, up to 10 videos / 3,000 images per prompt) and answered a
+ *               structured video review with thinking MEDIUM. It is the newest production (GA) Gemini
+ *               model this project can call (`gemini-3.5-pro` still 404s; `gemini-3.7-pro`/`3.8-pro` do
+ *               not exist). It replaces the preview `gemini-3.1-pro-preview` for creative reasoning,
+ *               script analysis and quality review. No fallback model is configured: a failure is
+ *               reported, never silently answered by an older model.
+ *  - music:     `lyria-3.5` is still refused by Vertex AI (400 "Unsupported model interaction") but is GA
+ *               on the Gemini Developer API (ai.google.dev, since 2026-09-04) through the same Interactions
+ *               API. AZ Studio calls it there, server-side, with an API key read from Secret Manager
+ *               (`AZ_STUDIO_GEMINI_API_KEY`); the key never reaches the browser. Without the key, music
+ *               jobs fail fast with the exact limitation; no older Lyria model is ever substituted.
+ *  - transcription: `gemini-3.5-transcribe` (GA ID) still 404s for this project; the preview
+ *               `gemini-3.5-transcribe-preview` remains the transcription model (word timestamps verified).
+ *  - vision:    Cloud Vision API v1 (face, object and text detection) answered from `az-learner`.
  */
 export const MODEL_REGISTRY = {
   video: {
@@ -59,13 +76,14 @@ export const MODEL_REGISTRY = {
     docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-pro-image',
   },
   reasoning: {
-    id: 'gemini-3.1-pro-preview',
-    fallbackId: 'gemini-2.5-pro',
-    displayName: 'Gemini 3.1 Pro',
+    id: 'gemini-3.8-flash',
+    /** No fallback: a failure is reported, never answered silently by an older model. */
+    fallbackId: null,
+    displayName: 'Gemini 3.8 Flash',
     api: 'generateContent',
     location: 'global',
-    launchStage: 'preview',
-    docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-1-pro',
+    launchStage: 'ga',
+    docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash',
   },
   transcription: {
     id: 'gemini-3.5-transcribe-preview',
@@ -89,7 +107,29 @@ export const MODEL_REGISTRY = {
     api: 'interactions',
     location: 'global',
     launchStage: 'ga',
+    /** Vertex AI first (if Google enables it for the project), else the Gemini Developer API. */
+    surfaces: ['vertex', 'developer-api'],
+    apiKeySecret: 'AZ_STUDIO_GEMINI_API_KEY',
     docs: 'https://ai.google.dev/gemini-api/docs/models/lyria-3.5',
+  },
+  vision: {
+    id: 'cloud-vision-v1',
+    displayName: 'Cloud Vision (faces, objects, text)',
+    api: 'images:annotate',
+    location: 'global',
+    launchStage: 'ga',
+    features: ['FACE_DETECTION', 'OBJECT_LOCALIZATION', 'TEXT_DETECTION'],
+    docs: 'https://cloud.google.com/vision/docs',
+  },
+  separation: {
+    id: 'htdemucs',
+    displayName: 'Demucs v4 (hybrid transformer) stem separation',
+    api: 'cloud-run-job',
+    location: 'us-central1',
+    launchStage: 'ga',
+    job: 'az-studio-stems',
+    stems: ['vocals', 'drums', 'bass', 'other'],
+    docs: 'https://github.com/adefossez/demucs',
   },
 } as const;
 
@@ -97,7 +137,7 @@ export type ModelRole = keyof typeof MODEL_REGISTRY;
 
 /** Exact limitation recorded when the music model is not served by Vertex AI for this project. */
 export const MUSIC_MODEL_LIMITATION =
-  'Lyria 3.5 (lyria-3.5) is not available on Vertex AI for project az-learner: Google returns 400 “Unsupported model interaction: lyria-3.5” and the publisher model is not found. AZ Studio does not switch to an older music model. Upload or import audio instead, or ask Google Cloud to enable Lyria 3.5 on Vertex AI for this project.';
+  'Lyria 3.5 (lyria-3.5) is not served by Vertex AI for project az-learner (Google returns 400 “Unsupported model interaction: lyria-3.5”), and no Gemini API key is configured for the Gemini Developer API, where Lyria 3.5 is available. Add a key to Secret Manager as AZ_STUDIO_GEMINI_API_KEY (see docs/OPERATIONS.md). AZ Studio does not switch to an older music model; upload or import audio meanwhile.';
 
 const MB = 1024 * 1024;
 
@@ -160,6 +200,7 @@ export const REASONING_CAPABILITIES: ReasoningCapabilities = {
   supportsAudioInput: true,
   supportsStructuredOutput: true,
   maxAudioSeconds: 60 * 60,
+  maxVideosPerPrompt: 10,
 };
 
 /** Prebuilt voices of the Gemini TTS models (voice names, not model IDs). */
@@ -189,11 +230,34 @@ export const MUSIC_CAPABILITIES: MusicCapabilities = {
   perSongUsd: 0.08,
   maxImageInputs: 10,
   supportsLyrics: true,
-  notes: ['Full songs with vocals, timed lyrics and arrangement (44.1 kHz stereo), or instrumental score when prompted.', MUSIC_MODEL_LIMITATION],
+  notes: [
+    'Full songs (about 2 minutes, controllable by prompt and timestamps) with vocals and lyrics, or instrumental music when prompted; 44.1 kHz stereo MP3.',
+    'Single-turn only: Lyria cannot edit or extend part of an existing song. AZ Studio regenerates the song, generates a replacement passage and blends it, or arranges the real audio — and every version says which.',
+    'Served by the Gemini Developer API (server-side key in Secret Manager) while Vertex AI does not offer Lyria 3.5 for this project.',
+  ],
+  surface: 'developer-api',
 };
 
 /** Language hints the transcription model accepts reliably; others use automatic detection. */
 export const TRANSCRIPTION_LANGUAGE_HINTS = new Set(['en', 'fr', 'es', 'pt', 'de', 'it', 'nl', 'ar', 'zh', 'ja', 'ko', 'hi', 'ru', 'tr', 'pl', 'sw', 'ha', 'yo', 'ig', 'zu', 'am']);
+
+export const VISION_CAPABILITIES: VisionCapabilities = {
+  modelId: MODEL_REGISTRY.vision.id,
+  displayName: MODEL_REGISTRY.vision.displayName,
+  launchStage: MODEL_REGISTRY.vision.launchStage,
+  features: [...MODEL_REGISTRY.vision.features],
+  maxImagesPerRequest: 16,
+  notes: ['Detects faces (with head pan), people and objects, and reads text in sampled frames: face visibility, occlusion, screen direction, mirrored text, face-safe reframing and lyric placement use it.'],
+};
+
+export const SEPARATION_CAPABILITIES: SeparationCapabilities = {
+  modelId: MODEL_REGISTRY.separation.id,
+  displayName: MODEL_REGISTRY.separation.displayName,
+  launchStage: MODEL_REGISTRY.separation.launchStage,
+  stems: [...MODEL_REGISTRY.separation.stems],
+  maxAudioSeconds: 15 * 60,
+  notes: ['Open-source Demucs v4 runs on a Cloud Run job; neither Gemini nor Lyria returns stems.'],
+};
 
 export function studioCapabilities(): StudioCapabilities {
   return {
@@ -203,6 +267,8 @@ export function studioCapabilities(): StudioCapabilities {
     music: MUSIC_CAPABILITIES,
     speech: SPEECH_CAPABILITIES,
     transcription: TRANSCRIPTION_CAPABILITIES,
+    vision: VISION_CAPABILITIES,
+    separation: SEPARATION_CAPABILITIES,
     region: REGION,
     vertexLocation: MODEL_REGISTRY.video.location,
   };

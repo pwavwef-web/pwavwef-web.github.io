@@ -99,7 +99,7 @@ describe('authentication and access control', () => {
     expect(r.result.owner.uid).toBe(OWNER.uid);
     expect(r.result.capabilities.video.modelId).toBe('gemini-omni-1.1-flash-preview');
     expect(r.result.capabilities.image.modelId).toBe('gemini-3-pro-image');
-    expect(r.result.capabilities.reasoning.modelId).toBe('gemini-3.1-pro-preview');
+    expect(r.result.capabilities.reasoning.modelId).toBe('gemini-3.8-flash');
     expect(r.result.capabilities.video.aspectRatios).toEqual(['16:9', '9:16']);
     expect(r.result.pricing.video.videoOutputPerM).toBe(17.5);
     expect(r.result.settings.dailyLimitUsd).toBeGreaterThan(0);
@@ -157,7 +157,7 @@ describe('job submission', () => {
     const jobId = r.result.jobIds[0] as string;
     const first = (await getDoc(doc(owner.db, 'jobs', jobId))).data()!;
     expect(first.ownerUid).toBe(OWNER.uid);
-    expect(first.modelId).toBe('gemini-3.1-pro-preview');
+    expect(first.modelId).toBe('gemini-3.8-flash');
     expect(first.estimate.basis).toBe('published_rate');
     // In the emulator the demo project has no Vertex AI access, so the worker must fail cleanly. That
     // denial is a real network round trip to Vertex AI (and its fallback model), so allow for latency.

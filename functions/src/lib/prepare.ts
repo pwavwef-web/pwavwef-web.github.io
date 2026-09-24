@@ -48,6 +48,27 @@ import { col, db } from './firebase';
 import { IMAGE_CAPABILITIES, MODEL_REGISTRY, MUSIC_MODEL_LIMITATION, REASONING_CAPABILITIES, TRANSCRIPTION_CAPABILITIES, VIDEO_CAPABILITIES } from '../config/models';
 import { PRICING } from '../config/pricing';
 import { TEXT_TASK_SPECS } from '../workers/text-tasks';
+import { applyContinuityToRequest, loadShotContinuity, planContinuity } from './continuity';
+import { musicSurface } from './music-model';
+import {
+  prepareAnalyzeSubjects,
+  prepareColorMatch,
+  prepareContinuityCompare,
+  prepareFinalInspect,
+  prepareLyricsResyncAudio,
+  prepareMusicAnalyze,
+  prepareMusicArrange,
+  prepareMusicMix,
+  prepareMusicReplaceSection,
+  prepareReferencePack,
+  prepareScreenReplace,
+  prepareStems,
+} from './prepare-studio';
+
+export interface PrepareOptions {
+  /** The request already carries its continuity direction (productions compile it once at start). */
+  skipContinuity?: boolean;
+}
 
 export interface PreparedMedia {
   role: string;
@@ -127,12 +148,12 @@ function ageDays(t: unknown): number {
 // Video (Gemini Omni)
 // ---------------------------------------------------------------------------
 
-async function prepareVideo(uid: string, req: VideoJobRequest): Promise<PreparedJob> {
+async function prepareVideo(uid: string, reqIn: VideoJobRequest, opts: PrepareOptions = {}): Promise<PreparedJob> {
   const cap = VIDEO_CAPABILITIES;
+  let req = reqIn;
   if (req.aspectRatio && !cap.aspectRatios.includes(req.aspectRatio)) bad(`${cap.displayName} supports aspect ratios ${cap.aspectRatios.join(' and ')}.`);
   if (req.resolution && !cap.resolutions.includes(req.resolution)) bad(`${cap.displayName} supports resolutions ${cap.resolutions.join(', ')}.`);
-  // Ownership check only; the style bible is compiled client-side into the prompt body.
-  await loadProject(uid, req.projectId);
+  const project = await loadProject(uid, req.projectId);
   await assertConsent(req.projectId, req.characterIds);
 
   const mode = req.mode;
@@ -179,6 +200,15 @@ async function prepareVideo(uid: string, req: VideoJobRequest): Promise<Prepared
       if (pt.get('interactionId') && ageDays(pt.get('createdAt')) < cap.interactionRetentionDays - 0.25) previousInteractionId = pt.get('interactionId') as string;
       else if (ptAsset) chainFallbackAssetId = ptAsset;
       else bad('That take can no longer be edited.');
+    }
+    // Continuity Director: every new shot generation inherits the approved Visual Bible, the character,
+    // set and prop bibles, the blocking plan, the camera axis and the previous approved state — as
+    // structured direction plus the right reference images.
+    if (mode === 'generate' && !opts.skipContinuity) {
+      const ctx = await loadShotContinuity(req.projectId!, target.id);
+      const plan = planContinuity(ctx, req.media, { lockRefs: ctx.shot.lockRefs });
+      const applied = applyContinuityToRequest({ prompt: req.prompt, media: req.media }, plan);
+      req = { ...req, prompt: applied.prompt, media: applied.media };
     }
     const takeId = shotRef.collection('takes').doc().id;
     take = { shotId: target.id, takeId, prompt: req.prompt, parentTakeId: parentTakeId ?? null, params: {} };
@@ -238,12 +268,15 @@ async function prepareVideo(uid: string, req: VideoJobRequest): Promise<Prepared
 
   const task = inferVideoTask(refs.filter((r) => r.role !== 'source_video'), Boolean(previousInteractionId), mode === 'generate' ? undefined : mode);
   const finalPrompt = withDeclaration(planned.declaration, req.prompt);
-  const resolution = req.resolution ?? cap.defaultResolution;
+  // Draft quality explores at the lowest resolution; final uses the shot's own resolution.
+  const draft = project?.productionQuality === 'draft' && mode === 'generate';
+  const resolution = draft ? cap.resolutions[0]! : req.resolution ?? cap.defaultResolution;
   // Extensions return the whole video but are billed for the new seconds only; the earlier video counts as input.
   const outputSeconds = mode === 'edit' ? Math.max(1, sourceSeconds || parentDurationSec || cap.durationSec.default) : (durationSec ?? cap.durationSec.default);
   const videoInputSeconds = videos.reduce((s, m) => s + (assets.get(m.assetId)?.durationSec ?? 0), 0) + (previousInteractionId ? (parentDurationSec ?? 0) : 0);
   const estimate = estimateVideo({ resolution, outputSeconds, promptChars: finalPrompt.length, imageInputs: images.length, videoInputSeconds, task: task ?? mode }, PRICING);
   if (previousInteractionId) estimate.notes.push('Follow-up edits include the previous result as context; that context may be billed as input.');
+  if (draft) estimate.notes.push(`Draft quality: generated at ${resolution} while exploring (switch the project to Final for delivery resolution).`);
 
   const media: PreparedMedia[] = planned.media.map((m) => {
     const a = assets.get(m.assetId)!;
@@ -262,7 +295,7 @@ async function prepareVideo(uid: string, req: VideoJobRequest): Promise<Prepared
     task: task ?? null,
     aspectRatio: req.aspectRatio ?? null,
     resolution,
-    resolutionExplicit: Boolean(req.resolution),
+    resolutionExplicit: Boolean(req.resolution) || draft,
     durationSec,
     prompt: finalPrompt,
     promptBody: req.prompt,
@@ -537,8 +570,15 @@ async function prepareMusic(uid: string, req: MusicJobRequest): Promise<Prepared
     prompt = [movementPrompt(score, movement!, score.movements.length), req.prompt.trim() && req.prompt.trim() !== 'score' ? `Director’s note: ${req.prompt.trim()}` : ''].filter(Boolean).join('\n');
     target = { kind: 'score', id: req.scoreId!, sub: req.movementId! };
   }
+  if (req.musicProjectId) {
+    const mp = await col.projects().doc(req.projectId).collection('musicProjects').doc(req.musicProjectId).get();
+    if (!mp.exists) bad('Music project not found.');
+    if (req.purpose !== 'song') bad('Music Studio versions are songs, instrumentals, jingles or cues generated as a song.');
+  }
   const estimate = estimateMusic({ songs: 1 }, PRICING);
-  estimate.notes.push(MUSIC_MODEL_LIMITATION);
+  const surface = await musicSurface();
+  if (!surface) estimate.notes.push(MUSIC_MODEL_LIMITATION);
+  else if (surface === 'developer-api') estimate.notes.push(`${MODEL_REGISTRY.music.displayName} runs on the Gemini Developer API (server-side) — Vertex AI does not serve it to this project yet.`);
   return {
     type: 'music.generate',
     projectId: req.projectId,
@@ -556,9 +596,12 @@ async function prepareMusic(uid: string, req: MusicJobRequest): Promise<Prepared
       scoreId: req.scoreId ?? null,
       movementId: req.movementId ?? null,
       title: req.title ?? null,
+      musicProjectId: req.musicProjectId ?? null,
+      mode: req.mode ?? null,
+      alternate: req.alternate,
     },
     estimate,
-    target,
+    target: req.musicProjectId ? { kind: 'music_project', id: req.musicProjectId } : target,
   };
 }
 
@@ -612,10 +655,10 @@ async function prepareLyricsAlign(uid: string, req: LyricsAlignJobRequest): Prom
   };
 }
 
-export async function prepareJob(uid: string, req: JobRequest): Promise<PreparedJob> {
+export async function prepareJob(uid: string, req: JobRequest, opts: PrepareOptions = {}): Promise<PreparedJob> {
   switch (req.type) {
     case 'video.generate':
-      return prepareVideo(uid, req);
+      return prepareVideo(uid, req, opts);
     case 'image.generate':
       return prepareImage(uid, req);
     case 'text.assist':
@@ -632,5 +675,29 @@ export async function prepareJob(uid: string, req: JobRequest): Promise<Prepared
       return prepareLyricsTranscribe(uid, req);
     case 'lyrics.align':
       return prepareLyricsAlign(uid, req);
+    case 'reference.pack':
+      return prepareReferencePack(uid, req);
+    case 'continuity.compare':
+      return prepareContinuityCompare(uid, req);
+    case 'media.screen_replace':
+      return prepareScreenReplace(uid, req);
+    case 'media.color_match':
+      return prepareColorMatch(uid, req);
+    case 'media.analyze_subjects':
+      return prepareAnalyzeSubjects(uid, req);
+    case 'lyrics.resync_audio':
+      return prepareLyricsResyncAudio(uid, req);
+    case 'final.inspect':
+      return prepareFinalInspect(uid, req);
+    case 'music.analyze':
+      return prepareMusicAnalyze(uid, req);
+    case 'music.arrange':
+      return prepareMusicArrange(uid, req);
+    case 'music.mix':
+      return prepareMusicMix(uid, req);
+    case 'music.replace_section':
+      return prepareMusicReplaceSection(uid, req);
+    case 'audio.stems':
+      return prepareStems(uid, req);
   }
 }

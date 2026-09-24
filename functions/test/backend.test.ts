@@ -165,7 +165,9 @@ describe('model registry', () => {
   it('uses the verified production model IDs', () => {
     expect(MODEL_REGISTRY.video.id).toBe('gemini-omni-1.1-flash-preview');
     expect(MODEL_REGISTRY.image.id).toBe('gemini-3-pro-image');
-    expect(MODEL_REGISTRY.reasoning.id).toBe('gemini-3.1-pro-preview');
+    // Newest GA (production) Gemini model callable on Vertex AI for this project (verified 2026-09-24); no silent fallback.
+    expect(MODEL_REGISTRY.reasoning.id).toBe('gemini-3.8-flash');
+    expect(MODEL_REGISTRY.reasoning.fallbackId).toBeNull();
     expect(MODEL_REGISTRY.transcription.id).toBe('gemini-3.5-transcribe-preview');
     expect(MODEL_REGISTRY.speech.id).toBe('gemini-2.5-pro-tts');
     // Required model for songs and film score; never swapped for an older Lyria model.
@@ -176,7 +178,8 @@ describe('model registry', () => {
     for (const r of VIDEO_CAPABILITIES.resolutions) expect(PRICING.video.outputTokensPerSecond[r]).toBeGreaterThan(0);
     for (const s of IMAGE_CAPABILITIES.imageSizes) expect(PRICING.image.outputTokensPerImage[s]).toBeGreaterThan(0);
     expect(PRICING.text[MODEL_REGISTRY.reasoning.id]).toBeDefined();
-    expect(PRICING.text[MODEL_REGISTRY.reasoning.fallbackId]).toBeDefined();
+    expect(PRICING.vision?.perThousandUnits).toBeGreaterThan(0);
+    expect(PRICING.separation?.secondsPerAudioSecond).toBeGreaterThan(0);
     expect(PRICING.speech.modelId).toBe(MODEL_REGISTRY.speech.id);
     expect(PRICING.transcription.modelId).toBe(MODEL_REGISTRY.transcription.id);
     expect(PRICING.music.modelId).toBe(MODEL_REGISTRY.music.id);

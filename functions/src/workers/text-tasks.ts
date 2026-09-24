@@ -56,7 +56,62 @@ const need = (keys: string[]) => (input: Record<string, unknown>) => {
 
 const j = (v: unknown) => JSON.stringify(v ?? null, null, 1);
 
+const STUDIO_TASKS: Record<'film.coverage' | 'music.brief_from_media', TextTaskSpec> = {
+  'film.coverage': {
+  label: 'Coverage plan',
+  system:
+    `${WRITER} You are also a director of photography and an editor planning coverage. Suggest only coverage that gives the editor real choices: ` +
+    'an establishing or master shot for geography, singles and close-ups for emotional beats, over-the-shoulders for dialogue exchanges, reactions for listeners, inserts for important objects and actions, cutaways and transitions to control pace and bridge changes of screen direction. ' +
+    'Every shot is one continuous 3–10 second setup. Weigh emotional importance, dialogue length, action complexity, music rhythm, continuity needs and generation cost — do not pad the list.',
+  expectedOutputTokens: 4000,
+  thinking: 'HIGH',
+  validate: need(['scene']),
+  schema: obj({
+    shots: arr(
+      obj({
+        type: { type: 'string', enum: ['establishing', 'master', 'two_shot', 'medium', 'clean_single', 'close_up', 'over_the_shoulder', 'reaction', 'insert', 'cutaway', 'detail', 'transition', 'environment'] },
+        subjects: arr(str('Character name as given. For over_the_shoulder: first the foreground shoulder, then the character facing camera.')),
+        description: str('What the shot shows'),
+        action: str('Precise visible action for the video model'),
+        framing: str(),
+        lens: str(),
+        cameraMovement: str(),
+        durationSec: { type: 'integer', minimum: 3, maximum: 10 },
+        dialogueLines: arr({ type: 'integer', minimum: 0 }, { description: 'Indexes of the dialogue lines this shot covers' }),
+        priority: { type: 'string', enum: ['essential', 'recommended', 'optional'] },
+        rationale: str('Why the edit needs it (one sentence)'),
+      }),
+    ),
+  }),
+  prompt: (i) =>
+    `Plan coverage for this scene (at most ${i.maxShots ?? 10} shots).\nScene: ${j(i.scene)}\nDialogue lines (index: character: line): ${j(i.dialogue)}\nCharacters: ${j(i.characters)}\nLocation: ${j(i.location)}\nEmotional importance (1–5): ${i.importance ?? 3}\nMusic tempo (BPM, music videos): ${i.bpm ?? '—'}\nShots already planned: ${j(i.existing)}\nBudget note: ${i.budgetNote ?? 'keep it lean'}`,
+  },
+  'music.brief_from_media': {
+  label: 'Music brief from a treatment, screenplay or image',
+  system: `${WRITER} You are also a composer and music producer translating a story into a music brief that a music model can follow.`,
+  expectedOutputTokens: 2000,
+  thinking: 'MEDIUM',
+  schema: obj({
+    title: str(),
+    concept: str(),
+    genre: str(),
+    subgenre: str(),
+    mood: str(),
+    tempoBpm: num(),
+    key: str(),
+    vocals: { type: 'string', enum: ['none', 'lead', 'duet', 'group', 'choir', 'rap', 'spoken'] },
+    vocalCharacter: str(),
+    instrumentation: arr(str()),
+    energy: str('Energy progression through the piece'),
+    culturalDirection: str(),
+    avoidInstruments: arr(str()),
+  }),
+  prompt: (i) => `Write a music brief for ${i.purpose ?? 'a song'} that fits this material.\nMaterial type: ${i.kind ?? 'treatment'}\n${String(i.text ?? '').slice(0, 20000)}\nCreator's notes: ${i.notes ?? '—'}`,
+  },
+};
+
 export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
+  ...STUDIO_TASKS,
   'film.treatment': {
     label: 'Treatment',
     system: WRITER,

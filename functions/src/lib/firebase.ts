@@ -32,6 +32,8 @@ export const col = {
   productions: () => db.collection('productions'),
   songs: (projectId: string) => db.collection('projects').doc(projectId).collection('songs'),
   scores: (projectId: string) => db.collection('projects').doc(projectId).collection('scores'),
+  /** Any project subcollection (continuity, music, credits…). */
+  sub: (projectId: string, name: string) => db.collection('projects').doc(projectId).collection(name),
 };
 
 export const gsUri = (path: string) => `gs://${bucket.name}/${path}`;

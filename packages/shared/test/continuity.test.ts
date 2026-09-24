@@ -247,7 +247,7 @@ describe('continuity prompt', () => {
     expect(r.text).toMatch(/<IMAGE_REF_3> is the final frame of the previous shot/);
     expect(r.optionalPreferences.some((p) => p.text.includes('ochre and indigo'))).toBe(true);
     // With room for only two more images, lower-priority references are dropped and reported.
-    const tight = compileContinuity({ ...({} as never), sceneId: null, visualBible: null, characters: [], location: { id: 'loc', name: 'Compound', description: '', set, primaryRefAssetId: null }, props: [{ id: 'key', name: 'brass key', description: '', refAssetId: 'keyRef', state: defaultPropState() }], screens: [], previous: { title: 'Shot 1', finalFrameAssetId: 'prevFrame', sameScene: true }, blockingLines: [], travel: [], cameraDirectionDeg: 0, environment: null, startFromPreviousFrame: false, existingMedia: Array.from({ length: 8 }, (_, i) => ({ role: 'image_ref' as const, assetId: `x${i}` })), maxImages: 10 });
+    const tight = compileContinuity({ sceneId: null, visualBible: null, characters: [], location: { id: 'loc', name: 'Compound', description: '', set, primaryRefAssetId: null }, props: [{ id: 'key', name: 'brass key', description: '', refAssetId: 'keyRef', state: defaultPropState() }], screens: [], previous: { title: 'Shot 1', finalFrameAssetId: 'prevFrame', sameScene: true }, blockingLines: [], travel: [], cameraDirectionDeg: 0, environment: null, startFromPreviousFrame: false, existingMedia: Array.from({ length: 8 }, (_, i) => ({ role: 'image_ref' as const, assetId: `x${i}` })), maxImages: 10 });
     expect(tight.added).toHaveLength(2);
     expect(tight.dropped.map((d) => d.assetId)).toEqual(['keyRef']);
   });

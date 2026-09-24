@@ -3,12 +3,12 @@ import { sumEstimates, type CostEstimate, type JobDoc, type JobRequest, type Job
 import { PRICING } from '../config/pricing';
 import { col, db, FieldValue } from './firebase';
 import { enqueueJob } from './jobs';
-import { prepareJob, type PreparedJob } from './prepare';
-import { assertWithinLimits, getSettings, spendSnapshot } from './usage';
+import { prepareJob, type PrepareOptions, type PreparedJob } from './prepare';
+import { assertProjectBudget, assertWithinLimits, getSettings, spendSnapshot } from './usage';
 
-export async function prepareAll(uid: string, jobs: JobRequest[]): Promise<PreparedJob[]> {
+export async function prepareAll(uid: string, jobs: JobRequest[], opts: PrepareOptions = {}): Promise<PreparedJob[]> {
   const out: PreparedJob[] = [];
-  for (const j of jobs) out.push(await prepareJob(uid, j));
+  for (const j of jobs) out.push(await prepareJob(uid, j, opts));
   return out;
 }
 
@@ -27,6 +27,8 @@ export interface CreateJobsOptions {
   productionId?: string | null;
   /** Skip the confirmation step (the owner already approved the production's budget). */
   preconfirmed?: boolean;
+  /** The requests already carry their continuity direction (compiled once at production start). */
+  skipContinuity?: boolean;
 }
 
 /**
@@ -35,7 +37,7 @@ export interface CreateJobsOptions {
  */
 export async function createJobs(uid: string, requests: JobRequest[], opts: CreateJobsOptions = {}, preparedIn?: PreparedJob[]): Promise<{ jobIds: string[]; batchId: string | null; estimate: CostEstimate; prepared: PreparedJob[] }> {
   const settings = await getSettings(uid);
-  const prepared = preparedIn ?? (await prepareAll(uid, requests));
+  const prepared = preparedIn ?? (await prepareAll(uid, requests, { skipContinuity: opts.skipContinuity }));
   const total = sumEstimates(prepared.map((x) => x.estimate), PRICING);
   if (!opts.preconfirmed) {
     const confirm = confirmationPolicy(settings, prepared, total.usd);
@@ -44,6 +46,10 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
     }
   }
   assertWithinLimits(settings, await spendSnapshot(uid), total.usd);
+  // Each project stays inside its own budget as well as the owner's daily and monthly limits.
+  const byProject = new Map<string, number>();
+  for (const x of prepared) if (x.projectId) byProject.set(x.projectId, (byProject.get(x.projectId) ?? 0) + x.estimate.usd);
+  for (const [pid, usd] of byProject) await assertProjectBudget(uid, pid, usd);
 
   const now = FieldValue.serverTimestamp();
   const batchId = prepared.length > 1 ? col.batches().doc().id : null;
@@ -127,7 +133,7 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
 }
 
 export interface InternalJobInput {
-  type: Extract<JobType, 'quality.inspect' | 'media.composite'>;
+  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect'>;
   projectId: string;
   modelId: string | null;
   label: string;
@@ -140,7 +146,10 @@ export interface InternalJobInput {
 /** Jobs the production loop runs on its own (inspection, repair edits); they are not user-submittable. */
 export async function createInternalJob(uid: string, input: InternalJobInput): Promise<string> {
   const settings = await getSettings(uid);
-  if (input.estimate.usd > 0) assertWithinLimits(settings, await spendSnapshot(uid), input.estimate.usd);
+  if (input.estimate.usd > 0) {
+    assertWithinLimits(settings, await spendSnapshot(uid), input.estimate.usd);
+    await assertProjectBudget(uid, input.projectId, input.estimate.usd);
+  }
   const ref = col.jobs().doc();
   const now = FieldValue.serverTimestamp();
   const job: Omit<JobDoc, 'id'> = {

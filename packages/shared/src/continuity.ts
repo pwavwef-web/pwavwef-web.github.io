@@ -146,6 +146,8 @@ export interface VisualBibleDoc {
   colour: ColourDirection;
   approvedAt: number | null;
   version: number;
+  /** The version every generation inherits, frozen at approval (draft edits reach no shot until approved). */
+  approved?: { entries: Partial<Record<VisualBibleKey, BibleEntry>>; lookbookAssetIds: string[]; colour: ColourDirection; approvedAt: number; version: number } | null;
   updatedAt?: Time;
 }
 

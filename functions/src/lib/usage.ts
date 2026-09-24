@@ -1,5 +1,5 @@
 import { HttpsError } from 'firebase-functions/v2/https';
-import { ACTIVE_STATUSES, DEFAULT_SETTINGS, costFromUsage, dayKey, monthKey, type StudioSettings, type UsageAggregate } from '@az-studio/shared';
+import { ACTIVE_STATUSES, DEFAULT_SETTINGS, costFromUsage, dayKey, monthKey, type StudioSettings, type UsageAggregate, type UsageRecord } from '@az-studio/shared';
 import { col, db, FieldValue } from './firebase';
 import { PRICING } from '../config/pricing';
 
@@ -60,7 +60,7 @@ export interface UsageInput {
   projectId: string | null;
   jobId: string;
   modelId: string;
-  kind: 'image' | 'video' | 'text' | 'audio' | 'speech' | 'transcription' | 'music';
+  kind: Exclude<UsageRecord['kind'], 'render'>;
   inputTokens: number;
   outputTokens: number;
   thoughtTokens: number;
@@ -76,7 +76,7 @@ export interface UsageInput {
  * daily, monthly, per-project and per-job aggregates.
  */
 export async function recordUsage(u: UsageInput): Promise<number> {
-  const pricingKind = u.kind === 'audio' ? 'text' : u.kind === 'music' ? null : u.kind;
+  const pricingKind = u.kind === 'audio' ? 'text' : u.kind === 'music' || u.kind === 'vision' || u.kind === 'compute' ? null : u.kind;
   const costUsd =
     u.costUsdOverride !== undefined
       ? Math.round(u.costUsdOverride * 1e6) / 1e6
@@ -108,6 +108,26 @@ export async function recordUsage(u: UsageInput): Promise<number> {
   batch.set(col.jobs().doc(u.jobId), { usageUsd: FieldValue.increment(costUsd) }, { merge: true });
   await batch.commit();
   return costUsd;
+}
+
+/**
+ * Rejects work that would take a project past its own budget (recorded usage + running jobs + this).
+ * Projects without a budget are only bound by the owner's daily and monthly limits.
+ */
+export async function assertProjectBudget(uid: string, projectId: string | null | undefined, addUsd: number): Promise<void> {
+  if (!projectId || addUsd <= 0) return;
+  const p = await col.projects().doc(projectId).get();
+  const limit = p.get('budget.limitUsd') as number | null | undefined;
+  if (typeof limit !== 'number' || limit <= 0) return;
+  const spent = Number(p.get('usage.costUsd') ?? 0);
+  const active = await col.jobs().where('ownerUid', '==', uid).where('projectId', '==', projectId).where('status', 'in', [...ACTIVE_STATUSES]).get();
+  const pending = active.docs.reduce((s, d) => s + Number(d.get('estimate.usd') ?? 0), 0);
+  if (spent + pending + addUsd > limit + 1e-9) {
+    throw new HttpsError(
+      'resource-exhausted',
+      `This would exceed the project budget of $${limit.toFixed(2)} (spent ≈ $${spent.toFixed(2)} + in progress ≈ $${pending.toFixed(2)} + this ≈ $${addUsd.toFixed(2)}). Raise the project budget, reuse approved takes, or cancel queued work.`,
+    );
+  }
 }
 
 /** Sliding one-minute submission limit to stop runaway clients. */

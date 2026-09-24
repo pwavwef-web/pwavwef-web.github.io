@@ -60,6 +60,8 @@ export interface ReasoningCapabilities {
   supportsAudioInput: boolean;
   supportsStructuredOutput: boolean;
   maxAudioSeconds: number;
+  /** Videos the reasoning model can watch in one request (take comparison). */
+  maxVideosPerPrompt?: number;
 }
 
 export interface AudioModelCapabilities {
@@ -74,6 +76,18 @@ export interface MusicCapabilities extends AudioModelCapabilities {
   maxImageInputs: number;
   /** Full songs with vocals and lyrics, or instrumental (prompt-controlled). */
   supportsLyrics: boolean;
+  /** Where the model is served from (Vertex AI or the Gemini Developer API, server-side). */
+  surface?: 'vertex' | 'developer-api';
+}
+
+export interface VisionCapabilities extends AudioModelCapabilities {
+  features: string[];
+  maxImagesPerRequest: number;
+}
+
+export interface SeparationCapabilities extends AudioModelCapabilities {
+  stems: string[];
+  maxAudioSeconds: number;
 }
 
 export interface SpeechCapabilities extends AudioModelCapabilities {
@@ -93,6 +107,8 @@ export interface StudioCapabilities {
   music: MusicCapabilities;
   speech: SpeechCapabilities;
   transcription: TranscriptionCapabilities;
+  vision?: VisionCapabilities;
+  separation?: SeparationCapabilities;
   region: string;
   vertexLocation: string;
 }
