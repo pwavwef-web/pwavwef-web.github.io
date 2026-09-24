@@ -17,6 +17,7 @@ import { apiRequestSchema, type ApiRequest } from '@az-studio/shared';
 import { ALLOWED_ORIGINS, IS_EMULATOR, MEDIA_BUCKET, OWNER_EMAIL, OWNER_UID, REGION, RUNTIME_SERVICE_ACCOUNT, RUNTIME_SERVICE_ACCOUNT_EMAIL } from './config/runtime';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
+import * as production from './api/production';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
@@ -52,6 +53,14 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return actions.deriveClip(owner, req.payload);
     case 'extractFrame':
       return actions.extractFrame(owner, req.payload);
+    case 'estimateProduction':
+      return production.estimateProduction(owner, req.payload);
+    case 'startProduction':
+      return production.startProduction(owner, req.payload);
+    case 'productionAction':
+      return production.productionAction(owner, req.payload);
+    case 'modelStatus':
+      return production.modelStatus(owner, req.payload);
   }
 }
 

@@ -8,6 +8,12 @@ import { runImageJob } from './image';
 import { pollVideoJob, startVideoJob } from './video';
 import { runAudioJob, runTextJob } from './text';
 import { startRenderJob, watchRenderJob } from './render';
+import { runInspectJob } from './inspect';
+import { runSpeechJob } from './speech';
+import { runMusicJob } from './music';
+import { runLyricsAlignJob, runLyricsTranscribeJob } from './lyrics';
+import { runCompositeJob } from './composite';
+import { advanceProduction } from '../lib/production';
 
 const MAX_AUTO_RETRIES = 4;
 /** Only image/video generations occupy the owner's concurrent-generation slots. */
@@ -47,11 +53,34 @@ async function startJob(jobId: string, seq: number): Promise<void> {
     case 'render.timeline':
       await startRenderJob(claimed);
       return;
+    case 'quality.inspect':
+      await runInspectJob(claimed);
+      return;
+    case 'speech.generate':
+      await runSpeechJob(claimed);
+      return;
+    case 'music.generate':
+      await runMusicJob(claimed);
+      return;
+    case 'lyrics.transcribe':
+      await runLyricsTranscribeJob(claimed);
+      return;
+    case 'lyrics.align':
+      await runLyricsAlignJob(claimed);
+      return;
+    case 'media.composite':
+      await runCompositeJob(claimed);
+      return;
   }
 }
 
 /** Entry point for every Cloud Tasks delivery. Idempotent: duplicate deliveries are ignored. */
 export async function handleTask(payload: WorkerPayload): Promise<void> {
+  if (payload.productionId) {
+    await advanceProduction(payload.productionId);
+    return;
+  }
+  if (!payload.jobId) return;
   const job = await getJob(payload.jobId);
   if (!job || isTerminal(job.status)) return;
   try {

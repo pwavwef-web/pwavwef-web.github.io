@@ -3,6 +3,13 @@ import {
   EXPORT_PRESETS,
   compileImagePrompt,
   estimateImage,
+  estimateMusic,
+  estimateSpeech,
+  estimateSpeechSeconds,
+  estimateTranscription,
+  languageName,
+  movementPrompt,
+  sumEstimates,
   estimateRender,
   estimateText,
   estimateVideo,
@@ -10,6 +17,7 @@ import {
   planOmniMedia,
   presetDimensions,
   timelineDuration,
+  checkLyricSync,
   toMillis,
   validateTimeline,
   withDeclaration,
@@ -21,15 +29,23 @@ import {
   type JobRequest,
   type JobTarget,
   type JobType,
+  type LyricSyncIssue,
+  type LyricsSheet,
+  type LyricsAlignJobRequest,
+  type LyricsTranscribeJobRequest,
+  type MusicJobRequest,
   type OmniMediaRef,
   type ProjectDoc,
   type RenderJobRequest,
+  type ScoreDoc,
+  type SongDoc,
+  type SpeechJobRequest,
   type TextJobRequest,
   type TimelineDoc,
   type VideoJobRequest,
 } from '@az-studio/shared';
 import { col, db } from './firebase';
-import { IMAGE_CAPABILITIES, MODEL_REGISTRY, REASONING_CAPABILITIES, VIDEO_CAPABILITIES } from '../config/models';
+import { IMAGE_CAPABILITIES, MODEL_REGISTRY, MUSIC_MODEL_LIMITATION, REASONING_CAPABILITIES, TRANSCRIPTION_CAPABILITIES, VIDEO_CAPABILITIES } from '../config/models';
 import { PRICING } from '../config/pricing';
 import { TEXT_TASK_SPECS } from '../workers/text-tasks';
 
@@ -53,7 +69,7 @@ export interface PreparedJob {
   params: Record<string, unknown>;
   estimate: CostEstimate;
   target: JobTarget | null;
-  take?: { shotId: string; takeId: string; prompt: string; parentTakeId: string | null; params: Record<string, unknown> };
+  take?: { shotId: string; takeId: string; prompt: string; parentTakeId: string | null; params: Record<string, unknown>; label?: string };
   chain?: { chainId: string; turnId: string; isNew: boolean; kind: 'video' | 'image'; title: string; parentTurnId: string | null; prompt: string; mode: string };
   render?: { renderId: string; doc: Record<string, unknown> };
 }
@@ -199,6 +215,9 @@ async function prepareVideo(uid: string, req: VideoJobRequest): Promise<Prepared
   if (videos.length > cap.maxVideoInputs) bad(`Omni accepts up to ${cap.maxVideoInputs} videos per request.`);
   if (refs.some((r) => r.role === 'last_frame') && !refs.some((r) => r.role === 'first_frame')) bad('A last frame needs a first frame.');
 
+  if (mode === 'edit' && previousInteractionId && (parentDurationSec ?? 0) > cap.maxEditInputSeconds + 0.05) {
+    bad(`Omni edits videos of up to ${cap.maxEditInputSeconds} seconds; this take is ${Math.round(parentDurationSec ?? 0)} s. Regenerate it, or extend it instead.`);
+  }
   const hasSource = planned.media.some((m) => m.role === 'source_video');
   if (mode === 'generate' && hasSource && !chainFallbackAssetId) bad('Use Edit or Extend mode to work on an existing video.');
   if ((mode === 'edit' || mode === 'extend') && !hasSource && !previousInteractionId) bad(`${mode === 'edit' ? 'Editing' : 'Extending'} needs a source video or a previous result.`);
@@ -220,7 +239,8 @@ async function prepareVideo(uid: string, req: VideoJobRequest): Promise<Prepared
   const task = inferVideoTask(refs.filter((r) => r.role !== 'source_video'), Boolean(previousInteractionId), mode === 'generate' ? undefined : mode);
   const finalPrompt = withDeclaration(planned.declaration, req.prompt);
   const resolution = req.resolution ?? cap.defaultResolution;
-  const outputSeconds = mode === 'edit' ? Math.max(1, sourceSeconds || parentDurationSec || cap.durationSec.default) : mode === 'extend' ? sourceSeconds + (durationSec ?? 0) : (durationSec ?? cap.durationSec.default);
+  // Extensions return the whole video but are billed for the new seconds only; the earlier video counts as input.
+  const outputSeconds = mode === 'edit' ? Math.max(1, sourceSeconds || parentDurationSec || cap.durationSec.default) : (durationSec ?? cap.durationSec.default);
   const videoInputSeconds = videos.reduce((s, m) => s + (assets.get(m.assetId)?.durationSec ?? 0), 0) + (previousInteractionId ? (parentDurationSec ?? 0) : 0);
   const estimate = estimateVideo({ resolution, outputSeconds, promptChars: finalPrompt.length, imageInputs: images.length, videoInputSeconds, task: task ?? mode }, PRICING);
   if (previousInteractionId) estimate.notes.push('Follow-up edits include the previous result as context; that context may be billed as input.');
@@ -397,6 +417,17 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
   const tl = { id: snap.id, ...snap.data() } as TimelineDoc;
   const problems = validateTimeline(tl);
   if (problems.length) bad(`Fix the timeline before rendering: ${problems.slice(0, 3).join(' ')}`);
+  // Final synchronisation check: lyric captions must follow the vocals they belong to.
+  const songIds = [...new Set(tl.clips.map((c) => c.lyric?.songId).filter((x): x is string => Boolean(x)))];
+  let lyricSync: LyricSyncIssue[] = [];
+  if (songIds.length) {
+    const songs = await db.getAll(...songIds.map((id) => col.songs(req.projectId).doc(id)));
+    const sheets = Object.fromEntries(songs.map((s) => [s.id, s.exists ? ((s.get('lyricsSheet') as LyricsSheet | null) ?? null) : null]));
+    lyricSync = checkLyricSync(tl, sheets);
+    if (lyricSync.length && !req.acceptLyricSync) {
+      throw new HttpsError('failed-precondition', `Lyric captions are out of sync: ${lyricSync.slice(0, 3).map((i) => i.message).join(' ')}${lyricSync.length > 3 ? ` (+${lyricSync.length - 3} more)` : ''} Resync the lyrics in the editor, or render anyway.`, { reason: 'lyric_sync', issues: lyricSync.slice(0, 50) });
+    }
+  }
   const durationSec = timelineDuration(tl.clips);
   if (durationSec <= 0) bad('The timeline is empty.');
   const assetIds = tl.clips.map((c) => c.assetId).filter((x): x is string => Boolean(x));
@@ -418,7 +449,7 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
     projectId: req.projectId,
     modelId: null,
     label: req.label ?? `${EXPORT_PRESETS[req.preset].label} · ${req.quality === 'final' ? 'Final' : 'Draft'} render`,
-    params: { renderId, timelineId: req.timelineId, preset: req.preset, quality: req.quality, width: dims.width, height: dims.height, fps: tl.fps, durationSec },
+    params: { renderId, timelineId: req.timelineId, preset: req.preset, quality: req.quality, width: dims.width, height: dims.height, fps: tl.fps, durationSec, lyricSyncIssues: lyricSync.length },
     estimate,
     target: { kind: 'timeline', id: req.timelineId, sub: renderId },
     render: {
@@ -436,10 +467,148 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         fps: tl.fps,
         durationSec,
         snapshot: { tracks: tl.tracks, clips: tl.clips, aspectRatio: tl.aspectRatio, fps: tl.fps },
+        lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
         assets: assetMap,
         computeRates: { vcpu: PRICING.render.vcpu, memoryGiB: PRICING.render.memoryGiB, perVcpuSecond: PRICING.render.perVcpuSecond, perGiBSecond: PRICING.render.perGiBSecond },
       },
     },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Dialogue guide audio (TTS)
+// ---------------------------------------------------------------------------
+
+async function prepareSpeech(uid: string, req: SpeechJobRequest): Promise<PreparedJob> {
+  await loadProject(uid, req.projectId);
+  const chars = req.lines.reduce((s, l) => s + l.text.length, 0);
+  const seconds = req.lines.reduce((s, l) => s + estimateSpeechSeconds(l.text) + 0.6, 0);
+  const estimate = estimateSpeech({ chars, seconds, lines: req.lines.length }, PRICING);
+  return {
+    type: 'speech.generate',
+    projectId: req.projectId,
+    modelId: MODEL_REGISTRY.speech.id,
+    label: req.label ?? `Dialogue audio · ${req.lines.length} line${req.lines.length === 1 ? '' : 's'}`,
+    params: { lines: req.lines.map((l) => ({ index: l.index, character: l.character, text: l.text, voice: l.voice ?? null, direction: l.direction ?? '' })), languageCode: req.languageCode ?? null },
+    estimate,
+    target: req.target ?? { kind: 'project', id: req.projectId },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Music (Lyria)
+// ---------------------------------------------------------------------------
+
+async function prepareMusic(uid: string, req: MusicJobRequest): Promise<PreparedJob> {
+  const project = await loadProject(uid, req.projectId);
+  if (req.instrumental && req.lyrics?.trim()) bad('Instrumental music cannot have lyrics. Turn off “instrumental” or remove the lyrics.');
+  const images = await loadAssets(uid, req.imageAssetIds);
+  for (const a of images.values()) if (a.kind !== 'image') bad(`“${a.title}” is not an image.`);
+  let prompt = req.prompt.trim();
+  let target: JobTarget | null = null;
+  if (req.purpose === 'song') {
+    if (req.songId) {
+      const song = await col.songs(req.projectId).doc(req.songId).get();
+      if (!song.exists) bad('Song not found.');
+      target = { kind: 'song', id: req.songId };
+    }
+    const lang = languageName(req.languageCode ?? null);
+    prompt = [
+      prompt,
+      req.instrumental
+        ? 'Instrumental only: no vocals, no singing, no spoken words, no lyrics.'
+        : req.lyrics?.trim()
+          ? `Sing exactly these lyrics, in this order, without changing, adding or dropping any word (section tags mark the structure):\n${req.lyrics.trim()}`
+          : 'Write original lyrics that fit this brief and sing them.',
+      !req.instrumental && lang ? `Sing in ${lang}.` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+  } else {
+    if (!req.scoreId || !req.movementId) bad('A score movement needs its score and movement.');
+    if (project?.type !== 'film') bad('Film scores belong to film projects. Music videos keep their song as the master audio.');
+    const snap = await col.scores(req.projectId).doc(req.scoreId!).get();
+    if (!snap.exists) bad('Score not found.');
+    const score = { id: snap.id, ...snap.data() } as ScoreDoc;
+    if (score.mode === 'none') bad('This film is set to “No score”. Choose minimal or cinematic score first.');
+    const movement = score.movements.find((m) => m.id === req.movementId);
+    if (!movement) bad('Movement not found.');
+    if (movement!.locked) bad('This movement is locked. Unlock it before regenerating.');
+    prompt = [movementPrompt(score, movement!, score.movements.length), req.prompt.trim() && req.prompt.trim() !== 'score' ? `Director’s note: ${req.prompt.trim()}` : ''].filter(Boolean).join('\n');
+    target = { kind: 'score', id: req.scoreId!, sub: req.movementId! };
+  }
+  const estimate = estimateMusic({ songs: 1 }, PRICING);
+  estimate.notes.push(MUSIC_MODEL_LIMITATION);
+  return {
+    type: 'music.generate',
+    projectId: req.projectId,
+    modelId: MODEL_REGISTRY.music.id,
+    label: req.label ?? (req.purpose === 'song' ? 'Song generation' : 'Score movement'),
+    params: {
+      purpose: req.purpose,
+      prompt,
+      lyricsProvided: Boolean(req.lyrics?.trim()),
+      lyrics: req.lyrics?.trim() ?? null,
+      instrumental: req.instrumental,
+      languageCode: req.languageCode ?? null,
+      images: [...images.values()].map((a) => ({ assetId: a.id, storagePath: a.storagePath, mimeType: normMime(a.mimeType) })),
+      songId: req.songId ?? null,
+      scoreId: req.scoreId ?? null,
+      movementId: req.movementId ?? null,
+      title: req.title ?? null,
+    },
+    estimate,
+    target,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Lyrics extraction & synchronisation
+// ---------------------------------------------------------------------------
+
+async function songAudio(uid: string, projectId: string, songId: string, audioAssetId: string) {
+  await loadProject(uid, projectId);
+  const song = await col.songs(projectId).doc(songId).get();
+  if (!song.exists) bad('Song not found.');
+  const a = (await loadAssets(uid, [audioAssetId])).get(audioAssetId)!;
+  if (a.kind !== 'audio' && !(a.kind === 'video' && a.hasAudio)) bad('Choose the song’s audio.');
+  const durationSec = a.durationSec ?? 0;
+  if (durationSec > TRANSCRIPTION_CAPABILITIES.maxTimedAudioSeconds) bad(`Songs longer than ${Math.round(TRANSCRIPTION_CAPABILITIES.maxTimedAudioSeconds / 60)} minutes cannot be transcribed with word timing in one request.`);
+  return { song: { id: song.id, ...song.data() } as SongDoc, asset: a, durationSec };
+}
+
+async function prepareLyricsTranscribe(uid: string, req: LyricsTranscribeJobRequest): Promise<PreparedJob> {
+  const { song, asset, durationSec } = await songAudio(uid, req.projectId, req.songId, req.audioAssetId);
+  if (song.instrumental) bad('This song is marked instrumental, so there are no lyrics to extract. Clear “instrumental” first if it has vocals.');
+  const estimate = sumEstimates([estimateTranscription({ seconds: durationSec }, PRICING), estimateText({ modelId: MODEL_REGISTRY.reasoning.id, inputChars: 3000, expectedOutputTokens: 5000, audioSeconds: durationSec }, PRICING)], PRICING);
+  return {
+    type: 'lyrics.transcribe',
+    projectId: req.projectId,
+    modelId: MODEL_REGISTRY.transcription.id,
+    label: req.label ?? 'Extract lyrics',
+    params: { songId: req.songId, audioAssetId: asset.id, storagePath: asset.storagePath, mimeType: asset.mimeType, durationSec, languageCode: req.languageCode ?? null },
+    estimate,
+    target: { kind: 'song', id: req.songId },
+  };
+}
+
+async function prepareLyricsAlign(uid: string, req: LyricsAlignJobRequest): Promise<PreparedJob> {
+  const { song, asset, durationSec } = await songAudio(uid, req.projectId, req.songId, req.audioAssetId);
+  if (song.instrumental) bad('This song is marked instrumental — there are no lyrics to synchronise.');
+  if (!song.lyricsSheet?.lines.length) bad('Add, generate or extract the lyrics first.');
+  const cached = !req.retranscribe && song.asr?.audioAssetId === asset.id && song.asr.words.length > 0;
+  const parts = [estimateText({ modelId: MODEL_REGISTRY.reasoning.id, inputChars: 4000 + JSON.stringify(song.lyricsSheet!.lines.map((l) => l.text)).length, expectedOutputTokens: 3000, audioSeconds: durationSec }, PRICING)];
+  if (!cached) parts.push(estimateTranscription({ seconds: durationSec }, PRICING));
+  const estimate = sumEstimates(parts, PRICING);
+  if (cached) estimate.notes.push('Reuses the cached word-timed transcription of this audio.');
+  return {
+    type: 'lyrics.align',
+    projectId: req.projectId,
+    modelId: MODEL_REGISTRY.transcription.id,
+    label: req.label ?? 'Synchronise lyrics',
+    params: { songId: req.songId, audioAssetId: asset.id, storagePath: asset.storagePath, mimeType: asset.mimeType, durationSec, languageCode: req.languageCode ?? song.lyricsSheet!.language ?? null, useCache: cached },
+    estimate,
+    target: { kind: 'song', id: req.songId },
   };
 }
 
@@ -455,5 +624,13 @@ export async function prepareJob(uid: string, req: JobRequest): Promise<Prepared
       return prepareAudio(uid, req);
     case 'render.timeline':
       return prepareRender(uid, req);
+    case 'speech.generate':
+      return prepareSpeech(uid, req);
+    case 'music.generate':
+      return prepareMusic(uid, req);
+    case 'lyrics.transcribe':
+      return prepareLyricsTranscribe(uid, req);
+    case 'lyrics.align':
+      return prepareLyricsAlign(uid, req);
   }
 }

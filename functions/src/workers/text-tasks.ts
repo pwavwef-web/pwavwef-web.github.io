@@ -209,7 +209,7 @@ export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
       sectionIdeas: arr(obj({ sectionLabel: str('Section name as given'), idea: str() })),
     }),
     prompt: (i) =>
-      `Create a music video treatment.\nSong: ${i.songTitle ?? 'Untitled'} by ${i.artist ?? 'the artist'}\nArtist brief: ${i.brief ?? '—'}\nTempo: ${i.bpm ?? '?'} BPM\nSections: ${j(i.sections)}\nLyrics:\n${String(i.lyrics ?? '(instrumental or not provided)').slice(0, 12000)}`,
+      `Create a music video treatment.\nSong: ${i.songTitle ?? 'Untitled'} by ${i.artist ?? 'the artist'}\nArtist brief: ${i.brief ?? '—'}\nTempo: ${i.bpm ?? '?'} BPM\nSections: ${j(i.sections)}\n${i.instrumental ? 'This song is INSTRUMENTAL: it has no lyrics. Do not invent, quote or imply any lyrics.' : `Lyrics:\n${String(i.lyrics ?? '(not provided — do not invent lyrics)').slice(0, 12000)}`}`,
   },
   'music.shotlist': {
     label: 'Music video shot list',
@@ -221,7 +221,7 @@ export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
       shots: arr(obj({ slotIndex: { type: 'integer', minimum: 0 }, ...SHOT_FIELDS, characterNames: arr(str()), locationName: str(), lyricCue: str('Lyric sung during the shot, if any') })),
     }),
     prompt: (i) =>
-      `Write exactly one shot for every slot below (use its slotIndex).\nTreatment: ${j(i.treatment)}\nSlots (seconds within the song): ${j(i.slots)}\nSections: ${j(i.sections)}\nLyrics with timing: ${j(i.lyrics)}\nCharacters: ${j(i.characters)}\nLocations: ${j(i.locations)}\nStyle bible: ${j(i.styleBible)}`,
+      `Write exactly one shot for every slot below (use its slotIndex).\nTreatment: ${j(i.treatment)}\nSlots (seconds within the song): ${j(i.slots)}\nSections: ${j(i.sections)}\n${i.instrumental ? 'The song is instrumental: lyricCue must be empty and no shot may invent lyrics.' : `Lyrics with timing: ${j(i.lyrics)}`}\nCharacters: ${j(i.characters)}\nLocations: ${j(i.locations)}\nStyle bible: ${j(i.styleBible)}`,
   },
   'prompt.polish': {
     label: 'Prompt polish',
@@ -243,6 +243,78 @@ export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
     schema: obj({ frames: arr(obj({ shotId: str(), prompt: str() })) }),
     prompt: (i) => `Write one storyboard frame prompt per shot.\nStyle: ${j(i.styleBible)}\nCharacters: ${j(i.characters)}\nShots: ${j(i.shots)}`,
   },
+  'music.lyrics': {
+    label: 'Song lyrics',
+    system:
+      `${WRITER} You are also a professional songwriter. Write original lyrics only — never quote or imitate existing songs or a real artist's lyrics. ` +
+      'Write every line in the requested language and keep to it; never switch into a more widely spoken language. For languages with little written material ' +
+      '(for example Kasem, Dagbani, Gurenɛ), use simple, common words and standard orthography with its special letters (ɛ, ɔ, ɩ, ʋ, ŋ), and say plainly in `notes` which words or spellings a fluent speaker should check.',
+    expectedOutputTokens: 3500,
+    thinking: 'HIGH',
+    validate: need(['subject', 'language']),
+    schema: obj({
+      title: str(),
+      languageCode: str('BCP-47 code of the language actually written, e.g. en, tw, xsm'),
+      sections: arr(obj({ label: { type: 'string', enum: ['intro', 'verse', 'pre-chorus', 'chorus', 'post-chorus', 'bridge', 'breakdown', 'drop', 'instrumental', 'hook', 'outro', 'other'] }, name: str('e.g. Verse 1'), lines: arr(str('One sung line')) })),
+      notes: str('Choices made, and anything a fluent speaker should verify'),
+    }),
+    prompt: (i) =>
+      `Write song lyrics.\nLanguage: ${i.languageName ?? i.language} (${i.language})\nSubject: ${i.subject}\nStructure: ${i.structure || 'intro, verse, pre-chorus, chorus, verse, pre-chorus, chorus, bridge, chorus, outro'}\nTone: ${i.tone ?? 'open'}\nGenre: ${i.genre ?? 'open'}\nTitle idea: ${i.title ?? '—'}\nArtist / brand notes: ${i.notes ?? '—'}\n` +
+      'Return the sections in singing order; repeat chorus text in full wherever the chorus is sung. Instrumental sections have no lines.',
+  },
+  'film.score_bible': {
+    label: 'Musical bible',
+    system: `${WRITER} You are also a film composer and music supervisor. Design one coherent musical identity for the whole film that a music model can follow in every cue.`,
+    expectedOutputTokens: 3000,
+    thinking: 'HIGH',
+    validate: need(['title']),
+    schema: obj({
+      mainTheme: str('Main theme: melodic shape, instrument, character — concrete enough to recreate in every cue'),
+      emotionalMotif: str('Recurring emotional motif'),
+      instrumentation: arr(str('An instrument or ensemble in the palette')),
+      key: str('Home key, e.g. D minor'),
+      tempoMin: num('Slowest tempo (BPM)'),
+      tempoMax: num('Fastest tempo (BPM)'),
+      culturalDirection: str('Cultural and stylistic direction'),
+      characterThemes: arr(obj({ character: str(), theme: str() })),
+      locationThemes: arr(obj({ location: str(), theme: str() })),
+      tensionLanguage: str('How the score expresses tension'),
+      resolutionLanguage: str('How the score expresses release and resolution'),
+      avoid: arr(str('Instrument, style or cliché to avoid')),
+      notes: str(),
+    }),
+    prompt: (i) =>
+      `Create the musical bible for the film "${i.title}".\nGenre: ${i.genre ?? 'unspecified'}\nLogline: ${i.logline ?? '—'}\nCreator's music direction: ${i.direction ?? '—'}\nTreatment:\n${String(i.treatment ?? '').slice(0, 8000)}\n\nCharacters: ${j(i.characters)}\nLocations: ${j(i.locations)}\n\nScreenplay (excerpt):\n${String(i.fountain ?? '').slice(0, 40000)}`,
+  },
+  'film.cue_sheet': {
+    label: 'Score cue sheet',
+    system:
+      `${WRITER} You are also a music editor spotting a film. Music is a deliberate choice: use silence where it serves the story, keep the score under dialogue, ` +
+      'let it rise in scenes without dialogue, and make transitions intentional. Times are film seconds and must cover the film in order without overlaps.',
+    expectedOutputTokens: 6000,
+    thinking: 'HIGH',
+    validate: need(['scenes']),
+    schema: obj({
+      cues: arr(
+        obj({
+          sceneId: str('Scene id as given, or empty'),
+          scene: str('Scene heading'),
+          start: num('Start (film seconds)'),
+          end: num('End (film seconds)'),
+          purpose: str('Emotional purpose of the music here'),
+          intensity: num('0 (barely there) to 10 (full)'),
+          theme: str('Theme or motif used'),
+          transitionIn: { type: 'string', enum: ['cut_in', 'crossfade', 'swell', 'sting', 'fade_in', 'continue'] },
+          transitionOut: { type: 'string', enum: ['crossfade', 'fade_out', 'hard_out', 'continue'] },
+          silence: { type: 'boolean', description: 'True for deliberate silence (no score at all)' },
+          duckForDialogue: { type: 'boolean', description: 'True when dialogue plays over this cue' },
+          notes: str(),
+        }),
+      ),
+    }),
+    prompt: (i) =>
+      `Spot the score for "${i.title}" (${i.mode === 'minimal' ? 'minimal, sparse score' : 'cinematic score'}), total length ${Math.round(Number(i.durationSec) || 0)} s.\nMusical bible: ${j(i.bible)}\nCreator's direction: ${i.direction ?? '—'}\nScenes in order with film timing and dialogue share (0 = no dialogue, 1 = wall-to-wall talk): ${j(i.scenes)}`,
+  },
 };
 
 export const SONG_ANALYSIS_SCHEMA: Schema = obj({
@@ -260,4 +332,60 @@ export const SONG_ANALYSIS_SCHEMA: Schema = obj({
     }),
   ),
   lyrics: arr(obj({ start: num('seconds'), end: num('seconds'), text: str('One sung line') })),
+});
+
+const SEVERITY: Schema = { type: 'string', enum: ['minor', 'major', 'critical'] };
+const SECONDS = (d: string) => num(`${d} (seconds from the start of the clip; -1 when not applicable)`);
+
+/** Structured scene review returned by the reasoning model during quality inspection. */
+export const INSPECTION_SCHEMA: Schema = obj({
+  summary: str('Two or three sentences a director can act on'),
+  speakerAttribution: arr(obj({ lineIndex: { type: 'integer' }, expectedCharacter: str(), deliveredBy: str('Who actually speaks the line on screen (character name, "off-screen", or "nobody")'), correct: { type: 'boolean' }, note: str() })),
+  lipSync: obj({ applicable: { type: 'boolean' }, drift: { type: 'string', enum: ['none', 'minor', 'severe'] }, note: str() }),
+  performanceFinished: { type: 'boolean', description: 'Every speaker finishes their physical performance (gesture, turn, reaction) before the end' },
+  dialogueOverMusic: { type: 'string', enum: ['clear', 'music_loud', 'music_overpowering', 'not_applicable'] },
+  abruptCutDuringSpeech: { type: 'boolean' },
+  actions: arr(obj({ beat: str('One required action beat from the direction'), completed: { type: 'boolean' }, startSec: SECONDS('When it starts'), endSec: SECONDS('When it completes'), note: str() })),
+  actionComplete: { type: 'boolean' },
+  unfinishedMovementAtEnd: { type: 'boolean' },
+  continuity: arr(obj({ aspect: { type: 'string', enum: ['character_identity', 'costume', 'hairstyle', 'location', 'time_of_day', 'props', 'storyboard_mismatch', 'previous_shot_mismatch', 'story_continuity', 'screen_direction'] }, ok: { type: 'boolean' }, severity: { type: 'string', enum: ['none', 'minor', 'major', 'critical'] }, note: str() })),
+  cameraMatchesDirection: { type: 'boolean' },
+  screenDirectionConsistent: { type: 'boolean' },
+  emotionalPerformanceMatches: { type: 'boolean' },
+  renderedText: obj({ present: { type: 'boolean' }, acceptable: { type: 'boolean' }, note: str() }),
+  artefacts: arr(obj({ description: str(), severity: SEVERITY, startSec: SECONDS('Start'), endSec: SECONDS('End') })),
+  suddenDisappearance: { type: 'boolean' },
+  accidentalSceneChange: { type: 'boolean', description: 'An unplanned cut or scene change (planned cuts listed in the brief do not count)' },
+  firstFrame: obj({ quality: { type: 'string', enum: ['good', 'acceptable', 'poor'] }, note: str() }),
+  lastFrame: obj({ quality: { type: 'string', enum: ['good', 'acceptable', 'poor'] }, note: str() }),
+  scores: obj({
+    actionCompleteness: num('0–100'),
+    visualAccuracy: num('0–100'),
+    characterContinuity: num('0–100, or -1 when no recurring character appears'),
+    audioQuality: num('0–100'),
+    storyContinuity: num('0–100'),
+    overallUsability: num('0–100: could this take go into the film as it is?'),
+  }),
+  problems: arr(obj({ category: str('One of the problem categories listed in the brief'), severity: SEVERITY, startSec: SECONDS('Start'), endSec: SECONDS('End'), description: str() })),
+  recommendedRepair: obj({
+    type: { type: 'string', enum: ['none', 'conversational_edit', 'extend_scene', 'regenerate_longer', 'split_into_shots', 'replace_visuals_keep_audio', 'cutaway', 'regenerate_section', 'trim_ending', 'regenerate'] },
+    instruction: str('Exact instruction for the video model to fix the problems'),
+    sectionStartSec: SECONDS('Start of the faulty section'),
+    sectionEndSec: SECONDS('End of the faulty section'),
+    rationale: str(),
+  }),
+});
+
+/** Vocal detection and an independent line-level transcription (cross-checks the word-timed transcript). */
+export const VOCALS_SCHEMA: Schema = obj({
+  vocalsPresent: { type: 'boolean' },
+  confidence: num('0–1'),
+  languageCode: str('BCP-47 code of the sung language, or "und" when unsure'),
+  note: str(),
+  lines: arr(obj({ start: num('seconds'), end: num('seconds'), text: str('The sung line as heard'), uncertainWords: arr(str('A word in this line you are unsure about')) })),
+});
+
+/** Line anchors for exact, authoritative lyrics (the model returns indices and times only — never text). */
+export const LYRIC_ANCHORS_SCHEMA: Schema = obj({
+  lines: arr(obj({ lineIndex: { type: 'integer' }, start: num('When the line starts being sung (seconds)'), end: num('When it ends (seconds)'), confidence: num('0–1'), sung: { type: 'boolean', description: 'False if this line is not sung at all' } })),
 });

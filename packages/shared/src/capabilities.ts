@@ -62,10 +62,46 @@ export interface ReasoningCapabilities {
   maxAudioSeconds: number;
 }
 
+export interface AudioModelCapabilities {
+  modelId: string;
+  displayName: string;
+  launchStage: 'preview' | 'ga';
+  notes: string[];
+}
+
+export interface MusicCapabilities extends AudioModelCapabilities {
+  perSongUsd: number;
+  maxImageInputs: number;
+  /** Full songs with vocals and lyrics, or instrumental (prompt-controlled). */
+  supportsLyrics: boolean;
+}
+
+export interface SpeechCapabilities extends AudioModelCapabilities {
+  voices: string[];
+}
+
+export interface TranscriptionCapabilities extends AudioModelCapabilities {
+  wordTimestamps: boolean;
+  /** Longest audio transcribed with word timestamps in one request. */
+  maxTimedAudioSeconds: number;
+}
+
 export interface StudioCapabilities {
   video: VideoCapabilities;
   image: ImageCapabilities;
   reasoning: ReasoningCapabilities;
+  music: MusicCapabilities;
+  speech: SpeechCapabilities;
+  transcription: TranscriptionCapabilities;
   region: string;
   vertexLocation: string;
+}
+
+/** Live availability of a registry model for this project (from the `modelStatus` API). */
+export interface ModelAvailability {
+  role: string;
+  modelId: string;
+  status: 'available' | 'unavailable' | 'unknown';
+  detail: string;
+  checkedAt: number;
 }

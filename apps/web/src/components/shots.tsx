@@ -1,7 +1,7 @@
 import { forwardRef, useMemo, useRef, useState } from 'react';
 import { collection, doc, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { CheckCheck, CircleCheck, Clapperboard, Columns2, Copy, Film, ImagePlus, Lock, LockOpen, Play, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
+import { CheckCheck, CircleCheck, Clapperboard, Columns2, Copy, Film, ImagePlus, Lock, LockOpen, Play, ShieldCheck, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
 import {
   compileShotPrompt,
   estimateImage,
@@ -9,6 +9,7 @@ import {
   formatTimecode,
   formatUsd,
   planOmniMedia,
+  qualitySettings,
   sumEstimates,
   type CharacterDoc,
   type ElementDoc,
@@ -20,6 +21,7 @@ import {
   type ShotDoc,
   type TakeDoc,
   type VideoCapabilities,
+  type VideoJobRequest,
 } from '@az-studio/shared';
 import { api, errorMessage } from '../lib/api';
 import { sameData } from '../lib/compare';
@@ -31,6 +33,8 @@ import { addShots, deleteSubDoc, newShot, updateShot, updateSubDoc, useSub } fro
 import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetPicker, AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { DirectionsEditor, PromptPreview } from './video-controls';
+import { BatchProduceDialog, DirectorReview, DurationPreview, previewPlan, ProduceDialog, ProductionBadge, ShotProductionPanel } from './director';
+import { productionAction } from '../lib/production';
 import { Badge, Button, Card, cx, EmptyState, Field, IconButton, Input, Modal, Notice, Segmented, Select, Skeleton, Slider, Textarea, Toggle } from './ui';
 
 export type Shot = WithId<ShotDoc>;
@@ -85,7 +89,8 @@ export function shotPrompt(shot: ShotDoc, ctx: ShotContext, media: OmniMediaRef[
   const locations = shot.refs.locationIds.map((id) => ctx.locations.find((l) => l.id === id)).filter((l): l is Location => Boolean(l)).map((l) => ({ tag: shot.lockRefs ? tagOf(l.primaryRefAssetId) : '', name: l.name, description: [l.description, l.atmosphere, l.timeOfDay].filter(Boolean).join('; ') }));
   const elements = shot.refs.elementIds.map((id) => ctx.elements.find((e) => e.id === id)).filter((e): e is Element => Boolean(e)).map((e) => ({ tag: shot.lockRefs ? tagOf(e.referenceAssetIds[0]) : '', name: e.name, description: e.description }));
   const others = shot.refs.assetIds.map((id) => ({ tag: tagOf(id), name: 'the reference' }));
-  const compiled = compileShotPrompt(shot.directions, { description: shot.description, styleBible: ctx.project.styleBible ?? null, characters, locations, elements, others, durationSec: shot.durationSec, ...(timedCues?.length ? { timedCues } : {}) });
+  const noBackgroundMusic = ctx.project.type === 'film' && !/\b(music|song|singing|band|radio|choir|melody|score)\b/i.test(shot.directions.ambientSound);
+  const compiled = compileShotPrompt(shot.directions, { description: shot.description, styleBible: ctx.project.styleBible ?? null, characters, locations, elements, others, durationSec: shot.durationSec, noBackgroundMusic, noOverlayText: true, ...(timedCues?.length ? { timedCues } : {}) });
   return { body: shot.promptOverride ?? compiled, declaration: planned.declaration };
 }
 
@@ -141,8 +146,22 @@ export function estimateShot(shot: ShotDoc, pricing: PricingTable, imageInputs: 
 // Take card
 // ---------------------------------------------------------------------------
 
+/** Why a take cannot be approved directly (quality control owns approval of produced takes). */
+function approvalBlock(take: Pick<TakeDoc, 'quality' | 'productionId'>): string | null {
+  if (!take.productionId) return null;
+  if (take.quality?.verdict === 'failed') return 'Failed quality review — open the AI Director Review to repair it or mark its issues as acceptable.';
+  if (take.quality?.verdict !== 'passed') return 'Not inspected yet — wait for the quality review.';
+  return null;
+}
+
 /** Approves one take for the edit (a shot has at most one) or withdraws the approval. */
-async function approveTake(projectId: string, shot: Shot, takeId: string, approve: boolean) {
+async function approveTake(projectId: string, shot: Shot, takeId: string, approve: boolean, take?: Pick<TakeDoc, 'quality' | 'productionId' | 'versionId'>) {
+  if (approve && take?.productionId) {
+    const block = approvalBlock(take);
+    if (block) throw new Error(block);
+    await productionAction(take.productionId, 'approve', { versionId: take.versionId ?? null });
+    return;
+  }
   const takeDoc = (id: string) => doc(db, 'projects', projectId, 'shots', shot.id, 'takes', id);
   if (approve && shot.approvedTakeId && shot.approvedTakeId !== takeId) await updateDoc(takeDoc(shot.approvedTakeId), { approved: false }).catch(() => undefined);
   await updateDoc(takeDoc(takeId), { approved: approve });
@@ -185,7 +204,7 @@ function TakeCompare({ projectId, shot, takes, onClose }: { projectId: string; s
         </Select>
         {take?.assetId ? <CompareVideo key={take.assetId} ref={ref} assetId={take.assetId} /> : <Skeleton className="aspect-video w-full rounded-xl" />}
         {take && (
-          <Button size="sm" variant={approved ? 'subtle' : 'secondary'} icon={<CircleCheck className="size-3.5" />} disabled={approved} onClick={() => void approveTake(projectId, shot, take.id, true)}>
+          <Button size="sm" variant={approved ? 'subtle' : 'secondary'} icon={<CircleCheck className="size-3.5" />} disabled={approved || Boolean(approvalBlock(take))} title={approvalBlock(take) ?? undefined} onClick={() => void approveTake(projectId, shot, take.id, true, take).catch((e) => toast.error('Not approved', { description: errorMessage(e) }))}>
             {approved ? `${take.label} approved` : `Approve ${take.label}`}
           </Button>
         )}
@@ -213,13 +232,14 @@ function TakeCompare({ projectId, shot, takes, onClose }: { projectId: string; s
   );
 }
 
-function TakeCard({ projectId, shot, take, onEdit }: { projectId: string; shot: Shot; take: WithId<TakeDoc>; onEdit: (take: WithId<TakeDoc>) => void }) {
+function TakeCard({ projectId, shot, take, onEdit, onReview }: { projectId: string; shot: Shot; take: WithId<TakeDoc>; onEdit: (take: WithId<TakeDoc>) => void; onReview: (take: WithId<TakeDoc>) => void }) {
   const [notes, setNotes] = useState(take.notes);
   const [busy, setBusy] = useState(false);
   const takeRef = doc(db, 'projects', projectId, 'shots', shot.id, 'takes', take.id);
   const approved = shot.approvedTakeId === take.id;
   const selected = shot.selectedTakeId === take.id;
-  const approve = () => approveTake(projectId, shot, take.id, !approved);
+  const block = approved ? null : approvalBlock(take);
+  const approve = () => approveTake(projectId, shot, take.id, !approved, take).catch((e) => toast.error('Not approved', { description: errorMessage(e) }));
   const saveLastFrame = async () => {
     if (!take.assetId) return;
     setBusy(true);
@@ -239,6 +259,11 @@ function TakeCard({ projectId, shot, take, onEdit }: { projectId: string; shot: 
         <Badge tone={take.status === 'completed' ? 'success' : take.status === 'failed' ? 'danger' : 'accent'}>{take.status}</Badge>
         {approved && <Badge tone="success" icon={<CheckCheck className="size-3" />}>Approved</Badge>}
         {take.parentTakeId && <Badge tone="violet">edit</Badge>}
+        {take.quality && (
+          <Badge tone={take.quality.verdict === 'passed' ? 'success' : take.quality.verdict === 'failed' ? 'danger' : 'neutral'} icon={<ShieldCheck className="size-3" />}>
+            {take.quality.verdict === 'pending' ? 'QC pending' : `QC ${take.quality.verdict}${take.quality.overall !== null ? ` · ${take.quality.overall}` : ''}`}
+          </Badge>
+        )}
       </div>
       {take.status === 'completed' && take.assetId ? <VideoPlayer assetId={take.assetId} /> : <div className="grid aspect-video place-items-center rounded-xl bg-black/30 text-xs text-dim">{take.status === 'failed' ? 'Failed — see Jobs for details' : 'Generating…'}</div>}
       {take.status === 'completed' && (
@@ -253,14 +278,21 @@ function TakeCard({ projectId, shot, take, onEdit }: { projectId: string; shot: 
             <Button size="sm" variant={selected ? 'subtle' : 'ghost'} onClick={() => void updateShot(projectId, shot.id, { selectedTakeId: take.id })}>
               {selected ? 'Selected' : 'Select'}
             </Button>
-            <Button size="sm" variant={approved ? 'subtle' : 'secondary'} icon={<CircleCheck className="size-3.5" />} onClick={() => void approve()}>
+            <Button size="sm" variant={approved ? 'subtle' : 'secondary'} icon={<CircleCheck className="size-3.5" />} disabled={Boolean(block)} title={block ?? undefined} onClick={() => void approve()}>
               {approved ? 'Unapprove' : 'Approve'}
             </Button>
           </div>
           <div className="flex flex-wrap gap-1">
-            <Button size="sm" variant="ghost" icon={<Wand2 className="size-3.5" />} onClick={() => onEdit(take)}>
-              Edit this take
-            </Button>
+            {!take.productionId && (
+              <Button size="sm" variant="ghost" icon={<Wand2 className="size-3.5" />} onClick={() => onEdit(take)}>
+                Edit this take
+              </Button>
+            )}
+            {!take.productionId && take.assetId && (
+              <Button size="sm" variant="ghost" icon={<ShieldCheck className="size-3.5" />} title="Inspect this take against the screenplay and repair it automatically" onClick={() => onReview(take)}>
+                Review & repair
+              </Button>
+            )}
             <Button size="sm" variant="ghost" loading={busy} icon={<ImagePlus className="size-3.5" />} onClick={() => void saveLastFrame()}>
               Save last frame
             </Button>
@@ -353,6 +385,9 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
   const [picker, setPicker] = useState<'first' | 'last' | 'refs' | null>(null);
   const [editing, setEditing] = useState<WithId<TakeDoc> | null>(null);
   const [comparing, setComparing] = useState(false);
+  const [producing, setProducing] = useState(false);
+  const [reviewing, setReviewing] = useState<WithId<TakeDoc> | null>(null);
+  const qc = qualitySettings(ctx.project.quality);
   const [editPrompt, setEditPrompt] = useState('');
   const [editMode, setEditMode] = useState<'edit' | 'extend'>('edit');
   const [extendSec, setExtendSec] = useState(4);
@@ -363,6 +398,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
   const imageInputs = planOmniMedia(media).media.length;
   const estimate = boot ? (takes > 1 ? sumEstimates(Array(takes).fill(estimateShot(draft, boot.pricing, imageInputs)), boot.pricing) : estimateShot(draft, boot.pricing, imageInputs)) : null;
   const dirty = !sameData(editorPatch(edits), editorPatch(shot));
+  const plan = useMemo(() => previewPlan(draft, qc, { min: caps.durationSec.min, max: caps.durationSec.max, chain: caps.maxExtendedLengthSec }), [draft, qc, caps]);
 
   const save = async () => {
     await updateSubDoc(ctx.project.id, 'shots', shot.id, { ...editorPatch(edits), updatedAt: serverTimestamp() });
@@ -370,6 +406,10 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
   };
   const generate = async () => {
     if (dirty) await save();
+    if (qc.autoQualityReview) {
+      setProducing(true);
+      return;
+    }
     await submit(Array(takes).fill(shotJob(draft, ctx, caps, timedCues)), { label: `${draft.title} · ${takes} take${takes > 1 ? 's' : ''}` });
   };
   const board = async () => {
@@ -408,8 +448,8 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
           <Button variant="secondary" loading={busy} onClick={() => void board()} icon={<ImagePlus className="size-4" />}>
             Storyboard frame
           </Button>
-          <Button variant="primary" loading={busy} onClick={() => void generate()} icon={<Sparkles className="size-4" />}>
-            Generate {takes > 1 ? `${takes} takes` : 'take'}
+          <Button variant="primary" loading={busy} disabled={qc.autoQualityReview && Boolean(plan.blocked)} onClick={() => void generate()} icon={qc.autoQualityReview ? <ShieldCheck className="size-4" /> : <Sparkles className="size-4" />}>
+            {qc.autoQualityReview ? 'Produce with quality control' : `Generate ${takes > 1 ? `${takes} takes` : 'take'}`}
           </Button>
         </>
       }
@@ -461,7 +501,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
             {!draft.lockRefs && <p className="text-xs text-faint">Unlocked: characters and locations are described in words only.</p>}
           </Card>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label={`Duration ${draft.durationSec}s`}>
+            <Field label={`Preferred duration ${draft.durationSec}s`} hint="A preference: the scene is lengthened or split when dialogue or action needs more time.">
               <Slider label="Duration" min={caps.durationSec.min} max={caps.durationSec.max} step={1} value={draft.durationSec} onChange={(v) => setDraft({ ...draft, durationSec: v })} className="mt-2" />
             </Field>
             <Field label="Aspect">
@@ -481,15 +521,19 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
               </Select>
             </Field>
           </div>
-          <Field label={`Takes per generation: ${takes}`} hint="Alternate takes are separate generations, each billed.">
-            <Slider label="Takes" min={1} max={4} step={1} value={takes} onChange={setTakes} />
-          </Field>
+          {(qc.ensureCompleteDialogue || qc.ensureCompleteAction) && <DurationPreview plan={plan} measured={false} />}
+          {!qc.autoQualityReview && (
+            <Field label={`Takes per generation: ${takes}`} hint="Alternate takes are separate generations, each billed.">
+              <Slider label="Takes" min={1} max={4} step={1} value={takes} onChange={setTakes} />
+            </Field>
+          )}
           <PromptPreview declaration={prompt.declaration} body={prompt.body} override={draft.promptOverride} onOverride={(v) => setDraft({ ...draft, promptOverride: v })} />
           <Field label="Production notes">
             <Textarea rows={2} value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
           </Field>
         </div>
         <div className="space-y-4">
+          <ShotProductionPanel projectId={ctx.project.id} shotId={shot.id} />
           <div className="flex items-center justify-between gap-2">
             <p className="eyebrow">Takes ({takeDocs.data.length})</p>
             {takeDocs.data.filter((t) => t.status === 'completed' && t.assetId).length >= 2 && (
@@ -522,7 +566,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
           {takeDocs.data.length === 0 ? (
             <EmptyState icon={<Clapperboard className="size-5" />} title="No takes yet" body="Generate a take; approve the best one for the edit." />
           ) : (
-            takeDocs.data.map((t) => <TakeCard key={t.id} projectId={ctx.project.id} shot={draft} take={t} onEdit={setEditing} />)
+            takeDocs.data.map((t) => <TakeCard key={t.id} projectId={ctx.project.id} shot={draft} take={t} onEdit={setEditing} onReview={setReviewing} />)
           )}
         </div>
       </div>
@@ -541,6 +585,8 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
         title={picker === 'refs' ? 'Reference images' : picker === 'first' ? 'First frame' : 'Last frame'}
       />
       {dialog}
+      {producing && <ProduceDialog projectId={ctx.project.id} shot={draft} job={shotJob(draft, ctx, caps, timedCues) as VideoJobRequest} onClose={() => setProducing(false)} />}
+      {reviewing && <ProduceDialog projectId={ctx.project.id} shot={draft} job={shotJob(draft, ctx, caps, timedCues) as VideoJobRequest} reviewTake={reviewing} onClose={() => setReviewing(null)} />}
     </Modal>
   );
 }
@@ -568,7 +614,10 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
   const [open, setOpen] = useState<Shot | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [filter, setFilter] = useState<'all' | 'planned' | 'ready' | 'approved' | 'failed'>('all');
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [batch, setBatch] = useState<Shot[] | null>(null);
   const { submit, busy, dialog } = useJobSubmitter();
+  const qc = qualitySettings(ctx.project.quality);
   if (!boot || !caps) return null;
   const visible = shots.filter((s) => filter === 'all' || s.status === filter || (filter === 'ready' && s.status === 'generating'));
   const chosen = shots.filter((s) => selected.includes(s.id));
@@ -576,6 +625,10 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
   const boardEstimate = chosen.length ? sumEstimates(chosen.map(() => estimateImage({ imageSize: boot.settings.defaultImageSize, referenceImages: 2, promptChars: 600, outputs: 1 }, boot.pricing)), boot.pricing) : null;
 
   const generate = async () => {
+    if (qc.autoQualityReview) {
+      setBatch(chosen);
+      return;
+    }
     const ids = await submit(chosen.map((s) => shotJob(s, ctx, caps, timedCuesFor?.(s))), { label: `${chosen.length} shots`, alwaysConfirm: chosen.length > 1 });
     if (ids) setSelected([]);
   };
@@ -614,7 +667,7 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
               Storyboard {chosen.length} · ≈ {formatUsd(boardEstimate?.usd ?? 0)}
             </Button>
             <Button size="sm" variant="primary" loading={busy} onClick={() => void generate()} icon={<Sparkles className="size-3.5" />}>
-              Generate {chosen.length} shot{chosen.length > 1 ? 's' : ''} · ≈ {formatUsd(batchEstimate?.usd ?? 0)}
+              {qc.autoQualityReview ? 'Produce' : 'Generate'} {chosen.length} shot{chosen.length > 1 ? 's' : ''} · ≈ {formatUsd(batchEstimate?.usd ?? 0)}
             </Button>
           </div>
         )}
@@ -636,6 +689,7 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
                     <p className="truncate text-sm font-medium text-fg">{s.title}</p>
                     <Badge tone={s.status === 'approved' ? 'success' : s.status === 'failed' ? 'danger' : s.status === 'planned' ? 'neutral' : 'accent'}>{s.status}</Badge>
                     {s.takeCount > 0 && <span className="text-[11px] text-faint">{s.takeCount} take{s.takeCount > 1 ? 's' : ''}</span>}
+                    <ProductionBadge summary={s.production ?? null} />
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-xs text-dim">{s.description || s.directions.action || 'No description'}</p>
                   <p className="mt-1 text-[11px] text-faint">
@@ -646,6 +700,11 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
                 </div>
               </button>
               <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
+                {s.production && (
+                  <IconButton label="AI Director Review" onClick={() => setReviewing(s.production!.id)}>
+                    <ShieldCheck className="size-4" />
+                  </IconButton>
+                )}
                 <IconButton label="Duplicate shot" onClick={() => void duplicate(s)}>
                   <Copy className="size-4" />
                 </IconButton>
@@ -658,6 +717,12 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
         </ul>
       )}
       {open && <ShotEditor ctx={ctx} shot={shots.find((x) => x.id === open.id) ?? open} timedCues={timedCuesFor?.(open)} onClose={() => setOpen(null)} />}
+      {reviewing && (
+        <Modal open onOpenChange={(o) => !o && setReviewing(null)} size="xl" title="AI Director Review">
+          <DirectorReview productionId={reviewing} />
+        </Modal>
+      )}
+      {batch && <BatchProduceDialog projectId={ctx.project.id} items={batch.map((s) => ({ shot: s, job: shotJob(s, ctx, caps, timedCuesFor?.(s)) as VideoJobRequest }))} onClose={() => setBatch(null)} onStarted={() => setSelected([])} />}
       {dialog}
     </div>
   );

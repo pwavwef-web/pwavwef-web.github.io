@@ -11,7 +11,7 @@ const id = z.string().min(1).max(128).regex(/^[\w-]+$/, 'Invalid id');
 const text = (max: number) => z.string().max(max);
 
 export const jobTargetSchema = z.object({
-  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset']),
+  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score']),
   id,
   sub: id.optional(),
 });
@@ -77,6 +77,9 @@ export const TEXT_TASKS = [
   'music.shotlist',
   'prompt.polish',
   'storyboard.prompts',
+  'music.lyrics',
+  'film.score_bible',
+  'film.cue_sheet',
 ] as const;
 export type TextTask = (typeof TEXT_TASKS)[number];
 
@@ -104,16 +107,104 @@ export const renderJobSchema = z.object({
   timelineId: id,
   preset: z.enum(['youtube_16x9', 'vertical_9x16', 'square_1x1']),
   quality: z.enum(['draft', 'final']),
+  /** Render even though lyric captions are out of sync with the vocals (the issues are recorded). */
+  acceptLyricSync: z.boolean().default(false),
   label: text(160).optional(),
 });
 
-export const jobRequestSchema = z.discriminatedUnion('type', [imageJobSchema, videoJobSchema, textJobSchema, audioJobSchema, renderJobSchema]);
+const languageCode = z.string().trim().min(2).max(24).regex(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/, 'Use a language code such as en, tw or xsm');
+
+export const speechJobSchema = z.object({
+  type: z.literal('speech.generate'),
+  projectId: id,
+  lines: z
+    .array(z.object({ index: z.number().int().min(0).max(500), character: text(80), text: z.string().trim().min(1).max(2000), voice: text(40).nullable().optional(), direction: text(300).optional() }))
+    .min(1)
+    .max(40),
+  languageCode: languageCode.nullable().optional(),
+  label: text(160).optional(),
+  target: jobTargetSchema.nullable().optional(),
+});
+
+export const musicJobSchema = z.object({
+  type: z.literal('music.generate'),
+  projectId: id,
+  purpose: z.enum(['song', 'score_movement']),
+  prompt: z.string().trim().min(1, 'Describe the music.').max(12000),
+  /** Exact lyrics to sing (section tags allowed). Omitted for instrumental music. */
+  lyrics: z.string().max(12000).nullable().optional(),
+  instrumental: z.boolean().default(false),
+  languageCode: languageCode.nullable().optional(),
+  imageAssetIds: z.array(id).max(10).default([]),
+  songId: id.nullable().optional(),
+  scoreId: id.nullable().optional(),
+  movementId: text(40).nullable().optional(),
+  title: text(160).optional(),
+  label: text(160).optional(),
+});
+
+export const lyricsTranscribeJobSchema = z.object({
+  type: z.literal('lyrics.transcribe'),
+  projectId: id,
+  songId: id,
+  audioAssetId: id,
+  languageCode: languageCode.nullable().optional(),
+  label: text(160).optional(),
+});
+
+export const lyricsAlignJobSchema = z.object({
+  type: z.literal('lyrics.align'),
+  projectId: id,
+  songId: id,
+  audioAssetId: id,
+  languageCode: languageCode.nullable().optional(),
+  /** Transcribe the vocals again even if a cached transcription exists. */
+  retranscribe: z.boolean().default(false),
+  label: text(160).optional(),
+});
+
+export const jobRequestSchema = z.discriminatedUnion('type', [imageJobSchema, videoJobSchema, textJobSchema, audioJobSchema, renderJobSchema, speechJobSchema, musicJobSchema, lyricsTranscribeJobSchema, lyricsAlignJobSchema]);
 export type JobRequest = z.infer<typeof jobRequestSchema>;
 export type ImageJobRequest = z.infer<typeof imageJobSchema>;
 export type VideoJobRequest = z.infer<typeof videoJobSchema>;
 export type TextJobRequest = z.infer<typeof textJobSchema>;
 export type AudioJobRequest = z.infer<typeof audioJobSchema>;
 export type RenderJobRequest = z.infer<typeof renderJobSchema>;
+export type SpeechJobRequest = z.infer<typeof speechJobSchema>;
+export type MusicJobRequest = z.infer<typeof musicJobSchema>;
+export type LyricsTranscribeJobRequest = z.infer<typeof lyricsTranscribeJobSchema>;
+export type LyricsAlignJobRequest = z.infer<typeof lyricsAlignJobSchema>;
+
+export const qualitySettingsSchema = z.object({
+  autoQualityReview: z.boolean(),
+  autoFixIncomplete: z.boolean(),
+  ensureCompleteDialogue: z.boolean(),
+  ensureCompleteAction: z.boolean(),
+  checkContinuity: z.boolean(),
+  maxRepairAttempts: z.number().int().min(0).max(6),
+  minApprovalScore: z.number().int().min(0).max(100),
+  repairCostCeilingUsd: z.number().min(0).max(200),
+  requireApprovalForExpensiveRetries: z.boolean(),
+  expensiveRetryUsd: z.number().min(0).max(100),
+  dialogueAudio: z.enum(['generate', 'estimate']),
+  openingAllowanceSec: z.number().min(0.4).max(1),
+  closingAllowanceSec: z.number().min(0.8).max(1.5),
+});
+
+export const productionOptionsSchema = z.object({
+  /** The creator's preferred duration (a preference, not a limit). */
+  requestedSec: z.number().min(1).max(60),
+  /** Uploaded recordings per dialogue line, measured instead of generated guide audio. */
+  uploadedAudio: z.array(z.object({ lineIndex: z.number().int().min(0).max(500), assetId: id })).max(40).default([]),
+  /** Measure line lengths from this earlier take (identify the final dialogue audio). */
+  identifyFromTakeId: id.nullable().optional(),
+  /** Review an existing take instead of generating: it becomes version 1 and goes straight to inspection and repair. */
+  reviewTakeId: id.nullable().optional(),
+  settings: qualitySettingsSchema.partial().optional(),
+});
+
+export const PRODUCTION_ACTIONS = ['approve', 'repair', 'extend', 'split', 'regenerate', 'keep_original', 'waive', 'unwaive', 'cancel', 'reinspect', 'approve_pending_repair', 'dismiss_pending_repair'] as const;
+export type ProductionAction = (typeof PRODUCTION_ACTIONS)[number];
 
 export const settingsSchema = z.object({
   maxConcurrentGenerations: z.number().int().min(1).max(8),
@@ -171,6 +262,28 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('deleteProject'), payload: z.object({ projectId: id, confirmTitle: z.string().min(1).max(200) }) }),
   z.object({ action: z.literal('usageSummary'), payload: z.object({ days: z.number().int().min(1).max(90).default(30) }) }),
+  z.object({
+    action: z.literal('estimateProduction'),
+    payload: z.object({ projectId: id, shotId: id, job: videoJobSchema, options: productionOptionsSchema }),
+  }),
+  z.object({
+    action: z.literal('startProduction'),
+    payload: z.object({ projectId: id, shotId: id, job: videoJobSchema, options: productionOptionsSchema, confirmedUsd: z.number().min(0).nullable().optional() }),
+  }),
+  z.object({
+    action: z.literal('productionAction'),
+    payload: z.object({
+      productionId: id,
+      action: z.enum(PRODUCTION_ACTIONS),
+      versionId: id.nullable().optional(),
+      categories: z.array(text(40)).max(40).default([]),
+      note: text(500).optional(),
+      instruction: text(2000).optional(),
+      extendSec: z.number().int().min(1).max(10).nullable().optional(),
+      confirmedUsd: z.number().min(0).nullable().optional(),
+    }),
+  }),
+  z.object({ action: z.literal('modelStatus'), payload: z.object({ refresh: z.boolean().default(false) }).default({ refresh: false }) }),
 ]);
 export type ApiRequest = z.infer<typeof apiRequestSchema>;
 export type ApiAction = ApiRequest['action'];

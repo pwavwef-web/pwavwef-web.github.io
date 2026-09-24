@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { AudioWaveform, CheckCheck, Clapperboard, Film, GalleryHorizontal, ImagePlus, Music2, Palette, Pause, Play, Plus, Scissors, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
+import { AudioWaveform, CheckCheck, Clapperboard, Film, GalleryHorizontal, ImagePlus, Music2, Palette, Pause, Play, Plus, Scissors, ShieldCheck, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
 import {
   addAudioBed,
+  applyLyricCaptions,
   assemblePicture,
   beatsInRange,
   emptyTimeline,
   formatDuration,
   formatTimecode,
   isWholeSong,
+  LYRIC_CAPTION_MODE_LABELS,
+  LYRIC_CAPTION_MODES,
   lyricsInRange,
   lyricsToCaptions,
   makeClip,
@@ -17,8 +20,11 @@ import {
   productionRange,
   SECTION_LABELS,
   sectionsInRange,
+  sheetText,
+  sheetToLyricLines,
   snapToBeat,
   type AudioAnalysisResult,
+  type LyricCaptionMode,
   type LyricLine,
   type ProjectDoc,
   type SectionLabel,
@@ -37,7 +43,6 @@ import { useAiRun, waitForJobOutput } from '../../lib/ai';
 import { analyzeAssetAudio } from '../../lib/audio-analysis';
 import { useDebounced, type WithId } from '../../lib/data';
 import { useMediaUrls } from '../../lib/media';
-import { parseLyrics } from '../../lib/text-utils';
 import { useBoot, useUid } from '../../lib/session';
 import { addDocs, addShots, createSong, createTimeline, newCharacter, newLocation, newShot, updateProject, updateSubDoc, useProject, useSub } from '../../lib/studio';
 import { BibleBoard } from '../../components/bibles';
@@ -46,7 +51,9 @@ import { useJobSubmitter } from '../../components/jobs';
 import { AssetPicker, useWaveform, Waveform } from '../../components/media';
 import { ProjectHeader } from '../../components/project-header';
 import { ShotQueue, useShotContext, type Shot } from '../../components/shots';
-import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, Notice, SectionHeader, Select, Skeleton, Tabs, Textarea, Toggle } from '../../components/ui';
+import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, SectionHeader, Select, Skeleton, Tabs, Textarea, Toggle } from '../../components/ui';
+import { GenerateMusicForm, LyricsWorkflow } from '../../components/lyrics';
+import { QualityTab } from '../../components/director';
 import { sameData } from '../../lib/compare';
 import { LookbookTab } from '../film/LookbookTab';
 import ImageStudio from '../ImageStudio';
@@ -67,15 +74,21 @@ const SECTION_COLORS: Record<string, string> = {
 };
 
 
+/** Timed lyric lines for planning: the lyric sheet when present, else the legacy line list. */
+function songLines(song: WithId<SongDoc> | null): LyricLine[] {
+  if (!song) return [];
+  return song.lyricsSheet ? sheetToLyricLines(song.lyricsSheet) : song.lyrics?.lines ?? [];
+}
+
 // ---------------------------------------------------------------------------
 // Song tab
 // ---------------------------------------------------------------------------
 
 function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<SongDoc> | null }) {
   const [picker, setPicker] = useState(false);
+  const [composing, setComposing] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
   const [peaks, setPeaks] = useState<AudioAnalysisResult['peaks'] | null>(null);
-  const [lyricsText, setLyricsText] = useState('');
   const audioRef = useRef<HTMLAudioElement>(null);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -105,7 +118,8 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   };
   const aiAnalyse = async () => {
     if (!song) return;
-    const ids = await submit([{ type: 'audio.analyze', projectId: project.id, songId: song.id, audioAssetId: song.audioAssetId, transcribeLyrics: !song.lyrics?.lines.length || song.lyrics.source === 'ai' }], { label: 'Song analysis' });
+    // Lyrics come from the lyric workflow; analysis never transcribes over a sheet or an instrumental.
+    const ids = await submit([{ type: 'audio.analyze', projectId: project.id, songId: song.id, audioAssetId: song.audioAssetId, transcribeLyrics: !song.instrumental && !song.lyricsSheet?.lines.length && (!song.lyrics?.lines.length || song.lyrics.source === 'ai') }], { label: 'Song analysis' });
     if (!ids?.[0]) return;
     setAiBusy(true);
     try {
@@ -125,7 +139,6 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
     await updateSubDoc(project.id, 'songs', song.id, { analysis: { ...(analysis ?? { bpm: 0, beats: [], downbeats: [], energy: [], energyHop: 0.5, analyzedAt: Date.now() }), sections: snapped, method: 'dsp+ai' } });
   };
   const setSections = (sections: SongSection[]) => song && analysis && void updateSubDoc(project.id, 'songs', song.id, { analysis: { ...analysis, sections } });
-  const saveLyrics = async (lines: LyricLine[], source: 'upload' | 'manual') => song && updateSubDoc(project.id, 'songs', song.id, { lyrics: { source, lines } });
 
   useEffect(() => {
     const a = audioRef.current;
@@ -146,8 +159,25 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   if (!song) {
     return (
       <>
-        <EmptyState icon={<Music2 className="size-5" />} title="Add the finished song" body="Upload a mastered track (MP3, WAV, FLAC, M4A…). AZ Studio finds the tempo, beats and sections and builds the video around them." action={<Button variant="primary" icon={<Upload className="size-4" />} onClick={() => setPicker(true)}>Upload or choose song</Button>} />
+        <EmptyState
+          icon={<Music2 className="size-5" />}
+          title="Add the finished song"
+          body="Upload a mastered track (MP3, WAV, FLAC, M4A…), or generate music and lyrics. AZ Studio finds the tempo, beats and sections and builds the video around them."
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="primary" icon={<Upload className="size-4" />} onClick={() => setPicker(true)}>
+                Upload or choose song
+              </Button>
+              <Button icon={<Sparkles className="size-4" />} onClick={() => setComposing(true)}>
+                Generate music and lyrics
+              </Button>
+            </div>
+          }
+        />
         <AssetPicker open={picker} onOpenChange={setPicker} kinds={['audio']} projectId={project.id} onPick={(a) => a[0] && void choose(a[0].id, a[0].title, a[0].durationSec ?? 0)} title="Choose the song" />
+        <Modal open={composing} onOpenChange={setComposing} size="lg" title="Generate music and lyrics" description="Lyria composes a full song; its lyrics, structure and timing are stored and aligned to the vocals.">
+          <GenerateMusicForm project={project} song={null} onDone={() => setComposing(false)} />
+        </Modal>
       </>
     );
   }
@@ -264,37 +294,27 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
             </ul>
           )}
         </Card>
-        <Card className="space-y-3 p-5">
-          <div className="flex items-center justify-between">
-            <p className="eyebrow">Lyrics {song.lyrics ? `· ${song.lyrics.source}` : ''}</p>
-            {song.lyrics && <Badge>{song.lyrics.lines.length} lines</Badge>}
-          </div>
-          <Textarea rows={4} value={lyricsText} onChange={(e) => setLyricsText(e.target.value)} placeholder={'Paste lyrics or LRC (e.g. [00:12.40] First line). Untimed lines are spread across the song for you to refine.'} aria-label="Lyrics text" />
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={!lyricsText.trim()} onClick={() => void saveLyrics(parseLyrics(lyricsText, duration), 'upload').then(() => setLyricsText(''))}>
-              Import lyrics
-            </Button>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] text-dim hover:bg-white/5 hover:text-fg">
-              <Upload className="size-3.5" /> .lrc / .txt file
-              <input type="file" accept=".lrc,.txt,text/plain" className="hidden" onChange={(e) => e.target.files?.[0]?.text().then((t) => void saveLyrics(parseLyrics(t, duration), 'upload'))} />
-            </label>
-          </div>
-          {song.lyrics?.lines.length ? (
-            <ul className="max-h-80 space-y-1 overflow-y-auto pr-1">
-              {song.lyrics.lines.map((l, i) => (
-                <li key={l.id} className={`grid grid-cols-[64px_64px_minmax(0,1fr)] items-center gap-2 rounded-lg px-1 ${time >= l.start && time < l.end ? 'bg-accent/10' : ''}`}>
-                  <Input type="number" step={0.1} value={l.start} onChange={(e) => void saveLyrics(song.lyrics!.lines.map((x, k) => (k === i ? { ...x, start: Number(e.target.value) } : x)), 'manual')} className="!px-2 !py-1 text-xs" aria-label="Line start" />
-                  <Input type="number" step={0.1} value={l.end} onChange={(e) => void saveLyrics(song.lyrics!.lines.map((x, k) => (k === i ? { ...x, end: Number(e.target.value) } : x)), 'manual')} className="!px-2 !py-1 text-xs" aria-label="Line end" />
-                  <button type="button" className="cursor-pointer truncate text-left text-sm text-dim hover:text-fg" onClick={() => audioRef.current && (audioRef.current.currentTime = l.start)}>
-                    {l.text}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-faint">No lyrics yet — import them or use AI transcription.</p>
-          )}
-        </Card>
+        <LyricsWorkflow
+          project={project}
+          song={song}
+          peaks={shownPeaks}
+          transport={{
+            time,
+            playing,
+            seek: (t) => {
+              if (audioRef.current) audioRef.current.currentTime = t;
+              setTime(t);
+            },
+            playRange: (start, end) => {
+              const a = audioRef.current;
+              if (!a) return;
+              a.currentTime = start;
+              stopAt.current = end;
+              void a.play();
+            },
+            pause: () => audioRef.current?.pause(),
+          }}
+        />
       </div>
       {dialog}
     </div>
@@ -419,7 +439,7 @@ function ConceptTab({ project, song }: { project: WithId<ProjectDoc>; song: With
     await updateProject(project.id, { idea: brief });
     const out = await ai.run<Treatment & { concept?: string; characters?: { name: string; description: string }[]; locations?: { name: string; description: string }[] }>(
       'music.treatment',
-      { songTitle: song?.title ?? project.title, artist: '', brief, bpm: song?.analysis?.bpm, sections: song?.analysis?.sections.map((s) => ({ name: s.name, label: s.label, start: s.start, end: s.end })), lyrics: song?.lyrics?.lines.map((l) => l.text).join('\n') },
+      { songTitle: song?.title ?? project.title, artist: '', brief, bpm: song?.analysis?.bpm, sections: song?.analysis?.sections.map((s) => ({ name: s.name, label: s.label, start: s.start, end: s.end })), instrumental: Boolean(song?.instrumental), lyrics: song?.instrumental ? null : song?.lyricsSheet ? sheetText(song.lyricsSheet) : song?.lyrics?.lines.map((l) => l.text).join('\n') },
       'Music video treatment',
     );
     if (!out) return;
@@ -510,7 +530,7 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
     const cues: string[] = [];
     const beats = analysis.downbeats.filter((b) => b >= s.timing!.start && b < s.timing!.end).map((b) => Math.round((b - s.timing!.start) * 10) / 10);
     if (beats.length) cues.push(`Strong musical downbeats at ${beats.map((b) => `${b}s`).join(', ')} — time cuts of motion and camera accents to them.`);
-    const lyric = song?.lyrics?.lines.filter((l) => l.start < s.timing!.end && l.end > s.timing!.start).map((l) => l.text);
+    const lyric = song?.instrumental ? [] : songLines(song).filter((l) => l.start < s.timing!.end && l.end > s.timing!.start).map((l) => l.text);
     if (lyric?.length) cues.push(`Lyric during this shot: “${lyric.join(' / ')}”.`);
     cues.push('Music-video footage: no spoken dialogue; the song will be laid over the edit.');
     return cues;
@@ -524,7 +544,8 @@ function ShotsTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId
         treatment: project.treatment ?? {},
         slots: slots.map((s, i) => ({ slotIndex: i, start: s.start, end: s.end, section: s.sectionName })),
         sections: inRange.map((s) => ({ id: s.id, name: s.name, label: s.label, start: s.start, end: s.end })),
-        lyrics: (song?.lyrics?.lines ?? []).filter((l) => !range || (l.end > range.start && l.start < range.end)).map((l) => ({ start: l.start, end: l.end, text: l.text })),
+        instrumental: Boolean(song?.instrumental),
+        lyrics: song?.instrumental ? [] : songLines(song).filter((l) => !range || (l.end > range.start && l.start < range.end)).map((l) => ({ start: l.start, end: l.end, text: l.text })),
         characters: ctx.characters.map((c) => ({ name: c.name, description: c.appearance })),
         locations: ctx.locations.map((l) => ({ name: l.name, description: l.description })),
         styleBible: project.styleBible ?? {},
@@ -594,6 +615,8 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   const navigate = useNavigate();
   const shots = useSub<ShotDoc>(project.id, 'shots', 'order');
   const [captions, setCaptions] = useState(true);
+  const hasWords = Boolean(song?.lyricsSheet?.lines.some((l) => l.words.some((w) => w.start !== null)));
+  const [captionMode, setCaptionMode] = useState<LyricCaptionMode>(project.format.aspectRatio === '9:16' ? 'vertical' : hasWords ? 'karaoke' : 'line');
   const [title, setTitle] = useState(true);
   const [keepOmniAudio, setKeepOmniAudio] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -619,8 +642,10 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
       let state = emptyTimeline(project.format.aspectRatio, project.format.fps);
       state = assemblePicture(state, items);
       state = { ...state, clips: state.clips.map((c) => (c.kind === 'video' ? { ...c, useSourceAudio: keepOmniAudio, volume: keepOmniAudio ? 0.2 : 1 } : c)) };
-      state = addAudioBed(state, song.audioAssetId, range.end - range.start, song.title, { inPoint: range.start, sourceDuration: song.durationSec });
-      if (captions && song.lyrics?.lines.length) state = lyricsToCaptions(state, lyricsInRange(song.lyrics.lines, range));
+      state = addAudioBed(state, song.audioAssetId, range.end - range.start, song.title, { inPoint: range.start, sourceDuration: song.durationSec, songId: song.id });
+      // Lyric captions follow the song clip: they re-time themselves when the music is moved or trimmed.
+      if (captions && !song.instrumental && song.lyricsSheet?.lines.length) state = applyLyricCaptions(state, song.id, song.lyricsSheet, captionMode);
+      else if (captions && !song.instrumental && song.lyrics?.lines.length) state = lyricsToCaptions(state, lyricsInRange(song.lyrics.lines, range));
       if (title) {
         const ov = state.tracks.find((t) => t.kind === 'overlay')!;
         state = { ...state, clips: [...state.clips, makeClip({ trackId: ov.id, kind: 'title', start: 0, duration: 3.5, text: project.title, fadeIn: 0.6, fadeOut: 0.8, label: 'Title card' })] };
@@ -638,7 +663,18 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   return (
     <div className="space-y-5">
       <Card className="flex flex-wrap items-center gap-6 p-5">
-        <Toggle checked={captions} onChange={setCaptions} label="Lyric captions" />
+        <Toggle checked={captions && !song?.instrumental} onChange={setCaptions} label="Lyric captions" description={song?.instrumental ? 'Instrumental — no lyrics.' : song?.lyricsSheet?.timing.status === 'needs_review' ? 'Some lines need a timing check on the Song tab.' : undefined} />
+        {captions && !song?.instrumental && song?.lyricsSheet && (
+          <Field label="Caption layout" className="w-56">
+            <Select value={captionMode} onChange={(e) => setCaptionMode(e.target.value as LyricCaptionMode)}>
+              {LYRIC_CAPTION_MODES.map((m) => (
+                <option key={m} value={m} disabled={(m === 'karaoke' || m === 'phrase') && !hasWords}>
+                  {LYRIC_CAPTION_MODE_LABELS[m]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Toggle checked={title} onChange={setTitle} label="Opening title card" />
         <Toggle checked={keepOmniAudio} onChange={setKeepOmniAudio} label="Keep Omni ambience at 20%" description="Off: the song carries all audio." />
       </Card>
@@ -666,6 +702,7 @@ export default function MusicStudio() {
     { value: 'shots', label: 'Storyboard & shots', icon: <Film className="size-4" /> },
     { value: 'edit', label: 'Edit & export', icon: <Clapperboard className="size-4" /> },
     { value: 'images', label: 'Images', icon: <ImagePlus className="size-4" /> },
+    { value: 'quality', label: 'Quality control', icon: <ShieldCheck className="size-4" /> },
   ];
   return (
     <div className="space-y-6">
@@ -693,6 +730,7 @@ export default function MusicStudio() {
       {tab === 'shots' && <ShotsTab project={project.data} song={song} />}
       {tab === 'edit' && <EditTab project={project.data} song={song} />}
       {tab === 'images' && <ImageStudio project={project.data} embedded />}
+      {tab === 'quality' && <QualityTab project={project.data} />}
     </div>
   );
 }

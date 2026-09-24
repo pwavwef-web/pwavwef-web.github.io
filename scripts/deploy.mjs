@@ -15,6 +15,9 @@ const region = 'us-central1';
 const args = process.argv.slice(2);
 const only = (args.find((a) => a.startsWith('--only='))?.slice(7) ?? 'renderer,rules,functions,hosting').split(',');
 const win = process.platform === 'win32';
+// The CLI loads the functions bundle locally to read its triggers and gives up after 10 s by default,
+// which a busy workstation can exceed; allow two minutes.
+process.env.FUNCTIONS_DISCOVERY_TIMEOUT ??= '120';
 
 function run(cmd, cmdArgs, opts = {}) {
   console.log(`\n$ ${cmd} ${cmdArgs.join(' ')}`);

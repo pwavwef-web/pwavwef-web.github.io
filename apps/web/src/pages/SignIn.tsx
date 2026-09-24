@@ -7,12 +7,13 @@ import {
   RecaptchaVerifier,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   TotpMultiFactorGenerator,
   type MultiFactorError,
   type MultiFactorResolver,
 } from 'firebase/auth';
 import { LockKeyhole, LogOut, ShieldCheck, Smartphone } from 'lucide-react';
-import { auth, configProblem } from '../lib/firebase';
+import { auth, config, configProblem } from '../lib/firebase';
 import { useSession } from '../lib/session';
 import { Logo } from '../components/shell';
 import { Button, ErrorState, Field, Input, Spinner } from '../components/ui';
@@ -32,6 +33,12 @@ function friendlyAuthError(e: unknown): string {
     'auth/unauthorized-domain': 'This domain is not authorised for sign-in.',
   };
   return map[code] ?? (e instanceof Error ? e.message : 'Sign-in failed.');
+}
+
+/** Google sign-in. Emulator builds use a redirect: embedded test browsers cannot relay a popup's result to the Auth emulator. */
+function googleSignIn() {
+  const provider = new GoogleAuthProvider().setCustomParameters({ prompt: 'select_account' });
+  return config.useEmulators ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
 }
 
 function Backdrop({ children }: { children: ReactNode }) {
@@ -155,7 +162,7 @@ export function SignIn() {
                 size="lg"
                 className="w-full"
                 loading={busy === 'google'}
-                onClick={() => void handle(() => signInWithPopup(auth, new GoogleAuthProvider().setCustomParameters({ prompt: 'select_account' })), 'google')}
+                onClick={() => void handle(() => googleSignIn(), 'google')}
               >
                 Continue with Google
               </Button>

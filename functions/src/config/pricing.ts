@@ -44,6 +44,16 @@ export const PRICING: PricingTable = {
     [MODEL_REGISTRY.reasoning.id]: { inputPerM: 2.0, outputPerM: 12.0, inputPerMLong: 4.0, outputPerMLong: 18.0, longContextThreshold: 200_000, audioTokensPerSecond: 32 },
     [MODEL_REGISTRY.reasoning.fallbackId]: { inputPerM: 1.25, outputPerM: 10.0, inputPerMLong: 2.5, outputPerMLong: 15.0, longContextThreshold: 200_000, audioTokensPerSecond: 32 },
   },
+  // Published 2026-09 (https://ai.google.dev/gemini-api/docs/pricing, Vertex AI list prices match):
+  // "Gemini 2.5 Pro TTS — Input $1.00 (text), Output $20.00 (audio)"; observed 25 audio tokens/s.
+  speech: { modelId: MODEL_REGISTRY.speech.id, inputPerM: 1.0, outputPerM: 20.0, audioTokensPerSecond: 25 },
+  // "Gemini 3.5 Transcribe — Input $2.00 or $0.003/min (audio), Output $12.00"; 25 audio tokens/s (observed).
+  transcription: { modelId: MODEL_REGISTRY.transcription.id, inputPerM: 2.0, outputPerM: 12.0, audioTokensPerSecond: 25 },
+  // "Lyria 3.5 (Full Song) $0.08 per song" (Gemini API list price; not billable on Vertex for this project yet).
+  music: { modelId: MODEL_REGISTRY.music.id, perSongUsd: 0.08, source: 'https://ai.google.dev/gemini-api/docs/pricing' },
+  // Scene inspection watches video at 2 fps. 258 tokens per frame and 32 audio tokens/s are AZ Studio
+  // estimates (actual tokens are recorded from the API response).
+  inspection: { videoTokensPerFrame: 258, audioTokensPerSecond: 32, framesPerSecond: 2, expectedOutputTokens: 7000 },
   render: {
     vcpu: 4,
     memoryGiB: 16,

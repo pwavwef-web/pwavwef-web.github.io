@@ -157,8 +157,10 @@ export function planOmniMedia(refs: OmniMediaRef[]): { media: PlannedOmniMedia[]
 
 /** Infers the Omni task, or `undefined` when the combination is mixed and the model should infer it. */
 export function inferVideoTask(refs: OmniMediaRef[], hasPreviousInteraction: boolean, requested?: 'edit' | 'extend'): string | undefined {
-  if (requested) return requested;
+  // Continuing a stored interaction: Vertex AI rejects any task alongside previous_interaction_id
+  // ("previous_interaction_id is not allowed when video task is set") — the prompt says what to change.
   if (hasPreviousInteraction) return undefined;
+  if (requested) return requested;
   const hasFirst = refs.some((r) => r.role === 'first_frame');
   const hasRefs = refs.some((r) => r.role === 'image_ref' || r.role === 'video_ref');
   if (hasFirst && !hasRefs) return 'image_to_video';
@@ -189,6 +191,10 @@ export interface CompileOptions {
   timedCues?: string[];
   singleContinuousShot?: boolean;
   description?: string;
+  /** Films are scored centrally: keep generated shots free of background music. */
+  noBackgroundMusic?: boolean;
+  /** Studio shots: captions, titles and name labels are added in the edit, never burned into the video. */
+  noOverlayText?: boolean;
 }
 
 const clean = (s: string | undefined | null) => (s ?? '').trim().replace(/\s+/g, ' ');
@@ -246,7 +252,9 @@ export function compileShotPrompt(d: ShotDirections, opts: CompileOptions = {}):
 
   lines.push(`Dialogue: ${dialogueText(d.dialogue)}`);
   if (clean(d.ambientSound)) lines.push(`Sound design: ${sentence(d.ambientSound)}`);
+  if (opts.noBackgroundMusic) lines.push('Music: no background music or score — only dialogue, ambience and sound effects (the film score is added in the edit).');
   if (opts.timedCues?.length) lines.push(`Timing: ${opts.timedCues.join(' ')}`);
+  if (opts.noOverlayText) lines.push('On-screen text: none — no captions, subtitles, titles or name labels (text is added in the edit).');
   if (clean(d.avoid)) lines.push(`Avoid: ${sentence(d.avoid.startsWith('Do not') ? d.avoid : `Do not include ${d.avoid}`)}`);
   return lines.filter(Boolean).join('\n');
 }

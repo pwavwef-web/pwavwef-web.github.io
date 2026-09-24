@@ -28,6 +28,10 @@ const table: PricingTable = {
     expectedThoughtTokens: 300,
   },
   text: { pro: { inputPerM: 2, outputPerM: 12, inputPerMLong: 4, outputPerMLong: 18, longContextThreshold: 200000, audioTokensPerSecond: 32 } },
+  speech: { modelId: 'tts', inputPerM: 1, outputPerM: 20, audioTokensPerSecond: 25 },
+  transcription: { modelId: 'asr', inputPerM: 2, outputPerM: 12, audioTokensPerSecond: 25 },
+  music: { modelId: 'lyria', perSongUsd: 0.08, source: 'x' },
+  inspection: { videoTokensPerFrame: 258, audioTokensPerSecond: 32, framesPerSecond: 2, expectedOutputTokens: 6000 },
   render: { vcpu: 4, memoryGiB: 16, perVcpuSecond: 0.000018, perGiBSecond: 0.000002, secondsPerOutputSecond: { draft: 0.5, final: 1.5 }, overheadSeconds: 60, source: 'x' },
 };
 
@@ -63,6 +67,9 @@ describe('Omni media planning', () => {
     expect(inferVideoTask([{ role: 'first_frame', assetId: 'a' }, { role: 'image_ref', assetId: 'b' }], false)).toBeUndefined();
     expect(inferVideoTask([], true)).toBeUndefined();
     expect(inferVideoTask([], false, 'extend')).toBe('extend');
+    // A follow-up on a stored interaction never carries a task (Vertex AI rejects the combination).
+    expect(inferVideoTask([], true, 'extend')).toBeUndefined();
+    expect(inferVideoTask([], true, 'edit')).toBeUndefined();
   });
 });
 
@@ -93,6 +100,7 @@ describe('prompt compilation', () => {
 
   it('states when there is no dialogue', () => {
     expect(compileShotPrompt(EMPTY_DIRECTIONS, { singleContinuousShot: false })).toBe('Dialogue: No dialogue.');
+    expect(compileShotPrompt(EMPTY_DIRECTIONS, { singleContinuousShot: false, noOverlayText: true })).toMatch(/no captions, subtitles, titles or name labels/);
   });
 
   it('prefixes image purposes', () => {

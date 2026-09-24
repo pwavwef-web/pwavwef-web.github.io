@@ -1,4 +1,5 @@
 import type { Clip, ClipKind, FrameAspect, LyricLine, TextPosition, TextStyle, TimelineDoc, Track, TrackKind } from './types';
+import { lyricCaptionSpecs, type LyricCaptionMode, type LyricsSheet } from './lyrics';
 
 export const MIN_CLIP_SECONDS = 0.1;
 const EPS = 1e-6;
@@ -387,10 +388,172 @@ export function lyricsToCaptions(state: TimelineState, lines: LyricLine[], style
 }
 
 /** Lays the song on the first audio track; `inPoint` starts it part-way (a production range). */
-export function addAudioBed(state: TimelineState, assetId: string, durationSec: number, label = 'Song', opts: { inPoint?: number; sourceDuration?: number } = {}): TimelineState {
+export function addAudioBed(state: TimelineState, assetId: string, durationSec: number, label = 'Song', opts: { inPoint?: number; sourceDuration?: number; songId?: string | null } = {}): TimelineState {
   const track = state.tracks.find((t) => t.kind === 'audio');
   if (!track) throw new Error('Timeline has no audio track');
-  return addClip(state, makeClip({ trackId: track.id, kind: 'audio', start: 0, duration: durationSec, assetId, inPoint: opts.inPoint ?? 0, sourceDuration: opts.sourceDuration ?? durationSec, label, useSourceAudio: false }));
+  return addClip(state, makeClip({ trackId: track.id, kind: 'audio', start: 0, duration: durationSec, assetId, inPoint: opts.inPoint ?? 0, sourceDuration: opts.sourceDuration ?? durationSec, label, useSourceAudio: false, ...(opts.songId ? { songId: opts.songId, role: 'music' as const } : {}) }));
+}
+
+// ---------------------------------------------------------------------------
+// Song-linked lyric captions
+// ---------------------------------------------------------------------------
+
+/** Caption presets per lyric layout (text is never altered — layout comes from size, margins and wrapping). */
+export const LYRIC_CAPTION_PRESETS: Record<LyricCaptionMode, { style: Partial<TextStyle>; position: TextPosition }> = {
+  line: { style: {}, position: DEFAULT_CAPTION_POSITION },
+  karaoke: { style: { highlight: '#F4B84A' }, position: DEFAULT_CAPTION_POSITION },
+  phrase: { style: { highlight: '#8AB6FF' }, position: DEFAULT_CAPTION_POSITION },
+  subtitle: { style: { bold: false, sizePct: 4.2, outline: 2, shadow: true, background: null }, position: { anchor: 'bottom', offset: 0.06, align: 'center' } },
+  vertical: { style: { sizePct: 6.2, outline: 3, highlight: '#F4B84A' }, position: { anchor: 'bottom', offset: 0.24, align: 'center' } },
+};
+
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
+
+function songClips(state: Pick<TimelineState, 'clips'>, songId: string): Clip[] {
+  return state.clips.filter((c) => c.kind === 'audio' && c.songId === songId).sort((a, b) => a.start - b.start);
+}
+
+/** Timeline time at which song time `t` is heard, or null when that part of the song is not on the timeline. */
+export function songTimeToTimeline(state: Pick<TimelineState, 'clips'>, songId: string, t: number): number | null {
+  for (const c of songClips(state, songId)) if (t >= c.inPoint - 1e-6 && t < c.inPoint + c.duration - 1e-6) return c.start + (t - c.inPoint);
+  return null;
+}
+
+export interface LyricPlacement {
+  lineId: string;
+  start: number;
+  duration: number;
+  text: string;
+  units: { text: string; start: number; end: number }[] | null;
+}
+
+/** Where each lyric line belongs on the timeline, following the song's audio clip(s). */
+export function lyricPlacements(state: Pick<TimelineState, 'clips'>, songId: string, sheet: LyricsSheet, mode: LyricCaptionMode): LyricPlacement[] {
+  const audio = songClips(state, songId);
+  const out: LyricPlacement[] = [];
+  for (const sp of lyricCaptionSpecs(sheet, mode)) {
+    const a = audio.find((c) => sp.start >= c.inPoint - 1e-6 && sp.start < c.inPoint + c.duration - 1e-6);
+    if (!a) continue;
+    const endSong = Math.min(sp.end, a.inPoint + a.duration);
+    const duration = endSong - sp.start;
+    if (duration < MIN_CLIP_SECONDS) continue;
+    out.push({
+      lineId: sp.lineId,
+      start: r3(a.start + (sp.start - a.inPoint)),
+      duration: r3(duration),
+      text: sp.text,
+      units: sp.units ? sp.units.filter((u) => u.start < duration).map((u) => ({ ...u, end: r3(Math.min(u.end, duration)) })) : null,
+    });
+  }
+  return out;
+}
+
+/**
+ * (Re)creates a song's lyric captions from its sheet on a dedicated caption track. Style and position
+ * already chosen for this song are kept when the layout is unchanged.
+ */
+export function applyLyricCaptions(state: TimelineState, songId: string, sheet: LyricsSheet, mode: LyricCaptionMode): TimelineState {
+  const previous = state.clips.filter((c) => c.lyric?.songId === songId);
+  const sameMode = previous.find((c) => c.lyric?.mode === mode);
+  let next: TimelineState = { ...state, clips: state.clips.filter((c) => c.lyric?.songId !== songId) };
+  let trackId = previous[0]?.trackId;
+  if (!trackId || !next.tracks.some((t) => t.id === trackId)) {
+    const free = next.tracks.find((t) => t.kind === 'caption' && (t.name === 'Lyrics' || !clipsOnTrack(next, t.id).length));
+    if (free) trackId = free.id;
+    else {
+      next = addTrack(next, 'caption', 'Lyrics');
+      trackId = next.tracks.filter((t) => t.kind === 'caption').pop()!.id;
+    }
+  }
+  const preset = LYRIC_CAPTION_PRESETS[mode];
+  const style: TextStyle = sameMode?.style ?? { ...DEFAULT_TEXT_STYLE, ...preset.style };
+  const position: TextPosition = sameMode?.position ?? preset.position;
+  const clips = lyricPlacements(next, songId, sheet, mode).map((p) =>
+    makeClip({ trackId: trackId!, kind: 'caption', start: p.start, duration: p.duration, text: p.text, style, position, label: 'Lyric', lyric: { songId, lineId: p.lineId, mode }, karaoke: p.units }),
+  );
+  return { ...next, clips: [...next.clips, ...clips] };
+}
+
+/** Re-times every song's lyric captions (after the song is moved, trimmed or its lyrics corrected). */
+export function resyncLyricCaptions(state: TimelineState, sheets: Record<string, LyricsSheet | null | undefined>): TimelineState {
+  const songs = [...new Set(state.clips.map((c) => c.lyric?.songId).filter((x): x is string => Boolean(x)))];
+  let next = state;
+  for (const songId of songs) {
+    const sheet = sheets[songId];
+    if (!sheet) continue;
+    const mode = state.clips.find((c) => c.lyric?.songId === songId)!.lyric!.mode;
+    next = applyLyricCaptions(next, songId, sheet, mode);
+  }
+  return next;
+}
+
+/** True when a song's audio clip moved, was trimmed or split between two timeline states. */
+export function songClipsChanged(a: Pick<TimelineState, 'clips'>, b: Pick<TimelineState, 'clips'>): boolean {
+  const key = (s: Pick<TimelineState, 'clips'>) =>
+    s.clips
+      .filter((c) => c.kind === 'audio' && c.songId)
+      .map((c) => `${c.id}:${c.songId}:${r3(c.start)}:${r3(c.inPoint)}:${r3(c.duration)}`)
+      .sort()
+      .join('|');
+  return key(a) !== key(b);
+}
+
+export type LyricSyncIssueKind = 'early' | 'late' | 'too_long' | 'overruns' | 'orphaned' | 'outside_audio' | 'missing';
+
+export interface LyricSyncIssue {
+  songId: string;
+  lineId: string;
+  clipId: string | null;
+  kind: LyricSyncIssueKind;
+  deltaSec: number;
+  message: string;
+}
+
+/**
+ * Final synchronisation check before rendering: every lyric caption must start with its vocal, not
+ * linger, and end before the next sung line.
+ */
+export function checkLyricSync(state: Pick<TimelineState, 'clips'>, sheets: Record<string, LyricsSheet | null | undefined>, tolerance = 0.15): LyricSyncIssue[] {
+  const issues: LyricSyncIssue[] = [];
+  const captions = state.clips.filter((c) => c.kind === 'caption' && c.lyric);
+  const songs = [...new Set(captions.map((c) => c.lyric!.songId))];
+  const short = (t: string) => (t.length > 40 ? `${t.slice(0, 40)}…` : t);
+  for (const songId of songs) {
+    const sheet = sheets[songId];
+    const mine = captions.filter((c) => c.lyric!.songId === songId);
+    if (!sheet) {
+      for (const c of mine) issues.push({ songId, lineId: c.lyric!.lineId, clipId: c.id, kind: 'orphaned', deltaSec: 0, message: `“${short(c.text)}” belongs to a song whose lyrics are no longer available.` });
+      continue;
+    }
+    const mode = mine[0]!.lyric!.mode;
+    const expected = new Map(lyricPlacements(state, songId, sheet, mode).map((p) => [p.lineId, p]));
+    const order = sheet.lines.map((l) => l.id);
+    for (const c of mine) {
+      const lineId = c.lyric!.lineId;
+      const exp = expected.get(lineId);
+      const line = sheet.lines.find((l) => l.id === lineId);
+      if (!line) {
+        issues.push({ songId, lineId, clipId: c.id, kind: 'orphaned', deltaSec: 0, message: `“${short(c.text)}” is no longer in the lyric sheet.` });
+        continue;
+      }
+      if (!exp) {
+        issues.push({ songId, lineId, clipId: c.id, kind: 'outside_audio', deltaSec: 0, message: `“${short(line.text)}” is shown where that part of the song is not playing.` });
+        continue;
+      }
+      if (c.text !== line.text) issues.push({ songId, lineId, clipId: c.id, kind: 'orphaned', deltaSec: 0, message: `“${short(c.text)}” no longer matches the corrected lyric “${short(line.text)}”.` });
+      const d = r3(c.start - exp.start);
+      if (d < -tolerance) issues.push({ songId, lineId, clipId: c.id, kind: 'early', deltaSec: d, message: `“${short(line.text)}” appears ${Math.abs(d).toFixed(2)} s before it is sung.` });
+      else if (d > tolerance) issues.push({ songId, lineId, clipId: c.id, kind: 'late', deltaSec: d, message: `“${short(line.text)}” appears ${d.toFixed(2)} s after it is sung.` });
+      const endDiff = r3(c.start + c.duration - (exp.start + exp.duration));
+      if (endDiff > 0.6) issues.push({ songId, lineId, clipId: c.id, kind: 'too_long', deltaSec: endDiff, message: `“${short(line.text)}” stays on screen ${endDiff.toFixed(2)} s after the phrase ends.` });
+      const nextId = order[order.indexOf(lineId) + 1];
+      const next = nextId ? expected.get(nextId) : undefined;
+      if (next && c.start + c.duration > next.start + 0.05) issues.push({ songId, lineId, clipId: c.id, kind: 'overruns', deltaSec: r3(c.start + c.duration - next.start), message: `“${short(line.text)}” is still showing when the next line is sung.` });
+    }
+    const shown = new Set(mine.map((c) => c.lyric!.lineId));
+    for (const [lineId, p] of expected) if (!shown.has(lineId)) issues.push({ songId, lineId, clipId: null, kind: 'missing', deltaSec: 0, message: `“${short(p.text)}” is sung but has no caption.` });
+  }
+  return issues;
 }
 
 /** Where the next clip goes when appending to a track: the end of its last clip. */

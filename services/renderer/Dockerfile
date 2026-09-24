@@ -6,7 +6,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && fc-cache -f \
  && echo "Installed font families:" && fc-list : family | sort -u | grep -Ei "inter|garamond|dejavu sans$|noto sans$" \
- && ffmpeg -hide_banner -filters | grep -E " (subtitles|zoompan|loudnorm|tpad|xfade) " \
+ && ffmpeg -hide_banner -filters | grep -E " (subtitles|zoompan|loudnorm|tpad|xfade|sidechaincompress) " \
  && mkdir -p /app/fonts
 
 WORKDIR /app

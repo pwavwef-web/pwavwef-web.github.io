@@ -95,7 +95,12 @@ export async function startVideoJob(job: JobDoc): Promise<void> {
 }
 
 function failureFrom(it: InteractionLike): JobFailure {
-  const messages = [...(it.errors ?? []).map((e) => e.message ?? ''), it.output_text ?? '', ...(it.steps ?? []).flatMap((s) => (s.content ?? []).map((c) => c.text ?? ''))].filter(Boolean).join(' ');
+  // Only what the model said: the echoed prompt (a user_input step) must not be read as a safety message.
+  const modelSteps = (it.steps ?? []).filter((s) => s.type === 'model_output');
+  const messages = [...(it.errors ?? []).map((e) => e.message ?? ''), it.output_text ?? '', ...modelSteps.flatMap((s) => (s.content ?? []).map((c) => c.text ?? ''))].filter(Boolean).join(' ');
+  if (/unable to process speech edits/i.test(messages)) {
+    return new JobFailure({ code: 'speech_edit_unsupported', message: 'Gemini Omni cannot edit or extend speech in a re-sent video. Only a take generated in AZ Studio within the last 7 days can be continued with dialogue — regenerate the scene instead.', retryable: false, details: messages.slice(0, 600) });
+  }
   if (isSafetyMessage(messages)) {
     return new JobFailure({ code: 'safety_blocked', message: 'Google’s safety filters rejected this video request. Adjust the prompt or references and try again.', retryable: false, safety: true, details: messages.slice(0, 600) });
   }

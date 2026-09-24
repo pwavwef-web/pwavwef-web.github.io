@@ -47,3 +47,6 @@ desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Acceptance-test run logs and reports (tests/acceptance)
+tests/acceptance/.results/

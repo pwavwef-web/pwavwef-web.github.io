@@ -1,3 +1,8 @@
+import type { AsrWord, LyricCaptionMode, LyricsSheet } from './lyrics';
+import type { ProductionSummary } from './production';
+import type { QualitySettings } from './quality';
+import type { ScoreMode } from './score';
+
 /**
  * AZ Studio domain model. These shapes are shared by the web app, Cloud Functions and the renderer.
  * Firestore database: `az-studio`. Every top-level document carries `ownerUid`.
@@ -68,6 +73,12 @@ export interface ProjectDoc {
   coverAssetId?: string | null;
   treatment?: Treatment;
   styleBible?: StyleBible;
+  /** Autonomous quality control for generated scenes (defaults: DEFAULT_QUALITY_SETTINGS). */
+  quality?: Partial<QualitySettings>;
+  /** Film soundtrack policy. Music videos keep their song as the master audio. */
+  score?: { mode: ScoreMode; scoreId: string | null } | null;
+  /** Main spoken language of the project (BCP-47), used as a transcription hint. */
+  language?: string | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
@@ -154,7 +165,19 @@ export const JOB_STATUSES = [
 ] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
-export const JOB_TYPES = ['image.generate', 'video.generate', 'text.assist', 'audio.analyze', 'render.timeline'] as const;
+export const JOB_TYPES = [
+  'image.generate',
+  'video.generate',
+  'text.assist',
+  'audio.analyze',
+  'render.timeline',
+  'quality.inspect',
+  'speech.generate',
+  'music.generate',
+  'lyrics.transcribe',
+  'lyrics.align',
+  'media.composite',
+] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
 export interface JobError {
@@ -177,7 +200,7 @@ export interface CostEstimate {
 }
 
 export interface JobTarget {
-  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset';
+  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score';
   id: string;
   /** Extra identifier, e.g. the take id created for a shot. */
   sub?: string;
@@ -201,10 +224,12 @@ export interface JobDoc {
   attempt: number;
   retryOf: string | null;
   external: { interactionId?: string; executionName?: string; pollCount?: number; renderId?: string } | null;
-  result: { assetIds?: string[]; aiRunId?: string; interactionId?: string; text?: string } | null;
+  result: { assetIds?: string[]; aiRunId?: string; interactionId?: string; text?: string; reportId?: string; data?: Record<string, unknown> } | null;
   error: JobError | null;
   cancelRequested: boolean;
   usageUsd: number | null;
+  /** Set on jobs a production run submitted; their completion advances the run. */
+  productionId?: string | null;
   createdAt?: Time;
   updatedAt?: Time;
   startedAt?: Time;
@@ -389,6 +414,8 @@ export interface ShotDoc {
   timing: { start: number; end: number } | null;
   takeCount: number;
   notes: string;
+  /** Latest quality-controlled production run for this shot (mirrored by the backend). */
+  production?: ProductionSummary | null;
   createdAt?: Time;
   updatedAt?: Time;
 }
@@ -407,6 +434,10 @@ export interface TakeDoc {
   rating: number;
   notes: string;
   approved: boolean;
+  /** Quality control result for this take when it was produced by a production run. */
+  productionId?: string | null;
+  versionId?: string | null;
+  quality?: { verdict: 'pending' | 'passed' | 'failed' | 'error'; overall: number | null; reportId: string | null } | null;
   createdAt?: Time;
 }
 
@@ -491,6 +522,18 @@ export interface SongDoc {
   ai: { genre?: string; mood?: string; instrumentation?: string; tempoFeel?: string; summary?: string } | null;
   /** Part of the song being produced (seconds); null or missing means the whole song. */
   range?: { start: number; end: number } | null;
+  /** Editable lyric sheet with word timing (source of truth for captions and exports). */
+  lyricsSheet?: LyricsSheet | null;
+  /** Explicitly instrumental: AZ Studio never invents lyrics for it. */
+  instrumental?: boolean;
+  /** Vocal detection result for the audio. */
+  vocals?: { present: boolean; confidence: number; checkedAt: number; note: string } | null;
+  /** Cached word-timed transcription of the vocals (lets corrections re-sync without a new model call). */
+  asr?: { words: AsrWord[]; modelId: string; languageCode: string | null; audioAssetId: string; createdAt: number } | null;
+  /** A transcribed draft kept aside because approved lyrics already exist. */
+  lyricsCandidate?: LyricsSheet | null;
+  /** Present when the song itself was generated. */
+  generation?: { jobId: string; modelId: string; prompt: string; caption: string; bpm: number | null } | null;
   createdAt?: Time;
   updatedAt?: Time;
 }
@@ -532,6 +575,8 @@ export interface TextStyle {
   uppercase: boolean;
   outline: number;
   shadow: boolean;
+  /** Karaoke / phrase highlight colour (sung text). */
+  highlight?: string | null;
 }
 
 export interface TextPosition {
@@ -569,6 +614,20 @@ export interface Clip {
   label: string;
   shotId: string | null;
   takeId: string | null;
+  /** Audio role in the mix: music is ducked under dialogue and follows score automation. */
+  role?: 'music' | 'dialogue' | 'effects' | null;
+  /** Lower this clip automatically while dialogue plays. */
+  duck?: boolean;
+  /** How far a ducked clip drops under dialogue (dB). */
+  duckDb?: number;
+  /** Linear gain keyframes relative to the clip start (score volume automation). */
+  volumeAutomation?: { t: number; gain: number }[] | null;
+  /** Audio clip of a song in the project (lyric captions follow it). */
+  songId?: string | null;
+  /** Caption generated from a song's lyric sheet; re-timed from the sheet whenever the song moves. */
+  lyric?: { songId: string; lineId: string; mode: LyricCaptionMode } | null;
+  /** Highlight units (words or phrases) relative to the caption start. */
+  karaoke?: { text: string; start: number; end: number }[] | null;
 }
 
 export interface TimelineMarker {
@@ -653,7 +712,7 @@ export interface UsageRecord {
   projectId: string | null;
   jobId: string;
   modelId: string;
-  kind: 'image' | 'video' | 'text' | 'audio' | 'render';
+  kind: 'image' | 'video' | 'text' | 'audio' | 'render' | 'speech' | 'transcription' | 'music';
   tokens: { input: number; output: number; thoughts: number; byModality: Record<string, number> };
   costUsd: number;
   pricingVersion: string;

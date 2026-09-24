@@ -17,7 +17,7 @@ export { newCharacter, newElement, newLocation, newScene, newShot } from './shot
 import { useQuery, useDoc } from './data';
 import { useUid } from './session';
 
-export type SubCollection = 'scripts' | 'sequences' | 'scenes' | 'shots' | 'characters' | 'locations' | 'elements' | 'notes' | 'songs' | 'timelines' | 'aiRuns';
+export type SubCollection = 'scripts' | 'sequences' | 'scenes' | 'shots' | 'characters' | 'locations' | 'elements' | 'notes' | 'songs' | 'timelines' | 'aiRuns' | 'scores';
 
 export const projectRef = (id: string) => doc(db, 'projects', id);
 export const subCol = (projectId: string, sub: SubCollection) => collection(db, 'projects', projectId, sub);

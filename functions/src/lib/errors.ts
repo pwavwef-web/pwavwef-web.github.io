@@ -43,6 +43,11 @@ export function toJobError(e: unknown): JobError {
   if (status === 401 || status === 403 || /PERMISSION_DENIED|UNAUTHENTICATED/i.test(msg)) {
     return { code: 'permission', message: 'Vertex AI denied the studio service account. Check its roles/aiplatform.user grant.', retryable: false, details };
   }
+  // Vertex AI briefly reports a just-finished Omni interaction as still running; continuing it moments
+  // later works, so this is retried with backoff rather than failing the part.
+  if (/previous interaction .* invalid state|current state: IN_PROGRESS/i.test(msg)) {
+    return { code: 'previous_in_progress', message: 'Gemini Omni is still finalising the previous part. The job will retry automatically.', retryable: true, details };
+  }
   if (status === 404 || /NOT_FOUND|was not found/i.test(msg)) {
     return { code: 'not_found', message: 'Vertex AI could not find the requested model or interaction.', retryable: false, details };
   }

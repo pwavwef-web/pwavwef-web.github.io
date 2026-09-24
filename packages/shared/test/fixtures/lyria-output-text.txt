@@ -1,0 +1,10 @@
+[0.0:4.8] Morning light upon the Volta
+[4.8:9.6] Fishermen are singing low
+[9.6:14.4] Carry me home, carry me home
+[14.4:19.2] Where the river waters flow
+[19.2:24.0] Carry me home, carry me home
+[24.0:28.8] Where the river waters flow
+---
+Caption: This track is a quintessential example of modern Ghanaian Highlife, a genre defined by its fusion of indigenous rhythms with Western jazz and guitar influences to create joyful, intricate, and danceable music. The entire piece is built upon a foundation of clean, interlocking electric guitar parts. One lead guitar, with a bright, clean tone, plays a sparkling, syncopated single-note melody that dances around the vocal line, providing a memorable counter-melody. A second rhythm guitar plays tight, staccato major chords on the off-beats, creating the signature rhythmic push-and-pull of Highlife. The rhythmic heart of the song is a vibrant percussion section: a pair of congas provides a continuous, rolling polyrhythmic pattern, while a shaker (shekere) lays down a steady sixteenth-note pulse, creating a rich, textural groove. A melodic bassline, played on a clean Fender Precision Bass, weaves its own soulful counter-melody that connects the chord changes. Layered beneath it all, a small horn section (two saxophones, one trumpet) plays lush, harmonized chord pads that swell and fade, adding warmth and depth. The vocal is a warm, smooth male tenor, delivered with an effortless, relaxed phrasing that floats gracefully over the intricate instrumentation. The production is clean and vibrant, with a touch of hall reverb on the vocals and horns to give the track a spacious, uplifting feel.
+Mosic: 4.5
+BPM: 100.0

@@ -34,6 +34,14 @@ export interface PricingTable {
     string,
     { inputPerM: number; outputPerM: number; inputPerMLong: number; outputPerMLong: number; longContextThreshold: number; audioTokensPerSecond: number }
   >;
+  /** Text-to-speech used for dialogue guide audio (tokens per second of generated audio). */
+  speech: { modelId: string; inputPerM: number; outputPerM: number; audioTokensPerSecond: number };
+  /** Speech-to-text with word timestamps. */
+  transcription: { modelId: string; inputPerM: number; outputPerM: number; audioTokensPerSecond: number };
+  /** Music generation, billed per generated song. */
+  music: { modelId: string; perSongUsd: number; source: string };
+  /** Video understanding with the reasoning model (inspection). Per-frame tokens are an AZ Studio assumption. */
+  inspection: { videoTokensPerFrame: number; audioTokensPerSecond: number; framesPerSecond: number; expectedOutputTokens: number };
   render: {
     vcpu: number;
     memoryGiB: number;
@@ -81,10 +89,11 @@ export function estimateVideo(input: VideoEstimateInput, table: PricingTable): C
     { label: `Model reasoning (≈${v.expectedThoughtTokens} tokens, estimated)`, usd: perM(v.expectedThoughtTokens, v.textOutputPerM) },
   ];
   notes.push('Video output uses Google’s published tokens-per-second rate; reasoning tokens vary per request.');
-  let confidence: CostEstimate['confidence'] = 'medium';
+  const confidence: CostEstimate['confidence'] = 'medium';
   if (input.task === 'extend') {
-    notes.push('Extension billing is estimated on the full returned video length; Google does not publish a separate extension rate.');
-    confidence = 'low';
+    // Observed on Vertex AI (2026-09-24): a 4 s extension of a 4 s take returned 8 s of video and was
+    // billed 7,724 video output tokens (4 s × 1,931) plus the earlier video as input.
+    notes.push('Extensions are billed for the new seconds of video; the earlier video is billed as input (observed usage — Google does not publish a separate extension rate).');
   }
   return finish(parts, confidence, notes, table);
 }
@@ -145,6 +154,55 @@ export function estimateRender(input: { durationSec: number; quality: 'draft' | 
   );
 }
 
+/** Dialogue guide audio: one TTS request per line. */
+export function estimateSpeech(input: { chars: number; seconds: number; lines: number }, table: PricingTable): CostEstimate {
+  const t = table.speech;
+  const inTokens = approxTokens(input.chars) + input.lines * 20;
+  const outTokens = Math.ceil(input.seconds * t.audioTokensPerSecond);
+  return finish(
+    [
+      { label: `Dialogue guide audio (≈${Math.round(input.seconds)} s, ${input.lines} line${input.lines === 1 ? '' : 's'})`, usd: perM(outTokens, t.outputPerM) },
+      { label: 'Script text input', usd: perM(inTokens, t.inputPerM) },
+    ],
+    'medium',
+    ['Speech is billed per generated audio token (published rate); line lengths are estimated until measured.'],
+    table,
+  );
+}
+
+/** Word-timed transcription of audio. */
+export function estimateTranscription(input: { seconds: number; words?: number }, table: PricingTable): CostEstimate {
+  const t = table.transcription;
+  const inTokens = Math.ceil(input.seconds * t.audioTokensPerSecond) + 20;
+  const outTokens = Math.ceil((input.words ?? input.seconds * 3) * 1.6) + 50;
+  return finish([{ label: `Transcription (${Math.round(input.seconds)} s of audio)`, usd: perM(inTokens, t.inputPerM) + perM(outTokens, t.outputPerM) }], 'medium', ['Transcription is billed on audio input tokens and text output tokens.'], table);
+}
+
+/** Watching a generated scene with the reasoning model (video + audio + reference images). */
+export function estimateInspection(input: { modelId: string; durationSec: number; referenceImages: number; promptChars: number }, table: PricingTable): CostEstimate {
+  const t = table.text[input.modelId];
+  const q = table.inspection;
+  if (!t) return finish([], 'low', [`No pricing configured for ${input.modelId}.`], table, 'none');
+  const inTokens = Math.ceil(input.durationSec * (q.framesPerSecond * q.videoTokensPerFrame + q.audioTokensPerSecond)) + input.referenceImages * 560 + approxTokens(input.promptChars);
+  const long = inTokens > t.longContextThreshold;
+  const review = finish(
+    [
+      { label: `Scene review (≈${inTokens.toLocaleString('en-US')} input tokens incl. video at ${q.framesPerSecond} fps)`, usd: perM(inTokens, long ? t.inputPerMLong : t.inputPerM) },
+      { label: `Review output & reasoning (≈${q.expectedOutputTokens.toLocaleString('en-US')} tokens, estimated)`, usd: perM(q.expectedOutputTokens, long ? t.outputPerMLong : t.outputPerM) },
+    ],
+    'medium',
+    ['Inspection = transcription with word timestamps + a structured review by the reasoning model.'],
+    table,
+  );
+  return sumEstimates([review, estimateTranscription({ seconds: input.durationSec }, table)], table);
+}
+
+/** Music generation (per song, published rate). */
+export function estimateMusic(input: { songs: number }, table: PricingTable): CostEstimate {
+  const m = table.music;
+  return finish([{ label: `Music generation (${input.songs} × ${m.modelId})`, usd: input.songs * m.perSongUsd }], 'high', ['Music is billed per generated song at the published rate.'], table);
+}
+
 export function sumEstimates(estimates: CostEstimate[], table: PricingTable): CostEstimate {
   const parts = estimates.flatMap((e) => e.breakdown);
   const order = { high: 0, medium: 1, low: 2 } as const;
@@ -156,7 +214,7 @@ export function sumEstimates(estimates: CostEstimate[], table: PricingTable): Co
 
 /** Cost of recorded usage (tokens reported by the API) at published rates. */
 export function costFromUsage(
-  kind: 'video' | 'image' | 'text',
+  kind: 'video' | 'image' | 'text' | 'speech' | 'transcription',
   usage: { inputTokens: number; outputTokens: number; thoughtTokens: number; outputByModality?: Record<string, number> },
   table: PricingTable,
   modelId?: string,
@@ -172,6 +230,10 @@ export function costFromUsage(
     const imageOut = usage.outputByModality?.image ?? usage.outputTokens;
     const textOut = Math.max(0, usage.outputTokens - imageOut) + usage.thoughtTokens;
     return round(perM(usage.inputTokens, im.inputPerM) + perM(imageOut, im.imageOutputPerM) + perM(textOut, im.textOutputPerM));
+  }
+  if (kind === 'speech' || kind === 'transcription') {
+    const r = table[kind];
+    return round(perM(usage.inputTokens, r.inputPerM) + perM(usage.outputTokens + usage.thoughtTokens, r.outputPerM));
   }
   const t = modelId ? table.text[modelId] : undefined;
   if (!t) return 0;

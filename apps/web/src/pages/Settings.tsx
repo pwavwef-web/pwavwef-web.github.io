@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Cpu, LogOut, MonitorPlay, Save, ShieldCheck } from 'lucide-react';
-import { formatUsd, type StudioSettings } from '@az-studio/shared';
+import { Cpu, LogOut, MonitorPlay, RefreshCw, Save, ShieldCheck } from 'lucide-react';
+import { formatUsd, type ModelAvailability, type StudioSettings } from '@az-studio/shared';
+import { modelStatus } from '../lib/production';
 import { api, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { PRESENTER_EVENT, presenterEnabled, setPresenterEnabled } from '../lib/presenter';
@@ -11,6 +12,21 @@ export default function Settings() {
   const { boot, user, setSettings, signOut } = useSession();
   const [draft, setDraft] = useState<StudioSettings | null>(boot?.settings ?? null);
   const [saving, setSaving] = useState(false);
+  const [availability, setAvailability] = useState<ModelAvailability[] | null>(null);
+  const [checking, setChecking] = useState(false);
+  const check = async (refresh: boolean) => {
+    setChecking(true);
+    try {
+      setAvailability((await modelStatus(refresh)).models);
+    } catch (e) {
+      toast.error('Could not check models', { description: errorMessage(e) });
+    } finally {
+      setChecking(false);
+    }
+  };
+  useEffect(() => {
+    void check(false);
+  }, []);
   if (!boot || !draft) return <Skeleton className="h-96" />;
   const caps = boot.capabilities;
   const set = <K extends keyof StudioSettings>(k: K, v: StudioSettings[K]) => setDraft({ ...draft, [k]: v });
@@ -28,9 +44,12 @@ export default function Settings() {
     }
   };
   const models = [
-    { role: 'Video generation & conversational editing', cap: caps.video.displayName, id: caps.video.modelId, stage: caps.video.launchStage },
-    { role: 'Images & image editing', cap: caps.image.displayName, id: caps.image.modelId, stage: caps.image.launchStage },
-    { role: 'Screenplay, planning & song analysis', cap: caps.reasoning.displayName, id: caps.reasoning.modelId, stage: caps.reasoning.launchStage },
+    { key: 'video', role: 'Video generation, conversational editing & scene repairs', cap: caps.video.displayName, id: caps.video.modelId, stage: caps.video.launchStage },
+    { key: 'image', role: 'Images & image editing', cap: caps.image.displayName, id: caps.image.modelId, stage: caps.image.launchStage },
+    { key: 'reasoning', role: 'Screenplay, planning, lyrics, cue sheets & scene inspection', cap: caps.reasoning.displayName, id: caps.reasoning.modelId, stage: caps.reasoning.launchStage },
+    { key: 'transcription', role: 'Word-timed dialogue checks & lyric sync', cap: caps.transcription.displayName, id: caps.transcription.modelId, stage: caps.transcription.launchStage },
+    { key: 'speech', role: 'Dialogue guide audio (line lengths)', cap: caps.speech.displayName, id: caps.speech.modelId, stage: caps.speech.launchStage },
+    { key: 'music', role: 'Songs with lyrics & film score', cap: caps.music.displayName, id: caps.music.modelId, stage: caps.music.launchStage },
   ];
 
   return (
@@ -88,17 +107,27 @@ export default function Settings() {
               <Cpu className="size-3.5" /> Model registry (server-side)
             </p>
             <ul className="space-y-3">
-              {models.map((m) => (
-                <li key={m.id} className="rounded-xl border border-line p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm text-fg">{m.cap}</p>
-                    <Badge tone={m.stage === 'ga' ? 'success' : 'warning'}>{m.stage === 'ga' ? 'GA' : 'Preview'}</Badge>
-                  </div>
-                  <p className="timecode mt-1 text-xs text-accent-2">{m.id}</p>
-                  <p className="mt-0.5 text-xs text-faint">{m.role}</p>
-                </li>
-              ))}
+              {models.map((m) => {
+                const a = availability?.find((x) => x.role === m.key);
+                return (
+                  <li key={m.key} className="rounded-xl border border-line p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm text-fg">{m.cap}</p>
+                      <div className="flex gap-1.5">
+                        {a && <Badge tone={a.status === 'available' ? 'success' : a.status === 'unavailable' ? 'danger' : 'neutral'}>{a.status === 'available' ? 'Available' : a.status === 'unavailable' ? 'Not available' : 'Unknown'}</Badge>}
+                        <Badge tone={m.stage === 'ga' ? 'success' : 'warning'}>{m.stage === 'ga' ? 'GA' : 'Preview'}</Badge>
+                      </div>
+                    </div>
+                    <p className="timecode mt-1 text-xs text-accent-2">{m.id}</p>
+                    <p className="mt-0.5 text-xs text-faint">{m.role}</p>
+                    {a && a.status !== 'available' && <p className="mt-1 text-xs text-[#ff9b9b]">{a.detail}</p>}
+                  </li>
+                );
+              })}
             </ul>
+            <Button size="sm" variant="ghost" loading={checking} icon={<RefreshCw className="size-3.5" />} onClick={() => void check(true)}>
+              Check availability now
+            </Button>
             <p className="text-xs text-faint">
               Vertex AI location <span className="timecode">{caps.vertexLocation}</span> · functions in <span className="timecode">{caps.region}</span>
               {caps.reasoning.fallbackModelId ? ` · text fallback ${caps.reasoning.fallbackModelId} (used only if the preview model is retired)` : ''}.

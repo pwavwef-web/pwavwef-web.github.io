@@ -44,16 +44,26 @@ The API requires the UID **and** the verified email to match. Rules require the 
 
 Edit `functions/src/config/models.ts` (ID + capabilities) and `functions/src/config/pricing.ts` (published prices, source, date), run `npm run check`, deploy functions. No client change is needed: capabilities reach the UI through `bootstrap`.
 
+Settings → Models probes every role live (`modelStatus`, cached 6 h in `runtime/modelStatus`). Status on 2026-09-24 for project `az-learner`:
+
+- `lyria-3.5`: Vertex AI answers `400 Unsupported model interaction: lyria-3.5` (the publisher model is not found for the project in `global` or `us-central1`). Song and score generation fail fast with this limitation; nothing is billed and no older Lyria model is used. When Google enables it for the project, the existing jobs work unchanged.
+- `gemini-omni-1.1-flash` is served as `gemini-omni-1.1-flash-preview`; `gemini-3.5-transcribe` (GA ID) and `gemini-3.5-flash-tts` return 404 for the project, so `gemini-3.5-transcribe-preview` and `gemini-2.5-pro-tts` are used.
+
 ## Cost controls
 
 Settings → daily/monthly limits, confirmation threshold, concurrent generations, batch size. Limits are enforced server-side on submission (projected spend = recorded usage + running estimates + new estimate). Estimates use Google’s published list prices; invoices come from Cloud Billing.
+
+Quality control (per project, Quality tab): at most 3 automatic repairs per production, a repair cost ceiling (default $6 per production, counting everything the production has spent), and director approval for any single retry above $1.50. When a limit is reached the production stops in “Awaiting repair approval” or “Failed quality review” with the reason, the report and the best version so far.
 
 ## Emulators & tests
 
 ```bash
 npm test                   # unit tests (shared, functions, renderer with a real FFmpeg render, web)
 npm run test:integration   # auth/firestore/storage/functions/tasks emulators; rules + API tests
+AZS_ACCEPTANCE=1 npm run test:acceptance   # live acceptance suite (billable, ≈ $3 per full run at 360p)
 ```
+
+The acceptance suite (`tests/acceptance`) runs the same server code as the API with your Application Default Credentials; Cloud Tasks deliver the work to the deployed worker. Each run creates `QA · …` projects in the studio (delete them from the Projects page when done) and writes logs and production records to `tests/acceptance/.results/`. On a busy workstation, set `FUNCTIONS_DISCOVERY_TIMEOUT=90` for `test:integration` (the deploy script sets 120 s itself).
 
 ## Security notes
 

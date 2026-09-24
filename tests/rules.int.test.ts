@@ -97,8 +97,58 @@ describe('Firestore rules — creative documents and server records', () => {
   it('only allows rating / notes / approval on takes', async () => {
     const db = owner().firestore();
     await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { rating: 4, notes: 'Great light' }));
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { approved: true }));
     await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { assetId: 'other' }));
     await assertFails(setDoc(doc(db, 'projects/p1/shots/s1/takes/t2'), { status: 'completed' }));
+  });
+
+  it('never lets a take made under quality control be approved directly', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'projects/p1/shots/s1/takes/qc'), { status: 'completed', rating: 0, notes: '', approved: false, assetId: 'a2', productionId: 'prod1', versionId: 'v1', quality: { verdict: 'failed', overall: 48, reportId: 'r1' } });
+      await setDoc(doc(db, 'projects/p1/shots/s1/takes/qcApproved'), { status: 'completed', rating: 0, notes: '', approved: true, assetId: 'a3', productionId: 'prod1', versionId: 'v2', quality: { verdict: 'passed', overall: 88, reportId: 'r2' } });
+    });
+    const db = owner().firestore();
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qc'), { approved: true }));
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qc'), { quality: { verdict: 'passed', overall: 90, reportId: 'r1' } }));
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qc'), { rating: 2, notes: 'Door never closes' }));
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qcApproved'), { rating: 5 }));
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qcApproved'), { approved: false }));
+  });
+
+  it('keeps quality-control productions, versions, reports and events server-written', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'productions/prod1'), { ownerUid: OWNER, projectId: 'p1', shotId: 's1', status: 'failed_review' });
+      await setDoc(doc(db, 'productions/prod1/versions/v1'), { ownerUid: OWNER, n: 1 });
+      await setDoc(doc(db, 'productions/prod1/reports/r1'), { ownerUid: OWNER, passed: false });
+      await setDoc(doc(db, 'productions/prod1/events/e1'), { ownerUid: OWNER, message: 'Inspection failed' });
+      await setDoc(doc(db, 'productions/foreign'), { ownerUid: 'someone-else', status: 'approved' });
+    });
+    const db = owner().firestore();
+    await assertSucceeds(getDoc(doc(db, 'productions/prod1')));
+    await assertSucceeds(getDocs(query(collection(db, 'productions'), where('ownerUid', '==', OWNER))));
+    for (const sub of ['versions/v1', 'reports/r1', 'events/e1']) await assertSucceeds(getDoc(doc(db, `productions/prod1/${sub}`)));
+    await assertFails(updateDoc(doc(db, 'productions/prod1'), { status: 'approved' }));
+    await assertFails(setDoc(doc(db, 'productions/prod2'), { ownerUid: OWNER, status: 'approved' }));
+    await assertFails(updateDoc(doc(db, 'productions/prod1/reports/r1'), { passed: true }));
+    await assertFails(addDoc(collection(db, 'productions/prod1/events'), { ownerUid: OWNER, message: 'forged' }));
+    await assertFails(deleteDoc(doc(db, 'productions/prod1/reports/r1')));
+    await assertFails(getDoc(doc(db, 'productions/foreign')));
+    await assertFails(getDocs(collection(db, 'productions')));
+    for (const ctx of [intruder(), unverifiedOwner(), anon()]) {
+      await assertFails(getDoc(doc(ctx.firestore(), 'productions/prod1')));
+      await assertFails(getDoc(doc(ctx.firestore(), 'productions/prod1/reports/r1')));
+    }
+  });
+
+  it('lets the owner keep the film score and song lyric sheets with the project', async () => {
+    const db = owner().firestore();
+    await assertSucceeds(setDoc(doc(db, 'projects/p1/scores/main'), { mode: 'cinematic', cueSheet: [], movements: [] }));
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/scores/main'), { mode: 'minimal' }));
+    await assertSucceeds(setDoc(doc(db, 'projects/p1/songs/song1'), { title: 'Volta', lyricsSheet: { language: 'xsm', requiresLanguageVerification: false, lines: [] } }));
+    await assertFails(setDoc(doc(intruder().firestore(), 'projects/p1/scores/main'), { mode: 'none' }));
+    await assertFails(getDoc(doc(anon().firestore(), 'projects/p1/scores/main')));
   });
 
   it('keeps jobs, usage and runtime state server-controlled', async () => {

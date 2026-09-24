@@ -103,6 +103,11 @@ describe('authentication and access control', () => {
     expect(r.result.capabilities.video.aspectRatios).toEqual(['16:9', '9:16']);
     expect(r.result.pricing.video.videoOutputPerM).toBe(17.5);
     expect(r.result.settings.dailyLimitUsd).toBeGreaterThan(0);
+    // Quality control, lyrics and score models (music stays on the required model even when it is unavailable).
+    expect(r.result.capabilities.transcription.modelId).toBe('gemini-3.5-transcribe-preview');
+    expect(r.result.capabilities.transcription.wordTimestamps).toBe(true);
+    expect(r.result.capabilities.speech.modelId).toBe('gemini-2.5-pro-tts');
+    expect(r.result.capabilities.music.modelId).toBe('lyria-3.5');
   });
 
   it('rejects malformed API requests', async () => {
@@ -188,6 +193,85 @@ describe('job submission', () => {
     const ok = await call(owner.token, 'createUpload', { kind: 'image', fileName: 'still.png', mimeType: 'image/png', sizeBytes: 1000, projectId: 'it-project' });
     expect(ok.error).toBeUndefined();
     expect(ok.result.storagePath).toMatch(/^users\/owner-test-uid\/uploads\/[\w-]+\/still\.png$/);
+  });
+});
+
+describe('quality-controlled production', () => {
+  const shotId = 'it-shot-overflow';
+  const shot = {
+    sceneId: null,
+    sectionId: null,
+    order: 1,
+    number: '1A',
+    title: 'Reef crossing',
+    description: 'Ama and Kofi on the deck at dusk.',
+    directions: {
+      framing: 'Medium two-shot',
+      cameraMovement: 'Slow push-in',
+      lens: '35mm',
+      lighting: 'Dusk',
+      mood: 'Resolute',
+      style: 'Naturalistic',
+      performance: 'Quiet determination',
+      action: '',
+      dialogue: [
+        { character: 'AMA', line: 'We have crossed the reef, but the journey has only begun. The tide will turn before nightfall, and we must be ready.' },
+        { character: 'KOFI', line: 'Then we sail at first light. Tell the others to rest while they still can.' },
+      ],
+      ambientSound: 'Waves against the hull',
+      avoid: '',
+    },
+    promptOverride: null,
+    durationSec: 8,
+    aspectRatio: '16:9',
+    resolution: '360p',
+    refs: { characterIds: [], locationIds: [], elementIds: [], assetIds: [], firstFrameAssetId: null, lastFrameAssetId: null, storyboardAssetId: null },
+    lockRefs: false,
+    status: 'planned',
+    selectedTakeId: null,
+    approvedTakeId: null,
+    timing: null,
+    takeCount: 0,
+    notes: '',
+  };
+  const job = { type: 'video.generate', projectId: 'it-qc', mode: 'generate', prompt: 'Medium two-shot on a fishing boat deck at dusk. AMA and KOFI speak.', aspectRatio: '16:9', resolution: '360p', durationSec: 8, target: { kind: 'shot', id: shotId } };
+
+  beforeAll(async () => {
+    await setDoc(doc(owner.db, 'projects', 'it-qc'), { ownerUid: OWNER.uid, title: 'QC Integration', type: 'film', status: 'active', format: { aspectRatio: '16:9', fps: 24 }, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    await setDoc(doc(owner.db, 'projects', 'it-qc', 'shots', shotId), shot);
+  });
+
+  it('treats the requested duration as a preference and plans connected shots for dialogue that does not fit', async () => {
+    const r = await call(owner.token, 'estimateProduction', { projectId: 'it-qc', shotId, job, options: { requestedSec: 8 } });
+    expect(r.error).toBeUndefined();
+    const plan = r.result.plan;
+    expect(plan.requestedSec).toBe(8);
+    expect(plan.requiredSec).toBeGreaterThan(10);
+    expect(plan.strategy).toBe('extend_chain');
+    // Text estimates before the guide audio is measured: every part fits one generation and together they cover the scene.
+    expect(plan.segments.length).toBeGreaterThanOrEqual(2);
+    for (const s of plan.segments) expect(s.durationSec).toBeLessThanOrEqual(10);
+    expect(plan.segments.reduce((t: number, s: { durationSec: number }) => t + s.durationSec, 0)).toBeGreaterThanOrEqual(plan.requiredSec);
+    expect(plan.message).toMatch(/^AZ Studio will create (two|three|four) connected shots to complete this scene\.$/);
+    // Parts break only at sentence boundaries and together carry every word, in order.
+    const spoken = plan.segments.flatMap((s: { units: { text: string }[] }) => s.units.map((u) => u.text)).join(' ');
+    expect(spoken).toBe(shot.directions.dialogue.map((d) => d.line).join(' '));
+    expect(r.result.quality).toMatchObject({ ensureCompleteDialogue: true, ensureCompleteAction: true, maxRepairAttempts: 3 });
+    expect(r.result.audioMode).toBe('generated');
+    expect(r.result.estimate.usd).toBeGreaterThan(0);
+  });
+
+  it('refuses production requests that do not match the shot, and hides productions from everyone else', async () => {
+    const wrong = await call(owner.token, 'estimateProduction', { projectId: 'it-qc', shotId, job: { ...job, target: { kind: 'shot', id: 'another-shot' } }, options: { requestedSec: 8 } });
+    expect(wrong.error?.status).toBe('INVALID_ARGUMENT');
+    const missing = await call(owner.token, 'estimateProduction', { projectId: 'it-qc', shotId: 'no-such-shot', job: { ...job, target: { kind: 'shot', id: 'no-such-shot' } }, options: { requestedSec: 8 } });
+    expect(missing.error?.status).toBe('NOT_FOUND');
+    const foreign = await call(intruder.token, 'estimateProduction', { projectId: 'it-qc', shotId, job, options: { requestedSec: 8 } });
+    expect(foreign.error?.status).toBe('PERMISSION_DENIED');
+    const act = await call(owner.token, 'productionAction', { productionId: 'no-such-production', action: 'approve' });
+    expect(act.error?.status).toBe('NOT_FOUND');
+    const bad = await call(owner.token, 'productionAction', { productionId: 'no-such-production', action: 'approve_quietly' });
+    expect(bad.error?.status).toBe('INVALID_ARGUMENT');
   });
 });
 

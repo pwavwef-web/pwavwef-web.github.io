@@ -145,6 +145,30 @@ export function Inspector({
               </Field>
             </div>
           )}
+          {clip.kind === 'audio' && (
+            <Field label="Role in the mix">
+              <Segmented label="Audio role" size="sm" value={clip.role ?? 'effects'} onChange={(v) => onChange({ role: v, duck: v === 'music' ? clip.duck ?? true : false }, 'Audio role')} options={[{ value: 'music', label: 'Music' }, { value: 'dialogue', label: 'Dialogue' }, { value: 'effects', label: 'Effects' }]} />
+            </Field>
+          )}
+          {clip.kind === 'audio' && clip.role === 'music' && (
+            <>
+              <Toggle checked={Boolean(clip.duck)} onChange={(v) => onChange({ duck: v }, 'Ducking')} label="Duck under dialogue" description="Lowers automatically while dialogue and important effects play." />
+              {clip.duck && (
+                <Field label={`Duck depth ${clip.duckDb ?? 12} dB`}>
+                  <Slider label="Duck depth" min={6} max={18} step={1} value={clip.duckDb ?? 12} onChange={(v) => onChange({ duckDb: v }, 'Duck depth')} />
+                </Field>
+              )}
+              {clip.volumeAutomation?.length ? (
+                <div className="flex items-center justify-between gap-2 text-[11px] text-faint">
+                  <span>Volume automation: {clip.volumeAutomation.length} keyframes (from the score cue sheet)</span>
+                  <Button size="sm" variant="ghost" onClick={() => onChange({ volumeAutomation: null }, 'Clear automation')}>
+                    Clear
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          )}
+          {clip.songId && <p className="text-[11px] text-faint">Song clip — lyric captions follow it when it is moved, trimmed or split.</p>}
           {clip.volume > 1 && <p className="text-[11px] text-faint">Gain above 100% is applied in the render; the preview plays at 100%.</p>}
         </div>
       )}
@@ -152,7 +176,8 @@ export function Inspector({
       {isText && (
         <div className="space-y-3">
           <p className="eyebrow">Text</p>
-          <Textarea rows={3} value={clip.text} onChange={(e) => onChange({ text: e.target.value }, 'Text')} aria-label="Text" />
+          {clip.lyric && <p className="text-[11px] text-faint">Lyric caption ({clip.lyric.mode}) — timing comes from the song’s lyric sheet. Correct the words on the Song tab, then Resync lyrics.</p>}
+          <Textarea rows={3} value={clip.text} disabled={Boolean(clip.lyric)} onChange={(e) => onChange({ text: e.target.value }, 'Text')} aria-label="Text" />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Font">
               <Select value={style.font} onChange={(e) => onChange({ style: { ...style, font: e.target.value as TextStyle['font'] } }, 'Font')}>

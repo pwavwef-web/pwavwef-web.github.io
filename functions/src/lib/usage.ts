@@ -60,11 +60,15 @@ export interface UsageInput {
   projectId: string | null;
   jobId: string;
   modelId: string;
-  kind: 'image' | 'video' | 'text' | 'audio';
+  kind: 'image' | 'video' | 'text' | 'audio' | 'speech' | 'transcription' | 'music';
   inputTokens: number;
   outputTokens: number;
   thoughtTokens: number;
   outputByModality?: Record<string, number>;
+  /** Models priced per request (e.g. music per song) record their published price directly. */
+  costUsdOverride?: number;
+  /** False for secondary calls inside one job (keeps per-day job counts honest). */
+  countJob?: boolean;
 }
 
 /**
@@ -72,8 +76,14 @@ export interface UsageInput {
  * daily, monthly, per-project and per-job aggregates.
  */
 export async function recordUsage(u: UsageInput): Promise<number> {
-  const pricingKind = u.kind === 'audio' ? 'text' : u.kind;
-  const costUsd = costFromUsage(pricingKind, { inputTokens: u.inputTokens, outputTokens: u.outputTokens, thoughtTokens: u.thoughtTokens, outputByModality: u.outputByModality }, PRICING, u.modelId);
+  const pricingKind = u.kind === 'audio' ? 'text' : u.kind === 'music' ? null : u.kind;
+  const costUsd =
+    u.costUsdOverride !== undefined
+      ? Math.round(u.costUsdOverride * 1e6) / 1e6
+      : pricingKind
+        ? costFromUsage(pricingKind, { inputTokens: u.inputTokens, outputTokens: u.outputTokens, thoughtTokens: u.thoughtTokens, outputByModality: u.outputByModality }, PRICING, u.modelId)
+        : 0;
+  const jobs = u.countJob === false ? 0 : 1;
   const now = new Date();
   const day = dayKey(now);
   const month = monthKey(now);
@@ -91,10 +101,10 @@ export async function recordUsage(u: UsageInput): Promise<number> {
     month,
     createdAt: FieldValue.serverTimestamp(),
   });
-  const agg = { ownerUid: u.uid, costUsd: FieldValue.increment(costUsd), jobs: FieldValue.increment(1), byModel: { [u.modelId]: FieldValue.increment(costUsd) }, updatedAt: FieldValue.serverTimestamp() };
+  const agg = { ownerUid: u.uid, costUsd: FieldValue.increment(costUsd), jobs: FieldValue.increment(jobs), byModel: { [u.modelId]: FieldValue.increment(costUsd) }, updatedAt: FieldValue.serverTimestamp() };
   batch.set(col.usageDaily().doc(`${u.uid}_${day}`), { ...agg, day }, { merge: true });
   batch.set(col.usageMonthly().doc(`${u.uid}_${month}`), { ...agg, month }, { merge: true });
-  if (u.projectId) batch.set(col.projects().doc(u.projectId), { usage: { costUsd: FieldValue.increment(costUsd), jobs: FieldValue.increment(1) } }, { merge: true });
+  if (u.projectId) batch.set(col.projects().doc(u.projectId), { usage: { costUsd: FieldValue.increment(costUsd), jobs: FieldValue.increment(jobs) } }, { merge: true });
   batch.set(col.jobs().doc(u.jobId), { usageUsd: FieldValue.increment(costUsd) }, { merge: true });
   await batch.commit();
   return costUsd;

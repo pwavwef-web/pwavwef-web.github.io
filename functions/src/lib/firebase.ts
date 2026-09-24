@@ -29,6 +29,9 @@ export const col = {
   interactions: () => db.collection('interactions'),
   aiRuns: () => db.collection('aiRuns'),
   runtime: () => db.collection('runtime'),
+  productions: () => db.collection('productions'),
+  songs: (projectId: string) => db.collection('projects').doc(projectId).collection('songs'),
+  scores: (projectId: string) => db.collection('projects').doc(projectId).collection('scores'),
 };
 
 export const gsUri = (path: string) => `gs://${bucket.name}/${path}`;

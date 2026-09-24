@@ -14,17 +14,16 @@ import {
   type AssetDoc,
   type JobDoc,
   type JobRequest,
-  type StudioSettings,
 } from '@az-studio/shared';
 import { studioCapabilities } from '../config/models';
 import { PRICING } from '../config/pricing';
 import { createAsset, withTmpDir } from '../lib/assets';
 import { activeSlots } from '../lib/concurrency';
 import { bucket, col, db, FieldValue } from '../lib/firebase';
-import { cancelJobDoc, enqueueJob, getJob, transition } from '../lib/jobs';
+import { cancelJobDoc, getJob, transition } from '../lib/jobs';
+import { confirmationPolicy, createJobs, prepareAll } from '../lib/submit';
 import { trimVideo, videoFrame } from '../lib/media';
 import type { Owner } from '../lib/owner';
-import { prepareJob, type PreparedJob } from '../lib/prepare';
 import { deletePrefix, signedReadUrl } from '../lib/storage';
 import { mediaInputUrl } from '../lib/media-proxy';
 import { assertRateLimit, assertWithinLimits, getSettings, spendSnapshot } from '../lib/usage';
@@ -117,20 +116,6 @@ export async function mediaUrls(owner: Owner, p: Payload<'mediaUrls'>) {
   return { urls };
 }
 
-async function prepareAll(uid: string, jobs: JobRequest[]): Promise<PreparedJob[]> {
-  const out: PreparedJob[] = [];
-  for (const j of jobs) out.push(await prepareJob(uid, j));
-  return out;
-}
-
-function confirmationPolicy(settings: StudioSettings, prepared: PreparedJob[], totalUsd: number) {
-  const videos = prepared.filter((p) => p.type === 'video.generate').length;
-  const reasons: string[] = [];
-  if (totalUsd >= settings.confirmAboveUsd) reasons.push(`Estimated cost ≥ $${settings.confirmAboveUsd.toFixed(2)} confirmation threshold`);
-  if (videos >= 2) reasons.push(`${videos} video generations in one batch`);
-  return { required: reasons.length > 0, reasons };
-}
-
 export async function estimate(owner: Owner, p: Payload<'estimate'>) {
   const settings = await getSettings(owner.uid);
   const prepared = await prepareAll(owner.uid, p.jobs);
@@ -155,94 +140,11 @@ export async function estimate(owner: Owner, p: Payload<'estimate'>) {
 }
 
 export async function submitJobs(owner: Owner, p: Payload<'submitJobs'>) {
-  const uid = owner.uid;
-  const settings = await getSettings(uid);
+  const settings = await getSettings(owner.uid);
   if (p.jobs.length > settings.maxBatchSize) throw new HttpsError('invalid-argument', `Batches are limited to ${settings.maxBatchSize} jobs (see Settings).`);
-  await assertRateLimit(uid, p.jobs.length);
-  const prepared = await prepareAll(uid, p.jobs);
-  const total = sumEstimates(prepared.map((x) => x.estimate), PRICING);
-  const confirm = confirmationPolicy(settings, prepared, total.usd);
-  if (confirm.required && (p.confirmedUsd === null || p.confirmedUsd === undefined || p.confirmedUsd + 0.005 < total.usd)) {
-    throw new HttpsError('failed-precondition', 'Confirm the estimated cost before submitting this batch.', { reason: 'confirmation_required', estimate: total, reasons: confirm.reasons });
-  }
-  assertWithinLimits(settings, await spendSnapshot(uid), total.usd);
-
-  const now = FieldValue.serverTimestamp();
-  const batchId = prepared.length > 1 ? col.batches().doc().id : null;
-  const writes = db.batch();
-  const jobIds: string[] = [];
-  // Sequential take / turn numbering per shot and chain.
-  const takeCounters = new Map<string, number>();
-  const turnCounters = new Map<string, number>();
-  for (const [i, x] of prepared.entries()) {
-    const jobRef = col.jobs().doc();
-    jobIds.push(jobRef.id);
-    const job: Omit<JobDoc, 'id'> & { request: JobRequest } = {
-      ownerUid: uid,
-      projectId: x.projectId,
-      type: x.type,
-      status: 'queued',
-      stage: 'Queued',
-      progress: 0,
-      modelId: x.modelId,
-      params: x.params,
-      estimate: x.estimate,
-      batchId,
-      target: x.target,
-      label: x.label,
-      attempt: 0,
-      retryOf: null,
-      external: null,
-      result: null,
-      error: null,
-      cancelRequested: false,
-      usageUsd: null,
-      request: p.jobs[i]!,
-    };
-    writes.set(jobRef, { ...job, createdAt: now, updatedAt: now });
-    if (x.take && x.projectId) {
-      const shotRef = col.projects().doc(x.projectId).collection('shots').doc(x.take.shotId);
-      if (!takeCounters.has(x.take.shotId)) takeCounters.set(x.take.shotId, Number((await shotRef.get()).get('takeCount') ?? 0));
-      const index = takeCounters.get(x.take.shotId)! + 1;
-      takeCounters.set(x.take.shotId, index);
-      writes.set(shotRef.collection('takes').doc(x.take.takeId), {
-        index,
-        jobId: jobRef.id,
-        assetId: null,
-        status: 'queued',
-        prompt: x.take.prompt,
-        params: x.take.params,
-        interactionId: null,
-        parentTakeId: x.take.parentTakeId,
-        label: `Take ${index}`,
-        rating: 0,
-        notes: '',
-        approved: false,
-        createdAt: now,
-      });
-      writes.set(shotRef, { takeCount: FieldValue.increment(1), status: 'queued', updatedAt: now }, { merge: true });
-    }
-    if (x.chain) {
-      const chainRef = col.chains().doc(x.chain.chainId);
-      if (x.chain.isNew) {
-        turnCounters.set(x.chain.chainId, 0);
-        writes.set(chainRef, { ownerUid: uid, projectId: x.projectId, kind: x.chain.kind, title: x.chain.title, headTurnId: null, turnCount: 1, createdAt: now, updatedAt: now });
-      } else {
-        if (!turnCounters.has(x.chain.chainId)) turnCounters.set(x.chain.chainId, Number((await chainRef.get()).get('turnCount') ?? 0));
-        writes.set(chainRef, { turnCount: FieldValue.increment(1), updatedAt: now }, { merge: true });
-      }
-      const index = turnCounters.get(x.chain.chainId)!;
-      turnCounters.set(x.chain.chainId, index + 1);
-      writes.set(chainRef.collection('turns').doc(x.chain.turnId), { index, parentTurnId: x.chain.parentTurnId, prompt: x.chain.prompt, mode: x.chain.mode, jobId: jobRef.id, status: 'queued', assetId: null, interactionId: null, createdAt: now });
-    }
-    if (x.render) {
-      writes.set(col.renders().doc(x.render.renderId), { ...x.render.doc, status: 'queued', stage: 'Queued', progress: 0, jobId: jobRef.id, executionName: null, outputAssetId: null, error: null, createdAt: now, updatedAt: now });
-    }
-  }
-  if (batchId) writes.set(col.batches().doc(batchId), { ownerUid: uid, label: p.batchLabel ?? `${prepared.length} jobs`, jobIds, estimate: total, confirmedUsd: p.confirmedUsd ?? null, createdAt: now });
-  await writes.commit();
-  await Promise.all(jobIds.map((id) => enqueueJob(id, 'start')));
-  return { jobIds, batchId, estimate: total };
+  await assertRateLimit(owner.uid, p.jobs.length);
+  const res = await createJobs(owner.uid, p.jobs, { confirmedUsd: p.confirmedUsd ?? null, ...(p.batchLabel ? { batchLabel: p.batchLabel } : {}) });
+  return { jobIds: res.jobIds, batchId: res.batchId, estimate: res.estimate };
 }
 
 export async function cancelJob(owner: Owner, p: Payload<'cancelJob'>) {

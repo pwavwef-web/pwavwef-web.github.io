@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router';
-import { BookOpenText, Clapperboard, FileDown, Film, Lightbulb, ListChecks, MapPin, NotebookPen, Package, Palette, UserRound } from 'lucide-react';
+import { BookOpenText, Clapperboard, FileDown, Film, Lightbulb, ListChecks, MapPin, Music, NotebookPen, Package, Palette, ShieldCheck, UserRound } from 'lucide-react';
 import { useProject } from '../../lib/studio';
 import { ProjectHeader } from '../../components/project-header';
 import { BibleBoard } from '../../components/bibles';
@@ -12,6 +12,8 @@ import { FilmShotsTab } from './FilmShotsTab';
 import { AssemblyTab } from './AssemblyTab';
 import { NotesTab } from './NotesTab';
 import { ExportTab } from './ExportTab';
+import { ScoreTab } from './ScoreTab';
+import { QualityTab } from '../../components/director';
 
 const TABS = [
   { value: 'idea', label: 'Idea & treatment', icon: <Lightbulb className="size-4" /> },
@@ -22,6 +24,8 @@ const TABS = [
   { value: 'continuity', label: 'Props & costumes', icon: <Package className="size-4" /> },
   { value: 'lookbook', label: 'Lookbook', icon: <Palette className="size-4" /> },
   { value: 'shots', label: 'Storyboard & shots', icon: <Film className="size-4" /> },
+  { value: 'quality', label: 'Quality control', icon: <ShieldCheck className="size-4" /> },
+  { value: 'score', label: 'Score', icon: <Music className="size-4" /> },
   { value: 'assembly', label: 'Timeline & render', icon: <Clapperboard className="size-4" /> },
   { value: 'notes', label: 'Notes', icon: <NotebookPen className="size-4" /> },
   { value: 'export', label: 'Export docs', icon: <FileDown className="size-4" /> },
@@ -48,6 +52,8 @@ export default function FilmStudio() {
       {tab === 'continuity' && <BibleBoard kind="elements" project={p} />}
       {tab === 'lookbook' && <LookbookTab project={p} />}
       {tab === 'shots' && <FilmShotsTab project={p} />}
+      {tab === 'quality' && <QualityTab project={p} />}
+      {tab === 'score' && <ScoreTab project={p} />}
       {tab === 'assembly' && <AssemblyTab project={p} />}
       {tab === 'notes' && <NotesTab project={p} />}
       {tab === 'export' && <ExportTab project={p} />}

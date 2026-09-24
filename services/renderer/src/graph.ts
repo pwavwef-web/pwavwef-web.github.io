@@ -127,6 +127,26 @@ function alignment(pos: Clip['position']): number {
   return row + col;
 }
 
+/**
+ * Karaoke / phrase highlighting for a lyric caption: `\kf` sweeps each word as it is sung, `\k`
+ * lights whole phrases. Units are relative to the caption start; the visible clip window is `from`
+ * seconds into the caption (a segment may start mid-caption).
+ */
+export function karaokeText(units: { text: string; start: number; end: number }[], mode: 'sweep' | 'instant', uppercase: boolean): string {
+  const tag = mode === 'sweep' ? 'kf' : 'k';
+  let t = 0;
+  let out = '';
+  units.forEach((u, i) => {
+    const gap = Math.round((u.start - t) * 100);
+    if (gap > 0) out += `{\\k${gap}}`;
+    const dur = Math.max(1, Math.round((Math.max(u.end, u.start + 0.01) - Math.max(u.start, t)) * 100));
+    const word = assEscape(uppercase ? u.text.toUpperCase() : u.text);
+    out += `{\\${tag}${dur}}${word}${i < units.length - 1 ? ' ' : ''}`;
+    t = Math.max(u.end, u.start + dur / 100);
+  });
+  return out;
+}
+
 /** Builds the ASS script for all caption and title text visible in a segment (times relative to it). */
 export function buildAss(snap: RenderSnapshot, seg: Segment): string | null {
   const visible = new Set(snap.tracks.filter((t) => !t.muted).map((t) => t.id));
@@ -134,21 +154,26 @@ export function buildAss(snap: RenderSnapshot, seg: Segment): string | null {
   if (!texts.length) return null;
   const W = snap.width;
   const H = snap.height;
+  const portrait = H > W;
   const styles: string[] = [];
   const events: string[] = [];
   texts.forEach((c, i) => {
     const st: TextStyle = c.style ?? { font: 'Inter', sizePct: 5, color: '#FFFFFF', background: null, bold: true, italic: false, uppercase: false, outline: 2, shadow: true };
-    const size = Math.max(8, Math.round((st.sizePct / 100) * H));
+    // Lyrics in a vertical export sit higher (clear of platform UI) and wrap in a narrower column.
+    const lyricPortrait = portrait && Boolean(c.lyric) && c.lyric?.mode !== 'vertical';
+    const size = Math.max(8, Math.round((st.sizePct / 100) * H * (lyricPortrait ? 0.82 : 1)));
     const boxed = Boolean(st.background) && c.kind === 'caption';
     const outline = boxed ? Math.max(4, Math.round(size * 0.18)) : Math.round((st.outline * H) / 1080);
-    const marginV = Math.round(Math.max(0, c.position?.offset ?? 0.06) * H);
-    const marginH = Math.round(W * 0.06);
+    const marginV = Math.round(Math.max(lyricPortrait ? 0.2 : 0, c.position?.offset ?? 0.06) * H);
+    const marginH = Math.round(W * (portrait && c.lyric ? 0.08 : 0.06));
+    const highlight = c.karaoke?.length && c.lyric && c.lyric.mode !== 'line' && c.lyric.mode !== 'subtitle' ? st.highlight ?? '#F4B84A' : null;
     styles.push(
       [
         `Style: s${i}`,
         st.font,
         size,
-        assColor(st.color),
+        // Karaoke: text is drawn in SecondaryColour until sung, then PrimaryColour (the highlight).
+        assColor(highlight ?? st.color),
         assColor(st.color),
         boxed ? assColor(st.background ?? '#000000', 0x40) : assColor('#000000', 0x10),
         boxed ? assColor(st.background ?? '#000000', 0x40) : assColor('#000000', 0x80),
@@ -174,7 +199,10 @@ export function buildAss(snap: RenderSnapshot, seg: Segment): string | null {
     const end = Math.min(seg.end, c.start + c.duration) - seg.start;
     const fi = Math.round(Math.min(c.fadeIn, c.duration / 2) * 1000);
     const fo = Math.round(Math.min(c.fadeOut, c.duration / 2) * 1000);
-    const body = assEscape(st.uppercase ? c.text.toUpperCase() : c.text);
+    // When a segment starts mid-caption, shift the highlight timing so it stays on the vocals.
+    const into = Math.max(0, seg.start - c.start);
+    const units = highlight && c.karaoke ? c.karaoke.map((u) => ({ ...u, start: Math.max(0, u.start - into), end: Math.max(0, u.end - into) })) : null;
+    const body = units ? karaokeText(units, c.lyric?.mode === 'phrase' ? 'instant' : 'sweep', st.uppercase) : assEscape(st.uppercase ? c.text.toUpperCase() : c.text);
     events.push(`Dialogue: ${c.kind === 'title' ? 1 : 0},${assTime(start)},${assTime(end)},s${i},,0,0,0,,${fi || fo ? `{\\fad(${fi},${fo})}` : ''}${body}`);
   });
   return [
@@ -370,12 +398,45 @@ function slideX(c: Clip, vs: number): string {
 // Audio mix
 // ---------------------------------------------------------------------------
 
+/**
+ * FFmpeg expression for piecewise-linear gain keyframes (clip-local `t`), multiplied by `gain`.
+ * Values are held before the first and after the last keyframe.
+ */
+export function automationExpr(points: { t: number; gain: number }[], gain: number): string {
+  const pts = [...points].filter((p) => Number.isFinite(p.t) && Number.isFinite(p.gain)).sort((a, b) => a.t - b.t);
+  if (!pts.length) return String(gain);
+  let expr = String(r3(pts[pts.length - 1]!.gain));
+  for (let k = pts.length - 1; k > 0; k--) {
+    const a = pts[k - 1]!;
+    const b = pts[k]!;
+    const seg = b.t - a.t < 1e-3 ? String(r3(b.gain)) : `${r3(a.gain)}+(${r3(b.gain - a.gain)})*(t-${r3(a.t)})/${r3(b.t - a.t)}`;
+    expr = `if(lt(t,${r3(b.t)}),${seg},${expr})`;
+  }
+  expr = `if(lt(t,${r3(pts[0]!.t)}),${r3(pts[0]!.gain)},${expr})`;
+  return `${r3(gain)}*(${expr})`;
+}
+
+type Bus = 'dialogue' | 'music' | 'other';
+
+/** Which mix bus a clip feeds: Omni's production sound and dialogue drive the ducking of music. */
+function busOf(c: Clip): Bus {
+  if (c.kind === 'video' || c.role === 'dialogue') return 'dialogue';
+  if (c.duck || c.role === 'music') return 'music';
+  return 'other';
+}
+
+/** Sidechain ratio for a target reduction under dialogue (dB). */
+export function duckRatio(db: number): number {
+  return Math.max(2, Math.min(20, Math.round((db <= 6 ? 3 : db <= 12 ? 3 + ((db - 6) / 6) * 5 : 8 + ((db - 12) / 6) * 8) * 10) / 10));
+}
+
 export function buildAudioMix(snap: RenderSnapshot, resolve: (assetId: string) => string, output: string, filterScriptPath: string): { args: string[]; filter: string } {
   const enc = ENCODE_SETTINGS[snap.quality];
   const tracks = new Map(snap.tracks.map((t) => [t.id, t]));
   const args: string[] = ['-hide_banner', '-y', '-nostdin', '-progress', 'pipe:1', '-nostats'];
   const filters: string[] = [];
-  const labels: string[] = [];
+  const buses: Record<Bus, string[]> = { dialogue: [], music: [], other: [] };
+  let duckDb = 0;
   let i = 0;
   for (const c of snap.clips) {
     const track = tracks.get(c.trackId);
@@ -391,19 +452,39 @@ export function buildAudioMix(snap: RenderSnapshot, resolve: (assetId: string) =
     const fi = Math.max(0.02, c.fadeIn);
     const fo = Math.max(0.02, c.fadeOut);
     const delay = Math.round(c.start * 1000);
+    const bus = busOf(c);
+    // Music crossfades use an equal-power curve so the level never dips between movements.
+    const curve = bus === 'music' ? ':curve=qsin' : '';
+    const volume = c.volumeAutomation?.length ? `volume='${automationExpr(c.volumeAutomation, gain)}':eval=frame` : `volume=${gain}`;
     filters.push(
-      `[${i}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=duration=${r3(c.duration)},asetpts=PTS-STARTPTS,volume=${gain},afade=t=in:st=0:d=${r3(fi)},afade=t=out:st=${r3(Math.max(0, c.duration - fo))}:d=${r3(fo)},adelay=${delay}:all=1[a${i}]`,
+      `[${i}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=duration=${r3(c.duration)},asetpts=PTS-STARTPTS,${volume},afade=t=in:st=0:d=${r3(fi)}${curve},afade=t=out:st=${r3(Math.max(0, c.duration - fo))}:d=${r3(fo)}${curve},adelay=${delay}:all=1[a${i}]`,
     );
-    labels.push(`[a${i}]`);
+    buses[bus].push(`[a${i}]`);
+    if (bus === 'music' && c.duck) duckDb = Math.max(duckDb, c.duckDb ?? 12);
     i++;
   }
   const D = r3(snap.durationSec);
-  if (!labels.length) {
+  const all = [...buses.dialogue, ...buses.music, ...buses.other];
+  const master = snap.quality === 'final' ? 'loudnorm=I=-14:TP=-1.5:LRA=11' : 'alimiter=limit=0.95';
+  const tail = `apad,atrim=duration=${D},${master},aresample=48000[aout]`;
+  if (!all.length) {
     args.push('-f', 'lavfi', '-t', String(D), '-i', 'anullsrc=r=48000:cl=stereo');
     filters.push(`[0:a]atrim=duration=${D}[aout]`);
+  } else if (duckDb > 0 && buses.dialogue.length && buses.music.length) {
+    // Automatic ducking: the score is compressed by the dialogue/production-sound bus, so it drops under
+    // speech and important effects and rises again in the gaps.
+    const mix = (labels: string[], out: string) => (labels.length === 1 ? `${labels[0]}anull[${out}]` : `${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0[${out}]`);
+    filters.push(mix(buses.dialogue, 'dlg'));
+    filters.push(mix(buses.music, 'mus'));
+    // sidechaincompress stops when its key input ends: pad the dialogue key to the full length so the
+    // score keeps playing after the last line.
+    filters.push('[dlg]asplit=2[dlgmix][dlgkey]');
+    filters.push(`[dlgkey]apad=whole_dur=${D}[dlgsc]`);
+    filters.push(`[mus][dlgsc]sidechaincompress=threshold=0.02:ratio=${duckRatio(duckDb)}:attack=20:release=450:knee=3:makeup=1[ducked]`);
+    const rest = ['[dlgmix]', '[ducked]', ...buses.other];
+    filters.push(`${rest.join('')}amix=inputs=${rest.length}:normalize=0:dropout_transition=0,${tail}`);
   } else {
-    const master = snap.quality === 'final' ? 'loudnorm=I=-14:TP=-1.5:LRA=11' : 'alimiter=limit=0.95';
-    filters.push(`${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0,apad,atrim=duration=${D},${master},aresample=48000[aout]`);
+    filters.push(`${all.join('')}amix=inputs=${all.length}:normalize=0:dropout_transition=0,${tail}`);
   }
   args.push('-filter_complex_script', filterScriptPath, '-map', '[aout]', '-c:a', 'aac', '-b:a', enc.audioBitrate, '-ar', '48000', '-t', String(D), output);
   return { args, filter: filters.join(';\n') };

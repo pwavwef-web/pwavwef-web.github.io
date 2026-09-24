@@ -33,7 +33,7 @@ export function assertTransition(from: JobStatus, to: JobStatus): void {
 
 /** Jobs that call a paid generative model and therefore count toward the concurrency limit. */
 export function isGenerativeJob(type: JobType): boolean {
-  return type === 'image.generate' || type === 'video.generate' || type === 'text.assist' || type === 'audio.analyze';
+  return type !== 'render.timeline' && type !== 'media.composite';
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -53,4 +53,10 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   'text.assist': 'Writing assist',
   'audio.analyze': 'Song analysis',
   'render.timeline': 'Render',
+  'quality.inspect': 'Quality review',
+  'speech.generate': 'Dialogue audio',
+  'music.generate': 'Music',
+  'lyrics.transcribe': 'Lyrics extraction',
+  'lyrics.align': 'Lyrics sync',
+  'media.composite': 'Scene repair edit',
 };

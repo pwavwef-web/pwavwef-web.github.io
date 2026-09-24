@@ -99,7 +99,16 @@ function CaptionLayer({ clip, heightPx, t }: { clip: Clip; heightPx: number; t: 
   const boxed = Boolean(s?.background);
   return (
     <div className="pointer-events-none absolute inset-x-[6%] flex" style={{ opacity: style.opacity, zIndex: 50, justifyContent: pos.align === 'left' ? 'flex-start' : pos.align === 'right' ? 'flex-end' : 'center', ...(pos.anchor === 'top' ? { top: `${pos.offset * 100}%` } : pos.anchor === 'bottom' ? { bottom: `${pos.offset * 100}%` } : { top: '50%', transform: 'translateY(-50%)' }) }}>
-      <span style={{ ...textCss(s, heightPx), textAlign: pos.align, ...(boxed ? { background: s?.background ?? '#000', padding: '0.15em 0.45em', borderRadius: 4 } : {}) }}>{clip.text}</span>
+      <span style={{ ...textCss(s, heightPx), textAlign: pos.align, ...(boxed ? { background: s?.background ?? '#000', padding: '0.15em 0.45em', borderRadius: 4 } : {}) }}>
+        {clip.karaoke?.length && clip.lyric && clip.lyric.mode !== 'line' && clip.lyric.mode !== 'subtitle'
+          ? clip.karaoke.map((u, i) => (
+              <span key={i} style={{ color: t - clip.start >= u.start ? (s?.highlight ?? '#F4B84A') : undefined }}>
+                {u.text}
+                {i < clip.karaoke!.length - 1 ? ' ' : ''}
+              </span>
+            ))
+          : clip.text}
+      </span>
     </div>
   );
 }

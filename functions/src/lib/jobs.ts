@@ -5,32 +5,39 @@ import { col, db, FieldValue } from './firebase';
 import { releaseSlot } from './concurrency';
 import { REGION, WORKER_FUNCTION } from '../config/runtime';
 
-export type WorkerStep = 'start' | 'poll';
+export type WorkerStep = 'start' | 'poll' | 'advance';
 
+/** A job step, or an `advance` of a production run (the quality-control loop). */
 export interface WorkerPayload {
-  jobId: string;
+  jobId?: string;
+  productionId?: string;
   step: WorkerStep;
   seq: number;
 }
 
-/** Enqueues a worker task. Duplicate task ids are treated as already enqueued. */
-export async function enqueueJob(jobId: string, step: WorkerStep = 'start', opts: { delaySec?: number; seq?: number } = {}): Promise<void> {
-  const seq = opts.seq ?? 0;
+async function enqueue(payload: WorkerPayload, key: string, delaySec?: number): Promise<void> {
   const queue = getFunctions().taskQueue<WorkerPayload>(`locations/${REGION}/functions/${WORKER_FUNCTION}`);
   try {
-    await queue.enqueue(
-      { jobId, step, seq },
-      {
-        scheduleDelaySeconds: Math.max(0, Math.round(opts.delaySec ?? 0)),
-        dispatchDeadlineSeconds: 1800,
-        id: `${jobId}-${step}-${seq}-${Date.now().toString(36)}`,
-      },
-    );
+    await queue.enqueue(payload, {
+      scheduleDelaySeconds: Math.max(0, Math.round(delaySec ?? 0)),
+      dispatchDeadlineSeconds: 1800,
+      id: `${key}-${payload.step}-${payload.seq}-${Date.now().toString(36)}`,
+    });
   } catch (e) {
     const code = (e as { code?: string }).code ?? '';
     if (code.includes('task-already-exists')) return;
     throw e;
   }
+}
+
+/** Enqueues a worker task. Duplicate task ids are treated as already enqueued. */
+export async function enqueueJob(jobId: string, step: WorkerStep = 'start', opts: { delaySec?: number; seq?: number } = {}): Promise<void> {
+  await enqueue({ jobId, step, seq: opts.seq ?? 0 }, jobId, opts.delaySec);
+}
+
+/** Asks the worker to advance a production run (after a child job finished, or to resume one). */
+export async function enqueueProduction(productionId: string, opts: { delaySec?: number; seq?: number } = {}): Promise<void> {
+  await enqueue({ productionId, step: 'advance', seq: opts.seq ?? Math.floor(Date.now() / 1000) % 1_000_000 }, `prod-${productionId}`, opts.delaySec);
 }
 
 export async function getJob(jobId: string): Promise<JobDoc | null> {
@@ -66,7 +73,17 @@ export async function transition(
     tx.update(ref, data);
     return { ...job, ...patch, status: to } as JobDoc;
   });
-  if (result) await mirrorTarget(result, to, mirrorExtra);
+  if (result) {
+    await mirrorTarget(result, to, mirrorExtra);
+    // A finished child job moves its production run to the next stage.
+    if (isTerminal(to) && result.productionId) {
+      try {
+        await enqueueProduction(result.productionId, { delaySec: 2 });
+      } catch (e) {
+        logger.error('could not advance production', { jobId, productionId: result.productionId, error: String(e) });
+      }
+    }
+  }
   return result;
 }
 

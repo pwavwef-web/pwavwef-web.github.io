@@ -5,7 +5,8 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', 'functions/lib/**', 'firebase/generated/**', 'coverage/**', '.firebase/**', '.credentials/**'],
+    // `exports/` holds finished production deliverables (and their own scripts), not studio source.
+    ignores: ['**/node_modules/**', '**/dist/**', 'functions/lib/**', 'firebase/generated/**', 'coverage/**', '.firebase/**', '.credentials/**', 'exports/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

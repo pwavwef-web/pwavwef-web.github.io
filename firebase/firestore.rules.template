@@ -53,7 +53,7 @@ service cloud.firestore {
       match /{sub}/{docId} {
         allow read: if isOwner();
         allow create, update, delete: if isOwner()
-          && sub in ['scripts', 'sequences', 'scenes', 'shots', 'characters', 'locations', 'elements', 'notes', 'songs', 'timelines'];
+          && sub in ['scripts', 'sequences', 'scenes', 'shots', 'characters', 'locations', 'elements', 'notes', 'songs', 'timelines', 'scores'];
       }
       match /scripts/{scriptId}/versions/{versionId} {
         allow read, create: if isOwner();
@@ -63,10 +63,15 @@ service cloud.firestore {
         allow read, create: if isOwner();
         allow update, delete: if false;
       }
-      // Takes are created by generation jobs; the owner may rate, annotate and approve them.
+      // Takes are created by generation jobs; the owner may rate, annotate and approve them. A take made
+      // under quality control is approved through the API (which records any waived issues), so a failed
+      // review can never be approved quietly; withdrawing an approval is always allowed.
       match /shots/{shotId}/takes/{takeId} {
         allow read: if isOwner();
-        allow update: if isOwner() && changedOnly(['rating', 'notes', 'label', 'approved']);
+        allow update: if isOwner() && changedOnly(['rating', 'notes', 'label', 'approved'])
+          && (request.resource.data.get('approved', false) != true
+            || resource.data.get('approved', false) == true
+            || resource.data.get('productionId', null) == null);
         allow create, delete: if false;
       }
       // AI results are written by the backend.
@@ -90,6 +95,17 @@ service cloud.firestore {
       allow create, delete: if false;
       match /turns/{turnId} {
         allow read: if isOwner();
+        allow write: if false;
+      }
+    }
+
+    // Production runs of the quality-control loop (versions, reports, events) are written only by the
+    // backend; the director acts on them through the API so a failed review can never be approved quietly.
+    match /productions/{id} {
+      allow read: if ownerCanRead();
+      allow write: if false;
+      match /{sub}/{docId} {
+        allow read: if isOwner() && sub in ['versions', 'reports', 'events'];
         allow write: if false;
       }
     }

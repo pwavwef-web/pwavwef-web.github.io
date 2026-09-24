@@ -67,7 +67,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
 
   const render = async (preset: ExportPreset['id']) => {
     if (!tl) return;
-    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: tl.id, preset, quality }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
+    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: tl.id, preset, quality, acceptLyricSync: false }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
   };
 
   return (

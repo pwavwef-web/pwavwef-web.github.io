@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ArrowLeft, Clapperboard, Download, History as HistoryIcon, Magnet, Monitor, Pause, Play, Plus, Redo2, RotateCcw, Save, SkipBack, SkipForward, Smartphone, Square, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, Captions as CaptionsIcon, Clapperboard, Download, History as HistoryIcon, Magnet, Monitor, Pause, Play, Plus, Redo2, RotateCcw, Save, SkipBack, SkipForward, Smartphone, Square, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import {
   addClip,
   addClips,
   addTrack,
+  checkLyricSync,
   clipsOnTrack,
   createHistory,
   DEFAULT_CAPTION_POSITION,
@@ -21,7 +22,9 @@ import {
   parseSubtitles,
   pushHistory,
   redo,
+  resyncLyricCaptions,
   setClipDuration,
+  songClipsChanged,
   splitClip,
   timelineDuration,
   trackEnd,
@@ -30,18 +33,20 @@ import {
   validateTimeline,
   type ExportPreset,
   type History,
+  type LyricsSheet,
   type RenderDoc,
+  type SongDoc,
   type RenderQuality,
   type TimelineDoc,
   type TimelineState,
   type TrackKind,
 } from '@az-studio/shared';
 import { db } from '../../lib/firebase';
-import { useDebounced, useDoc, useQuery, type WithId } from '../../lib/data';
+import { useDebounced, useDoc, useLatest, useQuery, type WithId } from '../../lib/data';
 import { downloadUrl } from '../../lib/media';
 import { AssetPicker, VideoPlayer, type Asset } from '../../components/media';
 import { useBoot, useUid } from '../../lib/session';
-import { saveTimeline, snapshotTimeline, updateSubDoc, useProject } from '../../lib/studio';
+import { saveTimeline, snapshotTimeline, updateSubDoc, useProject, useSub } from '../../lib/studio';
 import { EstimateText, useJobSubmitter } from '../../components/jobs';
 import { Badge, Button, EmptyState, ErrorState, IconButton, Input, Modal, Notice, ProgressBar, Segmented, Select, Spinner, Tip } from '../../components/ui';
 import { Preview } from './Preview';
@@ -53,7 +58,7 @@ type SaveStatus = 'saved' | 'saving' | 'dirty' | 'conflict';
 
 const pick = (d: TimelineDoc): TimelineState => ({ tracks: d.tracks, clips: d.clips, markers: d.markers ?? [], fps: d.fps, aspectRatio: d.aspectRatio, beatGrid: d.beatGrid ?? null });
 
-function RenderDialog({ projectId, timeline, onClose, ensureSaved }: { projectId: string; timeline: WithId<TimelineDoc>; onClose: () => void; ensureSaved: () => Promise<boolean> }) {
+function RenderDialog({ projectId, timeline, onClose, ensureSaved, sheets, onResync }: { projectId: string; timeline: WithId<TimelineDoc>; onClose: () => void; ensureSaved: () => Promise<boolean>; sheets: Record<string, LyricsSheet | null>; onResync: () => void }) {
   const boot = useBoot();
   const uid = useUid();
   const [quality, setQuality] = useState<RenderQuality>('draft');
@@ -61,13 +66,35 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved }: { projectId
   const [watching, setWatching] = useState<string | null>(null);
   const renders = useQuery<RenderDoc>(() => (uid ? query(collection(db, 'renders'), where('ownerUid', '==', uid), where('timelineId', '==', timeline.id), orderBy('createdAt', 'desc'), limit(8)) : null), [uid, timeline.id]);
   const icons = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square };
+  const syncIssues = checkLyricSync(timeline, sheets);
+  const [acceptSync, setAcceptSync] = useState(false);
   const run = async (preset: ExportPreset['id']) => {
     if (!(await ensureSaved())) return;
-    await submit([{ type: 'render.timeline', projectId, timelineId: timeline.id, preset, quality }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
+    await submit([{ type: 'render.timeline', projectId, timelineId: timeline.id, preset, quality, acceptLyricSync: acceptSync }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
   };
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Render" description="FFmpeg on Cloud Run renders the saved timeline. Draft is fast; final uses full quality and loudness normalisation." size="lg">
       <Segmented label="Quality" value={quality} onChange={setQuality} options={[{ value: 'draft', label: 'Draft' }, { value: 'final', label: 'Final' }]} />
+      {syncIssues.length > 0 ? (
+        <Notice tone="warning" className="mt-4">
+          <p className="text-fg">Lyric sync check: {syncIssues.length} caption{syncIssues.length === 1 ? '' : 's'} out of step with the vocals.</p>
+          <ul className="mt-1 list-disc pl-4 text-xs">
+            {syncIssues.slice(0, 5).map((i, k) => (
+              <li key={k}>{i.message}</li>
+            ))}
+          </ul>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button size="sm" variant="primary" onClick={onResync}>
+              Resync lyrics to the vocals
+            </Button>
+            <Button size="sm" variant={acceptSync ? 'subtle' : 'ghost'} onClick={() => setAcceptSync((v) => !v)}>
+              {acceptSync ? 'Will render anyway' : 'Render anyway'}
+            </Button>
+          </div>
+        </Notice>
+      ) : timeline.clips.some((c) => c.lyric) ? (
+        <p className="mt-3 text-xs text-success">Lyric sync check passed — every caption starts with its vocal and clears before the next line.</p>
+      ) : null}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {(Object.values(EXPORT_PRESETS) as ExportPreset[]).map((p) => {
           const Icon = icons[p.id];
@@ -171,6 +198,9 @@ export default function TimelineEditor() {
   const [selection, setSelection] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState<'render' | 'versions' | null>(null);
   const [replacing, setReplacing] = useState(false);
+  const songs = useSub<SongDoc>(projectId, 'songs', 'createdAt', 'asc');
+  const sheets = Object.fromEntries(songs.data.map((s) => [s.id, s.lyricsSheet ?? null])) as Record<string, LyricsSheet | null>;
+  const sheetsRef = useLatest(sheets);
   const baseVersion = useRef(0);
   const savedJson = useRef('');
   const lastEdit = useRef<{ label: string; at: number } | null>(null);
@@ -192,16 +222,18 @@ export default function TimelineEditor() {
   const present = history?.present ?? null;
   const view = draft ?? present;
 
-  const commit = useCallback((next: TimelineState, label: string) => {
+  const commit = useCallback((incoming: TimelineState, label: string) => {
     setHistory((h) => {
       if (!h) return h;
+      // Lyric captions follow their song: moving, trimming or splitting the music re-times them.
+      const next = songClipsChanged(h.present, incoming) ? resyncLyricCaptions(incoming, sheetsRef.current) : incoming;
       const now = Date.now();
       const coalesce = lastEdit.current && lastEdit.current.label === label && now - lastEdit.current.at < 900 && !/^(Move|Trim|Split|Delete|Add)/.test(label);
       lastEdit.current = { label, at: now };
       return coalesce ? { ...h, present: next } : pushHistory(h, next);
     });
     setStatus((s) => (s === 'conflict' ? s : 'dirty'));
-  }, []);
+  }, [sheetsRef]);
 
   const save = useCallback(
     async (state: TimelineState): Promise<boolean> => {
@@ -413,6 +445,11 @@ export default function TimelineEditor() {
           <IconButton label="Redo (Ctrl+Shift+Z)" disabled={!history?.future.length} onClick={() => setHistory((h) => (h ? redo(h) : h))}>
             <Redo2 className="size-4" />
           </IconButton>
+          {present.clips.some((c) => c.lyric) && (
+            <Button size="sm" variant="ghost" icon={<CaptionsIcon className="size-4" />} onClick={() => { commit(resyncLyricCaptions(present, sheets), 'Resync lyrics'); toast.success('Lyrics resynchronised', { description: 'Captions follow the corrected lyrics and the song clip.' }); }}>
+              Resync lyrics
+            </Button>
+          )}
           <Button size="sm" variant="ghost" icon={<HistoryIcon className="size-4" />} onClick={() => setDialogOpen('versions')}>
             Versions
           </Button>
@@ -508,7 +545,7 @@ export default function TimelineEditor() {
       {replacing && selected && (
         <AssetPicker open onOpenChange={(o) => !o && setReplacing(false)} kinds={[selected.kind === 'audio' ? 'audio' : selected.kind === 'image' ? 'image' : 'video']} projectId={projectId} onPick={(a) => a[0] && replaceMedia(a[0])} title="Replace media" />
       )}
-      {dialogOpen === 'render' && <RenderDialog projectId={projectId} timeline={{ ...remote.data, ...present }} onClose={() => setDialogOpen(null)} ensureSaved={() => save(present)} />}
+      {dialogOpen === 'render' && <RenderDialog projectId={projectId} timeline={{ ...remote.data, ...present }} sheets={sheets} onResync={() => commit(resyncLyricCaptions(present, sheets), 'Resync lyrics')} onClose={() => setDialogOpen(null)} ensureSaved={() => save(present)} />}
       {dialogOpen === 'versions' && (
         <VersionsDialog
           projectId={projectId}

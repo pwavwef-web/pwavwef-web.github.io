@@ -10,7 +10,7 @@ import { recordUsage } from '../lib/usage';
 import { genai } from '../lib/vertex';
 import { SONG_ANALYSIS_SCHEMA, TEXT_TASK_SPECS } from './text-tasks';
 
-interface ReasoningResult {
+export interface ReasoningResult {
   json: unknown;
   text: string;
   modelId: string;
@@ -23,7 +23,7 @@ interface ReasoningResult {
  * Calls the reasoning model with structured output. Falls back to the registry's fallback model
  * only when the primary model is not found (retired preview); the fallback is recorded on the job.
  */
-async function callReasoning(parts: Part[], config: GenerateContentConfig, thinking: 'LOW' | 'MEDIUM' | 'HIGH'): Promise<ReasoningResult> {
+export async function callReasoning(parts: Part[], config: GenerateContentConfig, thinking: 'LOW' | 'MEDIUM' | 'HIGH'): Promise<ReasoningResult> {
   const primary = MODEL_REGISTRY.reasoning.id;
   const fallback = MODEL_REGISTRY.reasoning.fallbackId;
   const started = Date.now();
@@ -70,15 +70,15 @@ async function callReasoning(parts: Part[], config: GenerateContentConfig, think
 }
 
 /** AI results are persisted so they survive refreshes: per project, or in the owner's top-level `aiRuns`. */
-async function saveRun(job: JobDoc, task: string, modelId: string, output: unknown, text: string): Promise<string> {
+export async function saveRun(job: JobDoc, task: string, modelId: string, output: unknown, text: string): Promise<string> {
   const ref = job.projectId ? col.projects().doc(job.projectId).collection('aiRuns').doc() : col.aiRuns().doc();
   await ref.set({ ownerUid: job.ownerUid, task, jobId: job.id, status: 'completed', modelId, output, outputText: text.length < 200_000 ? text : null, createdAt: FieldValue.serverTimestamp() });
   return ref.id;
 }
 
-async function usageFor(job: JobDoc, r: ReasoningResult, kind: 'text' | 'audio') {
+export async function usageFor(job: JobDoc, r: ReasoningResult, kind: 'text' | 'audio', countJob = true) {
   const u = r.res.usageMetadata;
-  return recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: r.modelId, kind, inputTokens: u?.promptTokenCount ?? 0, outputTokens: u?.candidatesTokenCount ?? 0, thoughtTokens: u?.thoughtsTokenCount ?? 0 });
+  return recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: r.modelId, kind, inputTokens: u?.promptTokenCount ?? 0, outputTokens: u?.candidatesTokenCount ?? 0, thoughtTokens: u?.thoughtsTokenCount ?? 0, countJob });
 }
 
 export async function runTextJob(job: JobDoc): Promise<void> {
@@ -153,9 +153,10 @@ export async function runAudioJob(job: JobDoc): Promise<void> {
     aiSections: sections,
     updatedAt: FieldValue.serverTimestamp(),
   };
-  // Never overwrite lyrics the owner uploaded or edited.
+  // Never overwrite lyrics the owner uploaded or edited, a lyric sheet, or an instrumental song.
   const existing = song.get('lyrics') as { source?: string; lines?: unknown[] } | null | undefined;
-  if (p.transcribeLyrics && lyrics.length && (!existing || !existing.lines?.length || existing.source === 'ai')) patch.lyrics = { source: 'ai', lines: lyrics };
+  const hasSheet = Boolean((song.get('lyricsSheet') as { lines?: unknown[] } | null | undefined)?.lines?.length);
+  if (p.transcribeLyrics && lyrics.length && !hasSheet && !song.get('instrumental') && (!existing || !existing.lines?.length || existing.source === 'ai')) patch.lyrics = { source: 'ai', lines: lyrics };
   await songRef.set(patch, { merge: true });
   const runId = await saveRun(job, 'audio.analyze', r.modelId, json, r.text);
   const cost = await usageFor(job, r, 'audio');

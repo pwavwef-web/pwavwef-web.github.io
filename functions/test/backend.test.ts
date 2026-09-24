@@ -7,7 +7,12 @@ import { buildInteractionRequest, type VideoParams } from '../src/workers/video'
 import { buildImageParts, type ImageParams } from '../src/workers/image';
 import { sniffUpload } from '../src/triggers/upload';
 import { normaliseSongAnalysis } from '../src/workers/text';
-import { SONG_ANALYSIS_SCHEMA, TEXT_TASK_SPECS } from '../src/workers/text-tasks';
+import { INSPECTION_SCHEMA, LYRIC_ANCHORS_SCHEMA, SONG_ANALYSIS_SCHEMA, TEXT_TASK_SPECS, VOCALS_SCHEMA } from '../src/workers/text-tasks';
+import { parseTranscription } from '../src/lib/audio-models';
+import { extractMusic, isModelUnavailable } from '../src/lib/music-model';
+import { normalizeReview } from '../src/workers/inspect';
+import { productionEstimate, segmentPrompt } from '../src/lib/production';
+import { parseLyricsText, planSceneDuration } from '@az-studio/shared';
 import { IMAGE_CAPABILITIES, MODEL_REGISTRY, VIDEO_CAPABILITIES } from '../src/config/models';
 import { PRICING } from '../src/config/pricing';
 import { detectC2pa } from '../src/lib/media';
@@ -31,6 +36,8 @@ describe('error mapping', () => {
     expect(toJobError({ status: 403, message: 'PERMISSION_DENIED' })).toMatchObject({ code: 'permission', retryable: false });
     expect(toJobError({ status: 404, message: 'Publisher model not found' })).toMatchObject({ code: 'not_found' });
     expect(toJobError({ status: 400, message: 'Unsupported model interaction: x' })).toMatchObject({ code: 'invalid_request', retryable: false });
+    // Seen live (2026-09-24): continuing an Omni interaction the moment it finishes.
+    expect(toJobError({ status: 400, message: '400 Previous interaction ChA3NmQ5 is in an invalid state (current state: IN_PROGRESS).' })).toMatchObject({ code: 'previous_in_progress', retryable: true });
     expect(toJobError({ status: 503, message: 'UNAVAILABLE' })).toMatchObject({ code: 'unavailable', retryable: true });
     expect(toJobError(new Error('fetch failed'))).toMatchObject({ retryable: true });
     const f = new JobFailure({ code: 'x', message: 'y', retryable: false });
@@ -159,6 +166,10 @@ describe('model registry', () => {
     expect(MODEL_REGISTRY.video.id).toBe('gemini-omni-1.1-flash-preview');
     expect(MODEL_REGISTRY.image.id).toBe('gemini-3-pro-image');
     expect(MODEL_REGISTRY.reasoning.id).toBe('gemini-3.1-pro-preview');
+    expect(MODEL_REGISTRY.transcription.id).toBe('gemini-3.5-transcribe-preview');
+    expect(MODEL_REGISTRY.speech.id).toBe('gemini-2.5-pro-tts');
+    // Required model for songs and film score; never swapped for an older Lyria model.
+    expect(MODEL_REGISTRY.music.id).toBe('lyria-3.5');
   });
 
   it('has a published price for every selectable option', () => {
@@ -166,6 +177,10 @@ describe('model registry', () => {
     for (const s of IMAGE_CAPABILITIES.imageSizes) expect(PRICING.image.outputTokensPerImage[s]).toBeGreaterThan(0);
     expect(PRICING.text[MODEL_REGISTRY.reasoning.id]).toBeDefined();
     expect(PRICING.text[MODEL_REGISTRY.reasoning.fallbackId]).toBeDefined();
+    expect(PRICING.speech.modelId).toBe(MODEL_REGISTRY.speech.id);
+    expect(PRICING.transcription.modelId).toBe(MODEL_REGISTRY.transcription.id);
+    expect(PRICING.music.modelId).toBe(MODEL_REGISTRY.music.id);
+    expect(PRICING.music.perSongUsd).toBeGreaterThan(0);
   });
 
   it('defines model IDs only in the registry and never uses forbidden legacy models', () => {
@@ -185,7 +200,7 @@ describe('model registry', () => {
         /* workspace may not exist yet */
       }
     });
-    const idPattern = /['"`](gemini-[\w.-]+|imagen-[\w.-]+|veo-[\w.-]+|nano-banana[\w.-]*)['"`]/g;
+    const idPattern = /['"`](gemini-[\w.-]+|imagen-[\w.-]+|veo-[\w.-]+|nano-banana[\w.-]*|lyria-[\w.-]+)['"`]/g;
     const offenders: string[] = [];
     for (const f of files) {
       if (f.endsWith(path.join('config', 'models.ts'))) continue;
@@ -195,7 +210,7 @@ describe('model registry', () => {
     expect(offenders).toEqual([]);
     const registrySrc = readFileSync(path.resolve(import.meta.dirname, '../src/config/models.ts'), 'utf8');
     const ids = [...registrySrc.matchAll(/id: '([^']+)'|fallbackId: '([^']+)'/g)].map((m) => m[1] ?? m[2]);
-    for (const forbidden of ['gemini-omni-flash-preview', 'gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'imagen-4.0-generate-001']) expect(ids).not.toContain(forbidden);
+    for (const forbidden of ['gemini-omni-flash-preview', 'gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'imagen-4.0-generate-001', 'lyria-002', 'lyria-3-pro-preview', 'lyria-3-clip-preview']) expect(ids).not.toContain(forbidden);
   });
 });
 
@@ -210,5 +225,129 @@ describe('structured output schemas', () => {
   it('never limit the length of object arrays', () => {
     for (const [task, spec] of Object.entries(TEXT_TASK_SPECS)) expect(offending(spec.schema), task).toEqual([]);
     expect(offending(SONG_ANALYSIS_SCHEMA)).toEqual([]);
+    for (const schema of [INSPECTION_SCHEMA, VOCALS_SCHEMA, LYRIC_ANCHORS_SCHEMA]) expect(offending(schema)).toEqual([]);
+  });
+});
+
+describe('transcription parsing (Vertex generateContent audioTranscriptionConfig)', () => {
+  it('reads word offsets exactly as the API returns them', () => {
+    // Shape of a real gemini-3.5-transcribe-preview response on Vertex AI (verified 2026-09-24).
+    const res = {
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: 'We have crossed the reef.',
+                audioTranscription: {
+                  text: 'We have crossed the reef.',
+                  words: [
+                    { word: 'We', startOffset: '0.300s', endOffset: '0.800s' },
+                    { word: 'have', startOffset: '0.800s', endOffset: '1s' },
+                    { word: ' ', startOffset: '1s', endOffset: '1s' },
+                    { word: 'reef.', startOffset: '1.700s', endOffset: '2.400s' },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+      usageMetadata: { promptTokenCount: 143, candidatesTokenCount: 13 },
+    };
+    const t = parseTranscription(res as never);
+    expect(t.text).toBe('We have crossed the reef.');
+    expect(t.words).toEqual([
+      { text: 'We', start: 0.3, end: 0.8, speaker: null },
+      { text: 'have', start: 0.8, end: 1, speaker: null },
+      { text: 'reef.', start: 1.7, end: 2.4, speaker: null },
+    ]);
+    expect(t.usage).toEqual({ input: 143, output: 13, thoughts: 0 });
+  });
+});
+
+describe('Lyria output', () => {
+  it('extracts the audio and the timed lyrics / caption text exactly as returned', () => {
+    const interaction = {
+      id: 'i1',
+      status: 'completed',
+      steps: [
+        {
+          type: 'model_output',
+          content: [
+            { type: 'text', text: '[0.0:4.8] Morning light upon the Volta' },
+            { type: 'text', text: 'Caption: Highlife.\nBPM: 100.0' },
+            { type: 'audio', data: Buffer.from('ID3').toString('base64'), mime_type: 'audio/mpeg' },
+          ],
+        },
+      ],
+    };
+    const m = extractMusic(interaction);
+    expect(m.audio?.mime_type).toBe('audio/mpeg');
+    const parsed = parseLyricsText(m.text);
+    expect(parsed.lines[0]).toMatchObject({ text: 'Morning light upon the Volta', start: 0, end: 4.8 });
+    expect(parsed.meta.bpm).toBe(100);
+    expect(parsed.meta.caption).toBe('Highlife.');
+  });
+
+  it('recognises the exact Vertex AI rejection for a model the project cannot use', () => {
+    // Verbatim error returned for lyria-3.5 on project az-learner (2026-09-24).
+    expect(isModelUnavailable(new Error('400 Unsupported model interaction: lyria-3.5'))).toBe(true);
+    expect(isModelUnavailable(new Error('Publisher Model projects/az-learner/locations/global/publishers/google/models/lyria-3.5 not found.'))).toBe(true);
+    expect(isModelUnavailable(new Error('Quota exceeded for aiplatform.googleapis.com'))).toBe(false);
+  });
+});
+
+describe('inspection review normalisation', () => {
+  it('fills neutral defaults and turns -1 times and scores into null', () => {
+    const r = normalizeReview({
+      summary: 'Door closes after the cut.',
+      actions: [{ beat: 'door closes', completed: false, startSec: 4.2, endSec: -1 }],
+      scores: { overallUsability: 81, characterContinuity: -1 },
+      recommendedRepair: { type: 'extend_scene', instruction: 'Let the door close.', sectionStartSec: -1, sectionEndSec: -1, rationale: '' },
+    });
+    expect(r.actions[0]).toMatchObject({ beat: 'door closes', completed: false, startSec: 4.2, endSec: null });
+    expect(r.scores.characterContinuity).toBeNull();
+    expect(r.scores.overallUsability).toBe(81);
+    expect(r.recommendedRepair).toMatchObject({ type: 'extend_scene', sectionStartSec: null, sectionEndSec: null });
+    expect(r.lipSync.drift).toBe('none');
+    expect(normalizeReview({ recommendedRepair: { type: 'none' } }).recommendedRepair).toBeNull();
+    expect(normalizeReview({ recommendedRepair: { type: 'make_it_better' } }).recommendedRepair).toBeNull();
+  });
+});
+
+describe('connected-shot prompts', () => {
+  it('gives each part only its own sentences and never restarts the dialogue', () => {
+    const plan = planSceneDuration({
+      lines: [
+        { index: 0, character: 'AMA', text: 'We have crossed the reef, but the journey has only begun. The tide will turn before nightfall, and we must be ready.', seconds: 7.2, measured: true },
+        { index: 1, character: 'KOFI', text: 'Then we sail at first light. Tell the others to rest while they still can.', seconds: 4.6, measured: true },
+      ],
+      action: '',
+      requestedSec: 8,
+      ensureCompleteDialogue: true,
+      ensureCompleteAction: true,
+      caps: { minSec: 3, maxSec: 10, maxChainSec: 40 },
+    });
+    expect(plan.requiredSec).toBeGreaterThan(8);
+    expect(plan.strategy).toBe('extend_chain');
+    expect(plan.segments.length).toBeGreaterThanOrEqual(2);
+    const base = ['Single continuous shot, no cuts.', 'Medium two-shot on the deck.', 'Dialogue: AMA says: "We have crossed the reef, but the journey has only begun. The tide will turn before nightfall, and we must be ready." KOFI says: "Then we sail at first light. Tell the others to rest while they still can."', 'Sound design: waves.'].join('\n');
+    const prompts = plan.segments.map((seg) => segmentPrompt(base, plan, seg));
+    expect(prompts[0]).toContain('Dialogue (this part only');
+    for (const later of prompts.slice(1)) {
+      expect(later).toMatch(/^Continue this exact scene/);
+      expect(later).toContain('do not repeat anything already said');
+    }
+    // A review of an existing take is priced as one inspection; a production adds guide audio and generations.
+    const draft = { dialogueAudio: { mode: 'generated', lines: [{ index: 0, character: 'AMA', text: 'We have crossed the reef.', assetId: null, seconds: null, estimatedSec: 1.8, voice: null }], jobId: null, note: '' }, request: { prompt: base, resolution: '360p', media: [] }, plan };
+    const review = productionEstimate(draft as never, plan, { reviewSec: 4 });
+    const full = productionEstimate(draft as never, plan);
+    expect(review.usd).toBeGreaterThan(0);
+    expect(review.usd).toBeLessThan(full.usd);
+    // Every sentence is spoken in exactly one part.
+    const sentences = plan.segments.flatMap((seg) => seg.units.map((u) => u.text));
+    expect(sentences.join(' ')).toBe('We have crossed the reef, but the journey has only begun. The tide will turn before nightfall, and we must be ready. Then we sail at first light. Tell the others to rest while they still can.');
+    for (const sentence of sentences) expect(prompts.filter((pr) => pr.includes(sentence))).toHaveLength(1);
   });
 });
