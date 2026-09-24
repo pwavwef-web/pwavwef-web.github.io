@@ -1,5 +1,6 @@
 import { alignWords, normalizeWord, round1, round3, tokenize, wordSimilarity } from './text-align';
 import type { DurationPlan, EditorialWindow } from './duration';
+import { CATEGORY_KEYS, computeCategoryScores, directorProblems, emptyExpectations, meanCategoryScore, measuredContinuityProblems, type CategoryScores, type ColourMeasurements, type DirectorReview, type InspectionExpectations, type TemporalMeasurements, type VisionMeasurements } from './inspection';
 
 /**
  * Autonomous production quality control:
@@ -31,6 +32,8 @@ export interface QualitySettings {
   dialogueAudio: 'generate' | 'estimate';
   openingAllowanceSec: number;
   closingAllowanceSec: number;
+  /** Most independent takes a production may generate for one shot (each is billed). */
+  maxTakesPerShot: number;
 }
 
 export const DEFAULT_QUALITY_SETTINGS: QualitySettings = {
@@ -47,6 +50,7 @@ export const DEFAULT_QUALITY_SETTINGS: QualitySettings = {
   dialogueAudio: 'generate',
   openingAllowanceSec: 0.6,
   closingAllowanceSec: 1,
+  maxTakesPerShot: 2,
 };
 
 export function qualitySettings(partial: Partial<QualitySettings> | null | undefined): QualitySettings {
@@ -60,7 +64,7 @@ export function qualitySettings(partial: Partial<QualitySettings> | null | undef
 export const PRODUCTION_STATUSES = ['planning', 'generating', 'inspecting', 'repairing', 'awaiting_review', 'approved', 'failed_review', 'cancelled'] as const;
 export type ProductionStatus = (typeof PRODUCTION_STATUSES)[number];
 
-export const PRODUCTION_STAGES = ['plan', 'audio_prepare', 'duration_calculate', 'generate', 'inspect', 'repair', 'reinspect', 'approve', 'render'] as const;
+export const PRODUCTION_STAGES = ['plan', 'continuity', 'audio_prepare', 'duration_calculate', 'generate', 'inspect', 'compare', 'repair', 'reinspect', 'approve', 'update_continuity', 'render'] as const;
 export type ProductionStage = (typeof PRODUCTION_STAGES)[number];
 
 export const PRODUCTION_STATUS_LABELS: Record<ProductionStatus, string> = {
@@ -76,13 +80,16 @@ export const PRODUCTION_STATUS_LABELS: Record<ProductionStatus, string> = {
 
 export const PRODUCTION_STAGE_LABELS: Record<ProductionStage, string> = {
   plan: 'Plan',
+  continuity: 'Establish continuity',
   audio_prepare: 'Prepare dialogue audio',
   duration_calculate: 'Calculate duration',
   generate: 'Generate',
   inspect: 'Inspect',
+  compare: 'Compare takes',
   repair: 'Repair',
   reinspect: 'Re-inspect',
   approve: 'Approve',
+  update_continuity: 'Update continuity state',
   render: 'Render',
 };
 
@@ -156,15 +163,153 @@ export const PROBLEM_CATEGORIES = [
   'storyboard_mismatch',
   'previous_shot_mismatch',
   'story_continuity',
+  // Character continuity (against the Character Bible)
+  'face_change',
+  'missing_accessory',
+  'wrong_age',
+  'character_count',
+  'character_merge',
+  'character_disappears',
+  'scale_change',
+  'impossible_position',
+  // Background / set continuity (against the Set Bible and previous shots)
+  'background_drift',
+  'door_window_moved',
+  'furniture_moved',
+  'wall_colour',
+  'landscape',
+  'layout_reversed',
+  'weather',
+  'lighting_change',
+  'background_people',
+  'architecture_mutation',
+  'duplicate_object',
+  'location_replaced',
+  // Blocking and occlusion
+  'occlusion',
+  'face_hidden',
+  'bodies_merge',
+  'same_space',
+  'attached_character',
+  'action_hidden',
+  'depth_order',
+  'wrong_eyeline',
+  'speaker_blocked',
+  'walk_through',
+  // Screen direction and the camera axis
+  'direction_reversal',
+  'entry_exit_side',
+  'broken_eyeline',
+  'side_swap',
+  'axis_crossing',
+  'vehicle_direction',
+  'spatial_confusion',
+  // Protected screens, text, signs and logos
+  'mirrored_text',
+  'misspelled_text',
+  'reversed_logo',
+  'flipped_interface',
+  'distorted_ui',
+  'text_flicker',
+  'wrong_screen_content',
+  // Prop ledger
+  'prop_appearance',
+  'prop_hand',
+  'prop_teleport',
+  'prop_state',
+  'prop_missing',
+  'prop_scale',
+  'duplicate_prop',
+  // Temporal / frame-level
+  'face_instability',
+  'body_instability',
+  'hand_quality',
+  'texture_flicker',
+  'lighting_flicker',
+  'camera_jump',
+  'physics',
+  'broken_motion',
+  'morphing',
+  'repeated_frames',
+  'frozen_frames',
+  'corrupted_frames',
+  // First and last second
+  'early_dialogue_start',
+  'first_frame_mismatch',
+  'final_line_incomplete',
+  'final_action_incomplete',
+  'exit_incomplete',
+  'camera_unresolved',
+  'no_edit_room',
+  // Colour and lighting continuity
+  'colour_drift',
+  'exposure_mismatch',
+  'white_balance',
+  'skin_tone',
 ] as const;
 export type ProblemCategory = (typeof PROBLEM_CATEGORIES)[number];
 export type ProblemSeverity = 'minor' | 'major' | 'critical';
 
-export const DIALOGUE_CATEGORIES: readonly ProblemCategory[] = ['dialogue_missing', 'dialogue_altered', 'dialogue_repeated', 'dialogue_truncated', 'dialogue_early', 'dialogue_late', 'trailing_room', 'wrong_speaker', 'lip_sync', 'performance_unfinished', 'abrupt_cut', 'music_over_dialogue'];
-export const ACTION_CATEGORIES: readonly ProblemCategory[] = ['action_incomplete', 'unfinished_movement'];
-export const CONTINUITY_CATEGORIES: readonly ProblemCategory[] = ['character_identity', 'costume', 'hairstyle', 'location', 'time_of_day', 'props', 'storyboard_mismatch', 'previous_shot_mismatch', 'story_continuity', 'screen_direction'];
+export const DIALOGUE_CATEGORIES: readonly ProblemCategory[] = ['dialogue_missing', 'dialogue_altered', 'dialogue_repeated', 'dialogue_truncated', 'dialogue_early', 'dialogue_late', 'trailing_room', 'wrong_speaker', 'lip_sync', 'performance_unfinished', 'abrupt_cut', 'music_over_dialogue', 'early_dialogue_start', 'final_line_incomplete'];
+export const ACTION_CATEGORIES: readonly ProblemCategory[] = ['action_incomplete', 'unfinished_movement', 'final_action_incomplete', 'exit_incomplete'];
+export const CHARACTER_CATEGORIES: readonly ProblemCategory[] = ['character_identity', 'face_change', 'costume', 'hairstyle', 'missing_accessory', 'wrong_age', 'character_count', 'character_merge', 'character_disappears', 'scale_change', 'impossible_position'];
+export const BACKGROUND_CATEGORIES: readonly ProblemCategory[] = ['location', 'time_of_day', 'background_drift', 'door_window_moved', 'furniture_moved', 'wall_colour', 'landscape', 'layout_reversed', 'weather', 'lighting_change', 'background_people', 'architecture_mutation', 'duplicate_object', 'location_replaced'];
+export const BLOCKING_CATEGORIES: readonly ProblemCategory[] = ['occlusion', 'face_hidden', 'bodies_merge', 'same_space', 'attached_character', 'action_hidden', 'depth_order', 'wrong_eyeline', 'speaker_blocked', 'walk_through'];
+export const DIRECTION_CATEGORIES: readonly ProblemCategory[] = ['screen_direction', 'direction_reversal', 'entry_exit_side', 'broken_eyeline', 'side_swap', 'axis_crossing', 'vehicle_direction', 'spatial_confusion'];
+export const TEXT_CATEGORIES: readonly ProblemCategory[] = ['rendered_text', 'mirrored_text', 'misspelled_text', 'reversed_logo', 'flipped_interface', 'distorted_ui', 'text_flicker', 'wrong_screen_content'];
+export const PROP_CATEGORIES: readonly ProblemCategory[] = ['props', 'prop_appearance', 'prop_hand', 'prop_teleport', 'prop_state', 'prop_missing', 'prop_scale', 'duplicate_prop'];
+export const TEMPORAL_CATEGORIES: readonly ProblemCategory[] = ['visual_artefact', 'face_instability', 'body_instability', 'hand_quality', 'texture_flicker', 'lighting_flicker', 'camera_jump', 'physics', 'broken_motion', 'morphing', 'repeated_frames', 'frozen_frames', 'corrupted_frames', 'sudden_disappearance'];
+export const COLOUR_CATEGORIES: readonly ProblemCategory[] = ['colour_drift', 'exposure_mismatch', 'white_balance', 'skin_tone'];
+export const CONTINUITY_CATEGORIES: readonly ProblemCategory[] = [
+  'storyboard_mismatch',
+  'previous_shot_mismatch',
+  'story_continuity',
+  'first_frame_mismatch',
+  ...CHARACTER_CATEGORIES,
+  ...BACKGROUND_CATEGORIES,
+  ...BLOCKING_CATEGORIES,
+  ...DIRECTION_CATEGORIES,
+  ...PROP_CATEGORIES,
+  ...COLOUR_CATEGORIES,
+  'mirrored_text',
+  'misspelled_text',
+  'reversed_logo',
+  'flipped_interface',
+  'wrong_screen_content',
+];
 /** Problems that are about the picture only (the dialogue audio can be kept while they are fixed). */
-export const VISUAL_CATEGORIES: readonly ProblemCategory[] = ['character_identity', 'costume', 'hairstyle', 'location', 'time_of_day', 'props', 'camera_direction', 'screen_direction', 'rendered_text', 'visual_artefact', 'sudden_disappearance', 'first_frame', 'last_frame', 'storyboard_mismatch', 'previous_shot_mismatch'];
+export const VISUAL_CATEGORIES: readonly ProblemCategory[] = [
+  'camera_direction',
+  'first_frame',
+  'last_frame',
+  'storyboard_mismatch',
+  'previous_shot_mismatch',
+  ...CHARACTER_CATEGORIES.filter((c) => c !== 'character_count' && c !== 'character_disappears'),
+  ...BACKGROUND_CATEGORIES,
+  ...TEXT_CATEGORIES,
+  ...PROP_CATEGORIES,
+  ...COLOUR_CATEGORIES,
+  ...TEMPORAL_CATEGORIES.filter((c) => c !== 'sudden_disappearance' && c !== 'corrupted_frames'),
+  'screen_direction',
+];
+
+/** Problem groups shown together in the AI Director Review and the Continuity workspace. */
+export const PROBLEM_GROUPS: { key: string; title: string; categories: readonly ProblemCategory[] }[] = [
+  { key: 'dialogue', title: 'Dialogue', categories: DIALOGUE_CATEGORIES },
+  { key: 'action', title: 'Action', categories: ACTION_CATEGORIES },
+  { key: 'character', title: 'Characters', categories: CHARACTER_CATEGORIES },
+  { key: 'background', title: 'Background & set', categories: BACKGROUND_CATEGORIES },
+  { key: 'blocking', title: 'Blocking & occlusion', categories: BLOCKING_CATEGORIES },
+  { key: 'direction', title: 'Screen direction', categories: DIRECTION_CATEGORIES },
+  { key: 'text', title: 'Screens, text & logos', categories: TEXT_CATEGORIES },
+  { key: 'props', title: 'Props', categories: PROP_CATEGORIES },
+  { key: 'temporal', title: 'Frame-level quality', categories: TEMPORAL_CATEGORIES },
+  { key: 'colour', title: 'Colour & lighting', categories: COLOUR_CATEGORIES },
+];
+
+export function problemGroup(c: ProblemCategory): string {
+  return PROBLEM_GROUPS.find((g) => g.categories.includes(c))?.key ?? 'other';
+}
 
 export interface QualityProblem {
   id: string;
@@ -179,6 +324,8 @@ export interface QualityProblem {
   blocking: boolean;
   /** Set when the director marks the issue as acceptable. */
   waived?: { at: number; note: string } | null;
+  /** Where in the frame the problem is (0–1), when known — lets a reframe remove it. */
+  region?: { x: number; y: number; w: number; h: number } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -451,7 +598,7 @@ export interface ModelReview {
   screenDirectionConsistent: boolean;
   emotionalPerformanceMatches: boolean;
   renderedText: { present: boolean; acceptable: boolean; note: string };
-  artefacts: { description: string; severity: ProblemSeverity; startSec: number | null; endSec: number | null }[];
+  artefacts: { description: string; severity: ProblemSeverity; startSec: number | null; endSec: number | null; region?: { x: number; y: number; w: number; h: number } | null }[];
   suddenDisappearance: boolean;
   accidentalSceneChange: boolean;
   firstFrame: { quality: 'good' | 'acceptable' | 'poor'; note: string };
@@ -459,6 +606,8 @@ export interface ModelReview {
   scores: { actionCompleteness: number; visualAccuracy: number; characterContinuity: number | null; audioQuality: number; storyContinuity: number; overallUsability: number };
   problems: { category: string; severity: ProblemSeverity; startSec: number | null; endSec: number | null; description: string }[];
   recommendedRepair: { type: string; instruction: string; sectionStartSec: number | null; sectionEndSec: number | null; rationale: string } | null;
+  /** Continuity Director checks (character, background, blocking, direction, text, props, temporal, edges). */
+  director?: DirectorReview | null;
 }
 
 export interface AudioMeasurements {
@@ -485,9 +634,17 @@ export interface Measurements {
   hasAudio: boolean;
   audio: AudioMeasurements | null;
   visual: VisualMeasurements;
+  /** Frame-level analysis: freezes, stutter, flicker, jumps, decode errors. */
+  temporal?: TemporalMeasurements | null;
+  /** Sampled frames with detected faces, people, objects and text (Cloud Vision). */
+  vision?: VisionMeasurements | null;
+  /** Colour statistics of the shot, the approved reference still and the previous shot. */
+  colour?: ColourMeasurements | null;
 }
 
 export interface VerdictInput {
+  /** What the Continuity Director expects in this shot (characters, direction, protected screens…). */
+  expect?: InspectionExpectations | null;
   dialogue: DialogueAnalysis;
   review: ModelReview;
   measurements: Measurements;
@@ -509,6 +666,8 @@ export interface Verdict {
   reasons: string[];
   dialogueComplete: boolean;
   actionComplete: boolean;
+  /** The fifteen take-evaluation categories (null when not applicable). */
+  categoryScores: CategoryScores;
 }
 
 const clampScore = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(100, Math.round(v))) : null);
@@ -526,6 +685,8 @@ export function isBlocking(p: Pick<QualityProblem, 'category' | 'severity' | 'wa
   if (DIALOGUE_CATEGORIES.includes(p.category)) return s.ensureCompleteDialogue;
   if (ACTION_CATEGORIES.includes(p.category)) return s.ensureCompleteAction;
   if (CONTINUITY_CATEGORIES.includes(p.category)) return s.checkContinuity;
+  // Editorial niceties (camera settles late, little room at the end) never block on their own.
+  if (p.category === 'camera_unresolved' || p.category === 'no_edit_room' || p.category === 'emotional_performance' || p.category === 'camera_direction') return false;
   return true;
 }
 
@@ -565,7 +726,11 @@ export function evaluateQuality(input: VerdictInput): Verdict {
   if (!review.screenDirectionConsistent) add('screen_direction', 'major', 'Screen direction is inconsistent (characters or movement flip sides).', 'model');
   if (!review.emotionalPerformanceMatches) add('emotional_performance', 'minor', 'The emotional performance does not match the direction.', 'model');
   if (review.renderedText.present && !review.renderedText.acceptable) add('rendered_text', 'major', `Unwanted or garbled text in the frame: ${review.renderedText.note}`, 'model');
-  for (const a of review.artefacts) add('visual_artefact', a.severity, a.description, 'model', a.startSec, a.endSec);
+  for (const a of review.artefacts) {
+    add('visual_artefact', a.severity, a.description, 'model', a.startSec, a.endSec);
+    const last = problems[problems.length - 1];
+    if (a.region && last && last.description === a.description) last.region = a.region;
+  }
   if (review.suddenDisappearance) add('sudden_disappearance', 'critical', 'A character or object disappears suddenly.', 'model');
   // Cuts the plan asked for inside a continuation part are intended — up to its limit (away and back).
   const windows = input.editorialCuts ?? [];
@@ -592,6 +757,15 @@ export function evaluateQuality(input: VerdictInput): Verdict {
     const cat = modelCategory(p.category);
     if (DIALOGUE_CATEGORIES.includes(cat) && dialogue.applicable && ['dialogue_missing', 'dialogue_altered', 'dialogue_truncated'].includes(cat)) continue; // measured instead
     add(cat, p.severity, p.description, 'model', p.startSec, p.endSec);
+  }
+  // Continuity Director: the reviewer's continuity sections and the measured frame, text and colour checks.
+  const expect = input.expect ?? emptyExpectations();
+  const extra = [...(review.director ? directorProblems(review.director, expect) : []), ...measuredContinuityProblems({ temporal: m.temporal ?? null, vision: m.vision ?? null, colour: m.colour ?? null, expect, durationSec: m.durationSec })];
+  for (const p of extra) {
+    // The measured dialogue analysis already decides whether the final line is complete.
+    if (p.category === 'final_line_incomplete' && dialogue.applicable && dialogue.dialogueComplete && !dialogue.truncatedFinalWord) continue;
+    if (p.category === 'final_line_incomplete' && !dialogue.applicable) continue;
+    if (!problems.some((x) => x.category === p.category && x.description === p.description)) problems.push(p);
   }
 
   const waived = new Set(input.waivedCategories ?? []);
@@ -623,6 +797,24 @@ export function evaluateQuality(input: VerdictInput): Verdict {
   const mean = parts.length ? parts.reduce((s, v) => s + v, 0) / parts.length : 70;
   const minPart = parts.length ? Math.min(...parts) : 70;
   let overall = Math.min(clampScore(rs.overallUsability) ?? mean, Math.round(mean + 10), Math.round(minPart + 35));
+  const categoryScores = computeCategoryScores({
+    model: review.director?.categoryScores ?? {},
+    dialogueScore: scores.dialogueCompleteness,
+    actionScore: scores.actionCompleteness,
+    audioScore: scores.audioQuality,
+    lipSync: review.lipSync.applicable ? review.lipSync.drift : null,
+    problems,
+    hasText: expect.screens.length > 0 || review.renderedText.present,
+    hasDialogue: dialogue.applicable,
+  });
+  if (categoryScores.promptCompliance === null) categoryScores.promptCompliance = scores.visualAccuracy;
+  if (categoryScores.characterConsistency === null && input.hasCharacters) categoryScores.characterConsistency = scores.characterContinuity;
+  if (categoryScores.visualArtefacts === null) categoryScores.visualArtefacts = scores.visualAccuracy;
+  if (categoryScores.emotionalPerformance === null) categoryScores.emotionalPerformance = review.emotionalPerformanceMatches ? 85 : 60;
+  if (categoryScores.backgroundConsistency === null) categoryScores.backgroundConsistency = scores.storyContinuity;
+  const catMean = meanCategoryScore(categoryScores);
+  const catValues = CATEGORY_KEYS.map((k) => categoryScores[k]).filter((v): v is number => v !== null);
+  if (catMean !== null) overall = Math.min(overall, Math.round(catMean + 12), Math.round(Math.min(...catValues) + 40));
   const reasons: string[] = [];
   const activeBlocking = problems.filter((p) => p.blocking);
   if (settings.ensureCompleteDialogue && !dialogueComplete) {
@@ -638,14 +830,32 @@ export function evaluateQuality(input: VerdictInput): Verdict {
   if (overall < settings.minApprovalScore) reasons.push(`Overall usability ${overall} is below the approval threshold of ${settings.minApprovalScore}.`);
   for (const p of activeBlocking) reasons.push(p.description);
   const passed = overall >= settings.minApprovalScore && activeBlocking.length === 0 && (!settings.ensureCompleteDialogue || dialogueComplete) && (!settings.ensureCompleteAction || actionComplete || waived.has('action_incomplete'));
-  return { scores, overall, problems, passed, reasons: [...new Set(reasons)], dialogueComplete, actionComplete };
+  return { scores, overall, problems, passed, reasons: [...new Set(reasons)], dialogueComplete, actionComplete, categoryScores };
 }
 
 // ---------------------------------------------------------------------------
 // Repairs
 // ---------------------------------------------------------------------------
 
-export const REPAIR_TYPES = ['conversational_edit', 'extend_scene', 'regenerate_longer', 'split_into_shots', 'replace_visuals_keep_audio', 'cutaway', 'regenerate_section', 'trim_ending', 'regenerate'] as const;
+export const REPAIR_TYPES = [
+  'conversational_edit',
+  'extend_scene',
+  'regenerate_longer',
+  'split_into_shots',
+  'replace_visuals_keep_audio',
+  'cutaway',
+  'regenerate_section',
+  'trim_ending',
+  'regenerate',
+  'regenerate_with_references',
+  'replace_background',
+  'correct_blocking',
+  'correct_direction',
+  'screen_composite',
+  'color_match',
+  'reframe',
+  'use_other_take',
+] as const;
 export type RepairType = (typeof REPAIR_TYPES)[number];
 
 export const REPAIR_LABELS: Record<RepairType, string> = {
@@ -658,7 +868,18 @@ export const REPAIR_LABELS: Record<RepairType, string> = {
   regenerate_section: 'Regenerate the failed section only',
   trim_ending: 'Trim the unwanted ending',
   regenerate: 'Regenerate',
+  regenerate_with_references: 'Regenerate with stronger references',
+  replace_background: 'Replace only the background',
+  correct_blocking: 'Correct character positions (blocking frame)',
+  correct_direction: 'Correct the screen direction',
+  screen_composite: 'Composite the approved screen content',
+  color_match: 'Colour-match the shot',
+  reframe: 'Reframe to remove the artefact',
+  use_other_take: 'Use a different approved take',
 };
+
+/** Repairs that need no new video generation (FFmpeg, compositing or choosing another take). */
+export const NON_GENERATIVE_REPAIRS: readonly RepairType[] = ['trim_ending', 'color_match', 'reframe', 'use_other_take', 'screen_composite'];
 
 export interface RepairDecision {
   type: RepairType;
@@ -672,9 +893,17 @@ export interface RepairDecision {
   sectionEndSec: number | null;
   /** The repaired version keeps the current dialogue audio. */
   keepAudio: boolean;
+  /** Extra data for continuity repairs (crop box, take to switch to, screen to composite…). */
+  data?: Record<string, unknown> | null;
 }
 
 export interface RepairContext {
+  /** Other inspected versions/takes of this shot (for "use a different approved take"). */
+  alternatives?: { versionId: string; index: number; overall: number | null; passed: boolean; label: string }[];
+  /** Protected screens in the shot whose approved content can be composited. */
+  compositableScreens?: string[];
+  /** Region (0–1 of the frame) of localized artefacts or unwanted text, when known. */
+  regions?: { problemId: string; box: { x: number; y: number; w: number; h: number } }[];
   problems: QualityProblem[];
   dialogue: DialogueAnalysis;
   review: Pick<ModelReview, 'recommendedRepair' | 'actions'> | null;
@@ -693,12 +922,19 @@ export interface RepairContext {
 
 const ESCALATION: Partial<Record<RepairType, RepairType>> = {
   trim_ending: 'regenerate_section',
-  conversational_edit: 'regenerate',
+  conversational_edit: 'regenerate_with_references',
   cutaway: 'conversational_edit',
   replace_visuals_keep_audio: 'regenerate',
   extend_scene: 'regenerate_longer',
   regenerate_section: 'regenerate_longer',
   regenerate_longer: 'split_into_shots',
+  color_match: 'conversational_edit',
+  reframe: 'conversational_edit',
+  screen_composite: 'regenerate_with_references',
+  replace_background: 'regenerate_with_references',
+  correct_blocking: 'regenerate_with_references',
+  correct_direction: 'correct_blocking',
+  regenerate_with_references: 'regenerate',
 };
 
 /** Words still to be spoken after a cut-off, quoted for an extension instruction. */
@@ -762,6 +998,24 @@ export function chooseRepair(ctx: RepairContext): RepairDecision | null {
   const endIssue = cats.has('dialogue_truncated') || cats.has('trailing_room') || cats.has('unfinished_movement') || (cats.has('action_incomplete') && !dialogueCats.some((p) => p.category !== 'trailing_room')) || cats.has('performance_unfinished');
   const canExtendBy = (sec: number) => ctx.version.continuable && ctx.version.chainSec + sec <= ctx.caps.maxChainSec + 1e-6;
   const make = (type: RepairType, reason: string, instruction: string, extra: Partial<RepairDecision> = {}): RepairDecision => ({ type, reason, instruction, durationSec: null, sectionStartSec: null, sectionEndSec: null, keepAudio: false, ...extra });
+  const only = (group: readonly ProblemCategory[]) => active.every((p) => group.includes(p.category));
+
+  // 0. The cheapest fixes first: a take that already passes, colour matching, compositing, reframing.
+  const better = (ctx.alternatives ?? []).filter((a) => a.passed).sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))[0];
+  if (better && tried('use_other_take') === 0) {
+    return make('use_other_take', `${better.label} already passes review (${better.overall ?? '—'}/100), so it replaces this version with no new generation.`, 'Switch to the stronger approved-quality take.', { data: { versionId: better.versionId } });
+  }
+  if (only(COLOUR_CATEGORIES) && escalate('color_match') === 'color_match') {
+    return make('color_match', 'Only colour, exposure or white balance drift: a measured correction matches the shot to the approved reference, with skin tones protected.', 'Colour-match the shot to the approved reference.', { keepAudio: true });
+  }
+  if (only(TEXT_CATEGORIES) && (ctx.compositableScreens?.length ?? 0) > 0 && escalate('screen_composite') === 'screen_composite') {
+    return make('screen_composite', 'Protected screen or sign content is wrong, unreadable or mirrored: the approved content is tracked onto the surface and composited, then re-inspected.', 'Composite the approved content onto the protected surface.', { keepAudio: true, data: { screenIds: ctx.compositableScreens } });
+  }
+  const regions = (ctx.regions ?? []).filter((r) => active.some((p) => p.id === r.problemId));
+  if (regions.length && active.every((p) => regions.some((r) => r.problemId === p.id)) && escalate('reframe') === 'reframe') {
+    const crop = cropAvoiding(regions.map((r) => r.box), 0.84);
+    if (crop) return make('reframe', 'The fault sits at the edge of the frame, so the shot is reframed with a gentle push-in that removes it.', 'Reframe to remove the artefact.', { keepAudio: true, data: { crop } });
+  }
 
   // 1. Everything worked, but unwanted material follows the completed moment: trim it away (free).
   //    Only after the last word and the last action beat — a trim never cuts into the performance, and
@@ -828,6 +1082,35 @@ export function chooseRepair(ctx: RepairContext): RepairDecision | null {
       }
     }
     if (cats.has('accidental_scene_change') || cats.has('sudden_disappearance')) return longerOrSplit(ctx, make, escalate, 'Single continuous shot with no cuts, no scene changes and no one vanishing.');
+    const editable = ctx.version.continuable && D <= ctx.caps.maxSec + 0.05;
+    const secs = Math.min(ctx.caps.maxSec, Math.max(ctx.caps.minSec, Math.ceil(Math.max(D, ctx.plan?.requiredSec ?? D))));
+    // Only the set drifted: replace the background, keep the performance.
+    if (visualCats.length && !actionCats.length && visualCats.every((p) => BACKGROUND_CATEGORIES.includes(p.category))) {
+      const t = escalate('replace_background');
+      if (t === 'replace_background' && D <= ctx.caps.maxSec + 0.05) {
+        return make('replace_background', 'Only the background drifts from the Set Bible: it is replaced to match the canonical set while people, performance and timing stay.', `Keep the people, their faces, costumes, performance, dialogue, timing and camera exactly the same. Replace only the background so it matches the reference set exactly (architecture, doors, windows, furniture, wall colours, light direction). Fix: ${fixes} ${CONTINUITY_SUFFIX}`, { keepAudio: true, durationSec: null });
+      }
+      if (t === 'regenerate_with_references') return make('regenerate_with_references', 'The background still drifts: regenerating with the canonical set view and the previous shot’s final frame as references.', `The set must match the reference views exactly. Fix: ${fixes} ${CONTINUITY_SUFFIX}`, { durationSec: secs });
+    }
+    // Wrong blocking (occlusion, merging, eyelines, depth order): regenerate from a blocking frame.
+    if (active.some((p) => BLOCKING_CATEGORIES.includes(p.category))) {
+      const t = escalate('correct_blocking');
+      if (t === 'correct_blocking') return make('correct_blocking', 'Characters are blocked incorrectly: a blocking frame is generated from the stage plan and the shot is regenerated from it.', `Blocking must follow the plan exactly — every speaker visible, no one covering another, correct eyelines and depth order. Fix: ${fixes}`, { durationSec: secs });
+    }
+    // Screen direction reversed or eyelines broken across the cut.
+    if (active.some((p) => DIRECTION_CATEGORIES.includes(p.category))) {
+      const t = escalate('correct_direction');
+      if (t === 'correct_direction') return make('correct_direction', 'Screen direction breaks continuity: the shot is regenerated with the established direction and camera side (a neutral shot can also bridge it).', `Keep the established screen direction and camera side of the line. Fix: ${fixes}`, { durationSec: secs });
+      if (t === 'correct_blocking') return make('correct_blocking', 'Screen direction is still wrong: regenerating from a blocking frame that fixes positions and direction.', `Keep the established screen direction. Fix: ${fixes}`, { durationSec: secs });
+    }
+    // Identity, costume or prop drift: edit when possible, else regenerate with every approved reference.
+    if (active.some((p) => CHARACTER_CATEGORIES.includes(p.category) || PROP_CATEGORIES.includes(p.category))) {
+      const t = escalate(editable ? 'conversational_edit' : 'regenerate_with_references');
+      if (t === 'conversational_edit' && editable) {
+        return make('conversational_edit', 'Character or prop continuity is fixed by editing this take conversationally; timing, dialogue and performance stay the same.', `Keep everything about this video identical — the same timing, dialogue, voices, performance, blocking and camera — and fix only this: ${fixes} ${CONTINUITY_SUFFIX}`, { keepAudio: true });
+      }
+      if (t === 'regenerate_with_references') return make('regenerate_with_references', 'Identity or prop continuity failed: regenerating with every approved character, prop and set reference plus the previous shot’s final frame.', `Match the approved references exactly — faces, age, hair, costumes, accessories and props. Fix: ${fixes}`, { durationSec: secs });
+    }
     const t = escalate('conversational_edit');
     // Omni edits videos of up to 10 seconds (it refuses longer ones even inside a stored chain).
     if (t === 'conversational_edit' && ctx.version.continuable && D <= ctx.caps.maxSec + 0.05) {
@@ -864,6 +1147,23 @@ function longerOrSplit(ctx: RepairContext, make: (t: RepairType, r: string, i: s
     return make('regenerate', 'Regenerating the scene with stronger direction.', direction, { durationSec: Math.min(ctx.caps.maxSec, Math.max(ctx.caps.minSec, Math.ceil(Math.max(D, required)))) });
   }
   if (want === 'regenerate') return make('regenerate', 'Regenerating the scene with stronger direction.', direction, { durationSec: Math.min(ctx.caps.maxSec, Math.max(ctx.caps.minSec, Math.ceil(Math.max(D, required)))) });
+  return null;
+}
+
+/**
+ * Largest centred-as-possible crop (same aspect as the frame, at least `minScale`) that excludes every
+ * box. Returns null when no such crop exists (the fault is not near an edge).
+ */
+export function cropAvoiding(boxes: { x: number; y: number; w: number; h: number }[], minScale = 0.84): { x: number; y: number; w: number; h: number } | null {
+  const hits = (c: { x: number; y: number; w: number; h: number }) => boxes.some((b) => b.x < c.x + c.w && b.x + b.w > c.x && b.y < c.y + c.h && b.y + b.h > c.y);
+  for (let s = 0.97; s >= minScale - 1e-9; s -= 0.01) {
+    const free = 1 - s;
+    const options: { x: number; y: number }[] = [];
+    for (const fx of [0.5, 0, 1, 0.25, 0.75]) for (const fy of [0.5, 0, 1, 0.25, 0.75]) options.push({ x: free * fx, y: free * fy });
+    options.sort((a, b) => Math.hypot(a.x - free / 2, a.y - free / 2) - Math.hypot(b.x - free / 2, b.y - free / 2));
+    const ok = options.find((o) => !hits({ x: o.x, y: o.y, w: s, h: s }));
+    if (ok) return { x: round3(ok.x), y: round3(ok.y), w: round3(s), h: round3(s) };
+  }
   return null;
 }
 

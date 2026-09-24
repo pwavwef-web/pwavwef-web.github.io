@@ -1,4 +1,7 @@
 import type { AsrWord, LyricCaptionMode, LyricsSheet } from './lyrics';
+import type { CharacterBible, ContinuityStatus, ShotContinuityInput } from './continuity';
+import type { CategoryScores } from './inspection';
+import type { ReframeTrack } from './reframe';
 import type { ProductionSummary } from './production';
 import type { QualitySettings } from './quality';
 import type { ScoreMode } from './score';
@@ -18,7 +21,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -27,9 +30,10 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   film: 'Film',
   image: 'Image Studio',
   remix: 'Video Remix',
+  music: 'Music Studio',
 };
 
-export type FrameAspect = '16:9' | '9:16' | '1:1';
+export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';
 
 export interface Treatment {
   title?: string;
@@ -79,6 +83,14 @@ export interface ProjectDoc {
   score?: { mode: ScoreMode; scoreId: string | null } | null;
   /** Main spoken language of the project (BCP-47), used as a transcription hint. */
   language?: string | null;
+  /** Spending ceiling for this project (USD, recorded usage + running jobs); null = no project limit. */
+  budget?: { limitUsd: number | null; warnAtPct: number } | null;
+  /** Draft uses a low resolution while exploring; final uses the shot's resolution. */
+  productionQuality?: 'draft' | 'final';
+  /** Credits metadata the Credits Studio imports. */
+  credits?: { writer: string[]; director: string[]; producer: string[]; editors: string[]; brand: string } | null;
+  /** Continuity Director: advanced workspaces are shown when on (simple projects keep defaults). */
+  continuity?: { advanced: boolean } | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
@@ -177,6 +189,18 @@ export const JOB_TYPES = [
   'lyrics.transcribe',
   'lyrics.align',
   'media.composite',
+  'reference.pack',
+  'continuity.compare',
+  'media.screen_replace',
+  'media.color_match',
+  'media.analyze_subjects',
+  'lyrics.resync_audio',
+  'final.inspect',
+  'music.analyze',
+  'music.arrange',
+  'music.mix',
+  'music.replace_section',
+  'audio.stems',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -200,7 +224,7 @@ export interface CostEstimate {
 }
 
 export interface JobTarget {
-  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score';
+  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection';
   id: string;
   /** Extra identifier, e.g. the take id created for a shot. */
   sub?: string;
@@ -334,6 +358,8 @@ export interface CharacterDoc {
   /** Likeness safeguard: real people may only be depicted with their documented consent. */
   realPerson: boolean;
   consentConfirmed: boolean;
+  /** Character Bible (identity lock) — written through the API. */
+  bible?: CharacterBible | null;
 }
 
 export interface LocationDoc {
@@ -416,6 +442,10 @@ export interface ShotDoc {
   notes: string;
   /** Latest quality-controlled production run for this shot (mirrored by the backend). */
   production?: ProductionSummary | null;
+  /** The director's continuity plan for this shot (changes, prop events, protected screens). */
+  continuity?: ShotContinuityInput | null;
+  /** Continuity badge mirrored by the backend from the shot's snapshot. */
+  continuityStatus?: { status: ContinuityStatus; openWarnings: number; updatedAt: number } | null;
   createdAt?: Time;
   updatedAt?: Time;
 }
@@ -437,7 +467,7 @@ export interface TakeDoc {
   /** Quality control result for this take when it was produced by a production run. */
   productionId?: string | null;
   versionId?: string | null;
-  quality?: { verdict: 'pending' | 'passed' | 'failed' | 'error'; overall: number | null; reportId: string | null } | null;
+  quality?: { verdict: 'pending' | 'passed' | 'failed' | 'error'; overall: number | null; reportId: string | null; categoryScores?: CategoryScores | null } | null;
   createdAt?: Time;
 }
 
@@ -586,7 +616,8 @@ export interface TextPosition {
   align: 'left' | 'center' | 'right';
 }
 
-export type FitMode = 'fill' | 'fit' | 'blur';
+/** `smart`: face-safe reframing (a tracked crop that follows faces, speakers and important objects). */
+export type FitMode = 'fill' | 'fit' | 'blur' | 'smart';
 
 export interface Clip {
   id: string;
@@ -628,6 +659,10 @@ export interface Clip {
   lyric?: { songId: string; lineId: string; mode: LyricCaptionMode } | null;
   /** Highlight units (words or phrases) relative to the caption start. */
   karaoke?: { text: string; start: number; end: number }[] | null;
+  /** Face-safe reframing path per output aspect ratio (clip-local time). */
+  reframe?: Partial<Record<string, ReframeTrack>> | null;
+  /** A credit sequence rendered by the Credits Studio engine. */
+  credits?: { sequenceId: string } | null;
 }
 
 export interface TimelineMarker {
@@ -712,7 +747,7 @@ export interface UsageRecord {
   projectId: string | null;
   jobId: string;
   modelId: string;
-  kind: 'image' | 'video' | 'text' | 'audio' | 'render' | 'speech' | 'transcription' | 'music';
+  kind: 'image' | 'video' | 'text' | 'audio' | 'render' | 'speech' | 'transcription' | 'music' | 'vision' | 'compute';
   tokens: { input: number; output: number; thoughts: number; byModality: Record<string, number> };
   costUsd: number;
   pricingVersion: string;

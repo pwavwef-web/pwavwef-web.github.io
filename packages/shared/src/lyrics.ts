@@ -34,6 +34,10 @@ export interface LyricSheetLine {
   words: LyricWord[];
   confidence: number;
   flags: LineFlag[];
+  /** Translation shown by the dual-language lyric style (written by the creator, never automatic). */
+  translation?: string | null;
+  /** Singer or part (call-and-response). */
+  part?: string | null;
 }
 
 export interface LyricSheetSection {

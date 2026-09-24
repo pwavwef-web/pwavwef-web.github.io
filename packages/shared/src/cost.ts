@@ -40,6 +40,10 @@ export interface PricingTable {
   transcription: { modelId: string; inputPerM: number; outputPerM: number; audioTokensPerSecond: number };
   /** Music generation, billed per generated song. */
   music: { modelId: string; perSongUsd: number; source: string };
+  /** Cloud Vision (face, object and text detection), per image per feature; first 1,000 units a month are free. */
+  vision?: { perThousandUnits: number; freeUnitsPerMonth: number; source: string };
+  /** Stem separation on Cloud Run (compute per second of audio, estimate). */
+  separation?: { vcpu: number; memoryGiB: number; perVcpuSecond: number; perGiBSecond: number; secondsPerAudioSecond: number; overheadSeconds: number; source: string };
   /** Video understanding with the reasoning model (inspection). Per-frame tokens are an AZ Studio assumption. */
   inspection: { videoTokensPerFrame: number; audioTokensPerSecond: number; framesPerSecond: number; expectedOutputTokens: number };
   render: {
@@ -201,6 +205,28 @@ export function estimateInspection(input: { modelId: string; durationSec: number
 export function estimateMusic(input: { songs: number }, table: PricingTable): CostEstimate {
   const m = table.music;
   return finish([{ label: `Music generation (${input.songs} × ${m.modelId})`, usd: input.songs * m.perSongUsd }], 'high', ['Music is billed per generated song at the published rate.'], table);
+}
+
+/** Cloud Vision feature detection on sampled frames (published per-unit price; free tier not deducted). */
+export function estimateVision(input: { images: number; features: number }, table: PricingTable): CostEstimate {
+  const v = table.vision;
+  if (!v) return finish([], 'low', ['No Cloud Vision pricing configured.'], table, 'none');
+  const units = input.images * input.features;
+  return finish([{ label: `Face / object / text detection (${input.images} frame${input.images === 1 ? '' : 's'} × ${input.features} feature${input.features === 1 ? '' : 's'})`, usd: (units * v.perThousandUnits) / 1000 }], 'high', [`Cloud Vision is billed per image per feature; the first ${v.freeUnitsPerMonth.toLocaleString('en-US')} units a month are free (not deducted here).`], table);
+}
+
+/** Stem separation (Demucs on Cloud Run) — compute time is an estimate. */
+export function estimateSeparation(input: { audioSeconds: number }, table: PricingTable): CostEstimate {
+  const s = table.separation;
+  if (!s) return finish([], 'low', ['No stem-separation pricing configured.'], table, 'none');
+  const seconds = s.overheadSeconds + input.audioSeconds * s.secondsPerAudioSecond;
+  const usd = seconds * (s.vcpu * s.perVcpuSecond + s.memoryGiB * s.perGiBSecond);
+  return finish([{ label: `Stem separation compute (≈${Math.round(seconds / 60)} min on ${s.vcpu} vCPU)`, usd }], 'low', ['Stems are separated by an open-source model (Demucs) on Cloud Run; duration is an estimate.'], table, 'compute');
+}
+
+/** FFmpeg work inside AZ Studio's own functions (colour match, arrangement, mixdown): no model call. */
+export function estimateLocalCompute(label: string, table: PricingTable): CostEstimate {
+  return finish([{ label, usd: 0 }], 'high', ['Runs inside AZ Studio (FFmpeg); no model is called.'], table, 'compute');
 }
 
 export function sumEstimates(estimates: CostEstimate[], table: PricingTable): CostEstimate {

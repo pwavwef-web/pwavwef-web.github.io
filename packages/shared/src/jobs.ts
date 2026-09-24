@@ -33,7 +33,7 @@ export function assertTransition(from: JobStatus, to: JobStatus): void {
 
 /** Jobs that call a paid generative model and therefore count toward the concurrency limit. */
 export function isGenerativeJob(type: JobType): boolean {
-  return type !== 'render.timeline' && type !== 'media.composite';
+  return !['render.timeline', 'media.composite', 'media.color_match', 'music.arrange', 'music.mix', 'audio.stems', 'lyrics.resync_audio'].includes(type);
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -59,4 +59,45 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   'lyrics.transcribe': 'Lyrics extraction',
   'lyrics.align': 'Lyrics sync',
   'media.composite': 'Scene repair edit',
+  'reference.pack': 'Set reference pack',
+  'continuity.compare': 'Continuity comparison',
+  'media.screen_replace': 'Screen replacement',
+  'media.color_match': 'Colour match',
+  'media.analyze_subjects': 'Face & object tracking',
+  'lyrics.resync_audio': 'Lyric re-sync',
+  'final.inspect': 'Final-film inspection',
+  'music.analyze': 'Music analysis',
+  'music.arrange': 'Arrangement',
+  'music.mix': 'Mixdown',
+  'music.replace_section': 'Replacement passage',
+  'audio.stems': 'Stem separation',
 };
+
+/** The nine states AZ Studio shows for background work (derived from the durable job status). */
+export type DisplayJobStatus = 'Queued' | 'Preparing' | 'Processing' | 'Inspecting' | 'Repairing' | 'Rendering' | 'Completed' | 'Failed' | 'Cancelled';
+
+const INSPECTING_TYPES: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare'];
+const REPAIR_TYPES_: readonly JobType[] = ['media.composite', 'media.screen_replace', 'media.color_match'];
+const RENDER_TYPES: readonly JobType[] = ['render.timeline', 'music.mix', 'music.arrange'];
+
+export function displayJobStatus(job: { status: JobStatus; type: JobType; productionId?: string | null }): DisplayJobStatus {
+  switch (job.status) {
+    case 'queued':
+      return 'Queued';
+    case 'validating':
+      return 'Preparing';
+    case 'completed':
+      return 'Completed';
+    case 'failed':
+      return 'Failed';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'rendering':
+      return REPAIR_TYPES_.includes(job.type) && job.productionId ? 'Repairing' : 'Rendering';
+    default:
+      if (INSPECTING_TYPES.includes(job.type)) return 'Inspecting';
+      if (REPAIR_TYPES_.includes(job.type) && job.productionId) return 'Repairing';
+      if (RENDER_TYPES.includes(job.type)) return 'Rendering';
+      return 'Processing';
+  }
+}

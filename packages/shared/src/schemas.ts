@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { ASSET_KINDS } from './types';
+import { SET_VIEWS } from './continuity';
+import { characterBibleSchema, CONTINUITY_COLLECTIONS } from './continuity-schemas';
+import { COVERAGE_TYPES } from './coverage';
+import { MUSIC_MODES } from './music-studio';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -11,7 +15,7 @@ const id = z.string().min(1).max(128).regex(/^[\w-]+$/, 'Invalid id');
 const text = (max: number) => z.string().max(max);
 
 export const jobTargetSchema = z.object({
-  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score']),
+  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection']),
   id,
   sub: id.optional(),
 });
@@ -80,6 +84,8 @@ export const TEXT_TASKS = [
   'music.lyrics',
   'film.score_bible',
   'film.cue_sheet',
+  'film.coverage',
+  'music.brief_from_media',
 ] as const;
 export type TextTask = (typeof TEXT_TASKS)[number];
 
@@ -105,8 +111,10 @@ export const renderJobSchema = z.object({
   type: z.literal('render.timeline'),
   projectId: id,
   timelineId: id,
-  preset: z.enum(['youtube_16x9', 'vertical_9x16', 'square_1x1']),
+  preset: z.enum(['youtube_16x9', 'vertical_9x16', 'square_1x1', 'portrait_4x5']),
   quality: z.enum(['draft', 'final']),
+  /** Run the final-film inspection on the finished render. */
+  inspect: z.boolean().default(false),
   /** Render even though lyric captions are out of sync with the vocals (the issues are recorded). */
   acceptLyricSync: z.boolean().default(false),
   label: text(160).optional(),
@@ -130,6 +138,11 @@ export const musicJobSchema = z.object({
   type: z.literal('music.generate'),
   projectId: id,
   purpose: z.enum(['song', 'score_movement']),
+  /** Music Studio project the generated version belongs to (a new musicVersions entry). */
+  musicProjectId: id.nullable().optional(),
+  mode: z.enum(MUSIC_MODES).optional(),
+  /** Alternate movement of a score (kept beside the current one). */
+  alternate: z.boolean().default(false),
   prompt: z.string().trim().min(1, 'Describe the music.').max(12000),
   /** Exact lyrics to sing (section tags allowed). Omitted for instrumental music. */
   lyrics: z.string().max(12000).nullable().optional(),
@@ -163,7 +176,89 @@ export const lyricsAlignJobSchema = z.object({
   label: text(160).optional(),
 });
 
-export const jobRequestSchema = z.discriminatedUnion('type', [imageJobSchema, videoJobSchema, textJobSchema, audioJobSchema, renderJobSchema, speechJobSchema, musicJobSchema, lyricsTranscribeJobSchema, lyricsAlignJobSchema]);
+export const referencePackJobSchema = z.object({
+  type: z.literal('reference.pack'),
+  projectId: id,
+  locationId: id,
+  views: z.array(z.enum(SET_VIEWS)).min(1).max(5),
+  imageSize: z.string().min(2).max(3).default('2K'),
+  aspectRatio: z.string().min(3).max(6).default('16:9'),
+  direction: text(2000).optional(),
+  label: text(160).optional(),
+});
+
+export const continuityCompareJobSchema = z.object({ type: z.literal('continuity.compare'), projectId: id, shotIds: z.array(id).min(2).max(12), label: text(160).optional() });
+
+export const screenReplaceJobSchema = z.object({ type: z.literal('media.screen_replace'), projectId: id, sourceAssetId: id, screenId: id, shotId: id.nullable().optional(), label: text(160).optional() });
+
+export const colorMatchJobSchema = z.object({
+  type: z.literal('media.color_match'),
+  projectId: id,
+  sourceAssetId: id,
+  /** Still or clip to match; defaults to the Colour Director's approved reference still. */
+  referenceAssetId: id.nullable().optional(),
+  strength: z.number().min(0.1).max(1).default(0.8),
+  applyLut: z.boolean().default(false),
+  shotId: id.nullable().optional(),
+  label: text(160).optional(),
+});
+
+export const analyzeSubjectsJobSchema = z.object({ type: z.literal('media.analyze_subjects'), projectId: id, assetIds: z.array(id).min(1).max(60), fps: z.number().min(0.5).max(4).default(1), label: text(160).optional() });
+
+export const lyricsResyncAudioJobSchema = z.object({ type: z.literal('lyrics.resync_audio'), projectId: id, songId: id, fromAssetId: id, toAssetId: id, label: text(160).optional() });
+
+export const finalInspectJobSchema = z.object({ type: z.literal('final.inspect'), projectId: id, renderId: id, label: text(160).optional() });
+
+export const musicAnalyzeJobSchema = z.object({
+  type: z.literal('music.analyze'),
+  projectId: id,
+  audioAssetId: id,
+  musicProjectId: id.nullable().optional(),
+  versionId: id.nullable().optional(),
+  detectVocals: z.boolean().default(true),
+  label: text(160).optional(),
+});
+
+export const musicArrangeJobSchema = z.object({ type: z.literal('music.arrange'), projectId: id, musicProjectId: id, versionId: id, label: text(160).optional() });
+
+export const musicMixJobSchema = z.object({ type: z.literal('music.mix'), projectId: id, musicProjectId: id, label: text(160).optional() });
+
+export const musicReplaceSectionJobSchema = z.object({
+  type: z.literal('music.replace_section'),
+  projectId: id,
+  musicProjectId: id,
+  versionId: id,
+  sectionId: id,
+  direction: text(2000).default(''),
+  lyrics: z.string().max(4000).nullable().optional(),
+  label: text(160).optional(),
+});
+
+export const stemsJobSchema = z.object({ type: z.literal('audio.stems'), projectId: id, audioAssetId: id, musicProjectId: id.nullable().optional(), versionId: id.nullable().optional(), label: text(160).optional() });
+
+export const jobRequestSchema = z.discriminatedUnion('type', [
+  imageJobSchema,
+  videoJobSchema,
+  textJobSchema,
+  audioJobSchema,
+  renderJobSchema,
+  speechJobSchema,
+  musicJobSchema,
+  lyricsTranscribeJobSchema,
+  lyricsAlignJobSchema,
+  referencePackJobSchema,
+  continuityCompareJobSchema,
+  screenReplaceJobSchema,
+  colorMatchJobSchema,
+  analyzeSubjectsJobSchema,
+  lyricsResyncAudioJobSchema,
+  finalInspectJobSchema,
+  musicAnalyzeJobSchema,
+  musicArrangeJobSchema,
+  musicMixJobSchema,
+  musicReplaceSectionJobSchema,
+  stemsJobSchema,
+]);
 export type JobRequest = z.infer<typeof jobRequestSchema>;
 export type ImageJobRequest = z.infer<typeof imageJobSchema>;
 export type VideoJobRequest = z.infer<typeof videoJobSchema>;
@@ -174,6 +269,18 @@ export type SpeechJobRequest = z.infer<typeof speechJobSchema>;
 export type MusicJobRequest = z.infer<typeof musicJobSchema>;
 export type LyricsTranscribeJobRequest = z.infer<typeof lyricsTranscribeJobSchema>;
 export type LyricsAlignJobRequest = z.infer<typeof lyricsAlignJobSchema>;
+export type ReferencePackJobRequest = z.infer<typeof referencePackJobSchema>;
+export type ContinuityCompareJobRequest = z.infer<typeof continuityCompareJobSchema>;
+export type ScreenReplaceJobRequest = z.infer<typeof screenReplaceJobSchema>;
+export type ColorMatchJobRequest = z.infer<typeof colorMatchJobSchema>;
+export type AnalyzeSubjectsJobRequest = z.infer<typeof analyzeSubjectsJobSchema>;
+export type LyricsResyncAudioJobRequest = z.infer<typeof lyricsResyncAudioJobSchema>;
+export type FinalInspectJobRequest = z.infer<typeof finalInspectJobSchema>;
+export type MusicAnalyzeJobRequest = z.infer<typeof musicAnalyzeJobSchema>;
+export type MusicArrangeJobRequest = z.infer<typeof musicArrangeJobSchema>;
+export type MusicMixJobRequest = z.infer<typeof musicMixJobSchema>;
+export type MusicReplaceSectionJobRequest = z.infer<typeof musicReplaceSectionJobSchema>;
+export type StemsJobRequest = z.infer<typeof stemsJobSchema>;
 
 export const qualitySettingsSchema = z.object({
   autoQualityReview: z.boolean(),
@@ -189,6 +296,7 @@ export const qualitySettingsSchema = z.object({
   dialogueAudio: z.enum(['generate', 'estimate']),
   openingAllowanceSec: z.number().min(0.4).max(1),
   closingAllowanceSec: z.number().min(0.8).max(1.5),
+  maxTakesPerShot: z.number().int().min(1).max(4),
 });
 
 export const productionOptionsSchema = z.object({
@@ -201,9 +309,11 @@ export const productionOptionsSchema = z.object({
   /** Review an existing take instead of generating: it becomes version 1 and goes straight to inspection and repair. */
   reviewTakeId: id.nullable().optional(),
   settings: qualitySettingsSchema.partial().optional(),
+  /** Independent takes generated side by side; the strongest is recommended (the director approves). */
+  takes: z.number().int().min(1).max(4).default(1),
 });
 
-export const PRODUCTION_ACTIONS = ['approve', 'repair', 'extend', 'split', 'regenerate', 'keep_original', 'waive', 'unwaive', 'cancel', 'reinspect', 'approve_pending_repair', 'dismiss_pending_repair'] as const;
+export const PRODUCTION_ACTIONS = ['approve', 'repair', 'extend', 'split', 'regenerate', 'keep_original', 'waive', 'unwaive', 'cancel', 'reinspect', 'approve_pending_repair', 'dismiss_pending_repair', 'choose_version', 'color_match', 'screen_composite', 'correct_blocking', 'regenerate_with_references'] as const;
 export type ProductionAction = (typeof PRODUCTION_ACTIONS)[number];
 
 export const settingsSchema = z.object({
@@ -284,6 +394,50 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
     }),
   }),
   z.object({ action: z.literal('modelStatus'), payload: z.object({ refresh: z.boolean().default(false) }).default({ refresh: false }) }),
+  z.object({
+    action: z.literal('continuitySave'),
+    payload: z.object({ projectId: id, collection: z.enum(CONTINUITY_COLLECTIONS), id: id.nullable().optional(), data: z.record(z.string(), z.unknown()) }),
+  }),
+  z.object({ action: z.literal('continuityDelete'), payload: z.object({ projectId: id, collection: z.enum(CONTINUITY_COLLECTIONS), id }) }),
+  z.object({ action: z.literal('characterBibleSave'), payload: z.object({ projectId: id, characterId: id, bible: characterBibleSchema, approve: z.boolean().default(false) }) }),
+  z.object({ action: z.literal('bibleApprove'), payload: z.object({ projectId: id, kind: z.enum(['visual', 'character', 'set']), id, approve: z.boolean(), views: z.array(z.enum(SET_VIEWS)).max(5).default([]) }) }),
+  z.object({ action: z.literal('continuityCheck'), payload: z.object({ projectId: id, shotId: id, save: z.boolean().default(true) }) }),
+  z.object({ action: z.literal('continuityWarning'), payload: z.object({ projectId: id, shotId: id, warningId: text(80), action: z.enum(['override', 'reopen', 'resolve']), note: text(500).default('') }) }),
+  z.object({ action: z.literal('insertNeutralShot'), payload: z.object({ projectId: id, afterShotId: id, kind: z.enum(['head_on', 'tail_away', 'cutaway']) }) }),
+  z.object({
+    action: z.literal('coverageApply'),
+    payload: z.object({
+      projectId: id,
+      sceneId: id.nullable(),
+      masterShotId: id.nullable(),
+      suggestions: z
+        .array(
+          z.object({
+            id: text(40),
+            type: z.enum(COVERAGE_TYPES),
+            subjectIds: z.array(id).max(6),
+            description: text(400),
+            action: text(400),
+            framing: text(80),
+            lens: text(60),
+            cameraMovement: text(80),
+            durationSec: z.number().min(1).max(60),
+            dialogueLines: z.array(z.number().int().min(0).max(500)).max(40),
+            priority: z.enum(['essential', 'recommended', 'optional']),
+            rationale: text(300),
+            accepted: z.boolean(),
+          }),
+        )
+        .min(1)
+        .max(16),
+    }),
+  }),
+  z.object({ action: z.literal('finalInspectionAction'), payload: z.object({ inspectionId: id, action: z.enum(['apply_fix', 'apply_all_fixes', 'override', 'clear_override', 'resolve', 'reopen']), findingId: text(80).nullable().optional(), note: text(500).optional() }) }),
+  z.object({ action: z.literal('musicSetMaster'), payload: z.object({ projectId: id, musicProjectId: id, versionId: id }) }),
+  z.object({ action: z.literal('musicToVideo'), payload: z.object({ projectId: id, musicProjectId: id, versionId: id, targetProjectId: id }) }),
+  z.object({ action: z.literal('cancelQueued'), payload: z.object({ projectId: id.nullable().optional() }) }),
+  z.object({ action: z.literal('creditsMetadata'), payload: z.object({ projectId: id }) }),
+  z.object({ action: z.literal('continuityOverview'), payload: z.object({ projectId: id }) }),
 ]);
 export type ApiRequest = z.infer<typeof apiRequestSchema>;
 export type ApiAction = ApiRequest['action'];

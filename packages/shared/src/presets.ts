@@ -1,7 +1,7 @@
 import type { FrameAspect, RenderQuality } from './types';
 
 export interface ExportPreset {
-  id: 'youtube_16x9' | 'vertical_9x16' | 'square_1x1';
+  id: 'youtube_16x9' | 'vertical_9x16' | 'square_1x1' | 'portrait_4x5';
   label: string;
   platform: string;
   aspect: FrameAspect;
@@ -33,6 +33,14 @@ export const EXPORT_PRESETS: Record<ExportPreset['id'], ExportPreset> = {
     aspect: '1:1',
     final: { width: 1080, height: 1080 },
     draft: { width: 720, height: 720 },
+  },
+  portrait_4x5: {
+    id: 'portrait_4x5',
+    label: 'Portrait 4:5',
+    platform: 'Instagram and Facebook feed',
+    aspect: '4:5',
+    final: { width: 1080, height: 1350 },
+    draft: { width: 720, height: 900 },
   },
 };
 
