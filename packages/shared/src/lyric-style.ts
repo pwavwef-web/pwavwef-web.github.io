@@ -396,7 +396,6 @@ export function layoutLyrics(input: LyricLayoutInput): LyricLayout {
     const maxWidth = Math.max(80, colWidth);
     const rowsOut: SceneLine[] = [];
     let shrunk = false;
-    let textHeight = 0;
     const lh = (sz: number) => sz * s.lineSpacing;
     const lineTexts = group.map((g) => ({ g, text: capitalise(g.text, s.capitalisation) }));
     // Vertical captions show short phrase chunks that follow the vocal.
@@ -432,14 +431,12 @@ export function layoutLyrics(input: LyricLayoutInput): LyricLayout {
       const rowPaint = { ...paint, sizePx: wrapped.sizePx };
       for (const row of wrapped.rows) {
         rowsOut.push(rowLine(row, rowPaint, input.measure, g.id === line.id || group.length === 1 ? null : { start: g.start, end: g.end }, s));
-        textHeight += lh(wrapped.sizePx);
       }
       if (s.preset === 'dual_language' && g.translation) {
         const tPaint = { ...paint, sizePx: paint.sizePx * s.translation.sizeRatio, color: s.translation.color, inactiveColor: s.translation.color };
         const tw = wrapWords(g.translation.split(/\s+/).filter(Boolean).map((w) => ({ text: w, start: null, end: null })), tPaint, input.measure, maxWidth, s.maxCharsPerLine + 8, 2);
         for (const row of tw.rows) {
           rowsOut.push(rowLine(row, { ...tPaint, sizePx: tw.sizePx }, input.measure, null, s, true));
-          textHeight += lh(tw.sizePx);
         }
       }
     }

@@ -277,7 +277,7 @@ export function layoutCredits(seq: CreditSequenceDoc, frame: { width: number; he
   const totalH = y;
   const blocks: SceneBlock[] = [];
   const bg = seq.background.type === 'transparent' ? null : { color: seq.background.type === 'black' ? '#000000' : seq.background.colour, opacity: 1 };
-  let finishesAt = start;
+  let finishesAt: number;
   const baseBlock = (id: string, s: number, e: number, ls: SceneLine[], motion: SceneBlock['motion'], entrance: SceneBlock['entrance'], exit: SceneBlock['exit']): SceneBlock => ({
     id,
     refs: [seq.id],

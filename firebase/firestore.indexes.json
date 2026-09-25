@@ -479,6 +479,132 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "musicVersions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "musicProjectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "index",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "audioTracks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "musicProjectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "stems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "musicProjectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "repairAttempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "shotId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "qualityReviews",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "shotId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "finalInspections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "timelineId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "characterStates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "characterId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "propStates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "propId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "lyricsTracks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "songId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

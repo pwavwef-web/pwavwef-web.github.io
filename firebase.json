@@ -75,7 +75,7 @@
             },
             {
               "key": "Permissions-Policy",
-              "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+              "value": "camera=(), microphone=(self), geolocation=(), payment=(), usb=()"
             },
             {
               "key": "Cross-Origin-Opener-Policy",
@@ -87,7 +87,7 @@
             },
             {
               "key": "Content-Security-Policy",
-              "value": "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://apis.google.com https://www.gstatic.com; frame-src https://az-learner.firebaseapp.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://accounts.google.com; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google.com/recaptcha/ https://storage.googleapis.com https://firebasestorage.googleapis.com https://az-learner.firebaseapp.com; img-src 'self' data: blob: https://storage.googleapis.com https://*.googleusercontent.com https://www.gstatic.com https://www.google.com; media-src 'self' blob: https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+              "value": "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://apis.google.com https://www.gstatic.com; frame-src https://az-learner.firebaseapp.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://accounts.google.com; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google.com/recaptcha/ https://storage.googleapis.com https://firebasestorage.googleapis.com https://az-learner.firebaseapp.com; img-src 'self' data: blob: https://storage.googleapis.com https://*.googleusercontent.com https://www.gstatic.com https://www.google.com; media-src 'self' blob: https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob: https://storage.googleapis.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
             }
           ]
         },

@@ -37,8 +37,9 @@ export const UPLOAD_POLICY: Record<AssetKind, { maxBytes: number; mimeTypes: str
   },
   document: {
     maxBytes: 20 * MB,
-    mimeTypes: ['text/plain', 'application/pdf'],
-    extensions: ['txt', 'lrc', 'fountain', 'pdf'],
+    // Text (lyrics, .lrc, .fountain, .cube colour LUTs), PDF, and licensed fonts for lyric and credit styles.
+    mimeTypes: ['text/plain', 'application/pdf', 'font/ttf', 'font/otf', 'font/sfnt', 'application/x-font-ttf', 'application/x-font-otf', 'application/vnd.ms-opentype'],
+    extensions: ['txt', 'lrc', 'fountain', 'pdf', 'cube', 'ttf', 'otf'],
   },
 };
 

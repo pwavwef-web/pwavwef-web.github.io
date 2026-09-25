@@ -47,7 +47,9 @@ export async function sniffUpload(kind: AssetKind, head: Buffer): Promise<{ ok: 
   const detected = await fileTypeFromBuffer(head);
   if (kind === 'document') {
     if (detected?.ext === 'pdf') return { ok: true, mimeType: 'application/pdf' };
-    if (detected) return { ok: false, reason: `Expected a text or PDF document but found ${detected.mime}.` };
+    // Fonts for lyric and credit styles (TrueType / OpenType outlines).
+    if (detected?.ext === 'ttf' || detected?.ext === 'otf') return { ok: true, mimeType: detected.ext === 'ttf' ? 'font/ttf' : 'font/otf' };
+    if (detected) return { ok: false, reason: `Expected a text, PDF or font file but found ${detected.mime}.` };
     // Plain text (lyrics, .lrc, .fountain): must be valid UTF-8 without NUL bytes.
     if (head.includes(0)) return { ok: false, reason: 'This file is not a text document.' };
     try {

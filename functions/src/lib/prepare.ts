@@ -509,6 +509,7 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
         // Final renders are always inspected before export; drafts only when asked.
         inspect: req.inspect || req.quality === 'final',
+        finalInspection: null,
         assets: assetMap,
         computeRates: { vcpu: PRICING.render.vcpu, memoryGiB: PRICING.render.memoryGiB, perVcpuSecond: PRICING.render.perVcpuSecond, perGiBSecond: PRICING.render.perGiBSecond },
       },

@@ -19,7 +19,22 @@ service firebase.storage {
       allow create: if isOwner() && request.auth.uid == uid
         && request.resource.size > 0
         && request.resource.size <= 2 * 1024 * 1024 * 1024
-        && request.resource.contentType.matches('^(image|video|audio)/[-+.a-zA-Z0-9]+$|^text/plain$|^application/pdf$|^application/octet-stream$');
+        && request.resource.contentType.matches('^(image|video|audio|font)/[-+.a-zA-Z0-9]+$|^text/plain$|^application/pdf$|^application/octet-stream$|^application/(x-font-ttf|x-font-otf|vnd.ms-opentype)
+      allow update, delete: if false;
+    }
+
+    // Generated media, derivatives and renders are written by the backend only.
+    match /users/{uid}/{rest=**} {
+      allow read: if isOwner() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+);
       allow update, delete: if false;
     }
 

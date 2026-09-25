@@ -94,10 +94,10 @@ describe('Firestore rules — creative documents and server records', () => {
     await assertFails(addDoc(collection(db, 'projects/p1/unknown'), { x: 1 }));
   });
 
-  it('only allows rating / notes / approval on takes', async () => {
+  it('only allows rating / notes / label on takes (approval goes through the API)', async () => {
     const db = owner().firestore();
     await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { rating: 4, notes: 'Great light' }));
-    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { approved: true }));
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { approved: true }));
     await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/t1'), { assetId: 'other' }));
     await assertFails(setDoc(doc(db, 'projects/p1/shots/s1/takes/t2'), { status: 'completed' }));
   });
@@ -113,7 +113,37 @@ describe('Firestore rules — creative documents and server records', () => {
     await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qc'), { quality: { verdict: 'passed', overall: 90, reportId: 'r1' } }));
     await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qc'), { rating: 2, notes: 'Door never closes' }));
     await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qcApproved'), { rating: 5 }));
-    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qcApproved'), { approved: false }));
+    // Withdrawing also goes through the API (it removes the shot's canonical continuity records).
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s1/takes/qcApproved'), { approved: false }));
+  });
+
+  it('keeps shot approval, continuity status and production summaries server-managed', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'projects/p1/shots/s2'), { title: 'Two-shot', approvedTakeId: 't1', continuityStatus: { status: 'locked', openWarnings: 0 }, production: null });
+    });
+    const db = owner().firestore();
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/shots/s2'), { title: 'Two-shot, wider', continuity: { propIds: ['key'] } }));
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s2'), { approvedTakeId: null }));
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s2'), { continuityStatus: { status: 'consistent', openWarnings: 0 } }));
+    await assertFails(updateDoc(doc(db, 'projects/p1/shots/s2'), { production: { status: 'approved' } }));
+    await assertFails(setDoc(doc(db, 'projects/p1/shots/s3'), { title: 'Forged', approvedTakeId: 't9' }));
+    await assertSucceeds(setDoc(doc(db, 'projects/p1/shots/s3'), { title: 'New', approvedTakeId: null, production: null }));
+  });
+
+  it('saves Character Bibles and every continuity record through the API only', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'projects/p1/characters/c1'), { name: 'Ama', bible: { approvedAt: null } });
+      await setDoc(doc(db, 'projects/p1/continuitySnapshots/s1'), { status: 'planned' });
+    });
+    const db = owner().firestore();
+    await assertSucceeds(updateDoc(doc(db, 'projects/p1/characters/c1'), { appearance: 'Short natural hair', locked: true }));
+    await assertFails(updateDoc(doc(db, 'projects/p1/characters/c1'), { bible: { approvedAt: 1 } }));
+    await assertFails(addDoc(collection(db, 'projects/p1/characters'), { name: 'Forged', bible: { approvedAt: 1 } }));
+    await assertSucceeds(getDoc(doc(db, 'projects/p1/continuitySnapshots/s1')));
+    for (const c of ['continuitySnapshots', 'characterStates', 'propStates', 'visualBibles', 'setBibles', 'props', 'blockingPlans', 'cameraAxes', 'protectedScreens', 'qualityReviews', 'repairAttempts', 'finalInspections', 'musicProjects', 'musicVersions', 'audioTracks', 'stems', 'lyricStyles', 'lyricsTracks', 'creditSequences', 'subjectTracks']) {
+      await assertFails(setDoc(doc(db, `projects/p1/${c}/x`), { forged: true }));
+    }
   });
 
   it('keeps quality-control productions, versions, reports and events server-written', async () => {

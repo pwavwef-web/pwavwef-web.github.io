@@ -37,7 +37,7 @@ service cloud.firestore {
       allow create: if isOwner()
         && request.resource.data.ownerUid == request.auth.uid
         && validTitle(request.resource.data.title)
-        && request.resource.data.type in ['quick_video', 'music_video', 'film', 'image', 'remix']
+        && request.resource.data.type in ['quick_video', 'music_video', 'film', 'image', 'remix', 'music']
         && request.resource.data.status in ['active', 'archived']
         && !('usage' in request.resource.data);
       allow update: if ownsExisting()
@@ -49,11 +49,33 @@ service cloud.firestore {
       // Deletion goes through the API (keeps media, removes subcollections).
       allow delete: if false;
 
-      // Creative documents edited directly by the owner.
+      // Creative documents edited directly by the owner. Continuity bibles, blocking plans, lyric styles,
+      // credits and Music Studio projects are written through the API (validated with typed schemas);
+      // continuity snapshots, states, quality reviews, repair attempts, final inspections, music
+      // versions and stems are written by the backend only. The owner reads all of them.
       match /{sub}/{docId} {
         allow read: if isOwner();
         allow create, update, delete: if isOwner()
-          && sub in ['scripts', 'sequences', 'scenes', 'shots', 'characters', 'locations', 'elements', 'notes', 'songs', 'timelines', 'scores'];
+          && sub in ['scripts', 'sequences', 'scenes', 'locations', 'elements', 'notes', 'songs', 'timelines', 'scores'];
+      }
+      // Shots: approval (canonical continuity), the continuity badge and the production summary are
+      // server-managed; everything else is the director's to edit.
+      match /shots/{shotId} {
+        allow read: if isOwner();
+        allow create: if isOwner()
+          && request.resource.data.get('approvedTakeId', null) == null
+          && request.resource.data.get('continuityStatus', null) == null
+          && request.resource.data.get('production', null) == null;
+        allow update: if isOwner()
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approvedTakeId', 'continuityStatus', 'production']);
+        allow delete: if isOwner();
+      }
+      // Characters: the Character Bible (and its approval) is saved through the API.
+      match /characters/{characterId} {
+        allow read: if isOwner();
+        allow create: if isOwner() && !('bible' in request.resource.data);
+        allow update: if isOwner() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bible']);
+        allow delete: if isOwner();
       }
       match /scripts/{scriptId}/versions/{versionId} {
         allow read, create: if isOwner();
@@ -63,16 +85,21 @@ service cloud.firestore {
         allow read, create: if isOwner();
         allow update, delete: if false;
       }
-      // Takes are created by generation jobs; the owner may rate, annotate and approve them. A take made
-      // under quality control is approved through the API (which records any waived issues), so a failed
-      // review can never be approved quietly; withdrawing an approval is always allowed.
+      // Takes are created by generation jobs; the owner may rate, annotate and rename them. Approving or
+      // withdrawing a take goes through the API, which updates canonical continuity and records any
+      // accepted issues, so a failed review can never be approved quietly.
       match /shots/{shotId}/takes/{takeId} {
         allow read: if isOwner();
-        allow update: if isOwner() && changedOnly(['rating', 'notes', 'label', 'approved'])
-          && (request.resource.data.get('approved', false) != true
-            || resource.data.get('approved', false) == true
-            || resource.data.get('productionId', null) == null);
+        allow update: if isOwner() && changedOnly(['rating', 'notes', 'label']);
         allow create, delete: if false;
+      }
+      match /songs/{songId}/lyricsHistory/{entryId} {
+        allow read: if isOwner();
+        allow write: if false;
+      }
+      match /finalInspections/{inspectionId}/events/{eventId} {
+        allow read: if isOwner();
+        allow write: if false;
       }
       // AI results are written by the backend.
       match /aiRuns/{runId} {
