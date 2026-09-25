@@ -138,6 +138,38 @@ export async function integratedLoudness(input: string): Promise<number | null> 
   }
 }
 
+/** Integrated loudness (LUFS), true peak (dBTP) and loudness range (LU), EBU R128. */
+export async function loudnessStats(input: string): Promise<{ integratedLufs: number | null; truePeakDb: number | null; lra: number | null }> {
+  try {
+    const { stderr } = await run(['-i', input, '-vn', '-af', 'ebur128=framelog=quiet:peak=true', '-f', 'null', '-'], { stdout: false, timeoutMs: 600_000 });
+    const sum = stderr.slice(stderr.lastIndexOf('Summary'));
+    const num = (re: RegExp) => {
+      const m = re.exec(sum);
+      return m && m[1] !== '-inf' ? Number(m[1]) : null;
+    };
+    return { integratedLufs: num(/I:\s+(-?[\d.]+)\s+LUFS/), truePeakDb: num(/True peak:\s+Peak:\s+(-?[\d.]+|-inf)\s+dBFS/) ?? num(/Peak:\s+(-?[\d.]+|-inf)\s+dBFS/), lra: num(/LRA:\s+(-?[\d.]+)\s+LU/) };
+  } catch {
+    return { integratedLufs: null, truePeakDb: null, lra: null };
+  }
+}
+
+/** Silent spans (below `noiseDb` for at least `minSec`). */
+export async function silentSpans(input: string, noiseDb = -45, minSec = 1.5): Promise<{ start: number; end: number }[]> {
+  const { stderr } = await run(['-i', input, '-vn', '-af', `silencedetect=n=${noiseDb}dB:d=${minSec}`, '-f', 'null', '-'], { stdout: false, timeoutMs: 600_000 });
+  const out: { start: number; end: number }[] = [];
+  let open: number | null = null;
+  for (const line of stderr.split('\n')) {
+    const s = /silence_start:\s*(-?[\d.]+)/.exec(line);
+    const e = /silence_end:\s*([\d.]+)/.exec(line);
+    if (s) open = Math.max(0, Number(s[1]));
+    if (e && open !== null) {
+      out.push({ start: open, end: Number(e[1]) });
+      open = null;
+    }
+  }
+  return out;
+}
+
 /** 16 kHz mono FLAC for transcription (small, lossless for speech). */
 export async function extractSpeechAudio(input: string, output: string): Promise<void> {
   await run(['-loglevel', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', output], { stdout: false });

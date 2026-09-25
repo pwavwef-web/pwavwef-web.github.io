@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { writeFile } from 'node:fs/promises';
-import { needsLanguageVerification, languageName, parseLyricsText, sheetFromParsed, sheetToLyricLines, type JobDoc, type LyricsSheet, type ScoreDoc } from '@az-studio/shared';
+import { analyzeMusic, needsLanguageVerification, languageName, parseLyricsText, sheetFromParsed, sheetToLyricLines, type JobDoc, type LyricsSheet, type MusicAnalysis, type ScoreDoc } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { PRICING } from '../config/pricing';
 import { createAsset, withTmpDir } from '../lib/assets';
@@ -9,9 +9,10 @@ import { JobFailure } from '../lib/errors';
 import { logInteraction } from '../lib/interactions';
 import { progress, transition } from '../lib/jobs';
 import { generateMusic } from '../lib/music-model';
-import { integratedLoudness } from '../lib/signal';
+import { decodeMono, loudnessStats } from '../lib/signal';
 import { recordUsage } from '../lib/usage';
 import { alignAndSave } from './lyrics';
+import { createMusicVersion } from './music-studio';
 
 interface MusicParams {
   purpose: 'song' | 'score_movement';
@@ -25,6 +26,10 @@ interface MusicParams {
   scoreId: string | null;
   movementId: string | null;
   title: string | null;
+  /** Music Studio: the generation becomes a new version of this music project. */
+  musicProjectId?: string | null;
+  mode?: string | null;
+  alternate?: boolean;
 }
 
 const EXT: Record<string, string> = { 'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/ogg': 'ogg', 'audio/flac': 'flac' };
@@ -65,6 +70,8 @@ export async function runMusicJob(job: JobDoc): Promise<void> {
   const storagePath = `users/${job.ownerUid}/generated/${job.id}/${assetId}.${ext}`;
   let durationSec = 0;
   let lufs: number | null = null;
+  let truePeakDb: number | null = null;
+  let analysis: MusicAnalysis | null = null;
   await withTmpDir(async (dir) => {
     const local = path.join(dir, `music.${ext}`);
     await writeFile(local, result.audio);
@@ -85,7 +92,11 @@ export async function runMusicJob(job: JobDoc): Promise<void> {
       generation: { jobId: job.id, modelId: MODEL_REGISTRY.music.id, prompt: p.prompt, params: { purpose: p.purpose, instrumental: p.instrumental, languageCode: p.languageCode }, interactionId: result.interactionId },
     });
     durationSec = Number((await col.assets().doc(assetId).get()).get('durationSec') ?? 0);
-    lufs = await integratedLoudness(local);
+    const loud = await loudnessStats(local);
+    lufs = loud.integratedLufs;
+    truePeakDb = loud.truePeakDb;
+    // Music Studio versions are analysed straight away (beats, bars, key, energy, sections: DSP, no model call).
+    if (p.musicProjectId) analysis = analyzeMusic(await decodeMono(local, 22050), 22050);
   });
   await logInteraction({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: MODEL_REGISTRY.music.id, api: 'interactions', interactionId: result.interactionId, request: { purpose: p.purpose, promptChars: p.prompt.length, images: p.images.length }, response: { assetId, durationSec, textChars: result.text.length, lines: parsed.lines.length, bpm: parsed.meta.bpm ?? null }, latencyMs: Date.now() - started });
 
@@ -118,8 +129,30 @@ export async function runMusicJob(job: JobDoc): Promise<void> {
     asr: null,
     range: null,
   };
-  const songRef = p.songId ? col.songs(job.projectId).doc(p.songId) : col.songs(job.projectId).doc();
-  await songRef.set({ ...songPatch, ...(p.songId ? {} : { title: p.title ?? 'Generated song', artist: '', createdAt: FieldValue.serverTimestamp() }), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  let songId = p.songId;
+  if (!songId && p.musicProjectId) songId = ((await col.sub(job.projectId, 'musicProjects').doc(p.musicProjectId).get()).get('songId') as string | null) ?? null;
+  const songRef = songId ? col.songs(job.projectId).doc(songId) : col.songs(job.projectId).doc();
+  await songRef.set({ ...songPatch, ...(songId ? {} : { title: p.title ?? 'Generated song', artist: '', createdAt: FieldValue.serverTimestamp() }), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  let versionId: string | null = null;
+  if (p.musicProjectId) {
+    versionId = await createMusicVersion(job.projectId, {
+      musicProjectId: p.musicProjectId,
+      source: 'lyria',
+      label: p.title ?? (p.instrumental ? 'Instrumental' : 'Song'),
+      assetId,
+      parentVersionId: null,
+      jobId: job.id,
+      prompt: p.prompt.slice(0, 12000),
+      lyricsText: p.lyrics ?? null,
+      modelId: MODEL_REGISTRY.music.id,
+      method: `${MODEL_REGISTRY.music.displayName} generated the full piece (${result.surface === 'developer-api' ? 'Gemini Developer API' : 'Vertex AI'}), ${p.instrumental ? 'instrumental' : p.lyricsProvided ? 'singing the provided lyrics' : 'with lyrics it wrote'}.`,
+      durationSec,
+      loudness: { integratedLufs: lufs, truePeakDb },
+      analysis,
+      timeMap: null,
+    });
+    await col.sub(job.projectId, 'musicProjects').doc(p.musicProjectId).set({ songId: songRef.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
 
   let syncNote = '';
   if (sheet?.lines.length) {
@@ -133,6 +166,6 @@ export async function runMusicJob(job: JobDoc): Promise<void> {
   const lang = languageName(p.languageCode);
   await transition(job.id, 'completed', {
     stage: `Song ready · ${durationSec.toFixed(0)} s${parsed.meta.bpm ? ` · ${parsed.meta.bpm} BPM` : ''}${lang && !p.instrumental ? ` · ${lang}` : ''}${syncNote}`,
-    result: { assetIds: [assetId], interactionId: result.interactionId, text: result.text.slice(0, 2000), data: { songId: songRef.id, lyricLines: sheet?.lines.length ?? 0, sectionCount: parsed.sections.length } },
+    result: { assetIds: [assetId], interactionId: result.interactionId, text: result.text.slice(0, 2000), data: { songId: songRef.id, versionId, lyricLines: sheet?.lines.length ?? 0, sectionCount: parsed.sections.length } },
   });
 }

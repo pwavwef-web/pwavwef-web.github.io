@@ -744,7 +744,7 @@ export interface ContinuityWarning {
   difference: string | null;
   proposedRepair: { type: string; label: string; estimateUsd: number | null } | null;
   affects: { previousShotId: string | null; nextShotId: string | null };
-  source: 'plan' | 'inspection' | 'final';
+  source: 'plan' | 'inspection' | 'final' | 'compare';
   status: 'open' | 'resolved' | 'overridden';
   note?: string;
 }

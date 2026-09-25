@@ -15,7 +15,6 @@ import {
   tokenize,
   trackDirection,
   type ColourMeasurements,
-  type ColourStats,
   type ContinuitySnapshotDoc,
   type ContinuityState,
   type ContinuityWarning,
@@ -30,7 +29,6 @@ import {
   type QualityReviewDoc,
   type QualitySettings,
   type Rgb,
-  type RgbStats,
   type TemporalMeasurements,
   type VisionFrame,
   type VisionMeasurements,
@@ -41,7 +39,7 @@ import { withTmpDir } from '../lib/assets';
 import { recordInspection } from '../lib/continuity';
 import { bucket, col, FieldValue, gsUri } from '../lib/firebase';
 import { fail } from '../lib/errors';
-import { flipJpeg, regionMean, rgbStats, sampleFrames, temporalMeasurements, type SampledFrame } from '../lib/frames';
+import { flipJpeg, regionMean, rgbStats, sampleFrames, temporalMeasurements, toColourStats, type SampledFrame } from '../lib/frames';
 import { logInteraction } from '../lib/interactions';
 import { probe } from '../lib/media';
 import { progress, transition } from '../lib/jobs';
@@ -147,14 +145,6 @@ const INSPECTOR_SYSTEM =
 // ---------------------------------------------------------------------------
 // Measurements the reviewer is shown (and the verdict uses directly)
 // ---------------------------------------------------------------------------
-
-const luma = (r: number, g: number, bl: number) => 0.2126 * r + 0.7152 * g + 0.0722 * bl;
-
-function colourStats(st: RgbStats | null, skin: Rgb | null): ColourStats | null {
-  if (!st) return null;
-  const [r, g, bl] = st.mean;
-  return { r: Math.round(r * 10) / 10, g: Math.round(g * 10) / 10, b: Math.round(bl * 10) / 10, luma: Math.round(luma(r, g, bl) * 10) / 10, skin: skin ? { r: Math.round(skin[0]), g: Math.round(skin[1]), b: Math.round(skin[2]) } : null };
-}
 
 /** Mean colour of the central part of the most confident face (skin tone), if a face is visible. */
 async function skinOf(frame: { jpeg: Buffer } | null, annotated: Pick<VisionFrame, 'faces'> | null): Promise<Rgb | null> {
@@ -353,7 +343,7 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
           const firstWithFace = annotated.find((f) => f.t <= 1.6 && f.faces.some((x) => x.confidence >= 0.6)) ?? null;
           const shotSkin = await skinOf(firstWithFace ? frames.find((f) => f.t === firstWithFace.t) ?? null : null, firstWithFace);
           const prevSkin = await skinOf({ jpeg: prevJpeg }, prevFaces[0] ?? null);
-          colour = { shot: colourStats(shotStats, shotSkin), reference: null, previous: colourStats(prevStats, prevSkin) };
+          colour = { shot: toColourStats(shotStats, shotSkin), reference: null, previous: toColourStats(prevStats, prevSkin) };
         } catch {
           colour = null;
         }

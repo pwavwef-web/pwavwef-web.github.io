@@ -278,7 +278,7 @@ export async function savePlan(plan: ContinuityPlan, extra: { productionId?: str
       const o = overridden.get(`${w.kind}:${w.subjectId}:${w.expected}`);
       return o ? { ...w, status: 'overridden' as const, note: o.note ?? '' } : w;
     }),
-    ...(prev?.continuityWarnings ?? []).filter((w) => w.source === 'inspection'),
+    ...(prev?.continuityWarnings ?? []).filter((w) => w.source !== 'plan'),
   ];
   const doc: Omit<ContinuitySnapshotDoc, 'id'> = {
     shotId: ctx.shot.id,

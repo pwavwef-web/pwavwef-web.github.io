@@ -13,11 +13,20 @@ import { runSpeechJob } from './speech';
 import { runMusicJob } from './music';
 import { runLyricsAlignJob, runLyricsTranscribeJob } from './lyrics';
 import { runCompositeJob } from './composite';
+import { runColorMatchJob } from './color-match';
+import { runContinuityCompareJob } from './continuity-compare';
+import { runFinalInspectJob } from './final-inspect';
+import { runLyricsResyncAudioJob, runMusicAnalyzeJob, runMusicArrangeJob, runMusicMixJob, runMusicReplaceSectionJob } from './music-studio';
+import { runReferencePackJob } from './reference-pack';
+import { runScreenReplaceJob } from './screen-replace';
+import { startStemsJob, watchStemsJob } from './stems';
+import { runAnalyzeSubjectsJob } from './subjects';
+import { afterRenderCompleted } from './after-render';
 import { advanceProduction } from '../lib/production';
 
 const MAX_AUTO_RETRIES = 4;
-/** Only image/video generations occupy the owner's concurrent-generation slots. */
-const usesSlot = (job: JobDoc) => job.type === 'image.generate' || job.type === 'video.generate';
+/** Only image/video generations (including set reference packs) occupy the owner's concurrent-generation slots. */
+const usesSlot = (job: JobDoc) => job.type === 'image.generate' || job.type === 'video.generate' || job.type === 'reference.pack';
 
 async function startJob(jobId: string, seq: number): Promise<void> {
   const claimed = await claimJob(jobId);
@@ -71,6 +80,51 @@ async function startJob(jobId: string, seq: number): Promise<void> {
     case 'media.composite':
       await runCompositeJob(claimed);
       return;
+    case 'reference.pack':
+      try {
+        await runReferencePackJob(claimed);
+      } finally {
+        await releaseSlot(claimed.ownerUid, claimed.id);
+      }
+      return;
+    case 'continuity.compare':
+      await runContinuityCompareJob(claimed);
+      return;
+    case 'media.screen_replace':
+      await runScreenReplaceJob(claimed);
+      return;
+    case 'media.color_match':
+      await runColorMatchJob(claimed);
+      return;
+    case 'media.analyze_subjects':
+      await runAnalyzeSubjectsJob(claimed);
+      return;
+    case 'lyrics.resync_audio':
+      await runLyricsResyncAudioJob(claimed);
+      return;
+    case 'final.inspect':
+      await runFinalInspectJob(claimed);
+      return;
+    case 'music.analyze':
+      await runMusicAnalyzeJob(claimed);
+      return;
+    case 'music.arrange':
+      await runMusicArrangeJob(claimed);
+      return;
+    case 'music.mix':
+      await runMusicMixJob(claimed);
+      return;
+    case 'music.replace_section':
+      await runMusicReplaceSectionJob(claimed);
+      return;
+    case 'audio.stems':
+      // Demucs runs as a Cloud Run job execution; polling follows its progress.
+      await startStemsJob(claimed);
+      return;
+    default: {
+      const unknown: never = claimed.type;
+      await failJob(claimed, { code: 'unsupported', message: `No worker handles ${String(unknown)} jobs.`, retryable: false });
+    }
   }
 }
 
@@ -82,11 +136,17 @@ export async function handleTask(payload: WorkerPayload): Promise<void> {
   }
   if (!payload.jobId) return;
   const job = await getJob(payload.jobId);
+  // A finished render (the renderer completes the job itself) gets its final-film inspection.
+  if (job && job.type === 'render.timeline' && job.status === 'completed' && payload.step === 'poll') {
+    await afterRenderCompleted(job);
+    return;
+  }
   if (!job || isTerminal(job.status)) return;
   try {
     if (payload.step === 'start') await startJob(job.id, payload.seq);
     else if (job.type === 'video.generate') await pollVideoJob(job, payload.seq);
     else if (job.type === 'render.timeline') await watchRenderJob(job, payload.seq);
+    else if (job.type === 'audio.stems') await watchStemsJob(job, payload.seq);
   } catch (e) {
     const err = toJobError(e);
     const fresh = await getJob(job.id);

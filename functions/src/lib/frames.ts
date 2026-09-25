@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { flickerIndex, statsFromRgb, type Rgb, type RgbStats, type TemporalMeasurements } from '@az-studio/shared';
+import { flickerIndex, statsFromRgb, type ColourStats, type Rgb, type RgbStats, type TemporalMeasurements } from '@az-studio/shared';
 import { FFMPEG } from './media';
 
 /**
@@ -154,4 +154,18 @@ export async function temporalMeasurements(input: string): Promise<TemporalMeasu
   const repeatedRatio = frames > 0 && decFrames > 0 ? Math.max(0, Math.min(1, 1 - decFrames / frames)) : 0;
   const decodeErrors = decode.stderr.split('\n').filter((l) => /error|corrupt|invalid|concealing/i.test(l)).length;
   return { frozen, repeatedRatio: Math.round(repeatedRatio * 1000) / 1000, flickerIndex: flickerIndex(yavg), jumps: [...new Set(jumps)].slice(0, 12), decodeErrors, frames };
+}
+
+/** RGB statistics as the colour-continuity measure (mean colour, luma and skin tone). */
+export function toColourStats(st: RgbStats | null, skin: Rgb | null = st?.skin ?? null): ColourStats | null {
+  if (!st) return null;
+  const [r, g, b] = st.mean;
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+  return { r: r1(r), g: r1(g), b: r1(b), luma: r1(0.2126 * r + 0.7152 * g + 0.0722 * b), skin: skin ? { r: Math.round(skin[0]), g: Math.round(skin[1]), b: Math.round(skin[2]) } : null };
+}
+
+/** One JPEG frame of a video (at a time) or of an image. */
+export async function jpegAt(input: string, atSec: number, width = 768): Promise<Buffer | null> {
+  const { stdout } = await ffmpeg(['-loglevel', 'error', '-ss', String(Math.max(0, atSec)), '-i', input, '-an', '-frames:v', '1', '-vf', `scale=${width}:-2`, '-q:v', '3', '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1']);
+  return splitJpegs(stdout)[0] ?? null;
 }

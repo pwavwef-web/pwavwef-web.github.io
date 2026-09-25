@@ -712,7 +712,11 @@ export interface RenderDoc {
   outputAssetId: string | null;
   error: JobError | null;
   /** Final-film inspection of this render (export is blocked until it is ready or overridden). */
-  finalInspection?: { id: string; status: 'running' | 'completed' | 'failed'; readiness: 'ready' | 'blocked' | 'overridden' | null; score: number | null; errors: number; warnings: number } | null;
+  finalInspection?: { id: string; status: 'queued' | 'running' | 'completed' | 'failed'; readiness: 'ready' | 'blocked' | 'overridden' | null; score: number | null; errors: number; warnings: number; error?: string } | null;
+  /** Final renders are inspected automatically before export. */
+  inspect?: boolean;
+  /** Text layout measured by the renderer with the real fonts (lyric issues, credit timings). */
+  textLayout?: { issues: { lineId: string; kind: string; message: string; clipId?: string | null; start?: number | null }[]; credits: { clipId: string; name: string; finishesAt: number; issues: string[] }[] } | null;
   createdAt?: Time;
   updatedAt?: Time;
   completedAt?: Time;

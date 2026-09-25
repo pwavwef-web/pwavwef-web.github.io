@@ -449,7 +449,8 @@ async function establishContinuity(p: Prod): Promise<Prod | null> {
   const ctx = await loadShotContinuity(p.projectId, p.shotId);
   const plan = planContinuity(ctx, baseMedia, { lockRefs: ctx.shot.lockRefs });
   const snapshot = await savePlan(plan, { productionId: p.id });
-  const open = snapshot.continuityWarnings.filter((w) => w.status === 'open' && w.severity !== 'info' && w.source !== 'inspection');
+  // Only the plan's own warnings can stop a production (a re-production is how inspection and comparison findings get fixed).
+  const open = snapshot.continuityWarnings.filter((w) => w.status === 'open' && w.severity !== 'info' && w.source === 'plan');
   const critical = open.filter((w) => w.severity === 'critical');
   const sameScene = Boolean(ctx.previous && ctx.previous.shot.sceneId && ctx.previous.shot.sceneId === ctx.shot.sceneId);
   const previousFrame = sameScene ? ctx.previous?.snapshot.finalFrameAssetId ?? null : null;

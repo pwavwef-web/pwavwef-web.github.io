@@ -133,14 +133,15 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
 }
 
 export interface InternalJobInput {
-  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect'>;
+  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect' | 'music.analyze'>;
   projectId: string;
   modelId: string | null;
   label: string;
   params: Record<string, unknown>;
   estimate: CostEstimate;
   target: JobTarget | null;
-  productionId: string;
+  /** The production this job belongs to (none for studio jobs such as a render’s final inspection). */
+  productionId: string | null;
 }
 
 /** Jobs the production loop runs on its own (inspection, repair edits); they are not user-submittable. */

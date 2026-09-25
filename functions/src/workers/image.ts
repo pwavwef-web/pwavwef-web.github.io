@@ -31,7 +31,7 @@ export interface ImageParams {
   title: string | null;
 }
 
-const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
+export const IMAGE_EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 const SAFETY_FINISH = new Set(['SAFETY', 'IMAGE_SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'SPII', 'IMAGE_PROHIBITED_CONTENT', 'RECITATION', 'IMAGE_RECITATION']);
 
 export function buildImageParts(p: ImageParams): Part[] {
@@ -46,7 +46,7 @@ export function buildImageParts(p: ImageParams): Part[] {
   return parts;
 }
 
-function extractImage(res: GenerateContentResponse): { data: string; mimeType: string; text: string } {
+export function extractImage(res: GenerateContentResponse): { data: string; mimeType: string; text: string } {
   const block = res.promptFeedback?.blockReason;
   if (block) {
     fail('safety_blocked', `Google’s safety filters blocked this prompt (${block}). Rephrase it and try again.`, { safety: true, details: res.promptFeedback?.blockReasonMessage ?? block });
@@ -103,7 +103,7 @@ export async function runImageJob(job: JobDoc): Promise<void> {
 
   await transition(job.id, 'downloading', { stage: 'Saving image', progress: 0.85 });
   const assetId = await withTmpDir(async (dir) => {
-    const ext = EXT[image.mimeType] ?? 'png';
+    const ext = IMAGE_EXT[image.mimeType] ?? 'png';
     const buf = Buffer.from(image.data, 'base64');
     const local = await saveBufferToFile(dir, `image.${ext}`, buf);
     const newId = col.assets().doc().id;

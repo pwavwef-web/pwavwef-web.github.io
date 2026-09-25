@@ -7,9 +7,9 @@ import { JobFailure } from '../lib/errors';
 import { enqueueJob, failJob, getJob, progress, transition } from '../lib/jobs';
 
 const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-const RUN_API = 'https://run.googleapis.com/v2';
+export const RUN_API = 'https://run.googleapis.com/v2';
 
-interface Execution {
+export interface Execution {
   name?: string;
   completionTime?: string;
   succeededCount?: number;
@@ -19,7 +19,7 @@ interface Execution {
   conditions?: { type?: string; state?: string; message?: string }[];
 }
 
-async function runApi<T>(url: string, method: 'GET' | 'POST', data?: unknown): Promise<T> {
+export async function runApi<T>(url: string, method: 'GET' | 'POST', data?: unknown): Promise<T> {
   const client = await auth.getClient();
   const res = await client.request<T>({ url, method, ...(data !== undefined ? { data } : {}) });
   return res.data;

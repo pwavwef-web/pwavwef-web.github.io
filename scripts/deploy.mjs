@@ -5,7 +5,7 @@
 //   firestore       → database az-studio only (rules + indexes)
 //   storage         → bucket az-studio-media-az-learner only
 //   functions:az-studio → codebase az-studio only
-// Usage: node scripts/deploy.mjs [--skip-checks] [--only=renderer,rules,functions,hosting]
+// Usage: node scripts/deploy.mjs [--skip-checks] [--only=renderer,stems,rules,functions,hosting]
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -13,7 +13,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const project = process.env.AZS_PROJECT ?? 'az-learner';
 const region = 'us-central1';
 const args = process.argv.slice(2);
-const only = (args.find((a) => a.startsWith('--only='))?.slice(7) ?? 'renderer,rules,functions,hosting').split(',');
+const only = (args.find((a) => a.startsWith('--only='))?.slice(7) ?? 'renderer,stems,rules,functions,hosting').split(',');
 const win = process.platform === 'win32';
 // The CLI loads the functions bundle locally to read its triggers and gives up after 10 s by default,
 // which a busy workstation can exceed; allow two minutes.
@@ -50,6 +50,23 @@ if (only.includes('renderer')) {
     '--quiet',
   ]);
   run('gcloud', ['run', 'jobs', 'add-iam-policy-binding', 'az-studio-renderer', '--region', region, '--project', project, `--member=serviceAccount:az-studio-api@${project}.iam.gserviceaccount.com`, '--role=roles/run.developer', '--format=none']);
+}
+
+if (only.includes('stems')) {
+  // Demucs stem separation (Python + CPU torch; the model weights are baked into the image).
+  run('gcloud', [
+    'run', 'jobs', 'deploy', 'az-studio-stems',
+    '--source', 'services/stems',
+    '--region', region,
+    '--project', project,
+    `--service-account=az-studio-renderer@${project}.iam.gserviceaccount.com`,
+    '--tasks=1', '--max-retries=0', '--task-timeout=2h',
+    '--cpu=4', '--memory=16Gi',
+    '--set-env-vars=AZS_MEDIA_BUCKET=az-studio-media-az-learner',
+    '--labels=app=az-studio',
+    '--quiet',
+  ]);
+  run('gcloud', ['run', 'jobs', 'add-iam-policy-binding', 'az-studio-stems', '--region', region, '--project', project, `--member=serviceAccount:az-studio-api@${project}.iam.gserviceaccount.com`, '--role=roles/run.developer', '--format=none']);
 }
 
 const targets = [];

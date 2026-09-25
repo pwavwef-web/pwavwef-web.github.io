@@ -501,6 +501,8 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         durationSec,
         snapshot: { tracks: tl.tracks, clips: tl.clips, aspectRatio: tl.aspectRatio, fps: tl.fps },
         lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
+        // Final renders are always inspected before export; drafts only when asked.
+        inspect: req.inspect || req.quality === 'final',
         assets: assetMap,
         computeRates: { vcpu: PRICING.render.vcpu, memoryGiB: PRICING.render.memoryGiB, perVcpuSecond: PRICING.render.perVcpuSecond, perGiBSecond: PRICING.render.perGiBSecond },
       },

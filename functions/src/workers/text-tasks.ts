@@ -523,6 +523,58 @@ export const INSPECTION_SCHEMA: Schema = obj({
   ...DIRECTOR_SECTIONS,
 });
 
+const POINT: Schema = obj({ x: num('0–1 of the frame width from the left'), y: num('0–1 of the frame height from the top') });
+
+/** Four corners of a protected surface (screen, sign, page) in each sampled frame. */
+export const SCREEN_CORNERS_SCHEMA: Schema = obj({
+  frames: arr(
+    obj({
+      index: { type: 'integer', description: 'Frame number as labelled' },
+      visible: BOOL('The surface is visible in this frame'),
+      tl: POINT,
+      tr: POINT,
+      br: POINT,
+      bl: POINT,
+      occluded: BOOL('Something passes in front of part of the surface'),
+      confidence: num('0–1'),
+    }),
+  ),
+  note: str(),
+});
+
+/** Cross-shot continuity comparison of approved takes. */
+export const CONTINUITY_COMPARE_SCHEMA: Schema = obj({
+  summary: str('Two or three sentences for the director'),
+  shots: arr(obj({ index: { type: 'integer', description: 'Clip number as labelled' }, consistent: BOOL(), note: str() })),
+  issues: arr(
+    obj({
+      fromIndex: { type: 'integer', description: 'Earlier clip number' },
+      toIndex: { type: 'integer', description: 'Later clip number' },
+      kind: { type: 'string', enum: ['costume', 'hair', 'accessory', 'character_identity', 'prop_hand', 'prop_state', 'prop_missing', 'background', 'location', 'lighting', 'time_of_day', 'weather', 'screen_direction', 'axis_crossing', 'eyeline', 'colour', 'screen_content', 'mirrored_text'] },
+      severity: { type: 'string', enum: ['info', 'warning', 'critical'] },
+      subject: str('Character, prop or set element concerned'),
+      expected: str('How it looks in the earlier clip'),
+      detected: str('How it looks in the later clip'),
+      message: str('One sentence the director can act on'),
+    }),
+  ),
+});
+
+/** Final-film review of the rendered edit (cuts, ending, watermarks) — measured checks run separately. */
+export const FINAL_REVIEW_SCHEMA: Schema = obj({
+  summary: str('Two or three sentences on whether the film is ready'),
+  findings: arr(
+    obj({
+      check: { type: 'string', enum: ['abrupt_cut', 'continuity_between_shots', 'colour_inconsistency', 'incomplete_final_action', 'watermark', 'lyric_cropped', 'lyric_sync', 'credits_cut_off', 'credits_incorrect', 'dialogue_drowned', 'missing_dialogue', 'private_information'] },
+      severity: { type: 'string', enum: ['error', 'warning', 'info'] },
+      startSec: SECONDS('Start'),
+      endSec: SECONDS('End'),
+      message: str(),
+    }),
+  ),
+  endingComplete: BOOL('The film ends on a complete moment (final action and line finish)'),
+});
+
 /** Vocal detection and an independent line-level transcription (cross-checks the word-timed transcript). */
 export const VOCALS_SCHEMA: Schema = obj({
   vocalsPresent: { type: 'boolean' },
