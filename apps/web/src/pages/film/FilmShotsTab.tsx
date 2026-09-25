@@ -1,23 +1,14 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, Sparkles } from 'lucide-react';
-import { parseFountain, type ProjectDoc, type SceneDoc, type ScriptDoc, type ShotDoc } from '@az-studio/shared';
+import type { ProjectDoc, SceneDoc, ScriptDoc, ShotDoc } from '@az-studio/shared';
 import { useAiRun } from '../../lib/ai';
 import type { WithId } from '../../lib/data';
 import { useBoot } from '../../lib/session';
+import { sceneText } from '../../lib/text-utils';
 import { addShots, newShot, useSub } from '../../lib/studio';
 import { ShotQueue, useShotContext } from '../../components/shots';
 import { Button, Card, Field, Select } from '../../components/ui';
-
-/** Screenplay text between a scene heading and the next one. */
-function sceneText(fountain: string, sceneIndex: number): string {
-  const doc = parseFountain(fountain);
-  const lines = fountain.replace(/\r\n?/g, '\n').split('\n');
-  const start = doc.scenes[sceneIndex]?.line;
-  if (start === undefined) return '';
-  const end = doc.scenes[sceneIndex + 1]?.line ?? lines.length;
-  return lines.slice(start, end).join('\n').slice(0, 20000);
-}
 
 export function FilmShotsTab({ project }: { project: WithId<ProjectDoc> }) {
   const boot = useBoot();

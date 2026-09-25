@@ -135,6 +135,25 @@ describe('blocking analysis', () => {
     expect(analyzeBlocking(plan([a, b]), { axis }).warnings.some((w) => w.kind === 'axis_crossing')).toBe(false);
   });
 
+  it('checks planned depth layers and keeps protected zones (important actions) visible', () => {
+    // Camera at the south edge looking north: KOJO is ~4 m away (midground), not in the foreground.
+    const kojo = character('kojo', 0.5, 0.5, 180, { layer: 'foreground' });
+    expect(analyzeBlocking(plan([kojo])).warnings.some((w) => w.kind === 'blocking' && /planned in the foreground/.test(w.message))).toBe(true);
+    expect(analyzeBlocking(plan([{ ...kojo, layer: 'midground' }])).warnings.some((w) => w.kind === 'blocking')).toBe(false);
+    // The well is behind AMA from the camera's point of view: she hides it.
+    const well = { id: 'z1', label: 'well', x: 0.47, y: 0.2, w: 0.06, h: 0.06 };
+    const ama = character('ama', 0.5, 0.6, 180);
+    const hidden = analyzeBlocking({ ...plan([ama]), protectedZones: [well] });
+    expect(hidden.warnings.some((w) => w.kind === 'occlusion' && /in front of the well/.test(w.message))).toBe(true);
+    const clear = analyzeBlocking({ ...plan([{ ...ama, position: { x: 0.35, y: 0.6 } }]), protectedZones: [well] });
+    expect(clear.warnings.some((w) => w.kind === 'occlusion')).toBe(false);
+    // A zone behind the camera is out of frame, and the compiled direction names it.
+    const behind = analyzeBlocking({ ...plan([ama]), protectedZones: [{ ...well, y: 0.95, h: 0.03 }] });
+    expect(behind.warnings.some((w) => w.kind === 'out_of_frame' && /well/.test(w.message))).toBe(true);
+    const p = { ...plan([ama]), protectedZones: [well] };
+    expect(blockingDirection(p, analyzeBlocking(p), (e) => e.label).join(' ')).toMatch(/Keep well clearly visible/);
+  });
+
   it('compiles blocking into camera-relative words with the left-to-right order', () => {
     const a = character('ama', 0.4, 0.5, 120, { speaking: true, gaze: { kind: 'entity', targetId: 'e_kojo', deg: null } });
     const b = character('kojo', 0.6, 0.5, 240);

@@ -1,4 +1,4 @@
-import type { BlockingCamera, BlockingEntity, BlockingPlanDoc, CameraAxisDoc, CameraHeight, ContinuityWarning, FloorItem, Layer, Posture, ScreenDirection, StagePoint } from './continuity';
+import type { BlockingCamera, BlockingEntity, BlockingPlanDoc, CameraAxisDoc, CameraHeight, ContinuityWarning, FloorItem, Layer, Posture, ProtectedZone, ScreenDirection, StagePoint } from './continuity';
 import { DEFAULT_PLAN_SIZE_M, warningId } from './continuity';
 
 /**
@@ -239,7 +239,7 @@ export function inferAxis(plan: Pick<BlockingPlanDoc, 'entities'>): CameraAxisDo
  * the problems a director would catch on set — faces blocked during dialogue, people occupying the
  * same space, broken eyelines, crossing the line, walking through furniture or off-frame speakers.
  */
-export function analyzeBlocking(plan: Pick<BlockingPlanDoc, 'camera' | 'entities'>, opts: AnalyzeOptions = {}): BlockingAnalysis {
+export function analyzeBlocking(plan: Pick<BlockingPlanDoc, 'camera' | 'entities'> & { protectedZones?: ProtectedZone[] }, opts: AnalyzeOptions = {}): BlockingAnalysis {
   const size = opts.planSizeM ?? DEFAULT_PLAN_SIZE_M;
   const cam = plan.camera;
   const threshold = opts.occlusionThreshold ?? 0.35;
@@ -323,6 +323,42 @@ export function analyzeBlocking(plan: Pick<BlockingPlanDoc, 'camera' | 'entities
     }
   }
 
+  // Planned depth layers must match where the camera actually puts people (incorrect depth order).
+  for (const c of entities) {
+    const want = c.src.layer;
+    if (!want || !c.start.visible) continue;
+    if (want !== c.start.layer) {
+      warnings.push(warn('blocking', 'warning', c.src.refId, `${c.label} is planned in the ${want} but the camera places them in the ${c.start.layer} (${c.start.depthM.toFixed(1)} m from the lens).`, `${c.label} in the ${want}`, opts, { type: 'correct_blocking', label: 'Move the character or the camera to restore the depth order', estimateUsd: null }));
+    }
+  }
+
+  // Protected zones (an important action or object) must be in frame and not hidden by anyone.
+  for (const z of plan.protectedZones ?? []) {
+    const label = z.label || 'protected zone';
+    const centre = projectPoint(cam, { x: z.x + z.w / 2, y: z.y + z.h / 2 }, null, size);
+    if (!centre.visible) {
+      warnings.push(warn('out_of_frame', 'warning', null, `The ${label} is outside the camera’s view.`, `${label} in frame`, opts, { type: 'correct_blocking', label: 'Change camera angle or focal length', estimateUsd: null }));
+      continue;
+    }
+    const corners = [
+      { x: z.x, y: z.y },
+      { x: z.x + z.w, y: z.y },
+      { x: z.x + z.w, y: z.y + z.h },
+      { x: z.x, y: z.y + z.h },
+    ].map((q) => projectPoint(cam, q, null, size)).filter((q) => q.depthM > 0.3);
+    if (!corners.length) continue;
+    const z0 = Math.max(0, Math.min(...corners.map((q) => q.x)));
+    const z1 = Math.min(1, Math.max(...corners.map((q) => q.x)));
+    if (z1 - z0 < 1e-3) continue;
+    for (const c of chars) {
+      if (!c.start.visible || c.src.occlusionAllowed || c.start.depthM >= centre.depthM - 0.3) continue;
+      const cover = overlap(c.start.x - c.start.bodyFrac / 2, c.start.x + c.start.bodyFrac / 2, z0, z1) / (z1 - z0);
+      if (cover >= threshold) {
+        warnings.push(warn('occlusion', 'warning', c.src.refId, `${c.label} stands in front of the ${label} and hides about ${Math.round(Math.min(1, cover) * 100)}% of it.`, `${label} clearly visible`, opts, { type: 'correct_blocking', label: OCCLUSION_REPAIRS.slice(0, 3).join(' / '), estimateUsd: null }));
+      }
+    }
+  }
+
   // Walking through furniture or through another character.
   const solids = (opts.floorPlan ?? []).filter((it) => it.kind === 'furniture' || it.kind === 'wall' || it.kind === 'object');
   for (const c of entities) {
@@ -380,7 +416,7 @@ const facingWords: Record<Facing, string> = {
 const heightWords: Record<CameraHeight, string> = { ground: 'ground level', low: 'a low angle', eye: 'eye level', high: 'a high angle', overhead: 'directly overhead' };
 
 /** Compiles a blocking plan into precise camera-relative direction. `names` maps entity ids to display names. */
-export function blockingDirection(plan: Pick<BlockingPlanDoc, 'camera' | 'entities'>, analysis: BlockingAnalysis, names: (e: { id: string; refId: string | null; label: string }) => string): string[] {
+export function blockingDirection(plan: Pick<BlockingPlanDoc, 'camera' | 'entities'> & { protectedZones?: ProtectedZone[] }, analysis: BlockingAnalysis, names: (e: { id: string; refId: string | null; label: string }) => string): string[] {
   const lines: string[] = [];
   const cam = plan.camera;
   lines.push(`Camera at ${heightWords[cam.height]} with a ${Math.round(cam.lensMm)}mm lens${cam.endPosition ? ', moving during the shot' : ', holding its position'}.`);
@@ -415,6 +451,8 @@ export function blockingDirection(plan: Pick<BlockingPlanDoc, 'camera' | 'entiti
   const allowed = plan.entities.filter((e) => e.kind === 'character' && e.occlusionAllowed);
   for (const a of allowed) lines.push(`${names({ id: a.id, refId: a.refId, label: a.label })} may be partly out of focus or cut by frame edge in the foreground (deliberate framing).`);
   if (visible.length >= 2) lines.push('Characters keep a natural distance: bodies never overlap, merge or pass through each other or the furniture.');
+  const zones = (plan.protectedZones ?? []).map((z) => z.label.trim()).filter(Boolean);
+  if (zones.length) lines.push(`Keep ${zones.join(' and ')} clearly visible for the whole shot; nobody stands in front of ${zones.length > 1 ? 'them' : 'it'}.`);
   return lines;
 }
 

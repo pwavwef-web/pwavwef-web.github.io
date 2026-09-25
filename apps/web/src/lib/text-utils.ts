@@ -1,4 +1,14 @@
-import type { LyricLine, SceneDoc, ShotDoc } from '@az-studio/shared';
+import { parseFountain, type LyricLine, type SceneDoc, type ShotDoc } from '@az-studio/shared';
+
+/** Screenplay text between a scene heading and the next one. */
+export function sceneText(fountain: string, sceneIndex: number): string {
+  const doc = parseFountain(fountain);
+  const lines = fountain.replace(/\r\n?/g, '\n').split('\n');
+  const start = doc.scenes[sceneIndex]?.line;
+  if (start === undefined) return '';
+  const end = doc.scenes[sceneIndex + 1]?.line ?? lines.length;
+  return lines.slice(start, end).join('\n').slice(0, 20000);
+}
 
 /**
  * Parses LRC (`[mm:ss.xx] line`) or plain lyrics. Plain lines are spread evenly across the song so

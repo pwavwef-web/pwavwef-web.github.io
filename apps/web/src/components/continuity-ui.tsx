@@ -15,7 +15,7 @@ import {
 } from '@az-studio/shared';
 import { errorMessage } from '../lib/api';
 import type { WithId } from '../lib/data';
-import { checkContinuity, useProjectDoc, warningAction, type ContinuityCheck, type Snapshot } from '../lib/continuity';
+import { checkContinuity, insertNeutralShot, useProjectDoc, warningAction, type ContinuityCheck, type Snapshot } from '../lib/continuity';
 import { Badge, Button, Card, cx, Input, Modal, Notice, Skeleton, Tip } from './ui';
 
 type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'violet';
@@ -107,6 +107,19 @@ export function WarningItem({ projectId, shotId, warning, shotTitle, defaultOpen
       setBusy(null);
     }
   };
+  const neutral = async (kind: 'head_on' | 'tail_away' | 'cutaway') => {
+    if (!warning.affects.previousShotId) return;
+    setBusy(kind);
+    try {
+      await insertNeutralShot(projectId, warning.affects.previousShotId, kind);
+      toast.success('Neutral shot inserted', { description: 'It sits between the two shots on the line of action; produce it like any other shot.' });
+    } catch (e) {
+      toast.error('Could not insert the shot', { description: errorMessage(e) });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const bridgeable = warning.status === 'open' && Boolean(warning.affects.previousShotId) && (warning.kind === 'screen_direction' || warning.kind === 'entry_exit' || warning.kind === 'axis_crossing' || warning.proposedRepair?.type === 'neutral_shot');
   const prev = shotTitle(warning.affects.previousShotId);
   const next = shotTitle(warning.affects.nextShotId);
   return (
@@ -141,6 +154,16 @@ export function WarningItem({ projectId, shotId, warning, shotTitle, defaultOpen
               </>
             ) : null}
           </dl>
+          {bridgeable && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-faint">Bridge the cut with a neutral shot:</span>
+              {(['head_on', 'tail_away', 'cutaway'] as const).map((k) => (
+                <Button key={k} size="sm" variant="ghost" loading={busy === k} onClick={() => void neutral(k)}>
+                  {k === 'head_on' ? 'Head-on' : k === 'tail_away' ? 'Tail-away' : 'Cutaway'}
+                </Button>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-1.5">
             {warning.status === 'open' ? (
               <>

@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { arrayRemove, arrayUnion } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ImagePlus, Lock, MapPin, Package, Plus, Shirt, Sparkles, Trash2, UserRound } from 'lucide-react';
-import type { CharacterDoc, ElementDoc, ElementKind, ImagePurpose, JobRequest, LocationDoc, ProjectDoc } from '@az-studio/shared';
+import { BadgeCheck, BookUser, ImagePlus, LayoutGrid, Lock, MapPin, Package, Plus, Shirt, Sparkles, Trash2, UserRound } from 'lucide-react';
+import type { CharacterDoc, ElementDoc, ElementKind, ImagePurpose, JobRequest, LocationDoc, ProjectDoc, PropBibleDoc, SetBibleDoc } from '@az-studio/shared';
 import { errorMessage } from '../lib/api';
 import type { WithId } from '../lib/data';
+import { useProjectCollection } from '../lib/continuity';
 import { useBoot } from '../lib/session';
 import { addDocs, deleteSubDoc, newCharacter, newElement, newLocation, updateSubDoc, useSub } from '../lib/studio';
+import { CharacterBibleEditor } from './character-bible';
 import { useJobSubmitter } from './jobs';
+import { PropBibleEditor } from './prop-bible';
+import { SetBibleEditor } from './set-bible';
 import { AssetPicker, AssetThumb, useAsset, type Asset } from './media';
 import { Badge, Button, Card, cx, EmptyState, Field, Input, Modal, Notice, Select, Textarea, Toggle } from './ui';
 
@@ -38,7 +42,9 @@ function Cover({ id }: { id: string | null }) {
   return a.data ? <AssetThumb asset={a.data as Asset} showMeta={false} aspect="aspect-[4/5]" /> : <div className="cinema-thumb grid aspect-[4/5] place-items-center rounded-xl border border-line text-faint">No reference</div>;
 }
 
-function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<ProjectDoc>; item: AnyDoc; onClose: () => void }) {
+const BIBLE_LABEL: Record<Kind, string> = { characters: 'Character Bible', locations: 'Set Bible', elements: 'Prop ledger' };
+
+function Editor({ kind, project, item, onClose, onOpenBible }: { kind: Kind; project: WithId<ProjectDoc>; item: AnyDoc; onClose: () => void; onOpenBible: () => void }) {
   const boot = useBoot();
   const [draft, setDraft] = useState<AnyDoc>(item);
   const [picker, setPicker] = useState(false);
@@ -63,8 +69,9 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
   const makePrimary = (id: string) => updateRefs(kind === 'elements' ? { referenceAssetIds: [id, ...refs.filter((x) => x !== id)] } : { primaryRefAssetId: id });
 
   const save = async () => {
-    const { id, referenceAssetIds, primaryRefAssetId, turnaroundAssetId, ...fields } = draft as AnyDoc & { primaryRefAssetId?: unknown; turnaroundAssetId?: unknown };
-    void [referenceAssetIds, primaryRefAssetId, turnaroundAssetId];
+    // The Character Bible is written through the API (approval locks identity), never from this form.
+    const { id, referenceAssetIds, primaryRefAssetId, turnaroundAssetId, bible, ...fields } = draft as AnyDoc & { primaryRefAssetId?: unknown; turnaroundAssetId?: unknown; bible?: unknown };
+    void [referenceAssetIds, primaryRefAssetId, turnaroundAssetId, bible];
     await updateSubDoc(project.id, kind, id, fields);
     toast.success('Saved');
   };
@@ -107,6 +114,11 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
           <Button variant="danger" className="mr-auto" icon={<Trash2 className="size-4" />} onClick={() => void deleteSubDoc(project.id, kind, draft.id).then(onClose)}>
             Delete
           </Button>
+          {(kind !== 'elements' || e.kind !== 'costume') && (
+            <Button variant="ghost" icon={kind === 'locations' ? <LayoutGrid className="size-4" /> : <BookUser className="size-4" />} onClick={() => void save().then(onOpenBible)}>
+              {BIBLE_LABEL[kind]}
+            </Button>
+          )}
           <Button variant="primary" onClick={() => void save().then(onClose)}>
             Save
           </Button>
@@ -258,7 +270,10 @@ function Editor({ kind, project, item, onClose }: { kind: Kind; project: WithId<
 
 export function BibleBoard({ kind, project, onExtract, extracting }: { kind: Kind; project: WithId<ProjectDoc>; onExtract?: () => void; extracting?: boolean }) {
   const items = useSub<AnyDoc>(project.id, kind, 'name');
+  const sets = useProjectCollection<SetBibleDoc>(kind === 'locations' ? project.id : null, 'setBibles');
+  const props = useProjectCollection<PropBibleDoc>(kind === 'elements' ? project.id : null, 'props');
   const [open, setOpen] = useState<string | null>(null);
+  const [bibleFor, setBibleFor] = useState<string | null>(null);
   const Icon = ICON[kind];
   const label = kind === 'characters' ? 'character' : kind === 'locations' ? 'location' : 'prop or costume';
   const add = async () => {
@@ -266,6 +281,15 @@ export function BibleBoard({ kind, project, onExtract, extracting }: { kind: Kin
     if (id) setOpen(id);
   };
   const current = open ? items.data.find((i) => i.id === open) : null;
+  const bibleItem = bibleFor ? items.data.find((i) => i.id === bibleFor) : null;
+  const status = (it: AnyDoc) => {
+    if (kind === 'characters') return (it as WithId<CharacterDoc>).bible?.approvedAt ? { tone: 'success' as const, label: 'Identity locked' } : (it as WithId<CharacterDoc>).bible ? { tone: 'neutral' as const, label: 'Bible draft' } : null;
+    if (kind === 'locations') {
+      const sb = sets.data.find((x) => x.id === it.id);
+      return sb?.canonical.status === 'locked' ? { tone: 'success' as const, label: 'Set locked' } : sb?.canonical.status === 'pending_approval' ? { tone: 'warning' as const, label: 'Views to approve' } : sb ? { tone: 'neutral' as const, label: 'Set draft' } : null;
+    }
+    return props.data.some((x) => x.id === it.id) ? { tone: 'accent' as const, label: 'In prop ledger' } : null;
+  };
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -283,19 +307,47 @@ export function BibleBoard({ kind, project, onExtract, extracting }: { kind: Kin
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           {items.data.map((it) => (
-            <button key={it.id} type="button" onClick={() => setOpen(it.id)} className="group cursor-pointer text-left">
-              <Cover id={'primaryRefAssetId' in it ? it.primaryRefAssetId : (it as WithId<ElementDoc>).referenceAssetIds[0] ?? null} />
-              <div className="mt-2 flex items-center gap-1.5 px-1">
-                <p className="truncate text-sm font-medium text-fg">{it.name}</p>
-                {it.locked && <Lock className="size-3 text-accent-2" aria-label="Locked" />}
+            <div key={it.id} className="group text-left">
+              <button type="button" onClick={() => setOpen(it.id)} className="block w-full cursor-pointer text-left">
+                <Cover id={'primaryRefAssetId' in it ? it.primaryRefAssetId : (it as WithId<ElementDoc>).referenceAssetIds[0] ?? null} />
+                <div className="mt-2 flex items-center gap-1.5 px-1">
+                  <p className="truncate text-sm font-medium text-fg">{it.name}</p>
+                  {it.locked && <Lock className="size-3 text-accent-2" aria-label="Locked" />}
+                </div>
+                <p className="line-clamp-1 px-1 text-xs text-faint">{'role' in it ? it.role || 'Character' : 'atmosphere' in it ? it.atmosphere || it.timeOfDay || 'Location' : (it as WithId<ElementDoc>).kind.replace('_', ' ')}</p>
+              </button>
+              <div className="mt-1 flex flex-wrap items-center gap-1 px-1">
+                {'realPerson' in it && it.realPerson && <Badge tone={it.consentConfirmed ? 'success' : 'warning'}>{it.consentConfirmed ? 'Consent on file' : 'Needs consent'}</Badge>}
+                {(() => {
+                  const st = status(it);
+                  return st ? <Badge tone={st.tone} icon={st.tone === 'success' ? <BadgeCheck className="size-3" /> : undefined}>{st.label}</Badge> : null;
+                })()}
+                {(kind !== 'elements' || (it as WithId<ElementDoc>).kind !== 'costume') && (
+                  <button type="button" className="cursor-pointer text-[11px] text-accent-2 hover:underline" onClick={() => setBibleFor(it.id)}>
+                    {BIBLE_LABEL[kind]}
+                  </button>
+                )}
               </div>
-              <p className="line-clamp-1 px-1 text-xs text-faint">{'role' in it ? it.role || 'Character' : 'atmosphere' in it ? it.atmosphere || it.timeOfDay || 'Location' : (it as WithId<ElementDoc>).kind.replace('_', ' ')}</p>
-              {'realPerson' in it && it.realPerson && <Badge tone={it.consentConfirmed ? 'success' : 'warning'} className="mt-1 ml-1">{it.consentConfirmed ? 'Consent on file' : 'Needs consent'}</Badge>}
-            </button>
+            </div>
           ))}
         </div>
       )}
-      {current && <Editor key={current.id} kind={kind} project={project} item={current} onClose={() => setOpen(null)} />}
+      {current && (
+        <Editor
+          key={current.id}
+          kind={kind}
+          project={project}
+          item={current}
+          onClose={() => setOpen(null)}
+          onOpenBible={() => {
+            setOpen(null);
+            setBibleFor(current.id);
+          }}
+        />
+      )}
+      {bibleItem && kind === 'characters' && <CharacterBibleEditor key={bibleItem.id} project={project} character={bibleItem as WithId<CharacterDoc>} onClose={() => setBibleFor(null)} />}
+      {bibleItem && kind === 'locations' && <SetBibleEditor key={bibleItem.id} project={project} location={bibleItem as WithId<LocationDoc>} onClose={() => setBibleFor(null)} />}
+      {bibleItem && kind === 'elements' && <PropBibleEditor key={bibleItem.id} project={project} element={bibleItem as WithId<ElementDoc>} onClose={() => setBibleFor(null)} />}
     </div>
   );
 }
