@@ -1,4 +1,4 @@
-import type { TextTask } from '@az-studio/shared';
+import { BACKGROUND_ASPECTS, CATEGORY_KEYS, TEMPORAL_KINDS, type TextTask } from '@az-studio/shared';
 
 /**
  * JSON Schema subset accepted by Gemini structured output. Do not put `maxItems` on arrays of
@@ -391,6 +391,97 @@ export const SONG_ANALYSIS_SCHEMA: Schema = obj({
 
 const SEVERITY: Schema = { type: 'string', enum: ['minor', 'major', 'critical'] };
 const SECONDS = (d: string) => num(`${d} (seconds from the start of the clip; -1 when not applicable)`);
+const BOOL = (description?: string): Schema => ({ type: 'boolean', ...(description ? { description } : {}) });
+const DIRECTION: Schema = { type: 'string', enum: ['left_to_right', 'right_to_left', 'toward_camera', 'away_from_camera', 'static', 'mixed'] };
+const HAND: Schema = { type: 'string', enum: ['left', 'right', 'both', 'none'] };
+const YES_NO: Schema = { type: 'string', enum: ['yes', 'no', 'not_applicable'] };
+const REGION: Schema = obj({ x: num('Left edge, 0–1 of the frame width'), y: num('Top edge, 0–1 of the frame height'), w: num('Width, 0–1'), h: num('Height, 0–1') });
+
+/** Continuity Director sections of the review (what a script supervisor checks shot by shot). */
+const DIRECTOR_SECTIONS: Record<string, Schema> = {
+  characters: arr(
+    obj({
+      name: str('Character name from the brief'),
+      present: BOOL(),
+      faceMatchesReference: BOOL('Same face as the approved identity reference'),
+      hairMatches: BOOL(),
+      costumeMatches: BOOL('Costume matches the planned costume'),
+      accessoriesPresent: BOOL('Glasses, jewellery, scars, tattoos and other identity details are present'),
+      ageMatches: BOOL(),
+      scaleConsistent: BOOL('Body size stays consistent relative to the scene'),
+      merged: BOOL('Merges or fuses with another person'),
+      disappears: BOOL('Vanishes during the shot'),
+      positionPlausible: BOOL(),
+      speaksWhenExpected: BOOL(),
+      severity: SEVERITY,
+      note: str(),
+    }),
+  ),
+  background: arr(obj({ aspect: { type: 'string', enum: [...BACKGROUND_ASPECTS] }, ok: BOOL(), severity: SEVERITY, startSec: SECONDS('When it becomes visible'), note: str('What differs from the set reference views') })),
+  blocking: obj({
+    characterCount: { type: 'integer', description: 'People visible on screen' },
+    expectedCount: { type: 'integer', description: 'People the brief expects' },
+    faceVisibleDuringDialogue: BOOL('Every speaker’s face is visible while they speak'),
+    occlusions: arr(obj({ occluder: str(), occluded: str(), faceBlocked: BOOL(), intentional: BOOL('Planned in the brief (e.g. over-the-shoulder framing)'), startSec: SECONDS('Start'), endSec: SECONDS('End'), severity: SEVERITY })),
+    mergedBodies: BOOL(),
+    sameSpace: BOOL('Two people occupy the same physical space'),
+    attachedCharacter: BOOL('A background person looks attached to a foreground person'),
+    actionHidden: BOOL('The important action is hidden from the camera'),
+    depthOrderCorrect: BOOL(),
+    eyelinesCorrect: BOOL(),
+    speakerBehindOther: BOOL('A speaker is placed behind an unrelated character'),
+    walksThrough: BOOL('Someone walks through furniture or another person'),
+    screenOrder: arr(str('Names from screen left to screen right')),
+    note: str(),
+  }),
+  direction: obj({
+    travel: arr(obj({ name: str(), direction: DIRECTION })),
+    reversal: BOOL('Travel direction reverses without a reason'),
+    entryExitCorrect: BOOL('Entries and exits use the planned side of frame'),
+    eyelinesConsistent: BOOL(),
+    sidesSwapped: BOOL('Characters swap sides of the frame'),
+    axisCrossed: BOOL('The camera crosses the 180-degree line'),
+    vehicleReversal: BOOL(),
+    spatiallyConfusing: BOOL(),
+    note: str(),
+  }),
+  text: arr(
+    obj({
+      surface: str('Screen, sign, book, clothing, vehicle… (the name from the brief when protected)'),
+      text: str('What the text actually reads'),
+      expected: str('What it should read (from the brief), or empty'),
+      mirrored: BOOL('Letters are mirror-reversed'),
+      misspelled: BOOL(),
+      readable: BOOL(),
+      logoReversed: BOOL(),
+      interfaceFlipped: BOOL('A phone or computer interface is horizontally flipped'),
+      distorted: BOOL(),
+      changesBetweenFrames: BOOL(),
+      wrongContent: BOOL(),
+      startSec: SECONDS('First seen'),
+      note: str(),
+    }),
+  ),
+  props: arr(obj({ name: str(), present: BOOL(), holder: str('Who holds it, or where it is'), hand: HAND, status: str('open, closed, full, empty, on, off, damaged, intact…'), appearanceConsistent: BOOL(), teleports: BOOL('Jumps to another place without an action'), changesHandsWithoutAction: BOOL(), scaleConsistent: BOOL(), duplicated: BOOL(), severity: SEVERITY, note: str() })),
+  temporal: obj({ problems: arr(obj({ kind: { type: 'string', enum: [...TEMPORAL_KINDS] }, startSec: SECONDS('Start'), endSec: SECONDS('End'), severity: SEVERITY, description: str() })), note: str() }),
+  edges: obj({
+    dialogueStartsBeforeReady: BOOL('Dialogue starts before the actor is ready (no breath, mid-movement)'),
+    firstFrameContinues: { ...YES_NO, description: 'The first frame continues from the previous shot’s last frame (not_applicable when none is given)' },
+    finalLineComplete: BOOL(),
+    finalActionFinishes: BOOL(),
+    exitComplete: { ...YES_NO, description: 'A character who exits finishes the exit' },
+    cameraResolves: BOOL('The camera move settles before the end'),
+    editRoomSec: SECONDS('Usable room after the last word or action for the edit'),
+    note: str(),
+  }),
+  detectedState: obj({
+    characters: arr(obj({ name: str(), present: BOOL(), costume: str(), hair: str(), leftHand: str('What the LEFT hand holds at the end, or none'), rightHand: str('What the RIGHT hand holds at the end, or none'), posture: str(), screenSide: { type: 'string', enum: ['left', 'centre', 'right', 'absent'] }, facing: str(), emotion: str(), matchesReference: BOOL() })),
+    props: arr(obj({ name: str(), present: BOOL(), holder: str(), hand: HAND, status: str(), condition: str() })),
+    environment: obj({ timeOfDay: str(), weather: str(), lightDirection: str(), background: str() }),
+    travel: arr(obj({ name: str(), direction: DIRECTION })),
+  }),
+  categoryScores: obj(Object.fromEntries(CATEGORY_KEYS.map((k) => [k, num('0–100, or -1 when not applicable')]))),
+};
 
 /** Structured scene review returned by the reasoning model during quality inspection. */
 export const INSPECTION_SCHEMA: Schema = obj({
@@ -408,7 +499,7 @@ export const INSPECTION_SCHEMA: Schema = obj({
   screenDirectionConsistent: { type: 'boolean' },
   emotionalPerformanceMatches: { type: 'boolean' },
   renderedText: obj({ present: { type: 'boolean' }, acceptable: { type: 'boolean' }, note: str() }),
-  artefacts: arr(obj({ description: str(), severity: SEVERITY, startSec: SECONDS('Start'), endSec: SECONDS('End') })),
+  artefacts: arr(obj({ description: str(), severity: SEVERITY, startSec: SECONDS('Start'), endSec: SECONDS('End'), region: REGION }, ['description', 'severity', 'startSec', 'endSec'])),
   suddenDisappearance: { type: 'boolean' },
   accidentalSceneChange: { type: 'boolean', description: 'An unplanned cut or scene change (planned cuts listed in the brief do not count)' },
   firstFrame: obj({ quality: { type: 'string', enum: ['good', 'acceptable', 'poor'] }, note: str() }),
@@ -423,12 +514,13 @@ export const INSPECTION_SCHEMA: Schema = obj({
   }),
   problems: arr(obj({ category: str('One of the problem categories listed in the brief'), severity: SEVERITY, startSec: SECONDS('Start'), endSec: SECONDS('End'), description: str() })),
   recommendedRepair: obj({
-    type: { type: 'string', enum: ['none', 'conversational_edit', 'extend_scene', 'regenerate_longer', 'split_into_shots', 'replace_visuals_keep_audio', 'cutaway', 'regenerate_section', 'trim_ending', 'regenerate'] },
+    type: { type: 'string', enum: ['none', 'conversational_edit', 'extend_scene', 'regenerate_longer', 'split_into_shots', 'replace_visuals_keep_audio', 'cutaway', 'regenerate_section', 'trim_ending', 'regenerate', 'regenerate_with_references', 'replace_background', 'correct_blocking', 'correct_direction', 'color_match', 'reframe', 'screen_composite'] },
     instruction: str('Exact instruction for the video model to fix the problems'),
     sectionStartSec: SECONDS('Start of the faulty section'),
     sectionEndSec: SECONDS('End of the faulty section'),
     rationale: str(),
   }),
+  ...DIRECTOR_SECTIONS,
 });
 
 /** Vocal detection and an independent line-level transcription (cross-checks the word-timed transcript). */

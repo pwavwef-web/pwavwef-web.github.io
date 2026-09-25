@@ -711,6 +711,8 @@ export interface RenderDoc {
   executionName: string | null;
   outputAssetId: string | null;
   error: JobError | null;
+  /** Final-film inspection of this render (export is blocked until it is ready or overridden). */
+  finalInspection?: { id: string; status: 'running' | 'completed' | 'failed'; readiness: 'ready' | 'blocked' | 'overridden' | null; score: number | null; errors: number; warnings: number } | null;
   createdAt?: Time;
   updatedAt?: Time;
   completedAt?: Time;

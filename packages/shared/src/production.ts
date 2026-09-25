@@ -1,5 +1,8 @@
+import type { ContinuityState, ContinuityWarning } from './continuity';
 import type { DurationPlan, EditorialWindow } from './duration';
-import type { DetectedWord, DialogueAnalysis, ExpectedLine, Measurements, ModelReview, ProductionStage, ProductionStatus, QualityProblem, QualityScores, QualitySettings, RepairDecision, RepairType } from './quality';
+import type { CategoryScores, InspectionExpectations } from './inspection';
+import type { OmniMediaRef } from './prompt';
+import type { DetectedWord, DialogueAnalysis, ExpectedLine, Measurements, ModelReview, ProblemSeverity, ProductionStage, ProductionStatus, QualityProblem, QualityScores, QualitySettings, RepairDecision, RepairType } from './quality';
 import type { Time } from './types';
 
 /**
@@ -58,6 +61,44 @@ export interface RepairRecord {
   estimateUsd: number;
   at: number;
   outcome: 'pending' | 'fixed' | 'not_fixed' | 'failed';
+  /** `repairAttempts/{id}` record of this attempt (instruction, cost, result). */
+  attemptId?: string | null;
+}
+
+/**
+ * Continuity compiled once when the production starts (the shot's `continuitySnapshots` document holds
+ * the full plan). Generation, inspection and continuity repairs all use this.
+ */
+export interface ProductionContinuity {
+  plannedAt: number;
+  /** The shot's own prompt body and media before continuity was added (repairs re-plan from these). */
+  basePrompt: string;
+  baseMedia: OmniMediaRef[];
+  expectations: InspectionExpectations;
+  /** Canonical set views and approved identity, prop and screen references the reviewer compares with. */
+  refs: { assetId: string; label: string; kind: 'set' | 'character' | 'prop' | 'screen' }[];
+  /** Final frame of the previous approved shot in the same scene (colour and first-frame continuity). */
+  colourRefAssetId: string | null;
+  previousFinalFrameAssetId: string | null;
+  constraints: number;
+  preferences: number;
+  openWarnings: number;
+  /** References that did not fit in the request (the model accepts a limited number of images). */
+  dropped: { assetId: string; reason: string }[];
+  /** Protected screens whose approved content can be composited after generation. */
+  compositeScreenIds: string[];
+  /** The shot has a blocking plan (a blocking frame can be generated from it). */
+  hasBlocking: boolean;
+  /** Character and prop names by id (maps what the reviewer saw back to the ledger). */
+  names: { characters: Record<string, string>; props: Record<string, string> };
+}
+
+/** Result of comparing independently generated takes of the same shot. */
+export interface TakeComparison {
+  at: number;
+  ranked: { versionId: string; index: number; take: number; passed: boolean; overall: number | null; weakest: string | null; weakestScore: number | null }[];
+  recommendedVersionId: string | null;
+  reason: string;
 }
 
 export interface PendingRepair extends RepairDecision {
@@ -112,6 +153,11 @@ export interface ProductionDoc {
   approval: { at: number; versionId: string; override: boolean; note: string } | null;
   /** Set when the production reviews an existing take instead of generating one. */
   reviewTakeId?: string | null;
+  /** Continuity established for this shot (null for productions started before the Continuity Director). */
+  continuity?: ProductionContinuity | null;
+  /** Independent takes generated side by side for the first generation (1 = a single take). */
+  takes?: number;
+  comparison?: TakeComparison | null;
   createdAt?: Time;
   updatedAt?: Time;
 }
@@ -143,6 +189,10 @@ export interface ProductionVersionDoc {
   verdict: VersionVerdict;
   overall: number | null;
   scores: QualityScores | null;
+  /** The fifteen take-evaluation categories from its inspection. */
+  categoryScores?: CategoryScores | null;
+  /** Take number when several takes were generated side by side. */
+  take?: number | null;
   label: string;
   createdAt?: Time;
 }
@@ -153,7 +203,7 @@ export interface QualityReportDoc {
   versionId: string;
   jobId: string;
   assetId: string;
-  modelIds: { review: string; transcription: string };
+  modelIds: { review: string; transcription: string; vision?: string | null };
   measurements: Measurements;
   transcript: { text: string; words: DetectedWord[]; languageCode: string | null };
   dialogue: DialogueAnalysis;
@@ -168,7 +218,65 @@ export interface QualityReportDoc {
   recommendedRepair: RepairDecision | null;
   summary: string;
   costUsd: number;
+  categoryScores?: CategoryScores | null;
+  /** What the reviewer saw at the end of the take and how it differs from the continuity plan. */
+  continuity?: { detected: ContinuityState | null; warnings: ContinuityWarning[] } | null;
   createdAt?: Time;
+}
+
+/**
+ * `projects/{projectId}/qualityReviews/{reportId}` — one line per inspected take for project-wide
+ * lists and dashboards (the full report stays under the production). Server-written.
+ */
+export interface QualityReviewDoc {
+  id: string;
+  shotId: string;
+  takeId: string | null;
+  productionId: string;
+  versionId: string;
+  versionIndex: number | null;
+  reportId: string;
+  assetId: string;
+  passed: boolean;
+  overall: number;
+  threshold: number;
+  scores: QualityScores;
+  categoryScores: CategoryScores | null;
+  blocking: { category: string; severity: ProblemSeverity; description: string }[];
+  problemCount: number;
+  continuityWarnings: number;
+  summary: string;
+  modelIds: { review: string; transcription: string; vision: string | null };
+  costUsd: number;
+  createdAt?: Time;
+}
+
+/**
+ * `projects/{projectId}/repairAttempts/{id}` — every automatic or director-requested repair: what was
+ * wrong, the exact instruction, what it cost and whether it fixed the problem. The version it repaired
+ * is always kept. Server-written.
+ */
+export interface RepairAttemptDoc {
+  id: string;
+  shotId: string;
+  productionId: string;
+  fromVersionId: string;
+  fromAssetId: string | null;
+  resultVersionId: string | null;
+  resultAssetId: string | null;
+  type: RepairType;
+  label: string;
+  reason: string;
+  instruction: string;
+  categories: string[];
+  jobIds: string[];
+  estimateUsd: number;
+  costUsd: number | null;
+  outcome: RepairRecord['outcome'];
+  resultOverall: number | null;
+  directorRequested: boolean;
+  at: number;
+  updatedAt?: Time;
 }
 
 export interface ProductionEvent {

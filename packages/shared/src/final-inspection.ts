@@ -91,6 +91,9 @@ export interface FinalFinding {
   manual: boolean;
   resolvedAt?: number | null;
   overridden?: { at: number; note: string } | null;
+  /** An automatic fix was applied to the timeline (verified only by the next render and inspection). */
+  fixedAt?: number | null;
+  fixedInTimelineVersion?: number | null;
 }
 
 export type ExportReadiness = 'ready' | 'blocked' | 'overridden';
@@ -112,6 +115,8 @@ export interface FinalInspectionDoc {
   override: { at: number; note: string } | null;
   measurements: Record<string, unknown>;
   summary: string;
+  /** Fixes were applied to the timeline after this render: render and inspect again to verify them. */
+  needsRerender?: boolean;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

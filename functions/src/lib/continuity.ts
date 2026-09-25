@@ -152,7 +152,15 @@ export interface ContinuityPlan {
   expectations: InspectionExpectations;
   names: { characters: Record<string, string>; props: Record<string, string> };
   /** Set views and bible references the reviewer compares the take with. */
-  inspectionRefs: { assetId: string; label: string }[];
+  inspectionRefs: ContinuityRef[];
+  /** Plain-language positions from the blocking plan (for blocking frames). */
+  blockingLines: string[];
+}
+
+export interface ContinuityRef {
+  assetId: string;
+  label: string;
+  kind: 'set' | 'character' | 'prop' | 'screen';
 }
 
 /** Plans the shot's continuity and compiles direction + references on top of the shot's own media. */
@@ -215,25 +223,25 @@ export function planContinuity(ctx: ShotContinuityContext, existingMedia: OmniMe
     planWarnings: planned.warnings,
   };
   // The reviewer compares against the canonical set views and the approved identity references.
-  const inspectionRefs: { assetId: string; label: string }[] = [];
+  const inspectionRefs: ContinuityRef[] = [];
   const set = ctx.setBible;
   if (set?.canonical.status === 'locked') {
     const view = compiled.setView ?? 'wide';
-    for (const [v, id] of [[view, set.views[view]], ['wide', set.views.wide]] as const) if (id && !inspectionRefs.some((r) => r.assetId === id)) inspectionRefs.push({ assetId: id, label: `Canonical set view (${v}) of ${ctx.location?.name ?? 'the location'} — the background must match it` });
+    for (const [v, id] of [[view, set.views[view]], ['wide', set.views.wide]] as const) if (id && !inspectionRefs.some((r) => r.assetId === id)) inspectionRefs.push({ assetId: id, label: `Canonical set view (${v}) of ${ctx.location?.name ?? 'the location'} — the background must match it`, kind: 'set' });
   }
   for (const c of ctx.characters) {
     const id = c.bible?.approvedAt ? c.bible.approvedRefIds[0] ?? c.primaryRefAssetId : c.primaryRefAssetId;
-    if (id && !inspectionRefs.some((r) => r.assetId === id)) inspectionRefs.push({ assetId: id, label: `Approved identity reference: ${c.name}` });
+    if (id && !inspectionRefs.some((r) => r.assetId === id)) inspectionRefs.push({ assetId: id, label: `Approved identity reference: ${c.name}`, kind: 'character' });
   }
   for (const p of ctx.props) {
     const id = p.ledger?.approvedRefAssetId ?? p.element.referenceAssetIds[0];
-    if (id && !inspectionRefs.some((r) => r.assetId === id) && inspectionRefs.length < 8) inspectionRefs.push({ assetId: id, label: `Approved prop reference: ${p.element.name}` });
+    if (id && !inspectionRefs.some((r) => r.assetId === id) && inspectionRefs.length < 8) inspectionRefs.push({ assetId: id, label: `Approved prop reference: ${p.element.name}`, kind: 'prop' });
   }
   for (const s of ctx.screens) {
     const id = s.contentAssetId ?? s.referenceAssetId;
-    if (id && !inspectionRefs.some((r) => r.assetId === id) && inspectionRefs.length < 9) inspectionRefs.push({ assetId: id, label: `Approved content of the protected surface “${s.name}”` });
+    if (id && !inspectionRefs.some((r) => r.assetId === id) && inspectionRefs.length < 9) inspectionRefs.push({ assetId: id, label: `Approved content of the protected surface “${s.name}”`, kind: 'screen' });
   }
-  return { ctx, planned, compiled, before, expectations, names, inspectionRefs };
+  return { ctx, planned, compiled, before, expectations, names, inspectionRefs, blockingLines };
 }
 
 /** Adds the continuity direction and references to a shot's video request (idempotent by marker). */

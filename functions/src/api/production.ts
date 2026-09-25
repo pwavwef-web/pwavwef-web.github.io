@@ -24,8 +24,9 @@ import { MODEL_REGISTRY, MUSIC_MODEL_LIMITATION } from '../config/models';
 import { col, db, FieldValue } from '../lib/firebase';
 import { cancelJobDoc, enqueueProduction, getJob } from '../lib/jobs';
 import type { Owner } from '../lib/owner';
+import { approveContinuity, loadShotContinuity, planContinuity } from '../lib/continuity';
 import { prepareJob } from '../lib/prepare';
-import { CAPS, continuable, estimateRepairUsd, loadProduction, loadReport, mirrorShot, planFor, productionEstimate, productionSpend, reevaluate, reinspectVersion, startRepair } from '../lib/production';
+import { CAPS, chooseVersion, continuable, estimateRepairUsd, loadProduction, loadReport, mirrorShot, planFor, productionEstimate, productionSpend, reevaluate, reinspectVersion, startRepair } from '../lib/production';
 import { confirmationPolicy } from '../lib/submit';
 import { assertRateLimit, assertWithinLimits, getSettings, spendSnapshot } from '../lib/usage';
 import { genai } from '../lib/vertex';
@@ -95,7 +96,18 @@ async function prepareProduction(uid: string, p: Payload<'startProduction'> | Pa
   const requestedSec = Math.round(p.options.requestedSec);
   const request: VideoJobRequest = { ...p.job, durationSec: Math.min(CAPS.maxSec, Math.max(CAPS.minSec, requestedSec)), parentTakeId: null, chainId: null, parentTurnId: null };
   // Dry run: validates media, consent and parameters exactly as a real generation would.
-  await prepareJob(uid, request);
+  await prepareJob(uid, request, { skipContinuity: true });
+  // Continuity preview: references, protected screens and plan warnings (the production re-plans at start).
+  const cont = planContinuity(await loadShotContinuity(p.projectId, p.shotId), request.media, { lockRefs: shot.lockRefs });
+  const continuity = {
+    constraints: cont.compiled.protectedConstraints.length,
+    preferences: cont.compiled.optionalPreferences.length,
+    added: cont.compiled.added.length,
+    dropped: cont.compiled.dropped.length,
+    references: cont.inspectionRefs.length,
+    screens: cont.expectations.screens.length,
+    warnings: cont.planned.warnings.filter((w) => w.status === 'open' && w.severity !== 'info').map((w) => ({ kind: w.kind, severity: w.severity, message: w.message })),
+  };
   const settings = qualitySettings({ ...(project.quality ?? {}), ...(p.options.settings ?? {}) });
   const expected = await buildExpected(project, shot);
   const lines = expected.lines.map((l) => ({ index: l.index, character: l.character, text: l.text, assetId: null as string | null, seconds: null as number | null, estimatedSec: estimateSpeechSeconds(l.text), voice: null as string | null }));
@@ -133,10 +145,11 @@ async function prepareProduction(uid: string, p: Payload<'startProduction'> | Pa
       note: `Line lengths measured from the dialogue in ${take.label}.`,
     };
   }
-  const draft = { dialogueAudio: audio, expected, settings, request: request as unknown as Record<string, unknown> };
+  const draft = { dialogueAudio: audio, expected, settings, request: { ...request, media: cont.compiled.media } as unknown as Record<string, unknown> };
   const plan = planFor(draft, requestedSec);
-  const estimate = productionEstimate({ ...draft, plan }, plan, review ? { reviewSec: review.durationSec ?? requestedSec } : {});
-  return { project, shot, expected, request, audio, settings, plan, estimate, review };
+  const takes = review ? 1 : Math.max(1, Math.min(p.options.takes ?? 1, settings.maxTakesPerShot));
+  const estimate = productionEstimate({ ...draft, plan }, plan, review ? { reviewSec: review.durationSec ?? requestedSec, references: continuity.references, screens: continuity.screens } : { takes, references: continuity.references, screens: continuity.screens });
+  return { project, shot, expected, request, audio, settings, plan, estimate, review, takes: plan.segments.length === 1 ? takes : 1, continuity };
 }
 
 export async function estimateProduction(owner: Owner, p: Payload<'estimateProduction'>) {
@@ -149,7 +162,7 @@ export async function estimateProduction(owner: Owner, p: Payload<'estimateProdu
   } catch (e) {
     limitProblem = (e as Error).message;
   }
-  return { plan: x.plan, estimate: x.estimate, confirmation, limitProblem, quality: x.settings, audioMode: x.audio.mode, repairBudgetUsd: Math.max(0, x.settings.repairCostCeilingUsd - x.estimate.usd), review: x.review };
+  return { plan: x.plan, estimate: x.estimate, confirmation, limitProblem, quality: x.settings, audioMode: x.audio.mode, repairBudgetUsd: Math.max(0, x.settings.repairCostCeilingUsd - x.estimate.usd), review: x.review, takes: x.takes, continuity: x.continuity };
 }
 
 export async function startProduction(owner: Owner, p: Payload<'startProduction'>) {
@@ -197,6 +210,9 @@ export async function startProduction(owner: Owner, p: Payload<'startProduction'
     waivedCategories: [],
     approval: null,
     reviewTakeId: x.review?.takeId ?? null,
+    continuity: null,
+    takes: x.takes,
+    comparison: null,
     run: null,
     lock: null,
   };
@@ -205,7 +221,7 @@ export async function startProduction(owner: Owner, p: Payload<'startProduction'
   await mirrorShot({ id: docRef.id, ...doc });
   if (!x.review) await col.projects().doc(p.projectId).collection('shots').doc(p.shotId).set({ status: 'generating', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   await enqueueProduction(docRef.id, { delaySec: 0 });
-  return { productionId: docRef.id, plan: x.plan, estimate: x.estimate };
+  return { productionId: docRef.id, plan: x.plan, estimate: x.estimate, takes: x.takes, continuity: x.continuity };
 }
 
 // ---------------------------------------------------------------------------
@@ -251,6 +267,9 @@ async function approveVersion(uid: string, p: NonNullable<Awaited<ReturnType<typ
   batch.set(col.productions().doc(p.id), { status: 'approved', stage: 'render', approvedVersionId: v.id, currentVersionId: v.id, waivedCategories: waived, pendingRepair: null, approval: { at: Date.now(), versionId: v.id, override, note }, stageMessage: `Approved version ${v.index} (${verdict.overall}/100)${override ? ' with issues marked acceptable' : ''} — ready for the edit and render`, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   await batch.commit();
   await col.productions().doc(p.id).collection('events').add({ at: Date.now(), stage: 'approve', status: 'approved', message: `Director approved version ${v.index}${override ? ` — accepted: ${waived.join(', ')}` : ''}${note ? ` (${note})` : ''}`, detail: { versionId: v.id, uid }, createdAt: FieldValue.serverTimestamp() });
+  // Update continuity state: the approved take becomes canonical (states, props, axis, final frame).
+  await approveContinuity(p.projectId, p.shotId, { versionId: v.id, productionId: p.id, waivedKinds: waived, takeAssetId: v.assetId, repaired: v.kind === 'repair', inspected: true, ownerUid: uid });
+  await col.productions().doc(p.id).collection('events').add({ at: Date.now(), stage: 'update_continuity', status: 'approved', message: `Continuity state updated from version ${v.index}: character, prop and camera-axis records and the final frame for the next shot`, detail: { versionId: v.id }, createdAt: FieldValue.serverTimestamp() });
   const fresh = await loadProduction(p.id);
   if (fresh) await mirrorShot(fresh, { overall: verdict.overall, passed: true });
   return { status: 'approved', versionId: v.id, overall: verdict.overall };
@@ -317,6 +336,11 @@ export async function productionAction(owner: Owner, a: Payload<'productionActio
       await reinspectVersion(p.id, vid);
       return { status: 'inspecting' };
     }
+    case 'choose_version': {
+      if (busy) throw new HttpsError('failed-precondition', 'Wait for the current step to finish.');
+      if (!a.versionId) throw new HttpsError('invalid-argument', 'Choose a version.');
+      return chooseVersion(p.id, a.versionId);
+    }
     default:
       break;
   }
@@ -335,7 +359,7 @@ export async function productionAction(owner: Owner, a: Payload<'productionActio
     decision = rest;
   } else if (a.action === 'repair') {
     if (!report) throw new HttpsError('failed-precondition', 'Inspect this version first.');
-    decision = p.pendingRepair && p.pendingRepair.forVersionId === v.id ? (({ estimateUsd: _e, waitingFor: _w, forVersionId: _f, categories: _c, ...rest }) => rest)(p.pendingRepair) : chooseRepair({ problems: report.problems, dialogue: report.dialogue, review: report.review, version: { durationSec: v.durationSec ?? 0, continuable: continuable(v), chainSec: v.chainSec }, expected: { lines: p.expected.lines, action: p.expected.action }, plan: p.plan, caps: CAPS, previous: p.repairs.map((r) => ({ type: r.type, categories: r.categories as never })) });
+    decision = p.pendingRepair && p.pendingRepair.forVersionId === v.id ? (({ estimateUsd: _e, waitingFor: _w, forVersionId: _f, categories: _c, ...rest }) => rest)(p.pendingRepair) : chooseRepair({ compositableScreens: p.continuity?.compositeScreenIds ?? [], regions: report.problems.filter((x) => x.region).map((x) => ({ problemId: x.id, box: x.region! })), problems: report.problems, dialogue: report.dialogue, review: report.review, version: { durationSec: v.durationSec ?? 0, continuable: continuable(v), chainSec: v.chainSec }, expected: { lines: p.expected.lines, action: p.expected.action }, plan: p.plan, caps: CAPS, previous: p.repairs.map((r) => ({ type: r.type, categories: r.categories as never })) });
     if (!decision) throw new HttpsError('failed-precondition', 'No automatic repair applies to this version’s issues. Try Regenerate with new direction.');
   } else if (a.action === 'extend') {
     const secs = a.extendSec ?? 4;
@@ -344,6 +368,17 @@ export async function productionAction(owner: Owner, a: Payload<'productionActio
     decision = { type: 'regenerate', reason: 'The director asked for a new take.', instruction: a.instruction?.trim() || 'Deliver every scripted word exactly, at a natural pace, and let the action complete fully on screen.', durationSec: Math.min(CAPS.maxSec, Math.max(CAPS.minSec, p.plan?.plannedSec && p.plan.segments.length === 1 ? p.plan.plannedSec : Math.ceil(v.durationSec ?? 8))), sectionStartSec: null, sectionEndSec: null, keepAudio: false };
   } else if (a.action === 'split') {
     decision = { type: 'split_into_shots', reason: 'The director asked to split the scene into connected shots.', instruction: a.instruction?.trim() || '', durationSec: null, sectionStartSec: null, sectionEndSec: null, keepAudio: false };
+  } else if (a.action === 'color_match') {
+    if (!p.continuity?.colourRefAssetId) throw new HttpsError('failed-precondition', 'There is no colour reference for this shot yet: approve the previous shot of the scene first, or colour-match from the Colour Director with a reference still.');
+    decision = { type: 'color_match', reason: 'The director asked to colour-match the shot to the previous shot of the scene.', instruction: 'Colour-match the shot to the approved reference.', durationSec: null, sectionStartSec: null, sectionEndSec: null, keepAudio: true };
+  } else if (a.action === 'screen_composite') {
+    const screenIds = p.continuity?.compositeScreenIds ?? [];
+    if (!screenIds.length) throw new HttpsError('failed-precondition', 'This shot has no protected screen with approved content. Add one in the Continuity panel (Protected screens) first.');
+    decision = { type: 'screen_composite', reason: 'The director asked to composite the approved screen content.', instruction: 'Composite the approved content onto the protected surface.', durationSec: null, sectionStartSec: null, sectionEndSec: null, keepAudio: true, data: { screenIds } };
+  } else if (a.action === 'correct_blocking') {
+    decision = { type: 'correct_blocking', reason: 'The director asked to correct the blocking from a blocking frame.', instruction: a.instruction?.trim() || 'Every character in their planned position with their face visible; nobody blocks anyone; correct eyelines and depth order.', durationSec: Math.min(CAPS.maxSec, Math.max(CAPS.minSec, Math.ceil(v.durationSec ?? 8))), sectionStartSec: null, sectionEndSec: null, keepAudio: false };
+  } else if (a.action === 'regenerate_with_references') {
+    decision = { type: 'regenerate_with_references', reason: 'The director asked to regenerate with every approved reference.', instruction: a.instruction?.trim() || 'Match the approved references exactly — faces, age, hair, costumes, accessories, props and the set.', durationSec: Math.min(CAPS.maxSec, Math.max(CAPS.minSec, Math.ceil(v.durationSec ?? 8))), sectionStartSec: null, sectionEndSec: null, keepAudio: false };
   }
   if (!decision) throw new HttpsError('invalid-argument', 'Unknown action.');
   const estimateUsd = Math.round(estimateRepairUsd(p, v, decision) * 100) / 100;

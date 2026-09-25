@@ -432,12 +432,14 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
         .max(16),
     }),
   }),
-  z.object({ action: z.literal('finalInspectionAction'), payload: z.object({ inspectionId: id, action: z.enum(['apply_fix', 'apply_all_fixes', 'override', 'clear_override', 'resolve', 'reopen']), findingId: text(80).nullable().optional(), note: text(500).optional() }) }),
+  z.object({ action: z.literal('finalInspectionAction'), payload: z.object({ projectId: id, inspectionId: id, action: z.enum(['apply_fix', 'apply_all_fixes', 'override', 'clear_override', 'resolve', 'reopen']), findingId: text(80).nullable().optional(), note: text(500).optional() }) }),
   z.object({ action: z.literal('musicSetMaster'), payload: z.object({ projectId: id, musicProjectId: id, versionId: id }) }),
   z.object({ action: z.literal('musicToVideo'), payload: z.object({ projectId: id, musicProjectId: id, versionId: id, targetProjectId: id }) }),
   z.object({ action: z.literal('cancelQueued'), payload: z.object({ projectId: id.nullable().optional() }) }),
   z.object({ action: z.literal('creditsMetadata'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('continuityOverview'), payload: z.object({ projectId: id }) }),
+  /** Approve or withdraw a shot's take (approval updates canonical continuity; the rules deny direct writes). */
+  z.object({ action: z.literal('takeAction'), payload: z.object({ projectId: id, shotId: id, takeId: id, action: z.enum(['approve', 'withdraw']), note: text(500).optional() }) }),
 ]);
 export type ApiRequest = z.infer<typeof apiRequestSchema>;
 export type ApiAction = ApiRequest['action'];

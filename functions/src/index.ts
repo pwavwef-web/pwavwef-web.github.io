@@ -17,7 +17,10 @@ import { apiRequestSchema, type ApiRequest } from '@az-studio/shared';
 import { ALLOWED_ORIGINS, IS_EMULATOR, MEDIA_BUCKET, OWNER_EMAIL, OWNER_UID, REGION, RUNTIME_SERVICE_ACCOUNT, RUNTIME_SERVICE_ACCOUNT_EMAIL } from './config/runtime';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
+import * as continuity from './api/continuity';
 import * as production from './api/production';
+import * as studio from './api/studio';
+import * as takes from './api/takes';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
@@ -61,6 +64,41 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return production.productionAction(owner, req.payload);
     case 'modelStatus':
       return production.modelStatus(owner, req.payload);
+    case 'continuitySave':
+      return continuity.continuitySave(owner, req.payload);
+    case 'continuityDelete':
+      return continuity.continuityDelete(owner, req.payload);
+    case 'characterBibleSave':
+      return continuity.characterBibleSave(owner, req.payload);
+    case 'bibleApprove':
+      return continuity.bibleApprove(owner, req.payload);
+    case 'continuityCheck':
+      return continuity.continuityCheck(owner, req.payload);
+    case 'continuityWarning':
+      return continuity.continuityWarning(owner, req.payload);
+    case 'insertNeutralShot':
+      return continuity.insertNeutralShot(owner, req.payload);
+    case 'coverageApply':
+      return continuity.coverageApply(owner, req.payload);
+    case 'continuityOverview':
+      return continuity.continuityOverview(owner, req.payload);
+    case 'creditsMetadata':
+      return continuity.creditsMetadata(owner, req.payload);
+    case 'cancelQueued':
+      return continuity.cancelQueued(owner, req.payload);
+    case 'finalInspectionAction':
+      return studio.finalInspectionAction(owner, req.payload);
+    case 'musicSetMaster':
+      return studio.musicSetMaster(owner, req.payload);
+    case 'musicToVideo':
+      return studio.musicToVideo(owner, req.payload);
+    case 'takeAction':
+      return takes.takeAction(owner, req.payload);
+    default: {
+      // Every action in the request schema must be handled here (compile-time check).
+      const unhandled: never = req;
+      throw new HttpsError('invalid-argument', `Unknown action ${(unhandled as { action?: string }).action ?? ''}.`);
+    }
   }
 }
 

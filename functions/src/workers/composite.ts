@@ -3,15 +3,16 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import type { AssetDoc, JobDoc } from '@az-studio/shared';
 import { createAsset, withTmpDir } from '../lib/assets';
-import { bucket, col, db, FieldValue } from '../lib/firebase';
+import { bucket, col } from '../lib/firebase';
 import { fail } from '../lib/errors';
 import { FFMPEG, probe } from '../lib/media';
 import { progress, transition } from '../lib/jobs';
+import { recordDerivedTake } from '../lib/takes';
 
 const execFileAsync = promisify(execFile);
 
 export interface CompositeParams {
-  op: 'trim' | 'cutaway';
+  op: 'trim' | 'cutaway' | 'reframe';
   sourceAssetId: string;
   /** trim: keep [0, keepUntilSec). */
   keepUntilSec?: number;
@@ -19,6 +20,8 @@ export interface CompositeParams {
   insertAssetId?: string;
   sectionStartSec?: number;
   sectionEndSec?: number;
+  /** reframe: 0–1 crop box (same aspect as the frame) scaled back to full size — a gentle push-in. */
+  crop?: { x: number; y: number; w: number; h: number };
   shotId: string | null;
   parentTakeId: string | null;
   takeLabel: string;
@@ -34,12 +37,14 @@ const ENCODE = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '16', '-pix_fm
 
 /**
  * Least-destructive repair edits on real media: trim an unwanted ending, or cut away to an insert /
- * reaction shot for a faulty section while the original dialogue audio keeps playing underneath.
+ * reaction shot for a faulty section while the original dialogue audio keeps playing underneath, or
+ * reframe with a gentle push-in that removes a fault at the edge of the frame.
  */
 export async function runCompositeJob(job: JobDoc): Promise<void> {
   const p = job.params as unknown as CompositeParams;
   if (!job.projectId) fail('invalid_request', 'Repair edits need a project.');
-  if (!(await transition(job.id, 'rendering', { stage: p.op === 'trim' ? 'Trimming the ending' : 'Cutting away over the dialogue', progress: 0.1, lease: { until: Date.now() + 9 * 60_000 } }))) return;
+  const stage = p.op === 'trim' ? 'Trimming the ending' : p.op === 'reframe' ? 'Reframing the shot' : 'Cutting away over the dialogue';
+  if (!(await transition(job.id, 'rendering', { stage, progress: 0.1, lease: { until: Date.now() + 9 * 60_000 } }))) return;
   const src = { id: p.sourceAssetId, ...(await col.assets().doc(p.sourceAssetId).get()).data() } as AssetDoc;
   if (!src.storagePath) fail('not_found', 'The version being repaired no longer exists.');
   const newId = col.assets().doc().id;
@@ -53,6 +58,16 @@ export async function runCompositeJob(job: JobDoc): Promise<void> {
     if (p.op === 'trim') {
       const keep = Math.min(D, Math.max(0.5, p.keepUntilSec ?? D));
       await ffmpeg(['-i', srcLocal, '-t', String(r3(keep)), ...ENCODE, out]);
+    } else if (p.op === 'reframe') {
+      const c = p.crop;
+      if (!c || c.w <= 0 || c.h <= 0 || c.w > 1 || c.h > 1) fail('invalid_request', 'The reframe needs a crop inside the frame.');
+      const W = info.width ?? 1280;
+      const H = info.height ?? 720;
+      const cw = Math.max(2, Math.round((W * c!.w) / 2) * 2);
+      const ch = Math.max(2, Math.round((H * c!.h) / 2) * 2);
+      const cx = Math.max(0, Math.min(W - cw, Math.round(W * c!.x)));
+      const cy = Math.max(0, Math.min(H - ch, Math.round(H * c!.y)));
+      await ffmpeg(['-i', srcLocal, '-vf', `crop=${cw}:${ch}:${cx}:${cy},scale=${W}:${H}:flags=lanczos,setsar=1,format=yuv420p`, '-map', '0:v', '-map', '0:a?', ...ENCODE, out]);
     } else {
       const ins = { id: p.insertAssetId!, ...(await col.assets().doc(p.insertAssetId!).get()).data() } as AssetDoc;
       if (!ins.storagePath) fail('not_found', 'The cutaway shot no longer exists.');
@@ -97,36 +112,11 @@ export async function runCompositeJob(job: JobDoc): Promise<void> {
       dir,
       collections: src.collections ?? [],
       derivedFrom: { assetId: src.id, ...(p.op === 'trim' ? { startSec: 0, durationSec: p.keepUntilSec ?? D } : {}) },
-      ...(src.generation ? { generation: { ...src.generation, jobId: job.id, parentAssetId: src.id, params: { ...src.generation.params, repair: p.op, insertAssetId: p.insertAssetId ?? null }, provenance: { ...src.generation.provenance, c2pa: 'absent' } } } : {}),
+      ...(src.generation ? { generation: { ...src.generation, jobId: job.id, parentAssetId: src.id, params: { ...src.generation.params, repair: p.op, insertAssetId: p.insertAssetId ?? null, crop: p.crop ?? null }, provenance: { ...src.generation.provenance, c2pa: 'absent' } } } : {}),
     });
     if (!p.shotId) return null;
     // The repaired version becomes a take of the shot so it can be compared, selected and approved.
-    const shotRef = col.projects().doc(job.projectId!).collection('shots').doc(p.shotId);
-    const takeRef = shotRef.collection('takes').doc();
-    await db.runTransaction(async (tx) => {
-      const shot = await tx.get(shotRef);
-      const index = Number(shot.get('takeCount') ?? 0) + 1;
-      tx.set(takeRef, {
-        index,
-        jobId: job.id,
-        assetId: newId,
-        status: 'completed',
-        prompt: p.op === 'trim' ? 'Trimmed ending' : 'Cutaway over continuous dialogue',
-        params: { repair: p.op },
-        interactionId: null,
-        parentTakeId: p.parentTakeId,
-        label: `Take ${index} · ${p.takeLabel}`,
-        rating: 0,
-        notes: '',
-        approved: false,
-        productionId: job.productionId ?? null,
-        versionId: null,
-        quality: { verdict: 'pending', overall: null, reportId: null },
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      tx.set(shotRef, { takeCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    });
-    return takeRef.id;
+    return recordDerivedTake({ projectId: job.projectId!, shotId: p.shotId, jobId: job.id, assetId: newId, prompt: p.op === 'trim' ? 'Trimmed ending' : p.op === 'reframe' ? 'Reframed (push-in removing an edge artefact)' : 'Cutaway over continuous dialogue', params: { repair: p.op }, parentTakeId: p.parentTakeId, takeLabel: p.takeLabel, productionId: job.productionId ?? null });
   });
   await transition(job.id, 'completed', { stage: 'Repaired version saved', result: { assetIds: [newId], data: { takeId } } }, { assetId: newId });
 }
