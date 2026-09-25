@@ -61,7 +61,7 @@ async function saveSheet(projectId: string, song: Song, sheet: LyricsSheet | nul
   await updateSubDoc(projectId, 'songs', song.id, { lyricsSheet: sheet, lyrics: sheet ? { source: src, lines: sheetToLyricLines(sheet) } : null, ...extra });
 }
 
-function LanguageSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function LanguageSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Language">
       {LYRIC_LANGUAGES.map((l) => (
@@ -143,7 +143,7 @@ function GenerateLyricsForm({ project, song, onDone }: { project: WithId<Project
 }
 
 /** Lyria 3.5 availability (the exact Vertex AI limitation is shown when it is not served). */
-function useMusicAvailability() {
+export function useMusicAvailability() {
   const [status, setStatus] = useState<ModelAvailability | null>(null);
   const load = async (refresh = false) => {
     try {

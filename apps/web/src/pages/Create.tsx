@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { ArrowRight, Clapperboard, Film, Image as ImageIcon, Music2, Scissors } from 'lucide-react';
+import { ArrowRight, AudioLines, Clapperboard, Film, Image as ImageIcon, Music2, Scissors } from 'lucide-react';
 import type { ProjectType } from '@az-studio/shared';
 import { useCaps } from '../lib/session';
 import { NewProjectDialog } from '../components/projects';
@@ -10,11 +10,12 @@ export default function Create() {
   const caps = useCaps();
   const [params] = useSearchParams();
   const preset = params.get('mode') as ProjectType | null;
-  const [dialog, setDialog] = useState<ProjectType | null>(preset === 'film' || preset === 'music_video' ? preset : null);
+  const [dialog, setDialog] = useState<ProjectType | null>(preset === 'film' || preset === 'music_video' || preset === 'music' ? preset : null);
 
   const modes = [
     { key: 'quick', title: 'Quick Video', body: 'A polished clip from text, first/last frames and image or video references. Refine it conversationally.', icon: Film, to: '/create/video', model: caps?.video.displayName },
     { key: 'music', title: 'Music Video Studio', body: 'Upload a finished song. Beats, sections and lyrics drive a treatment, storyboard, shot queue and final cut.', icon: Music2, onClick: () => setDialog('music_video'), model: `${caps?.reasoning.displayName ?? ''} · ${caps?.video.displayName ?? ''}` },
+    { key: 'studio', title: 'Music Studio', body: 'Write, generate, record or upload music: lyrics, structure, arrangement, stems, mixing, score cues and versions — then send it to a music video.', icon: AudioLines, onClick: () => setDialog('music'), model: caps?.music.displayName },
     { key: 'film', title: 'Film Studio', body: 'Idea → treatment → screenplay → breakdown → bibles → lookbook → storyboard → shots → timeline → export.', icon: Clapperboard, onClick: () => setDialog('film'), model: `${caps?.reasoning.displayName ?? ''} · ${caps?.image.displayName ?? ''}` },
     { key: 'image', title: 'Image Studio', body: 'Characters, turnarounds, costumes, sets, posters, thumbnails and storyboard frames — with iterative edits.', icon: ImageIcon, to: '/create/image', model: caps?.image.displayName },
     { key: 'remix', title: 'Video Remix & Edit', body: 'Upload a clip and change location, style, objects, time of day, action or camera — turn by turn.', icon: Scissors, to: '/create/remix', model: caps?.video.displayName },

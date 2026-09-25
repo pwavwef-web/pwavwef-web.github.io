@@ -24,6 +24,8 @@ export default function ProjectRouter() {
       return <Navigate to={`/projects/${p.id}/film`} replace />;
     case 'music_video':
       return <Navigate to={`/projects/${p.id}/music`} replace />;
+    case 'music':
+      return <Navigate to={`/projects/${p.id}/studio`} replace />;
     case 'image':
       return <ImageStudio project={p} />;
     case 'remix':

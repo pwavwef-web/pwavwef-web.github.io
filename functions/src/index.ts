@@ -92,6 +92,8 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return studio.musicSetMaster(owner, req.payload);
     case 'musicToVideo':
       return studio.musicToVideo(owner, req.payload);
+    case 'musicAddVersion':
+      return studio.musicAddVersion(owner, req.payload);
     case 'musicCorrectAnalysis':
       return studio.musicCorrectAnalysis(owner, req.payload);
     case 'takeAction':

@@ -9,6 +9,7 @@ import {
   estimateTranscription,
   languageName,
   movementPrompt,
+  musicBriefPrompt,
   sumEstimates,
   estimateRender,
   estimateText,
@@ -34,6 +35,7 @@ import {
   type LyricsAlignJobRequest,
   type LyricsTranscribeJobRequest,
   type MusicJobRequest,
+  type MusicProjectDoc,
   type OmniMediaRef,
   type ProjectDoc,
   type RenderJobRequest,
@@ -555,17 +557,29 @@ async function prepareMusic(uid: string, req: MusicJobRequest): Promise<Prepared
       target = { kind: 'song', id: req.songId };
     }
     const lang = languageName(req.languageCode ?? null);
-    prompt = [
-      prompt,
-      req.instrumental
-        ? 'Instrumental only: no vocals, no singing, no spoken words, no lyrics.'
-        : req.lyrics?.trim()
-          ? `Sing exactly these lyrics, in this order, without changing, adding or dropping any word (section tags mark the structure):\n${req.lyrics.trim()}`
-          : 'Write original lyrics that fit this brief and sing them.',
-      !req.instrumental && lang ? `Sing in ${lang}.` : '',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    if (req.musicProjectId) {
+      // Music Studio: the saved brief is authoritative; the request only adds direction (alternates, media).
+      const mpSnap = await col.projects().doc(req.projectId).collection('musicProjects').doc(req.musicProjectId).get();
+      if (!mpSnap.exists) bad('Music project not found.');
+      const mp = mpSnap.data() as MusicProjectDoc;
+      const mode = req.mode ?? mp.mode;
+      if (mode === 'lyrics_only' || mode === 'upload') bad('This mode writes lyrics or analyses uploaded audio; it does not generate music.');
+      const instrumentalMode = mode === 'instrumental' || mode === 'film_score' || mode === 'scene_background' || mp.brief.vocals === 'none';
+      if (instrumentalMode !== req.instrumental) bad(instrumentalMode ? 'This brief is instrumental: generate without lyrics.' : 'This brief has vocals: turn off “instrumental”.');
+      prompt = musicBriefPrompt(mp.brief, { mode, lyrics: req.instrumental ? null : req.lyrics ?? null, languageName: lang, context: req.prompt.trim() && req.prompt.trim() !== 'brief' ? req.prompt.trim() : null });
+    } else {
+      prompt = [
+        prompt,
+        req.instrumental
+          ? 'Instrumental only: no vocals, no singing, no spoken words, no lyrics.'
+          : req.lyrics?.trim()
+            ? `Sing exactly these lyrics, in this order, without changing, adding or dropping any word (section tags mark the structure):\n${req.lyrics.trim()}`
+            : 'Write original lyrics that fit this brief and sing them.',
+        !req.instrumental && lang ? `Sing in ${lang}.` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+    }
   } else {
     if (!req.scoreId || !req.movementId) bad('A score movement needs its score and movement.');
     if (project?.type !== 'film') bad('Film scores belong to film projects. Music videos keep their song as the master audio.');

@@ -125,3 +125,5 @@ export const musicToVideo = (projectId: string, musicProjectId: string, versionI
   api<{ songId: string; projectId: string; lyricsCopied: boolean; note: string }, 'musicToVideo'>('musicToVideo', { projectId, musicProjectId, versionId, targetProjectId });
 export const musicCorrectAnalysis = (projectId: string, versionId: string, corrections: Partial<Pick<MusicAnalysis, 'bpm' | 'key' | 'timeSignature' | 'sections' | 'downbeats'>>) =>
   api<{ analysis: MusicAnalysis }, 'musicCorrectAnalysis'>('musicCorrectAnalysis', { projectId, versionId, corrections: corrections as never });
+export const musicAddVersion = (projectId: string, musicProjectId: string, assetId: string, source: 'upload' | 'recording', label?: string) =>
+  api<{ versionId: string; songId: string }, 'musicAddVersion'>('musicAddVersion', { projectId, musicProjectId, assetId, source, ...(label ? { label } : {}) });

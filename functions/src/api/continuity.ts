@@ -105,6 +105,14 @@ export async function continuitySave(owner: Owner, p: Payload<'continuitySave'>)
     const el = await col.projects().doc(p.projectId).collection('elements').doc(String(data.elementId)).get();
     if (!el.exists) throw new HttpsError('not-found', 'The prop is not in the Props & costumes list.');
   }
+  if (p.collection === 'musicProjects') {
+    // The linked song, the master version and the version counter are maintained by the server (a stale
+    // editor must not undo a generation that finished meanwhile); the master changes through musicSetMaster.
+    const { songId: _song, masterVersionId: _master, ...rest } = data;
+    void [_song, _master];
+    await ref.set({ ...rest, ...(existing.exists ? {} : { songId: null, masterVersionId: null, versionCount: 0, createdAt: FieldValue.serverTimestamp() }), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    return { id: ref.id };
+  }
   if (p.collection === 'audioTracks') {
     const mp = await col.sub(p.projectId, 'musicProjects').doc(String(data.musicProjectId)).get();
     if (!mp.exists) throw new HttpsError('not-found', 'Music project not found.');

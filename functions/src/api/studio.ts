@@ -14,6 +14,7 @@ import {
   type TimelineState,
 } from '@az-studio/shared';
 import { col, db, FieldValue } from '../lib/firebase';
+import { createMusicVersion } from '../workers/music-studio';
 import type { Owner } from '../lib/owner';
 
 type Payload<A extends ApiRequest['action']> = Extract<ApiRequest, { action: A }>['payload'];
@@ -122,6 +123,47 @@ export async function musicCorrectAnalysis(owner: Owner, p: Payload<'musicCorrec
   const analysis = applyCorrections(v.analysis, { ...p.corrections, ...(sections ? { sections } : {}), ...(p.corrections.downbeats ? { downbeats: [...p.corrections.downbeats].sort((a, b) => a - b) } : {}) });
   await ref.set({ analysis }, { merge: true });
   return { analysis };
+}
+
+/**
+ * Uploaded or recorded audio becomes a version of the music project. A project without a linked song
+ * gets one from its first audio, so lyrics can be transcribed, aligned and styled against it.
+ */
+export async function musicAddVersion(owner: Owner, p: Payload<'musicAddVersion'>) {
+  await ownedProject(owner.uid, p.projectId);
+  const mpRef = col.sub(p.projectId, 'musicProjects').doc(p.musicProjectId);
+  const mp = await mpRef.get();
+  if (!mp.exists) throw new HttpsError('not-found', 'Music project not found.');
+  const a = await col.assets().doc(p.assetId).get();
+  if (!a.exists || a.get('ownerUid') !== owner.uid) throw new HttpsError('not-found', 'Audio not found in your library.');
+  if (a.get('status') !== 'ready') throw new HttpsError('failed-precondition', 'Wait for the upload to finish processing.');
+  if (a.get('kind') !== 'audio' && !(a.get('kind') === 'video' && a.get('hasAudio'))) throw new HttpsError('invalid-argument', 'Choose an audio file.');
+  const durationSec = Number(a.get('durationSec') ?? 0) || null;
+  const title = String(a.get('title') ?? 'Audio');
+  const versionId = await createMusicVersion(p.projectId, {
+    musicProjectId: mp.id,
+    source: p.source,
+    label: p.label?.trim() || (p.source === 'recording' ? 'Recording' : title),
+    assetId: a.id,
+    parentVersionId: null,
+    jobId: null,
+    prompt: null,
+    lyricsText: null,
+    modelId: null,
+    method: p.source === 'recording' ? 'Recorded in the studio with the browser microphone; nothing generated.' : 'Uploaded audio; nothing generated.',
+    durationSec,
+    loudness: null,
+    analysis: null,
+    timeMap: null,
+  });
+  let songId = (mp.get('songId') as string | null) ?? null;
+  if (!songId) {
+    const ref = col.songs(p.projectId).doc();
+    await ref.set({ audioAssetId: a.id, title: (mp.get('brief.title') as string | undefined)?.trim() || title, artist: '', durationSec: durationSec ?? 0, analysis: null, lyrics: null, ai: null, lyricsSheet: null, instrumental: mp.get('brief.vocals') === 'none', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    await mpRef.set({ songId: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    songId = ref.id;
+  }
+  return { versionId, songId };
 }
 
 /** The version used for exports, videos and lyric sync. */
