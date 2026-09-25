@@ -21,6 +21,7 @@ import {
   planSceneDuration,
   rankTakes,
   REPAIR_LABELS,
+  screenCompositeForPassedTake,
   segmentTimingDirections,
   strongestVersion,
   sumEstimates,
@@ -902,6 +903,20 @@ async function decide(p: Prod, v: ProductionVersionDoc, report: QualityReportDoc
     await updateAttempt(p.projectId, last.attemptId, { outcome: report.passed ? 'fixed' : 'not_fixed', resultVersionId: v.id, resultAssetId: v.assetId, resultOverall: report.overall, jobIds: last.jobIds, costUsd: await jobsCost([...last.jobIds, report.jobId]) });
   }
   if (report.passed) {
+    // A passing take whose protected screen is still blank or wrong gets the approved content composited.
+    const composite = screenCompositeForPassedTake({ problems: report.problems, compositeScreenIds: p.continuity?.compositeScreenIds ?? [], triedTypes: repairs.map((r) => r.type) });
+    if (composite) {
+      const estimate = Math.round(estimateRepairUsd(p, v, composite) * 100) / 100;
+      const spent = await productionSpend(p.id);
+      const next = decideAfterInspection({ passed: false, settings: p.settings, repairCount: p.repairCount, spentUsd: spent, repair: composite, repairEstimateUsd: estimate });
+      if (next.action === 'repair') {
+        await startRepair({ ...p, waitingOn: [], repairs, bestVersionId: best?.id ?? v.id, spentUsd: spent }, v, composite, estimate, [], false);
+        return;
+      }
+      // Automatic repairs are off, used up or need approval: the composite is proposed to the director.
+      await setState(p, { status: 'awaiting_review', stage: 'approve', waitingOn: [], repairs, bestVersionId: best?.id ?? v.id, pendingRepair: { ...composite, estimateUsd: estimate, waitingFor: next.action === 'await_repair_approval' ? next.waitingFor : 'director', forVersionId: v.id, categories: [] }, failure: null, stageMessage: `Version ${v.index} passed quality review (${report.overall}/100) — its protected screen still needs the approved content (compositing is proposed)` }, { overall: report.overall, passed: true });
+      return;
+    }
     await setState(p, { status: 'awaiting_review', stage: 'approve', waitingOn: [], repairs, bestVersionId: best?.id ?? v.id, pendingRepair: null, failure: null, stageMessage: `Version ${v.index} passed quality review (${report.overall}/100) — awaiting the director’s approval` }, { overall: report.overall, passed: true });
     return;
   }

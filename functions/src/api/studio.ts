@@ -2,11 +2,14 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import {
   applyCorrections,
   applyFinalFix,
+  applyLyricStyleFixes,
   exportReadiness,
   finalScore,
   type ApiRequest,
   type FinalFinding,
   type FinalInspectionDoc,
+  type LyricStyleDoc,
+  type LyricsTrackDoc,
   type MusicProjectDoc,
   type MusicVersionDoc,
   type SongDoc,
@@ -63,31 +66,65 @@ export async function finalInspectionAction(owner: Owner, p: Payload<'finalInspe
     }
     case 'apply_fix':
     case 'apply_all_fixes': {
-      // Fixes change the timeline; this render still contains the problem, so the finding is marked
-      // “fixed in the timeline” and the film must be rendered (and inspected) again to verify it.
+      // Fixes change the timeline (or a song's lyric style); this render still contains the problem, so the
+      // finding is marked “fixed” and the film must be rendered (and inspected) again to verify it.
       const targets = p.action === 'apply_fix' ? findings.filter((x) => x.id === p.findingId) : findings.filter((x) => x.fix && !x.overridden && !x.fixedAt);
       if (!targets.length || targets.some((x) => !x.fix)) throw new HttpsError('failed-precondition', 'There is no automatic fix for that finding.');
+      const styleTargets = targets.filter((x) => x.fix!.type === 'fit_lyric_style');
+      const editTargets = targets.filter((x) => x.fix!.type !== 'fit_lyric_style');
       const tref = proj.ref.collection('timelines').doc(doc.timelineId);
-      timelineChange = await db.runTransaction(async (tx) => {
-        const ts = await tx.get(tref);
-        if (!ts.exists) throw new HttpsError('not-found', 'The timeline no longer exists.');
-        const tl = { ...(ts.data() as TimelineDoc), id: ts.id };
-        let state: TimelineState = { tracks: tl.tracks, clips: tl.clips, markers: tl.markers, fps: tl.fps, aspectRatio: tl.aspectRatio, beatGrid: tl.beatGrid };
-        const applied: string[] = [];
-        for (const f of targets) {
-          const next = applyFinalFix(state, f.fix!);
-          if (next) {
-            state = next;
-            applied.push(f.id);
+      const applied: string[] = [];
+      let version: number | null = null;
+      if (editTargets.length) {
+        const change = await db.runTransaction(async (tx) => {
+          const ts = await tx.get(tref);
+          if (!ts.exists) throw new HttpsError('not-found', 'The timeline no longer exists.');
+          const tl = { ...(ts.data() as TimelineDoc), id: ts.id };
+          let state: TimelineState = { tracks: tl.tracks, clips: tl.clips, markers: tl.markers, fps: tl.fps, aspectRatio: tl.aspectRatio, beatGrid: tl.beatGrid };
+          const done: string[] = [];
+          for (const f of editTargets) {
+            const next = applyFinalFix(state, f.fix!);
+            if (next) {
+              state = next;
+              done.push(f.id);
+            }
           }
+          if (!done.length) return null;
+          const v = Number(tl.version ?? 0) + 1;
+          tx.set(tref, { tracks: state.tracks, clips: state.clips, markers: state.markers, version: v, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+          tx.set(tref.collection('versions').doc(), { version: v, reason: `Final-inspection fix: ${editTargets.filter((f) => done.includes(f.id)).map((f) => f.fix!.label).join('; ')}`.slice(0, 500), tracks: state.tracks, clips: state.clips, markers: state.markers, createdAt: FieldValue.serverTimestamp() });
+          return { version: v, done };
+        });
+        if (change) {
+          applied.push(...change.done);
+          version = change.version;
         }
-        if (!applied.length) throw new HttpsError('failed-precondition', 'The timeline changed since the inspection; these fixes no longer apply. Render and inspect again.');
-        const version = Number(tl.version ?? 0) + 1;
-        tx.set(tref, { tracks: state.tracks, clips: state.clips, markers: state.markers, version, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-        tx.set(tref.collection('versions').doc(), { version, reason: `Final-inspection fix: ${targets.filter((f) => applied.includes(f.id)).map((f) => f.fix!.label).join('; ')}`.slice(0, 500), tracks: state.tracks, clips: state.clips, markers: state.markers, createdAt: FieldValue.serverTimestamp() });
-        return { version, applied };
-      });
-      findings = findings.map((x) => (timelineChange!.applied.includes(x.id) ? { ...x, fixedAt: now, fixedInTimelineVersion: timelineChange!.version } : x));
+      }
+      // Styled lyrics: the song's style (size and position for this aspect ratio) and its locked placements.
+      const bySong = new Map<string, FinalFinding[]>();
+      for (const f of styleTargets) {
+        const songId = String(f.fix!.params.songId ?? '');
+        if (songId) bySong.set(songId, [...(bySong.get(songId) ?? []), f]);
+      }
+      for (const [songId, list] of bySong) {
+        const trackRef = proj.ref.collection('lyricsTracks').doc(songId);
+        const track = (await trackRef.get()).data() as LyricsTrackDoc | undefined;
+        if (!track?.styleId) continue;
+        const styleRef = proj.ref.collection('lyricStyles').doc(track.styleId);
+        const style = (await styleRef.get()).data() as LyricStyleDoc | undefined;
+        if (!style) continue;
+        const next = applyLyricStyleFixes(style, track.placements ?? {}, list.map((f) => f.fix!));
+        if (!next) continue;
+        const batch = db.batch();
+        batch.set(styleRef, { global: next.global, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        batch.update(trackRef, { placements: next.placements, updatedAt: FieldValue.serverTimestamp() });
+        await batch.commit();
+        applied.push(...list.map((f) => f.id));
+      }
+      if (!applied.length) throw new HttpsError('failed-precondition', 'The timeline or lyric style changed since the inspection; these fixes no longer apply. Render and inspect again.');
+      version ??= Number((await tref.get()).get('version') ?? 0);
+      timelineChange = { version, applied };
+      findings = findings.map((x) => (applied.includes(x.id) ? { ...x, fixedAt: now, fixedInTimelineVersion: version } : x));
       break;
     }
   }

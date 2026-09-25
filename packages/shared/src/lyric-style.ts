@@ -401,7 +401,17 @@ export function layoutLyrics(input: LyricLayoutInput): LyricLayout {
     const baseSize = (s.fontSizePct / 100) * scaleRef;
     const paint = paintFor(s, baseSize, scaleRef);
     const marginX = (Math.max(safe.left, safe.right) + s.safeMargin) * W;
-    const colWidth = s.preset === 'call_response' ? W * 0.42 : W - 2 * marginX;
+    let colWidth = s.preset === 'call_response' ? W * 0.42 : W - 2 * marginX;
+    // Rolling credits sweep the whole height of the frame: with faces in the picture they scroll in a
+    // column beside them (unless the director locked the position).
+    let column: number | null = null;
+    if (s.preset === 'rolling_credit' && line.avoid?.length && !(line.placement?.locked ?? s.aspects[input.aspect]?.locked)) {
+      const free = clearColumn(line.avoid, safe, s.safeMargin);
+      if (free && free.w * W >= Math.max(W * 0.22, baseSize * 5) && free.w * W < colWidth) {
+        colWidth = free.w * W;
+        column = free.x + free.w / 2;
+      }
+    }
     const maxWidth = Math.max(80, colWidth);
     const rowsOut: SceneLine[] = [];
     let shrunk = false;
@@ -435,7 +445,7 @@ export function layoutLyrics(input: LyricLayoutInput): LyricLayout {
     }
     for (const { g, text } of lineTexts) {
       const words = timedWords(g, text);
-      const wrapped = wrapWords(words, paint, input.measure, maxWidth, s.maxCharsPerLine, group.length > 1 ? 1 : s.maxLines);
+      const wrapped = wrapWords(words, paint, input.measure, maxWidth, s.maxCharsPerLine, group.length > 1 ? 1 : column !== null ? Math.max(2, s.maxLines) : s.maxLines);
       if (wrapped.shrunk) shrunk = true;
       const rowPaint = { ...paint, sizePx: wrapped.sizePx };
       for (const row of wrapped.rows) {
@@ -459,7 +469,7 @@ export function layoutLyrics(input: LyricLayoutInput): LyricLayout {
     }
     const start = group[0]!.start;
     const end = group[group.length - 1]!.end;
-    const assembled = assemble(`${line.id}`, group.map((g) => g.id), start, end, rowsOut, s, input, i, line.avoid ?? [], blockIndex++);
+    const assembled = assemble(`${line.id}`, group.map((g) => g.id), start, end, rowsOut, s, input, i, line.avoid ?? [], blockIndex++, column);
     blocks.push(assembled.block);
     positions[line.id] = assembled.position;
     if (assembled.coversFace) pushIssue(line.id, 'covers_face', `“${line.text.slice(0, 40)}” covers a face; move it or unlock automatic placement.`);
@@ -515,8 +525,22 @@ const ALTERNATES: { x: number; y: number }[] = [
   { x: 0.5, y: 0.3 },
 ];
 
-function assemble(id: string, refs: string[], start: number, end: number, rows: SceneLine[], s: LyricStyle, input: LyricLayoutInput, index: number, avoid: { x: number; y: number; w: number; h: number }[], layer: number): { block: SceneBlock; position: { x: number; y: number; moved: boolean }; coversFace: boolean } {
-  return buildBlock(id, refs, start, end, null, 0, s, null, input, 0, avoid, layer, rows, index);
+function assemble(id: string, refs: string[], start: number, end: number, rows: SceneLine[], s: LyricStyle, input: LyricLayoutInput, index: number, avoid: { x: number; y: number; w: number; h: number }[], layer: number, column: number | null = null): { block: SceneBlock; position: { x: number; y: number; moved: boolean }; coversFace: boolean } {
+  return buildBlock(id, refs, start, end, null, 0, s, null, input, 0, avoid, layer, rows, index, column);
+}
+
+/** The widest vertical band of the safe area with no face in it (0–1 of the frame), or null. */
+export function clearColumn(avoid: { x: number; y: number; w: number; h: number }[], safe: { left: number; right: number }, margin = 0): { x: number; w: number } | null {
+  const lo = safe.left + margin;
+  const hi = 1 - safe.right - margin;
+  const blocked = avoid.map((a) => [Math.max(lo, a.x - 0.03), Math.min(hi, a.x + a.w + 0.03)] as const).filter(([a, b]) => b > a).sort((p, q) => p[0] - q[0]);
+  let best: { x: number; w: number } | null = null;
+  let cursor = lo;
+  for (const [a, b] of [...blocked, [hi, hi] as const]) {
+    if (a - cursor > (best?.w ?? 0)) best = { x: cursor, w: a - cursor };
+    cursor = Math.max(cursor, b);
+  }
+  return best && best.w > 0.01 ? { x: Math.round(best.x * 1000) / 1000, w: Math.round(best.w * 1000) / 1000 } : null;
 }
 
 function buildBlock(
@@ -534,6 +558,7 @@ function buildBlock(
   layer: number,
   preRows?: SceneLine[],
   lineIndex = 0,
+  column: number | null = null,
 ): { block: SceneBlock; position: { x: number; y: number; moved: boolean }; coversFace: boolean } {
   const W = input.width;
   const H = input.height;
@@ -589,7 +614,13 @@ function buildBlock(
   // A placement the director set for this line overrides the style anchor.
   const placement = input.lines.find((l) => l.id === refs[0])?.placement ?? null;
   if (placement) anchor = { x: placement.x, y: placement.y };
-  const covers = (left: number, top: number) => avoid.some((a) => rectsOverlap({ x: (left - pad) / W, y: (top - pad) / H, w: (blockW + 2 * pad) / W, h: (blockH + 2 * pad) / H }, a));
+  if (column !== null) {
+    anchor = { x: column, y: anchor.y };
+    align = 'center';
+  }
+  // A rolling credit scrolls through the whole height, so any face in its column is covered at some point.
+  const covers = (left: number, top: number) =>
+    avoid.some((a) => rectsOverlap(s.preset === 'rolling_credit' ? { x: (left - pad) / W, y: 0, w: (blockW + 2 * pad) / W, h: 1 } : { x: (left - pad) / W, y: (top - pad) / H, w: (blockW + 2 * pad) / W, h: (blockH + 2 * pad) / H }, a));
   const locked = placement?.locked ?? s.aspects[input.aspect]?.locked ?? false;
   let pos = placeAt(anchor.x, anchor.y);
   let moved = false;

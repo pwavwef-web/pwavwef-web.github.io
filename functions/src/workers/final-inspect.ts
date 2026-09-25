@@ -6,12 +6,14 @@ import {
   blackFindings,
   creditsFindings,
   dialogueMaskingFindings,
+  EXPORT_PRESETS,
   exportReadiness,
   finalScore,
   finding,
   formatFindings,
   frozenFindings,
   loudnessFindings,
+  loudSpikes,
   lyricLayoutFindings,
   missingMediaFindings,
   musicRestartFindings,
@@ -39,7 +41,7 @@ import { sampleFrames, temporalMeasurements } from '../lib/frames';
 import { logInteraction } from '../lib/interactions';
 import { FFMPEG, probe } from '../lib/media';
 import { progress, transition } from '../lib/jobs';
-import { blackSegments, extractSpeechAudio, loudnessStats, silentSpans } from '../lib/signal';
+import { blackSegments, extractSpeechAudio, loudnessStats, momentaryLoudness, silentSpans } from '../lib/signal';
 import { recordUsage } from '../lib/usage';
 import { annotateFrames } from '../lib/vision';
 import { callReasoning, usageFor } from './text';
@@ -117,7 +119,14 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
       const info = await probe(local);
       const D = info.durationSec ?? p.output.durationSec;
       await progress(job.id, 'Measuring black and frozen frames, peaks, loudness and silences', 0.15);
-      const [black, temporal, loud, silences, peaks] = await Promise.all([blackSegments(local).catch(() => []), temporalMeasurements(local).catch(() => null), loudnessStats(local), info.hasAudio ? silentSpans(local, -50, 2).catch(() => []) : Promise.resolve([]), info.hasAudio ? peakMoments(local).catch(() => []) : Promise.resolve([])]);
+      const [black, temporal, loud, silences, peaks, momentary] = await Promise.all([
+        blackSegments(local).catch(() => []),
+        temporalMeasurements(local).catch(() => null),
+        loudnessStats(local),
+        info.hasAudio ? silentSpans(local, -50, 2).catch(() => []) : Promise.resolve([]),
+        info.hasAudio ? peakMoments(local).catch(() => []) : Promise.resolve([]),
+        info.hasAudio ? momentaryLoudness(local).catch(() => []) : Promise.resolve([]),
+      ]);
       let words: { text: string; start: number; end: number }[] = [];
       if (info.hasAudio) {
         await progress(job.id, 'Transcribing the dialogue', 0.3);
@@ -141,7 +150,7 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
         if (one[0]) extra.push({ ...one[0], t });
       }
       const annotated = await annotateFrames({ frames: [...frames, ...extra], features: ['TEXT_DETECTION'], usage });
-      return { D, info, black, temporal, loud, silences, peaks, words, ocr: annotated.map((a) => ({ t: a.t, text: a.fullText })) };
+      return { D, info, black, temporal, loud, silences, peaks, spikes: loudSpikes(momentary), words, ocr: annotated.map((a) => ({ t: a.t, text: a.fullText })) };
     });
 
     const findings: FinalFinding[] = [];
@@ -159,12 +168,12 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
       if (m.temporal.decodeErrors > 0) findings.push(finding('corrupted_frames', m.temporal.decodeErrors > 3 ? 'error' : 'warning', `${m.temporal.decodeErrors} frame(s) failed to decode in the export.`, 'measured'));
     }
     // Sound.
-    findings.push(...loudnessFindings({ integratedLufs: m.loud.integratedLufs, truePeakDb: m.loud.truePeakDb, peaks: m.peaks }, state));
+    findings.push(...loudnessFindings({ integratedLufs: m.loud.integratedLufs, truePeakDb: m.loud.truePeakDb, peaks: m.peaks, spikes: m.spikes }, state));
     findings.push(...silenceFindings(m.silences, state));
     findings.push(...musicRestartFindings(state));
     findings.push(...dialogueMaskingFindings(state, dialogueSpans(m.words)));
     // Text: layout issues recorded by the renderer (real font metrics), credits, OCR.
-    findings.push(...lyricLayoutFindings(render.textLayout?.issues ?? []));
+    findings.push(...lyricLayoutFindings(render.textLayout?.issues ?? [], { clips: state.clips, aspect: EXPORT_PRESETS[render.preset as keyof typeof EXPORT_PRESETS]?.aspect ?? null }));
     findings.push(...creditsFindings(render.textLayout?.credits ?? [], m.D));
     for (const c of state.clips.filter((x) => (x.kind === 'caption' || x.kind === 'title' || x.lyric) && x.text.trim())) {
       const at = c.start + Math.min(c.duration / 2, 1.2);
@@ -205,7 +214,7 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
     const readiness = exportReadiness(findings, null);
     const errors = findings.filter((f) => f.severity === 'error').length;
     const warnings = findings.filter((f) => f.severity === 'warning').length;
-    const measurements = { durationSec: m.D, width: m.info.width, height: m.info.height, hasAudio: m.info.hasAudio, integratedLufs: m.loud.integratedLufs, truePeakDb: m.loud.truePeakDb, lra: m.loud.lra, blackSegments: m.black.slice(0, 50), frozen: m.temporal?.frozen.slice(0, 50) ?? [], decodeErrors: m.temporal?.decodeErrors ?? null, silences: m.silences.slice(0, 50), peaks: m.peaks.slice(0, 50), dialogueWords: m.words.length, ocrFrames: m.ocr.length, modelIds: { review: r.modelId, transcription: MODEL_REGISTRY.transcription.id, vision: MODEL_REGISTRY.vision.id } };
+    const measurements = { durationSec: m.D, width: m.info.width, height: m.info.height, hasAudio: m.info.hasAudio, integratedLufs: m.loud.integratedLufs, truePeakDb: m.loud.truePeakDb, lra: m.loud.lra, blackSegments: m.black.slice(0, 50), frozen: m.temporal?.frozen.slice(0, 50) ?? [], decodeErrors: m.temporal?.decodeErrors ?? null, silences: m.silences.slice(0, 50), peaks: m.peaks.slice(0, 50), loudSpikes: m.spikes.slice(0, 20), dialogueWords: m.words.length, ocrFrames: m.ocr.length, modelIds: { review: r.modelId, transcription: MODEL_REGISTRY.transcription.id, vision: MODEL_REGISTRY.vision.id } };
     const summary = review.summary?.slice(0, 1500) || (errors ? `${errors} error(s) must be fixed or overridden before export.` : 'Ready to export.');
     await inspRef.set({ status: 'completed', findings, score, errors, warnings, readiness, measurements, summary, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     await renderRef.set({ finalInspection: { id: p.renderId, status: 'completed', readiness, score, errors, warnings } }, { merge: true });

@@ -3,6 +3,7 @@ import type { DurationPlan, EditorialWindow } from './duration';
 import type { CategoryScores, InspectionExpectations } from './inspection';
 import type { OmniMediaRef } from './prompt';
 import type { DetectedWord, DialogueAnalysis, ExpectedLine, Measurements, ModelReview, ProblemSeverity, ProductionStage, ProductionStatus, QualityProblem, QualityScores, QualitySettings, RepairDecision, RepairType } from './quality';
+import { TEXT_CATEGORIES } from './quality';
 import type { Time } from './types';
 
 /**
@@ -334,6 +335,26 @@ export function decideAfterInspection(i: AfterInspectionInput): AfterInspection 
     return { action: 'await_repair_approval', waitingFor: 'expensive_retry', message: `The next repair is estimated at $${est.toFixed(2)} — waiting for approval before spending it.` };
   }
   return { action: 'repair', message: `Repairing: ${i.repair.reason}` };
+}
+
+/**
+ * A take can pass review while its protected screen is blank or wrong (the video model is told to leave a
+ * composited screen clean): the approved content still has to go onto it. Returns that composite once per
+ * production — never after a composite was made or tried.
+ */
+export function screenCompositeForPassedTake(input: { problems: Pick<QualityProblem, 'category'>[]; compositeScreenIds: string[]; triedTypes: RepairType[] }): RepairDecision | null {
+  if (!input.compositeScreenIds.length || input.triedTypes.includes('screen_composite')) return null;
+  if (!input.problems.some((x) => (TEXT_CATEGORIES as readonly string[]).includes(x.category))) return null;
+  return {
+    type: 'screen_composite',
+    reason: 'The take passes review, but its protected screen does not show the approved content yet: the content is tracked onto the surface and composited, then re-inspected.',
+    instruction: 'Composite the approved content onto the protected surface.',
+    durationSec: null,
+    sectionStartSec: null,
+    sectionEndSec: null,
+    keepAudio: true,
+    data: { screenIds: input.compositeScreenIds },
+  };
 }
 
 /** Human list of the manual options offered when a scene fails review. */

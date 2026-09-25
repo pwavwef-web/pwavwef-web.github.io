@@ -1,3 +1,4 @@
+import { LYRIC_ASPECTS, LYRIC_PRESET_STYLES, type LyricAspect, type LyricStyle, type LyricStyleDoc, type LyricsTrackDoc } from './lyric-style';
 import { clipEnd, clipsAt, trimEnd, trimStart, updateClip, type TimelineState } from './timeline';
 import type { Clip } from './types';
 
@@ -68,7 +69,11 @@ export const FINAL_CHECK_LABELS: Record<FinalCheck, string> = {
 
 export type FindingSeverity = 'error' | 'warning' | 'info';
 
-export type FixType = 'trim_clip_start' | 'trim_clip_end' | 'close_gap' | 'reduce_gain' | 'enable_limiter' | 'shrink_text' | 'reposition_text' | 'shorten_credits' | 'resync_lyrics' | 'color_match_shot';
+/**
+ * `fit_lyric_style` changes the song's lyric style (styled lyrics are drawn from the style, not from the
+ * caption clip); every other fix is a timeline edit (`applyFinalFix`).
+ */
+export type FixType = 'trim_clip_start' | 'trim_clip_end' | 'close_gap' | 'reduce_gain' | 'enable_limiter' | 'shrink_text' | 'reposition_text' | 'shorten_credits' | 'resync_lyrics' | 'color_match_shot' | 'fit_lyric_style';
 
 export interface FinalFix {
   type: FixType;
@@ -218,13 +223,69 @@ export interface LoudnessMeasure {
   truePeakDb: number | null;
   /** Moments where the sample peak reaches or exceeds the limit (s, dBFS). */
   peaks: { t: number; db: number }[];
+  /** Sudden loud moments (momentary loudness far above the rest of the film), from `loudSpikes`. */
+  spikes?: LoudSpike[];
+}
+
+export interface LoudSpike {
+  start: number;
+  end: number;
+  /** Highest momentary loudness in the span (LUFS). */
+  lufs: number;
+  /** Typical momentary loudness of the film (LUFS) the spike is compared with. */
+  referenceLufs: number;
+}
+
+/**
+ * Sudden loud moments. The master limiter keeps a render from clipping, so a blast of sound only shows
+ * in its loudness: momentary loudness (EBU R128, 400 ms windows every 100 ms) far above the film's
+ * typical level (the median of its audible moments — the integrated value would be pulled up by the
+ * spike itself).
+ */
+export function loudSpikes(momentary: { t: number; m: number }[], opts: { aboveLu?: number; floorLufs?: number } = {}): LoudSpike[] {
+  const audible = momentary.filter((s) => Number.isFinite(s.m) && s.m > -60).sort((a, b) => a.t - b.t);
+  if (audible.length < 5) return [];
+  const sorted = audible.map((s) => s.m).sort((a, b) => a - b);
+  const reference = sorted[Math.floor(sorted.length / 2)]!;
+  // Relative to the film (a quiet film is blasted by less); nothing below the floor counts as loud.
+  const limit = Math.max(opts.floorLufs ?? -30, reference + (opts.aboveLu ?? 10));
+  const spans: { start: number; end: number; lufs: number }[] = [];
+  for (const s of audible) {
+    if (s.m < limit) continue;
+    const last = spans[spans.length - 1];
+    if (last && s.t - last.end <= 0.35) {
+      last.end = s.t;
+      last.lufs = Math.max(last.lufs, s.m);
+    } else spans.push({ start: Math.max(0, s.t - 0.4), end: s.t, lufs: s.m });
+  }
+  return spans.map((s) => ({ start: r2(s.start), end: r2(s.end), lufs: Math.round(s.lufs * 10) / 10, referenceLufs: Math.round(reference * 10) / 10 }));
 }
 
 export function loudnessFindings(m: LoudnessMeasure, state: Pick<TimelineState, 'clips' | 'tracks'>, target = -14): FinalFinding[] {
   const out: FinalFinding[] = [];
   const audible = (c: Clip) => c.kind === 'audio' || (c.kind === 'video' && c.useSourceAudio);
+  const spikes = (m.spikes ?? []).slice(0, 12);
+  for (const s of spikes) {
+    // The likely source: a short clip under the spike (a sound effect, a sting) before a long bed, then the loudest.
+    const under = state.clips.filter((c) => audible(c) && c.start < s.end + 0.1 && clipEnd(c) > s.start - 0.1).sort((a, b) => Number(b.duration <= 3) - Number(a.duration <= 3) || b.volume - a.volume);
+    const culprit = under[0];
+    const over = s.lufs - s.referenceLufs;
+    const db = Math.max(3, Math.ceil(s.lufs - (s.referenceLufs + 3)));
+    const fix: FinalFix = culprit ? { type: 'reduce_gain', label: `Lower “${culprit.label || 'the clip'}” by ${db} dB`, clipId: culprit.id, params: { db } } : { type: 'enable_limiter', label: 'Add a limiter to the master', clipId: null, params: {} };
+    out.push(
+      finding('audio_clipping', over >= 15 || s.lufs >= -5 ? 'error' : 'warning',`A sudden loud peak reaches ${s.lufs.toFixed(1)} LUFS (momentary) from ${r2(s.start)} s to ${r2(s.end)} s — ${Math.round(over)} LU above the rest of the film${culprit ? ` (“${culprit.label || 'a clip'}”)` : ''}.`, 'measured', {
+        startSec: r2(s.start),
+        endSec: r2(s.end),
+        clipIds: under.map((c) => c.id),
+        fix,
+        manual: false,
+      }),
+    );
+  }
   const groups: { t: number; db: number }[] = [];
   for (const p of [...m.peaks].sort((a, b) => a.t - b.t)) {
+    // Peaks inside a reported spike are the same problem.
+    if (spikes.some((s) => p.t >= s.start - 0.5 && p.t <= s.end + 0.5)) continue;
     const g = groups[groups.length - 1];
     if (g && p.t - g.t < 1) g.db = Math.max(g.db, p.db);
     else groups.push({ ...p });
@@ -236,7 +297,7 @@ export function loudnessFindings(m: LoudnessMeasure, state: Pick<TimelineState, 
     const fix: FinalFix | null = loudest ? { type: 'reduce_gain', label: `Lower “${loudest.label || 'the clip'}” by ${Math.max(1, Math.ceil(over + 1))} dB`, clipId: loudest.id, params: { db: Math.max(1, Math.ceil(over + 1)) } } : { type: 'enable_limiter', label: 'Add a limiter to the master', clipId: null, params: {} };
     out.push(finding('audio_clipping', g.db >= -0.1 ? 'error' : 'warning', `Audio peaks at ${g.db.toFixed(1)} dBFS at ${r2(g.t)} s${loudest ? ` (“${loudest.label || 'a clip'}”)` : ''}.`, 'measured', { startSec: r2(g.t), endSec: r2(g.t + 0.5), clipIds: under.map((c) => c.id), fix, manual: false }));
   }
-  if (m.truePeakDb !== null && m.truePeakDb > -1 && !groups.length) out.push(finding('audio_clipping', 'warning', `True peak ${m.truePeakDb.toFixed(1)} dBTP exceeds −1 dBTP.`, 'measured', { fix: { type: 'enable_limiter', label: 'Add a limiter to the master', clipId: null, params: {} }, manual: false }));
+  if (m.truePeakDb !== null && m.truePeakDb > -1 && !groups.length && !spikes.length) out.push(finding('audio_clipping', 'warning', `True peak ${m.truePeakDb.toFixed(1)} dBTP exceeds −1 dBTP.`, 'measured', { fix: { type: 'enable_limiter', label: 'Add a limiter to the master', clipId: null, params: {} }, manual: false }));
   if (m.integratedLufs !== null && Math.abs(m.integratedLufs - target) > 3) out.push(finding('loudness', 'warning', `Integrated loudness is ${m.integratedLufs.toFixed(1)} LUFS (target ${target} LUFS for streaming).`, 'measured', { manual: false, fix: { type: 'enable_limiter', label: `Normalise the master to ${target} LUFS (final render)`, clipId: null, params: { target } } }));
   return out;
 }
@@ -293,17 +354,74 @@ export function dialogueMaskingFindings(state: Pick<TimelineState, 'clips' | 'tr
 // Text: lyrics and credits
 // ---------------------------------------------------------------------------
 
-export function lyricLayoutFindings(issues: { lineId: string; kind: string; message: string; clipId?: string | null; start?: number | null }[]): FinalFinding[] {
+/**
+ * Layout issues the renderer measured with the real fonts. Styled lyrics (a clip with `lyric` rendered
+ * with its song's lyric style) are drawn from the style, so their fixes change the style for the export's
+ * aspect ratio; plain captions are fixed on the clip.
+ */
+export function lyricLayoutFindings(issues: { lineId: string; kind: string; message: string; clipId?: string | null; start?: number | null }[], ctx: { clips?: Pick<Clip, 'id' | 'lyric'>[]; aspect?: string | null } = {}): FinalFinding[] {
   return issues
     .filter((i) => i.kind === 'cropped' || i.kind === 'outside_safe_area' || i.kind === 'covers_face' || i.kind === 'overlaps_next' || i.kind === 'diacritics_clipped')
-    .map((i) =>
-      finding(i.kind === 'overlaps_next' ? 'lyric_sync' : 'lyric_cropped', i.kind === 'cropped' || i.kind === 'diacritics_clipped' ? 'error' : 'warning', i.message, 'timeline', {
+    .map((i) => {
+      const clip = i.clipId ? ctx.clips?.find((c) => c.id === i.clipId) : undefined;
+      const aspect = ctx.aspect && (LYRIC_ASPECTS as readonly string[]).includes(ctx.aspect) ? ctx.aspect : null;
+      const styled = clip?.lyric && aspect ? { songId: clip.lyric.songId, lineId: clip.lyric.lineId, aspect } : null;
+      let fix: FinalFix | null = null;
+      if (i.clipId && styled) {
+        if (i.kind === 'cropped' || i.kind === 'outside_safe_area') fix = { type: 'fit_lyric_style', label: `Fit the lyrics inside the ${aspect} safe area (safe position, 18% smaller)`, clipId: i.clipId, params: { ...styled, action: 'fit', factor: 0.82 } };
+        else if (i.kind === 'diacritics_clipped') fix = { type: 'fit_lyric_style', label: 'Open up the lyric line spacing so accents are not clipped', clipId: i.clipId, params: { ...styled, action: 'spacing', lineSpacing: 1.4 } };
+        else if (i.kind === 'covers_face') fix = { type: 'fit_lyric_style', label: 'Unlock the lyric position so it moves clear of faces', clipId: i.clipId, params: { ...styled, action: 'unlock' } };
+      } else if (i.clipId) {
+        if (i.kind === 'cropped' || i.kind === 'outside_safe_area' || i.kind === 'diacritics_clipped') fix = { type: 'shrink_text', label: 'Reduce the text size so it fits the safe area', clipId: i.clipId, params: { factor: 0.82 } };
+        else if (i.kind === 'covers_face') fix = { type: 'reposition_text', label: 'Move the lyric clear of faces', clipId: i.clipId, params: {} };
+      }
+      return finding(i.kind === 'overlaps_next' ? 'lyric_sync' : 'lyric_cropped', i.kind === 'cropped' || i.kind === 'diacritics_clipped' ? 'error' : 'warning', i.message, 'timeline', {
         startSec: i.start ?? null,
         clipIds: i.clipId ? [i.clipId] : [],
-        fix: i.clipId && (i.kind === 'cropped' || i.kind === 'outside_safe_area' || i.kind === 'diacritics_clipped') ? { type: 'shrink_text', label: 'Reduce the text size so it fits the safe area', clipId: i.clipId, params: { factor: 0.82 } } : i.clipId && i.kind === 'covers_face' ? { type: 'reposition_text', label: 'Move the lyric clear of faces', clipId: i.clipId, params: {} } : null,
-        manual: !i.clipId,
-      }),
-    );
+        fix,
+        manual: !fix,
+      });
+    });
+}
+
+/**
+ * Applies `fit_lyric_style` fixes to a song's lyric style and its locked placements (pure). Several
+ * findings of one kind on the same aspect ratio are one change (the style is shrunk once, not per line).
+ * Returns null when none of the fixes applies.
+ */
+export function applyLyricStyleFixes(style: Pick<LyricStyleDoc, 'global'>, placements: LyricsTrackDoc['placements'], fixes: FinalFix[]): { global: LyricStyle; placements: LyricsTrackDoc['placements'] } | null {
+  const global: LyricStyle = { ...style.global, aspects: { ...style.global.aspects } };
+  const next: LyricsTrackDoc['placements'] = { ...placements };
+  const done = new Set<string>();
+  let changed = false;
+  for (const fix of fixes) {
+    if (fix.type !== 'fit_lyric_style') continue;
+    const aspect = String(fix.params.aspect) as LyricAspect;
+    if (!(LYRIC_ASPECTS as readonly string[]).includes(aspect)) continue;
+    const action = String(fix.params.action);
+    const lineId = fix.params.lineId ? String(fix.params.lineId) : null;
+    const lines = { ...(next[aspect] ?? {}) };
+    const once = !done.has(`${aspect}|${action}`);
+    done.add(`${aspect}|${action}`);
+    const cur = global.aspects[aspect] ?? {};
+    if (action === 'fit') {
+      if (once) {
+        const preset = LYRIC_PRESET_STYLES[global.preset] ?? LYRIC_PRESET_STYLES.line_by_line;
+        const size = cur.fontSizePct ?? global.fontSizePct;
+        global.aspects[aspect] = { ...cur, fontSizePct: Math.max(1, Math.round(size * (Number(fix.params.factor) || 0.82) * 100) / 100), x: preset.x, y: preset.y, align: preset.align, locked: false };
+      }
+      // The line's own position in this aspect ratio gives way to the fitted one.
+      if (lineId) delete lines[lineId];
+    } else if (action === 'spacing') {
+      if (once) global.lineSpacing = Math.min(3, Math.max(global.lineSpacing, Number(fix.params.lineSpacing) || 1.4));
+    } else if (action === 'unlock') {
+      if (once) global.aspects[aspect] = { ...cur, locked: false };
+      if (lineId && lines[lineId]) lines[lineId] = { ...lines[lineId]!, locked: false };
+    } else continue;
+    next[aspect] = lines;
+    changed = true;
+  }
+  return changed ? { global, placements: next } : null;
 }
 
 /** OCR of a rendered caption against its text: missing leading/trailing characters mean it is cropped. */

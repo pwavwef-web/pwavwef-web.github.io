@@ -153,6 +153,20 @@ export async function loudnessStats(input: string): Promise<{ integratedLufs: nu
   }
 }
 
+/** Momentary loudness (EBU R128, 400 ms window) every 100 ms; `t` is the end of the window. */
+export async function momentaryLoudness(input: string): Promise<{ t: number; m: number }[]> {
+  const { stdout } = await run(['-loglevel', 'error', '-i', input, '-vn', '-af', 'aresample=48000,asetnsamples=n=4800:p=0,ebur128=metadata=1,ametadata=mode=print:key=lavfi.r128.M:file=-', '-f', 'null', '-'], { timeoutMs: 600_000 });
+  const out: { t: number; m: number }[] = [];
+  let t: number | null = null;
+  for (const line of stdout.toString().split('\n')) {
+    const at = /pts_time:([\d.]+)/.exec(line);
+    if (at) t = Number(at[1]) + 0.1;
+    const m = /lavfi\.r128\.M=(-?[\d.]+)/.exec(line);
+    if (m && t !== null) out.push({ t: Math.round(t * 1000) / 1000, m: Number(m[1]) });
+  }
+  return out;
+}
+
 /** Silent spans (below `noiseDb` for at least `minSec`). */
 export async function silentSpans(input: string, noiseDb = -45, minSec = 1.5): Promise<{ start: number; end: number }[]> {
   const { stderr } = await run(['-i', input, '-vn', '-af', `silencedetect=n=${noiseDb}dB:d=${minSec}`, '-f', 'null', '-'], { stdout: false, timeoutMs: 600_000 });

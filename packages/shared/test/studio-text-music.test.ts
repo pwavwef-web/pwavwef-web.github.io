@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   alignVersions,
   applyFinalFix,
+  applyLyricStyleFixes,
   approximateMeasure,
   arrangementFilter,
   arrangementPlan,
   ASPECT_SIZES,
   blackFindings,
   chroma,
+  clearColumn,
   computeColourMatch,
   computeReframe,
   creditsFromMetadata,
@@ -21,6 +23,8 @@ import {
   layoutCredits,
   layoutLyrics,
   loudnessFindings,
+  loudSpikes,
+  lyricLayoutFindings,
   LYRIC_PRESET_STYLES,
   LYRIC_PRESETS,
   makeClip,
@@ -34,6 +38,7 @@ import {
   reframeCropExpressions,
   remapSheet,
   resolveLyricStyle,
+  SAFE_AREAS,
   sceneToAss,
   statsFromRgb,
   structureTimeline,
@@ -97,6 +102,31 @@ describe('lyric style presets', () => {
     expect(auto.issues.some((i) => i.kind === 'covers_face')).toBe(false);
     const locked = { ...doc, global: { ...doc.global, aspects: { '16:9': { locked: true } } } };
     const kept = layoutLyrics({ lines: withFace, doc: locked, aspect: '16:9', width: 1920, height: 1080, measure: approximateMeasure });
+    expect(kept.issues.some((i) => i.kind === 'covers_face')).toBe(true);
+  });
+
+  it('scrolls rolling credits in a column beside the faces they would otherwise cross', () => {
+    // A singer framed left of centre, head in the upper half: a centred credit would scroll over the face.
+    const face = [{ x: 0.3, y: 0.18, w: 0.16, h: 0.3 }];
+    const doc = defaultLyricStyleDoc('rolling_credit');
+    const plain = layoutLyrics({ lines, doc, aspect: '16:9', width: 1920, height: 1080, measure: approximateMeasure });
+    const centred = plain.scene.blocks.find((b) => b.refs.includes('l1'))!;
+    // Centred, it shares columns with the face (and so crosses it while scrolling).
+    expect(centred.bounds.x).toBeLessThan(0.46 * 1920);
+    expect(centred.bounds.x + centred.bounds.w).toBeGreaterThan(0.3 * 1920);
+    const withFace = layoutLyrics({ lines: lines.map((l) => ({ ...l, avoid: face })), doc, aspect: '16:9', width: 1920, height: 1080, measure: approximateMeasure });
+    expect(withFace.issues.filter((i) => i.kind === 'covers_face')).toEqual([]);
+    for (const b of withFace.scene.blocks) {
+      // The whole scroll path (every height) stays clear of the face's columns.
+      expect(b.bounds.x).toBeGreaterThanOrEqual((0.46 + 0.03) * 1920 - 1);
+      expect(b.bounds.x + b.bounds.w).toBeLessThanOrEqual((1 - SAFE_AREAS['16:9'].right) * 1920 + 1);
+      expect(b.motion?.dy).toBeLessThan(0);
+    }
+    expect(clearColumn(face, SAFE_AREAS['16:9'])).toEqual({ x: 0.49, w: 0.45 });
+    expect(clearColumn([{ x: 0.05, y: 0.1, w: 0.9, h: 0.5 }], SAFE_AREAS['16:9'])).toBeNull();
+    // Locked by the director: it keeps its place and the face is reported.
+    const locked = { ...doc, global: { ...doc.global, aspects: { '16:9': { locked: true } } } };
+    const kept = layoutLyrics({ lines: lines.map((l) => ({ ...l, avoid: face })), doc: locked, aspect: '16:9', width: 1920, height: 1080, measure: approximateMeasure });
     expect(kept.issues.some((i) => i.kind === 'covers_face')).toBe(true);
   });
 
@@ -266,6 +296,56 @@ describe('final-film inspection', () => {
     expect(exportReadiness([...black, ...loud, crop!], null)).toBe('blocked');
     expect(exportReadiness([...black, ...loud, crop!], { at: 1, note: 'client approved' })).toBe('overridden');
     expect(exportReadiness(loud.filter((f) => f.severity !== 'error'), null)).toBe('ready');
+  });
+
+  it('finds a sudden loud peak that the master limiter kept from clipping', () => {
+    const beep = makeClip({ trackId: tl.tracks.filter((t) => t.kind === 'audio').at(-1)!.id, kind: 'audio', start: 6, duration: 0.6, assetId: 'beep', sourceDuration: 0.6, label: 'Beep', volume: 2 });
+    const withBeep = { ...state, clips: [...clips.map((c) => (c.label === 'Song' ? { ...c, volume: 1 } : c)), beep] };
+    // Momentary loudness every 100 ms: the film sits around −16 LUFS, the beep jumps to −0.6 LUFS.
+    const momentary = Array.from({ length: 90 }, (_, i) => {
+      const t = Math.round((i + 1) * 100) / 1000;
+      return { t, m: t >= 6.1 && t <= 6.8 ? -0.6 : -16 + (i % 3) * 0.4 };
+    });
+    const spikes = loudSpikes(momentary);
+    expect(spikes).toHaveLength(1);
+    expect(spikes[0]!.start).toBeCloseTo(5.7, 1);
+    expect(spikes[0]!.referenceLufs).toBeLessThan(-15);
+    // Sample peaks inside the spike (the limiter's ceiling) are the same problem, reported once.
+    const found = loudnessFindings({ integratedLufs: -12, truePeakDb: -0.4, peaks: [{ t: 6.3, db: -0.45 }], spikes }, withBeep);
+    const clipping = found.filter((f) => f.check === 'audio_clipping');
+    expect(clipping).toHaveLength(1);
+    expect(clipping[0]!.severity).toBe('error');
+    expect(clipping[0]!.fix).toMatchObject({ type: 'reduce_gain', clipId: beep.id });
+    const lowered = applyFinalFix(withBeep, clipping[0]!.fix!)!;
+    expect(lowered.clips.find((c) => c.id === beep.id)!.volume).toBeLessThan(0.6);
+    // Ordinary dynamics (a chorus a few LU louder) are not a spike.
+    expect(loudSpikes(momentary.map((s) => ({ ...s, m: s.t >= 6 && s.t <= 7 ? -9 : s.m })))).toEqual([]);
+  });
+
+  it('fixes a cropped styled lyric in its lyric style, not on the caption clip', () => {
+    const lyric = makeClip({ trackId: tl.tracks.find((t) => t.kind === 'caption')!.id, kind: 'caption', start: 1, duration: 2.5, text: 'Carry me home', lyric: { songId: 'song1', lineId: 'l1', mode: 'line' }, label: 'Lyric' });
+    const issues = [{ lineId: lyric.id, kind: 'cropped', message: '“Carry me home” runs outside the frame.', clipId: lyric.id, start: 1 }];
+    const [styled] = lyricLayoutFindings(issues, { clips: [lyric], aspect: '16:9' });
+    expect(styled).toMatchObject({ check: 'lyric_cropped', severity: 'error', manual: false });
+    expect(styled!.fix).toMatchObject({ type: 'fit_lyric_style', params: { songId: 'song1', lineId: 'l1', aspect: '16:9', action: 'fit' } });
+    // A plain caption (no lyric style) is still fixed on the clip.
+    expect(lyricLayoutFindings(issues)[0]!.fix?.type).toBe('shrink_text');
+    const style = { ...defaultLyricStyleDoc('environment'), global: { ...LYRIC_PRESET_STYLES.environment, x: 0.86, fontSizePct: 11 } };
+    const placements = { '16:9': { l1: { x: 0.95, y: 0.5, locked: true } }, '9:16': { l1: { x: 0.2, y: 0.3, locked: true } } };
+    const out = applyLyricStyleFixes(style, placements, [styled!.fix!, { ...styled!.fix!, params: { ...styled!.fix!.params, lineId: 'l2' } }])!;
+    // Shrunk once (not once per line), back to the preset's own position, only for this aspect ratio.
+    expect(out.global.aspects['16:9']).toMatchObject({ fontSizePct: 9.02, x: LYRIC_PRESET_STYLES.environment.x, y: LYRIC_PRESET_STYLES.environment.y, locked: false });
+    expect(out.global.fontSizePct).toBe(11);
+    expect(out.placements['16:9']).toEqual({});
+    expect(out.placements['9:16']).toEqual(placements['9:16']);
+    const resolved = resolveLyricStyle(out.global ? { global: out.global, sections: {} } : style, null, '16:9');
+    expect(resolved.x).toBe(LYRIC_PRESET_STYLES.environment.x);
+    // The fitted style really fits: the renderer's layout no longer crops the line.
+    const before = layoutLyrics({ lines: [{ id: lyric.id, text: 'Carry me home to the river of gold', start: 1, end: 3.5, section: null, words: null, translation: null }], doc: { global: style.global, sections: {} }, aspect: '16:9', width: 1280, height: 720, measure: approximateMeasure, fps: 24 });
+    const after = layoutLyrics({ lines: [{ id: lyric.id, text: 'Carry me home to the river of gold', start: 1, end: 3.5, section: null, words: null, translation: null }], doc: { global: out.global, sections: {} }, aspect: '16:9', width: 1280, height: 720, measure: approximateMeasure, fps: 24 });
+    expect(before.issues.some((i) => i.kind === 'cropped')).toBe(true);
+    expect(after.issues.some((i) => i.kind === 'cropped')).toBe(false);
+    expect(applyLyricStyleFixes(style, placements, [{ type: 'reduce_gain', label: '', clipId: null, params: {} }])).toBeNull();
   });
 
   it('finds private information in on-screen text', () => {
