@@ -1,4 +1,35 @@
-import type { JobStatus, JobType } from './types';
+import type { JobDoc, JobStatus, JobType } from './types';
+
+/**
+ * What a job is doing, in the words the studio shows: the storage status plus the job's purpose
+ * (an inspection, a repair made by the production loop, a render).
+ */
+export const JOB_PHASES = ['queued', 'preparing', 'processing', 'inspecting', 'repairing', 'rendering', 'completed', 'failed', 'cancelled'] as const;
+export type JobPhase = (typeof JOB_PHASES)[number];
+
+export const JOB_PHASE_LABELS: Record<JobPhase, string> = {
+  queued: 'Queued',
+  preparing: 'Preparing',
+  processing: 'Processing',
+  inspecting: 'Inspecting',
+  repairing: 'Repairing',
+  rendering: 'Rendering',
+  completed: 'Completed',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
+};
+
+const INSPECTION_JOBS: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare'];
+
+export function jobPhase(job: Pick<JobDoc, 'status' | 'type' | 'label'> & { productionId?: string | null; params?: Record<string, unknown> }): JobPhase {
+  if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') return job.status;
+  if (job.status === 'queued') return 'queued';
+  if (job.status === 'validating') return 'preparing';
+  if (INSPECTION_JOBS.includes(job.type)) return 'inspecting';
+  if (job.productionId && (job.params?.repair === true || /\brepair\b/i.test(job.label))) return 'repairing';
+  if (job.status === 'rendering' || job.type === 'render.timeline') return 'rendering';
+  return 'processing';
+}
 
 /** Allowed job status transitions. Terminal states never transition; a retry creates a new job. */
 export const JOB_TRANSITIONS: Record<JobStatus, readonly JobStatus[]> = {

@@ -680,7 +680,7 @@ async function startChain(p: Prod, plan: DurationPlan, run: ProductionRun, extra
   const seg = plan.segments[0]!;
   const prompt = segmentPrompt(String(baseRequest(p).prompt), plan, seg, extra);
   const takes = takeCount(p, plan, run);
-  const label = plan.segments.length > 1 ? `part 1 of ${plan.segments.length}` : run.kind === 'repair' ? REPAIR_LABELS[run.type!] : 'generation';
+  const label = run.kind === 'repair' ? `repair · ${REPAIR_LABELS[run.type!].toLowerCase()}${plan.segments.length > 1 ? ` · part 1 of ${plan.segments.length}` : ''}` : plan.segments.length > 1 ? `part 1 of ${plan.segments.length}` : 'generation';
   const jobIds = await submitVideos(p, { mode: 'generate', prompt, durationSec: seg.durationSec }, label, true, takes);
   await setState(p, {
     status: run.kind === 'repair' ? 'repairing' : 'generating',

@@ -6,7 +6,8 @@ import {
   formatDuration,
   formatUsd,
   isTerminal,
-  JOB_STATUS_LABELS,
+  JOB_PHASE_LABELS,
+  jobPhase,
   JOB_TYPE_LABELS,
   relativeTime,
   toMillis,
@@ -293,7 +294,7 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="min-w-0 truncate text-sm font-medium text-fg">{job.label}</p>
-          <Badge tone={statusTone(job.status)}>{JOB_STATUS_LABELS[job.status]}</Badge>
+          <Badge tone={statusTone(job.status)}>{JOB_PHASE_LABELS[jobPhase(job)]}</Badge>
           {job.error?.safety && (
             <Badge tone="warning" icon={<ShieldCheck className="size-3" />}>
               Safety filter

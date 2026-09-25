@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { Captions, Eye, EyeOff, Film, Image as ImageIcon, Lock, LockOpen, Music2, Type, Volume2, VolumeX } from 'lucide-react';
-import { clipEnd, formatTimecode, moveClip, snap, snapPoints, timelineDuration, trackAccepts, trimEnd, trimStart, updateTrack, type Clip, type ClipKind, type TimelineState, type Track } from '@az-studio/shared';
+import { clipEnd, formatTimecode, moveClip, snap, snapPoints, timelineDuration, trackAccepts, trimEnd, trimStart, updateTrack, type Clip, type ClipKind, type ScreenDirection, type TimelineState, type Track } from '@az-studio/shared';
+import { DirectionArrows } from '../../components/continuity-ui';
 import { useMediaUrls } from '../../lib/media';
 import { useWaveform } from '../../components/media';
 import { cx, IconButton } from '../../components/ui';
@@ -52,7 +53,10 @@ function ClipWave({ clip, width, height }: { clip: Clip; width: number; height: 
   return <canvas ref={ref} style={{ width, height }} className="pointer-events-none absolute inset-0" />;
 }
 
-function ClipFace({ clip, width, height }: { clip: Clip; width: number; height: number }) {
+/** Screen direction of the shot's characters (from its continuity plan), shown on picture clips. */
+export type TravelMap = Map<string, Record<string, ScreenDirection>>;
+
+function ClipFace({ clip, width, height, travel, names }: { clip: Clip; width: number; height: number; travel?: Record<string, ScreenDirection>; names?: Record<string, string> }) {
   const urls = useMediaUrls(clip.kind === 'video' || clip.kind === 'image' ? clip.assetId : null);
   const thumb = urls?.thumb ?? urls?.poster;
   const Icon = clip.kind === 'video' ? Film : clip.kind === 'image' ? ImageIcon : clip.kind === 'audio' ? Music2 : clip.kind === 'caption' ? Captions : Type;
@@ -64,6 +68,7 @@ function ClipFace({ clip, width, height }: { clip: Clip; width: number; height: 
         <Icon className="size-3 shrink-0" aria-hidden />
         <span className="truncate">{clip.kind === 'caption' || clip.kind === 'title' ? clip.text || '(empty)' : clip.label || clip.kind}</span>
       </div>
+      {travel && width > 60 && <DirectionArrows travel={travel} names={names} className="pointer-events-none absolute bottom-1 left-1.5" />}
       {clip.transitionIn.type !== 'cut' && <div className="pointer-events-none absolute top-0 bottom-0 left-0 w-2 bg-gradient-to-r from-white/40 to-transparent" title={`${clip.transitionIn.type} ${clip.transitionIn.duration}s`} />}
     </>
   );
@@ -93,6 +98,8 @@ export function TimelineLanes({
   onDraft,
   onCommit,
   onDropAsset,
+  travelOf,
+  names,
 }: {
   state: TimelineState;
   pxPerSec: number;
@@ -104,6 +111,8 @@ export function TimelineLanes({
   onDraft: (s: TimelineState | null) => void;
   onCommit: (s: TimelineState, label: string) => void;
   onDropAsset: (asset: DroppedAsset, trackId: string, t: number) => void;
+  travelOf?: TravelMap;
+  names?: Record<string, string>;
 }) {
   const laneRefs = useRef(new Map<string, HTMLDivElement>());
   const drag = useRef<DragState | null>(null);
@@ -261,7 +270,7 @@ export function TimelineLanes({
                     tabIndex={0}
                     onKeyDown={(e) => e.key === 'Enter' && onSelect(c.id, false)}
                   >
-                    <ClipFace clip={c} width={w} height={h} />
+                    <ClipFace clip={c} width={w} height={h} travel={c.shotId && c.kind === 'video' ? travelOf?.get(c.shotId) : undefined} names={names} />
                     {!track.locked && (
                       <>
                         <div className="absolute top-0 left-0 z-10 h-full w-2 cursor-ew-resize hover:bg-white/30" onPointerDown={(e) => down(e, c, 'trim-start')} aria-hidden />

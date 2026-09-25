@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -31,6 +31,8 @@ import {
   undo,
   updateClip,
   validateTimeline,
+  type CharacterDoc,
+  type ContinuitySnapshotDoc,
   type ExportPreset,
   type History,
   type LyricsSheet,
@@ -47,6 +49,7 @@ import { openDownload } from '../../lib/media';
 import { AssetPicker, VideoPlayer, type Asset } from '../../components/media';
 import { useBoot, useUid } from '../../lib/session';
 import { saveTimeline, snapshotTimeline, updateSubDoc, useProject, useSub } from '../../lib/studio';
+import { useProjectCollection } from '../../lib/continuity';
 import { EstimateText, useJobSubmitter } from '../../components/jobs';
 import { Badge, Button, EmptyState, ErrorState, IconButton, Input, Modal, Notice, ProgressBar, Segmented, Select, Spinner, Tip } from '../../components/ui';
 import { Preview } from './Preview';
@@ -199,6 +202,10 @@ export default function TimelineEditor() {
   const [dialogOpen, setDialogOpen] = useState<'render' | 'versions' | null>(null);
   const [replacing, setReplacing] = useState(false);
   const songs = useSub<SongDoc>(projectId, 'songs', 'createdAt', 'asc');
+  const snapshots = useProjectCollection<ContinuitySnapshotDoc>(projectId, 'continuitySnapshots');
+  const characters = useSub<CharacterDoc>(projectId, 'characters', 'name');
+  const travelOf = useMemo(() => new Map(snapshots.data.map((s) => [s.shotId, (s.approvedState ?? s.plannedState)?.camera.travel ?? {}])), [snapshots.data]);
+  const characterNames = useMemo(() => Object.fromEntries(characters.data.map((c) => [c.id, c.name])), [characters.data]);
   const sheets = Object.fromEntries(songs.data.map((s) => [s.id, s.lyricsSheet ?? null])) as Record<string, LyricsSheet | null>;
   const sheetsRef = useLatest(sheets);
   const baseVersion = useRef(0);
@@ -498,7 +505,7 @@ export default function TimelineEditor() {
           {problems.length > 0 && <p className="text-xs text-warning">{problems[0]}</p>}
         </section>
         <aside className="min-h-0 overflow-y-auto border-l border-line">
-          <Inspector state={view} clip={selected} time={time} onChange={(patch, label) => selected && present && commit(updateClip(present, selected.id, patch), label)} onTiming={onTiming} onSplit={doSplit} onDelete={doDelete} onReplace={() => setReplacing(true)} />
+          <Inspector projectId={projectId} state={view} clip={selected} time={time} onChange={(patch, label) => selected && present && commit(updateClip(present, selected.id, patch), label)} onTiming={onTiming} onSplit={doSplit} onDelete={doDelete} onReplace={() => setReplacing(true)} />
         </aside>
       </div>
 
@@ -539,6 +546,8 @@ export default function TimelineEditor() {
           onDraft={setDraft}
           onCommit={commit}
           onDropAsset={(a, trackId, t) => addAsset(a, trackId, t)}
+          travelOf={travelOf}
+          names={characterNames}
         />
       </div>
 

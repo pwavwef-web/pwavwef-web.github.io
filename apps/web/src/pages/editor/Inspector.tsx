@@ -1,10 +1,12 @@
 import { Replace, Scissors, Trash2 } from 'lucide-react';
 import { DEFAULT_TEXT_STYLE, formatTimecode, TEXT_FONTS, TRANSITION_TYPES, type Clip, type FitMode, type TextPosition, type TextStyle, type TimelineState, type TransitionType } from '@az-studio/shared';
 import { Button, Field, Input, Segmented, Select, Slider, Textarea, Toggle } from '../../components/ui';
+import { ReframeEditor } from '../../components/reframe-editor';
 
 const TRANSITION_LABEL: Record<TransitionType, string> = { cut: 'Cut', dissolve: 'Dissolve', dip_black: 'Dip to black', dip_white: 'Dip to white', slide_left: 'Slide from right', slide_right: 'Slide from left' };
 
 export function Inspector({
+  projectId,
   state,
   clip,
   onChange,
@@ -14,6 +16,7 @@ export function Inspector({
   onReplace,
   time,
 }: {
+  projectId: string;
   state: TimelineState;
   clip: Clip | null;
   onChange: (patch: Partial<Clip>, label: string) => void;
@@ -119,9 +122,10 @@ export function Inspector({
           </div>
           {clip.kind !== 'title' && (
             <Field label="Fit to frame" hint="Used when the export aspect differs from the clip (e.g. square from 16:9).">
-              <Segmented label="Fit" size="sm" value={clip.fit} onChange={(v: FitMode) => onChange({ fit: v }, 'Fit')} options={[{ value: 'fill', label: 'Fill (crop)' }, { value: 'fit', label: 'Fit (bars)' }, { value: 'blur', label: 'Blurred bg' }]} />
+              <Segmented label="Fit" size="sm" value={clip.fit} onChange={(v: FitMode) => onChange({ fit: v }, 'Fit')} options={[{ value: 'smart', label: 'Smart (face-safe)' }, { value: 'fill', label: 'Fill (crop)' }, { value: 'fit', label: 'Fit (bars)' }, { value: 'blur', label: 'Blurred bg' }]} />
             </Field>
           )}
+          {clip.kind === 'video' && (clip.fit === 'smart' || clip.fit === 'fill') && <ReframeEditor projectId={projectId} clip={clip} time={time} onChange={onChange} />}
           {clip.kind === 'image' && <Toggle checked={clip.kenBurns} onChange={(v) => onChange({ kenBurns: v }, 'Ken Burns')} label="Slow push-in (Ken Burns)" />}
         </div>
       )}
