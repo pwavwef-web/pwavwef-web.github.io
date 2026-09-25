@@ -334,7 +334,7 @@ const ACCEPT: Record<AssetKind, string> = {
   image: 'image/png,image/jpeg,image/webp,image/heic,image/heif',
   video: 'video/mp4,video/quicktime,video/webm,video/mpeg,video/3gpp',
   audio: 'audio/*',
-  document: '.txt,.lrc,.fountain,text/plain,application/pdf',
+  document: '.txt,.lrc,.fountain,.cube,.ttf,.otf,text/plain,application/pdf,font/ttf,font/otf',
 };
 export const acceptFor = (kinds: AssetKind[]) => kinds.map((k) => ACCEPT[k]).join(',');
 

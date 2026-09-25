@@ -6,7 +6,7 @@ import { estimateImage, estimateVideo, relativeTime, toMillis, type ChainDoc, ty
 import { api, errorMessage } from '../lib/api';
 import { db } from '../lib/firebase';
 import { useDoc, useQuery, type WithId } from '../lib/data';
-import { downloadUrl } from '../lib/media';
+import { openDownload } from '../lib/media';
 import { useBoot, useUid } from '../lib/session';
 import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetThumb, ImageView, useAsset, VideoPlayer, type Asset } from './media';
@@ -59,8 +59,7 @@ function TurnResult({ turn, kind, isHead, onBranch, active }: { turn: Turn; kind
   };
   const download = async () => {
     if (!turn.assetId) return;
-    const url = await downloadUrl(turn.assetId);
-    if (url) window.open(url, '_blank', 'noopener');
+    await openDownload(turn.assetId);
   };
   const extract = async () => {
     if (!turn.assetId) return;

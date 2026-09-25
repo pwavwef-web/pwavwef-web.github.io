@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { toast } from 'sonner';
 import { ref, uploadBytesResumable } from 'firebase/storage';
 import { extensionOf, kindForMime, UPLOAD_POLICY, validateDeclaredUpload, type AssetDoc, type AssetKind } from '@az-studio/shared';
 import { api } from './api';
@@ -11,6 +12,8 @@ export interface MediaUrls {
   poster?: string;
   waveform?: string;
   expiresAt: number;
+  /** Why the file may not be downloaded yet (export gate of inspected renders). */
+  blocked?: string;
 }
 
 const cache = new Map<string, MediaUrls>();
@@ -84,7 +87,20 @@ export async function getMediaUrls(assetId: string): Promise<MediaUrls> {
 
 export async function downloadUrl(assetId: string): Promise<string | null> {
   const res = await api<{ urls: Record<string, MediaUrls> }, 'mediaUrls'>('mediaUrls', { assetIds: [assetId], variants: ['file'], download: true });
-  return res.urls[assetId]?.file ?? null;
+  const u = res.urls[assetId];
+  if (u?.blocked) throw new Error(u.blocked);
+  return u?.file ?? null;
+}
+
+/** Opens an asset's download, explaining (instead of failing silently) when export is blocked. */
+export async function openDownload(assetId: string): Promise<void> {
+  try {
+    const url = await downloadUrl(assetId);
+    if (url) window.open(url, '_blank', 'noopener');
+    else toast.error('The file is not available yet.');
+  } catch (e) {
+    toast.error('Download not available', { description: e instanceof Error ? e.message : String(e) });
+  }
 }
 
 // ---------------------------------------------------------------------------

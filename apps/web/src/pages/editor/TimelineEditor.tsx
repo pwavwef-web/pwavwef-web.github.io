@@ -43,7 +43,7 @@ import {
 } from '@az-studio/shared';
 import { db } from '../../lib/firebase';
 import { useDebounced, useDoc, useLatest, useQuery, type WithId } from '../../lib/data';
-import { downloadUrl } from '../../lib/media';
+import { openDownload } from '../../lib/media';
 import { AssetPicker, VideoPlayer, type Asset } from '../../components/media';
 import { useBoot, useUid } from '../../lib/session';
 import { saveTimeline, snapshotTimeline, updateSubDoc, useProject, useSub } from '../../lib/studio';
@@ -124,7 +124,7 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved, sheets, onRes
                   <Button size="sm" variant={watching === r.id ? 'subtle' : 'ghost'} icon={<Play className="size-3.5" />} onClick={() => setWatching(watching === r.id ? null : r.id)}>
                     {watching === r.id ? 'Close' : 'Play'}
                   </Button>
-                  <Button size="sm" icon={<Download className="size-3.5" />} onClick={() => void downloadUrl(r.outputAssetId!).then((u) => u && window.open(u, '_blank', 'noopener'))}>
+                  <Button size="sm" icon={<Download className="size-3.5" />} onClick={() => void openDownload(r.outputAssetId!)}>
                     Download
                   </Button>
                 </div>

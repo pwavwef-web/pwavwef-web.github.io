@@ -5,24 +5,24 @@ import { Clapperboard, Download, Monitor, Play, Plus, RectangleVertical, Smartph
 import { EXPORT_PRESETS, estimateRender, formatDuration, relativeTime, toMillis, type ExportPreset, type ProjectDoc, type RenderDoc, type RenderQuality, type TimelineDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery, type WithId } from '../lib/data';
-import { downloadUrl } from '../lib/media';
+import { openDownload } from '../lib/media';
 import { useBoot, useUid } from '../lib/session';
 import { useSub } from '../lib/studio';
+import { ReadinessBadge } from './final-inspection';
 import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { Badge, Button, Card, EmptyState, ProgressBar, Segmented, Select } from './ui';
 
 const PRESET_ICON = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square, portrait_4x5: RectangleVertical };
 
-function RenderRow({ render }: { render: WithId<RenderDoc> }) {
+function RenderRow({ render, inspectionHref }: { render: WithId<RenderDoc>; inspectionHref: string | null }) {
   const asset = useAsset(render.outputAssetId);
   const [watching, setWatching] = useState(false);
   const active = !['completed', 'failed', 'cancelled'].includes(render.status);
   const download = async () => {
-    if (!render.outputAssetId) return;
-    const url = await downloadUrl(render.outputAssetId);
-    if (url) window.open(url, '_blank', 'noopener');
+    if (render.outputAssetId) await openDownload(render.outputAssetId);
   };
+  const blocked = render.finalInspection?.status === 'completed' && render.finalInspection.readiness === 'blocked';
   return (
     <li className="rounded-xl border border-line p-2.5">
       <div className="flex items-center gap-3">
@@ -32,6 +32,12 @@ function RenderRow({ render }: { render: WithId<RenderDoc> }) {
           <p className="truncate text-sm text-fg">{EXPORT_PRESETS[render.preset as ExportPreset['id']]?.label ?? render.preset}</p>
           <Badge tone={render.quality === 'final' ? 'violet' : 'neutral'}>{render.quality === 'final' ? 'Final' : 'Draft'}</Badge>
           <Badge tone={render.status === 'completed' ? 'success' : render.status === 'failed' ? 'danger' : 'accent'}>{render.status}</Badge>
+          <ReadinessBadge render={render} />
+          {inspectionHref && render.finalInspection && (
+            <Link to={inspectionHref} className={blocked ? 'text-xs text-danger hover:underline' : 'text-xs text-accent-2 hover:underline'}>
+              {blocked ? 'Review findings' : 'Inspection'}
+            </Link>
+          )}
         </div>
         <p className="mt-0.5 text-xs text-dim">
           {render.width}×{render.height} · {formatDuration(render.durationSec)} · {render.stage} · {relativeTime(toMillis(render.createdAt))}
@@ -152,7 +158,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
       </div>
       <Card className="space-y-4 p-5">
         <p className="eyebrow">Renders</p>
-        {renders.data.length === 0 ? <p className="text-sm text-faint">Rendered films appear here with live progress.</p> : <ul className="space-y-2">{renders.data.map((r) => <RenderRow key={r.id} render={r} />)}</ul>}
+        {renders.data.length === 0 ? <p className="text-sm text-faint">Rendered films appear here with live progress.</p> : <ul className="space-y-2">{renders.data.map((r) => <RenderRow key={r.id} render={r} inspectionHref={project.type === 'film' ? `/projects/${project.id}/film/final` : project.type === 'music_video' ? `/projects/${project.id}/music/final` : null} />)}</ul>}
       </Card>
       {dialog}
     </div>

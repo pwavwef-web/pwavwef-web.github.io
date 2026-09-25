@@ -7,6 +7,7 @@ import { api, errorMessage } from '../lib/api';
 import type { WithId } from '../lib/data';
 import { updateProject } from '../lib/studio';
 import { PROJECT_ICON } from './projects';
+import { ProjectSettingsButton } from './project-settings';
 import { Badge, ConfirmDialog, IconButton, Input } from './ui';
 
 export function ProjectHeader({ project, actions, eyebrow }: { project: WithId<ProjectDoc>; actions?: ReactNode; eyebrow?: string }) {
@@ -68,6 +69,7 @@ export function ProjectHeader({ project, actions, eyebrow }: { project: WithId<P
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {actions}
+        <ProjectSettingsButton project={project} />
         <IconButton label={project.status === 'archived' ? 'Restore project' : 'Archive project'} onClick={() => void toggleArchive()}>
           {project.status === 'archived' ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
         </IconButton>

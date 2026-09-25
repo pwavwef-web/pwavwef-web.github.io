@@ -93,9 +93,24 @@ export async function createUpload(owner: Owner, p: Payload<'createUpload'>) {
   return { assetId: ref.id, storagePath };
 }
 
+/** Why a rendered film may not be exported yet (null when it may). */
+export async function exportBlock(storagePath: string): Promise<string | null> {
+  const renderId = /\/renders\/([^/]+)\//.exec(storagePath)?.[1];
+  if (!renderId) return null;
+  const r = await col.renders().doc(renderId).get();
+  if (!r.exists) return null;
+  const inspected = r.get('inspect') === true || r.get('quality') === 'final';
+  if (!inspected) return null;
+  const fi = r.get('finalInspection') as { status?: string; readiness?: string | null; errors?: number } | null | undefined;
+  if (fi?.status === 'completed' && (fi.readiness === 'ready' || fi.readiness === 'overridden')) return null;
+  if (fi?.status === 'failed') return 'The final inspection of this render failed. Run it again (Final inspection) before exporting.';
+  if (fi?.status === 'completed') return `Export is blocked: the final inspection found ${fi.errors ?? 0} critical problem${fi.errors === 1 ? '' : 's'}. Fix and re-render, resolve them, or override with a note in Final inspection.`;
+  return 'Export waits for the final inspection of this render to finish.';
+}
+
 export async function mediaUrls(owner: Owner, p: Payload<'mediaUrls'>) {
   const snaps = await db.getAll(...[...new Set(p.assetIds)].map((id) => col.assets().doc(id)));
-  const urls: Record<string, { file?: string; thumb?: string; poster?: string; waveform?: string; expiresAt: number }> = {};
+  const urls: Record<string, { file?: string; thumb?: string; poster?: string; waveform?: string; expiresAt: number; blocked?: string }> = {};
   await Promise.all(
     snaps.map(async (s) => {
       if (!s.exists || s.get('ownerUid') !== owner.uid) return;
@@ -108,6 +123,14 @@ export async function mediaUrls(owner: Owner, p: Payload<'mediaUrls'>) {
         entry[key] = r.url;
         entry.expiresAt = entry.expiresAt ? Math.min(entry.expiresAt, r.expiresAt) : r.expiresAt;
       };
+      // Export gate: an inspected render downloads only once its final inspection is ready or overridden.
+      if (p.download && a.source === 'render') {
+        const blocked = await exportBlock(a.storagePath);
+        if (blocked) {
+          urls[s.id] = { ...entry, blocked };
+          return;
+        }
+      }
       if (a.status === 'ready') await sign('file', a.storagePath, p.download ? a.fileName : undefined);
       await Promise.all([sign('thumb', a.thumbPath), sign('poster', a.posterPath), sign('waveform', a.waveformPath)]);
       urls[s.id] = entry;

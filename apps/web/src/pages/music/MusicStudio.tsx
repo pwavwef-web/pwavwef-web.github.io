@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Navigate, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { AudioWaveform, CheckCheck, Clapperboard, Film, GalleryHorizontal, ImagePlus, Music2, Palette, Pause, Play, Plus, Scissors, ShieldCheck, Sparkles, Trash2, Upload, UserRound, Wand2 } from 'lucide-react';
+import { Award, AudioWaveform, CheckCheck, Clapperboard, Film, GitCompareArrows, ImagePlus, Move3d, Music2, Palette, Pause, Play, Plus, Scissors, ShieldCheck, Sparkles, Trash2, Type, Upload, UserRound, Wand2 } from 'lucide-react';
 import {
   addAudioBed,
   applyLyricCaptions,
@@ -48,14 +48,20 @@ import { addDocs, addShots, createSong, createTimeline, newCharacter, newLocatio
 import { BibleBoard } from '../../components/bibles';
 import { EditAndExport } from '../../components/assembly';
 import { useJobSubmitter } from '../../components/jobs';
-import { AssetPicker, useWaveform, Waveform } from '../../components/media';
+import { AssetPicker, useWaveform, Waveform, type Asset } from '../../components/media';
 import { ProjectHeader } from '../../components/project-header';
 import { ShotQueue, useShotContext, type Shot } from '../../components/shots';
-import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, SectionHeader, Select, Skeleton, Tabs, Textarea, Toggle } from '../../components/ui';
+import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, Modal, Notice, SectionHeader, Select, Skeleton, Textarea, Toggle } from '../../components/ui';
+import { BlockingWorkspace } from '../../components/blocking';
+import { CreditsStudio } from '../../components/credits-studio';
+import { FinalInspectionWorkspace } from '../../components/final-inspection';
+import { LyricStyleStudio } from '../../components/lyric-style-studio';
+import { WorkspaceNav, type WorkspaceTab } from '../../components/workspace-nav';
+import { ContinuityTab } from '../film/ContinuityTab';
+import { VisualBibleTab } from '../film/VisualBibleTab';
 import { GenerateMusicForm, LyricsWorkflow } from '../../components/lyrics';
 import { QualityTab } from '../../components/director';
 import { sameData } from '../../lib/compare';
-import { LookbookTab } from '../film/LookbookTab';
 import ImageStudio from '../ImageStudio';
 
 const SECTION_COLORS: Record<string, string> = {
@@ -97,6 +103,7 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
   const serverPeaks = useWaveform(song?.audioAssetId ?? null);
   const { submit, busy, dialog } = useJobSubmitter();
   const [aiBusy, setAiBusy] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const duration = song?.durationSec ?? 0;
   const analysis = song?.analysis ?? null;
 
@@ -139,6 +146,21 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
     await updateSubDoc(project.id, 'songs', song.id, { analysis: { ...(analysis ?? { bpm: 0, beats: [], downbeats: [], energy: [], energyHop: 0.5, analyzedAt: Date.now() }), sections: snapped, method: 'dsp+ai' } });
   };
   const setSections = (sections: SongSection[]) => song && analysis && void updateSubDoc(project.id, 'songs', song.id, { analysis: { ...analysis, sections } });
+  // A new recording of the song: timed lyrics follow it (time map or measured offset); otherwise it is swapped directly.
+  const resync = async (fromAssetId: string, to: { id: string; title: string }) => {
+    if (!song) return;
+    const ids = await submit([{ type: 'lyrics.resync_audio', projectId: project.id, songId: song.id, fromAssetId, toAssetId: to.id, label: `Re-sync lyrics to ${to.title}` }], { label: 'Lyric re-sync' });
+    if (ids) toast.success('Re-syncing the lyrics to the new audio', { description: 'The song switches to the new audio once the timing has followed it; the previous sheet stays in the lyric history.' });
+  };
+  const replaceAudio = async (a: Asset) => {
+    setReplacing(false);
+    if (!song || a.id === song.audioAssetId) return;
+    if (song.lyricsSheet?.lines.some((l) => l.start !== null)) await resync(song.lyricsSheet.timing.audioAssetId ?? song.audioAssetId, { id: a.id, title: a.title });
+    else {
+      await updateSubDoc(project.id, 'songs', song.id, { audioAssetId: a.id, durationSec: a.durationSec ?? song.durationSec, analysis: null });
+      toast.success('Song audio replaced', { description: 'Detect beats & sections again for the new recording.' });
+    }
+  };
 
   useEffect(() => {
     const a = audioRef.current;
@@ -218,6 +240,9 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
             <Button size="sm" variant="subtle" loading={busy || aiBusy} onClick={() => void aiAnalyse()} icon={<Sparkles className="size-4" />}>
               AI sections & lyrics
             </Button>
+            <Button size="sm" variant="ghost" loading={busy} onClick={() => setReplacing(true)} icon={<Upload className="size-4" />}>
+              Replace audio
+            </Button>
           </div>
         </div>
         <audio ref={audioRef} src={urls?.file} preload="auto" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onLoadedMetadata={(e) => !duration && void updateSubDoc(project.id, 'songs', song.id, { durationSec: e.currentTarget.duration })} />
@@ -245,7 +270,16 @@ function SongTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
         )}
       </Card>
 
+      {song.lyricsSheet?.timing.audioAssetId && song.lyricsSheet.timing.audioAssetId !== song.audioAssetId && (
+        <Notice tone="warning">
+          The lyric timing was aligned to a different recording of this song.{' '}
+          <Button size="sm" variant="ghost" loading={busy} onClick={() => void resync(song.lyricsSheet!.timing.audioAssetId!, { id: song.audioAssetId, title: song.title })}>
+            Re-sync the timing to the current audio
+          </Button>
+        </Notice>
+      )}
       <RangeCard project={project} song={song} time={time} onPlay={playRange} />
+      <AssetPicker open={replacing} onOpenChange={setReplacing} kinds={['audio']} projectId={project.id} onPick={(a) => a[0] && void replaceAudio(a[0])} title="New version of the song" />
 
       {song.ai && (
         <Notice tone="accent" icon={<Sparkles className="size-4" />}>
@@ -685,6 +719,29 @@ function EditTab({ project, song }: { project: WithId<ProjectDoc>; song: WithId<
 
 // ---------------------------------------------------------------------------
 
+const MV_GROUPS = [
+  { value: 'music', label: 'Song', icon: <Music2 className="size-3.5" /> },
+  { value: 'look', label: 'Look & cast', icon: <Palette className="size-3.5" /> },
+  { value: 'direct', label: 'Direct', icon: <Film className="size-3.5" /> },
+  { value: 'finish', label: 'Finish', icon: <Clapperboard className="size-3.5" /> },
+];
+
+const MV_TABS: WorkspaceTab[] = [
+  { value: 'song', label: 'Song & lyrics', icon: <Music2 className="size-4" />, group: 'music' },
+  { value: 'lyrics', label: 'Lyric styles', icon: <Type className="size-4" />, group: 'music' },
+  { value: 'concept', label: 'Concept', icon: <Wand2 className="size-4" />, group: 'look' },
+  { value: 'visual', label: 'Visual Bible', icon: <Palette className="size-4" />, group: 'look' },
+  { value: 'cast', label: 'Cast & places', icon: <UserRound className="size-4" />, group: 'look' },
+  { value: 'images', label: 'Images', icon: <ImagePlus className="size-4" />, group: 'look' },
+  { value: 'shots', label: 'Storyboard & shots', icon: <Film className="size-4" />, group: 'direct' },
+  { value: 'blocking', label: 'Blocking', icon: <Move3d className="size-4" />, group: 'direct', advanced: true },
+  { value: 'continuity', label: 'Continuity', icon: <GitCompareArrows className="size-4" />, group: 'direct', advanced: true },
+  { value: 'quality', label: 'AI Director Review', icon: <Sparkles className="size-4" />, group: 'direct' },
+  { value: 'edit', label: 'Edit & export', icon: <Clapperboard className="size-4" />, group: 'finish' },
+  { value: 'credits', label: 'Credits', icon: <Award className="size-4" />, group: 'finish' },
+  { value: 'final', label: 'Final inspection', icon: <ShieldCheck className="size-4" />, group: 'finish' },
+];
+
 export default function MusicStudio() {
   const { projectId, tab = 'song' } = useParams();
   const navigate = useNavigate();
@@ -694,20 +751,11 @@ export default function MusicStudio() {
   if (project.error) return <ErrorState error={project.error} />;
   if (!project.data) return <EmptyState title="Project not found" />;
   const song = songs.data[0] ?? null;
-  const tabs = [
-    { value: 'song', label: 'Song', icon: <Music2 className="size-4" /> },
-    { value: 'concept', label: 'Concept', icon: <Wand2 className="size-4" /> },
-    { value: 'cast', label: 'Cast & places', icon: <UserRound className="size-4" /> },
-    { value: 'look', label: 'Lookbook', icon: <GalleryHorizontal className="size-4" /> },
-    { value: 'shots', label: 'Storyboard & shots', icon: <Film className="size-4" /> },
-    { value: 'edit', label: 'Edit & export', icon: <Clapperboard className="size-4" /> },
-    { value: 'images', label: 'Images', icon: <ImagePlus className="size-4" /> },
-    { value: 'quality', label: 'Quality control', icon: <ShieldCheck className="size-4" /> },
-  ];
+  if (tab === 'look') return <Navigate to={`/projects/${project.data.id}/music/visual`} replace />;
   return (
     <div className="space-y-6">
       <ProjectHeader project={project.data} eyebrow="Music Video Studio" />
-      <Tabs value={tab} onValueChange={(v) => navigate(`/projects/${project.data!.id}/music/${v}`)} tabs={tabs} />
+      <WorkspaceNav groups={MV_GROUPS} tabs={MV_TABS} value={tab} advanced={Boolean(project.data.continuity?.advanced)} onChange={(v) => navigate(`/projects/${project.data!.id}/music/${v}`)} />
       {tab === 'song' && <SongTab project={project.data} song={song} />}
       {tab === 'concept' && <ConceptTab project={project.data} song={song} />}
       {tab === 'cast' && (
@@ -726,7 +774,12 @@ export default function MusicStudio() {
           </section>
         </div>
       )}
-      {tab === 'look' && <LookbookTab project={project.data} />}
+      {tab === 'visual' && <VisualBibleTab project={project.data} />}
+      {tab === 'lyrics' && (song ? <LyricStyleStudio project={project.data} song={song} /> : <EmptyState title="Add the song first" body="Lyric styles are previewed with the song’s own lyric timing." />)}
+      {tab === 'blocking' && <BlockingWorkspace project={project.data} />}
+      {tab === 'continuity' && <ContinuityTab project={project.data} />}
+      {tab === 'credits' && <CreditsStudio project={project.data} />}
+      {tab === 'final' && <FinalInspectionWorkspace project={project.data} />}
       {tab === 'shots' && <ShotsTab project={project.data} song={song} />}
       {tab === 'edit' && <EditTab project={project.data} song={song} />}
       {tab === 'images' && <ImageStudio project={project.data} embedded />}

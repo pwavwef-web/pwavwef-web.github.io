@@ -6,7 +6,7 @@ import { type AssetDoc, type AssetKind } from '@az-studio/shared';
 import { api, errorMessage } from '../lib/api';
 import { db } from '../lib/firebase';
 import { useQuery } from '../lib/data';
-import { downloadUrl, useMediaUrls } from '../lib/media';
+import { openDownload, useMediaUrls } from '../lib/media';
 import { useUid } from '../lib/session';
 import { useProjects } from '../lib/studio';
 import { acceptFor, AssetMeta, AssetThumb, ImageView, UploadZone, VideoPlayer, type Asset } from '../components/media';
@@ -37,8 +37,7 @@ function AssetDetail({ asset, onClose }: { asset: Asset; onClose: () => void }) 
     }
   };
   const download = async () => {
-    const url = await downloadUrl(asset.id);
-    if (url) window.open(url, '_blank', 'noopener');
+    await openDownload(asset.id);
   };
   return (
     <Modal

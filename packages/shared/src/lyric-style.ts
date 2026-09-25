@@ -185,6 +185,15 @@ export interface LyricStyleDoc {
   updatedAt?: unknown;
 }
 
+/** `lyricsTracks/{songId}`: the style a song's lyrics render with and the positions locked per aspect ratio. */
+export interface LyricsTrackDoc {
+  id: string;
+  songId: string;
+  styleId: string | null;
+  placements: Partial<Record<LyricAspect, Record<string, { x: number; y: number; locked: boolean }>>>;
+  updatedAt?: unknown;
+}
+
 export function defaultLyricStyleDoc(preset: LyricPreset = 'karaoke'): Omit<LyricStyleDoc, 'id'> {
   return { name: LYRIC_PRESET_LABELS[preset], global: { ...LYRIC_PRESET_STYLES[preset] }, sections: {}, fonts: [] };
 }
