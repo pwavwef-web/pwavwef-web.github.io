@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_KINDS } from './types';
+import { ASSET_KINDS, SECTION_LABELS } from './types';
 import { SET_VIEWS } from './continuity';
 import { characterBibleSchema, CONTINUITY_COLLECTIONS } from './continuity-schemas';
 import { COVERAGE_TYPES } from './coverage';
@@ -438,6 +438,21 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('cancelQueued'), payload: z.object({ projectId: id.nullable().optional() }) }),
   z.object({ action: z.literal('creditsMetadata'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('continuityOverview'), payload: z.object({ projectId: id }) }),
+  /** Director corrections of an automatic music analysis (kept through re-analysis). */
+  z.object({
+    action: z.literal('musicCorrectAnalysis'),
+    payload: z.object({
+      projectId: id,
+      versionId: id,
+      corrections: z.object({
+        bpm: z.number().min(30).max(300).optional(),
+        key: text(40).optional(),
+        timeSignature: z.string().regex(/^\d{1,2}\/\d{1,2}$/, 'Use a time signature such as 4/4').optional(),
+        sections: z.array(z.object({ id, label: z.enum(SECTION_LABELS), name: text(80), start: z.number().min(0), end: z.number().min(0), energy: z.number().min(0).max(1) })).max(80).optional(),
+        downbeats: z.array(z.number().min(0)).max(5000).optional(),
+      }),
+    }),
+  }),
   /** Approve or withdraw a shot's take (approval updates canonical continuity; the rules deny direct writes). */
   z.object({ action: z.literal('takeAction'), payload: z.object({ projectId: id, shotId: id, takeId: id, action: z.enum(['approve', 'withdraw']), note: text(500).optional() }) }),
 ]);

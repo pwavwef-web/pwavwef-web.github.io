@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { Link } from 'react-router';
-import { Clapperboard, Download, Monitor, Play, Plus, Smartphone, Square } from 'lucide-react';
+import { Clapperboard, Download, Monitor, Play, Plus, RectangleVertical, Smartphone, Square } from 'lucide-react';
 import { EXPORT_PRESETS, estimateRender, formatDuration, relativeTime, toMillis, type ExportPreset, type ProjectDoc, type RenderDoc, type RenderQuality, type TimelineDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery, type WithId } from '../lib/data';
@@ -12,7 +12,7 @@ import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { Badge, Button, Card, EmptyState, ProgressBar, Segmented, Select } from './ui';
 
-const PRESET_ICON = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square };
+const PRESET_ICON = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square, portrait_4x5: RectangleVertical };
 
 function RenderRow({ render }: { render: WithId<RenderDoc> }) {
   const asset = useAsset(render.outputAssetId);
@@ -67,7 +67,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
 
   const render = async (preset: ExportPreset['id']) => {
     if (!tl) return;
-    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: tl.id, preset, quality, acceptLyricSync: false }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
+    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: tl.id, preset, quality, inspect: quality === 'final', acceptLyricSync: false }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
   };
 
   return (

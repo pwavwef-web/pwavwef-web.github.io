@@ -171,7 +171,7 @@ export function GenerateMusicForm({ project, song, onDone }: { project: WithId<P
   const [waiting, setWaiting] = useState(false);
   const unavailable = status?.status === 'unavailable';
   const go = async () => {
-    const ids = await submit([{ type: 'music.generate', projectId: project.id, purpose: 'song', prompt, lyrics: instrumental ? null : lyrics.trim() || null, instrumental, languageCode: language, imageAssetIds: [], songId: song?.id ?? null, title: song?.title ?? project.title, label: 'Generate music and lyrics' }], { label: 'Generate music and lyrics' });
+    const ids = await submit([{ type: 'music.generate', projectId: project.id, purpose: 'song', prompt, lyrics: instrumental ? null : lyrics.trim() || null, instrumental, languageCode: language, imageAssetIds: [], alternate: false, songId: song?.id ?? null, title: song?.title ?? project.title, label: 'Generate music and lyrics' }], { label: 'Generate music and lyrics' });
     if (!ids?.[0]) return;
     setWaiting(true);
     try {

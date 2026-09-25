@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { Clapperboard, Film, Image as ImageIcon, Music2, Scissors } from 'lucide-react';
+import { AudioLines, Clapperboard, Film, Image as ImageIcon, Music2, Scissors } from 'lucide-react';
 import { formatUsd, PROJECT_TYPE_LABELS, relativeTime, toMillis, type FrameAspect, type ProjectDoc, type ProjectType } from '@az-studio/shared';
 import type { WithId } from '../lib/data';
 import { useMediaUrls } from '../lib/media';
@@ -16,6 +16,7 @@ export const PROJECT_ICON: Record<ProjectType, ReactNode> = {
   film: <Clapperboard className="size-4" />,
   image: <ImageIcon className="size-4" />,
   remix: <Scissors className="size-4" />,
+  music: <AudioLines className="size-4" />,
 };
 
 const GRADIENT: Record<ProjectType, string> = {
@@ -24,6 +25,7 @@ const GRADIENT: Record<ProjectType, string> = {
   film: 'from-[#1d2e45] via-[#0c1422] to-[#05070b]',
   image: 'from-[#123a45] via-[#0b1a24] to-[#05070b]',
   remix: 'from-[#3a1f2e] via-[#150f1c] to-[#05070b]',
+  music: 'from-[#3b2a12] via-[#1a1208] to-[#05070b]',
 };
 
 export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): string {
@@ -32,6 +34,8 @@ export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): strin
       return `/projects/${p.id}/film`;
     case 'music_video':
       return `/projects/${p.id}/music`;
+    case 'music':
+      return `/projects/${p.id}/studio`;
     default:
       return `/projects/${p.id}`;
   }

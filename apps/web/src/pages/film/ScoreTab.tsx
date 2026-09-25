@@ -145,7 +145,7 @@ export function ScoreTab({ project }: { project: WithId<ProjectDoc> }) {
 
   const generate = async (movementIds: string[]) => {
     if (!score) return;
-    const jobs = movementIds.map((movementId) => ({ type: 'music.generate' as const, projectId: project.id, purpose: 'score_movement' as const, prompt: direction.trim() || 'score', lyrics: null, instrumental: true, languageCode: null, imageAssetIds: [], songId: null, scoreId: score.id, movementId, label: `Score movement ${movementId}` }));
+    const jobs = movementIds.map((movementId) => ({ type: 'music.generate' as const, projectId: project.id, purpose: 'score_movement' as const, prompt: direction.trim() || 'score', lyrics: null, instrumental: true, languageCode: null, imageAssetIds: [], alternate: false, songId: null, scoreId: score.id, movementId, label: `Score movement ${movementId}` }));
     await submit(jobs, { label: `${jobs.length} score movement${jobs.length === 1 ? '' : 's'}`, alwaysConfirm: jobs.length > 1 });
   };
 

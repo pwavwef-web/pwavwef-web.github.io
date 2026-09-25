@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { AlertTriangle, CheckCheck, CircleCheck, CircleX, Clapperboard, Columns2, Hammer, History, ListChecks, Mic, Play, RefreshCw, Scissors, ShieldCheck, Sparkles, SplitSquareHorizontal, TimerReset, Wand2 } from 'lucide-react';
+import { AlertTriangle, CheckCheck, CircleCheck, CircleX, Columns2, Crosshair, GitBranch, Hammer, History, Images, Mic, Palette, Play, RefreshCw, ScanText, Scissors, ShieldCheck, Sparkles, SplitSquareHorizontal, Trophy, Wand2 } from 'lucide-react';
 import {
   alignWords,
+  CATEGORY_KEYS,
+  CATEGORY_LABELS,
   estimateSpeechSeconds,
   formatUsd,
+  PROBLEM_GROUPS,
+  type RepairAttemptDoc,
   planSceneDuration,
   PRODUCTION_STAGES,
   PRODUCTION_STAGE_LABELS,
@@ -29,6 +33,8 @@ import type { WithId } from '../lib/data';
 import { useBoot } from '../lib/session';
 import { updateProject } from '../lib/studio';
 import { estimateProduction, productionAction, startProduction, useEvents, useProduction, useProjectProductions, useReport, useShotProductions, useVersions, type Production, type ProductionEstimate, type Report, type Version } from '../lib/production';
+import { useProjectCollection } from '../lib/continuity';
+import { WarningItem } from './continuity-ui';
 import { EstimateText } from './jobs';
 import { VideoPlayer } from './media';
 import { Badge, Button, Card, cx, EmptyState, Field, Input, Modal, Notice, ProgressBar, Select, Skeleton, Textarea, Toggle } from './ui';
@@ -110,13 +116,13 @@ export function DurationPreview({ plan, measured, className }: { plan: DurationP
 // Start a production (plan + cost confirmation)
 // ---------------------------------------------------------------------------
 
-export function ProduceDialog({ projectId, shot, job, reviewTake, onClose, onStarted }: { projectId: string; shot: WithId<ShotDoc>; job: VideoJobRequest; reviewTake?: WithId<TakeDoc> | null; onClose: () => void; onStarted?: (productionId: string) => void }) {
+export function ProduceDialog({ projectId, shot, job, reviewTake, takes = 1, onClose, onStarted }: { projectId: string; shot: WithId<ShotDoc>; job: VideoJobRequest; reviewTake?: WithId<TakeDoc> | null; takes?: number; onClose: () => void; onStarted?: (productionId: string) => void }) {
   const [est, setEst] = useState<ProductionEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let alive = true;
-    estimateProduction(projectId, shot.id, job, { requestedSec: shot.durationSec, reviewTakeId: reviewTake?.id ?? null })
+    estimateProduction(projectId, shot.id, job, { requestedSec: shot.durationSec, reviewTakeId: reviewTake?.id ?? null, takes })
       .then((r) => alive && setEst(r))
       .catch((e) => alive && setError(errorMessage(e)));
     return () => {
@@ -129,7 +135,7 @@ export function ProduceDialog({ projectId, shot, job, reviewTake, onClose, onSta
     if (!est) return;
     setBusy(true);
     try {
-      const r = await startProduction(projectId, shot.id, job, { requestedSec: shot.durationSec, reviewTakeId: reviewTake?.id ?? null }, est.estimate.usd);
+      const r = await startProduction(projectId, shot.id, job, { requestedSec: shot.durationSec, reviewTakeId: reviewTake?.id ?? null, takes: est.takes }, est.estimate.usd);
       toast.success(reviewTake ? 'Quality review started' : 'Production started', { description: reviewTake ? `Inspecting ${reviewTake.label}; problems are repaired automatically within your limits.` : r.plan.message });
       onStarted?.(r.productionId);
       onClose();
@@ -174,7 +180,7 @@ export function ProduceDialog({ projectId, shot, job, reviewTake, onClose, onSta
             <Card className="space-y-1 p-3">
               <p className="eyebrow">This run</p>
               <EstimateText estimate={est.estimate} />
-              <p className="text-xs text-faint">{est.review ? 'One full inspection of the existing take.' : `Guide audio, generation${est.plan.segments.length > 1 ? 's' : ''} and one full inspection.`}</p>
+              <p className="text-xs text-faint">{est.review ? 'One full inspection of the existing take.' : est.takes > 1 ? `Guide audio, ${est.takes} independent takes and ${est.takes} full inspections; the strongest take is recommended.` : `Guide audio, generation${est.plan.segments.length > 1 ? 's' : ''} and one full inspection.`}</p>
             </Card>
             <Card className="space-y-1 p-3">
               <p className="eyebrow">Automatic repairs</p>
@@ -186,6 +192,23 @@ export function ProduceDialog({ projectId, shot, job, reviewTake, onClose, onSta
               </p>
             </Card>
           </div>
+          <Card className="space-y-1.5 p-3">
+            <p className="eyebrow flex items-center gap-1.5">
+              <GitBranch className="size-3.5" /> Continuity
+            </p>
+            <p className="text-sm text-fg">
+              {est.continuity.constraints} protected constraint{est.continuity.constraints === 1 ? '' : 's'} · {est.continuity.added} reference image{est.continuity.added === 1 ? '' : 's'} added from the bibles and the previous shot
+              {est.continuity.screens ? ` · ${est.continuity.screens} protected screen${est.continuity.screens === 1 ? '' : 's'} checked with OCR` : ''}
+            </p>
+            {est.continuity.dropped > 0 && <p className="text-xs text-warning">{est.continuity.dropped} reference{est.continuity.dropped === 1 ? '' : 's'} left out (the model accepts a limited number of images).</p>}
+            {est.continuity.warnings.map((w, i) => (
+              <p key={i} className={cx('text-xs', w.severity === 'critical' ? 'text-[#ff9b9b]' : 'text-warning')}>
+                {w.severity === 'critical' ? 'Blocks generation: ' : ''}
+                {w.message}
+              </p>
+            ))}
+            {est.continuity.warnings.some((w) => w.severity === 'critical') && <p className="text-[11px] text-faint">The production stops before anything is generated while a critical plan warning is open — fix the plan or override the warning in the Continuity panel.</p>}
+          </Card>
           {est.limitProblem && <Notice tone="danger">{est.limitProblem}</Notice>}
         </div>
       )}
@@ -332,6 +355,9 @@ export function QualitySettingsCard({ project }: { project: WithId<ProjectDoc> }
         <Field label="Expensive retry ($)">
           <Input type="number" min={0} step={0.25} value={draft.expensiveRetryUsd} onChange={(e) => set('expensiveRetryUsd', num(e.target.value, 0, 100))} />
         </Field>
+        <Field label="Max takes per shot">
+          <Input type="number" min={1} max={4} value={draft.maxTakesPerShot} onChange={(e) => set('maxTakesPerShot', num(e.target.value, 1, 4))} />
+        </Field>
         <Field label="Line lengths from">
           <Select value={draft.dialogueAudio} onChange={(e) => set('dialogueAudio', e.target.value as QualitySettings['dialogueAudio'])}>
             <option value="generate">Spoken guide audio</option>
@@ -414,11 +440,8 @@ function DialogueDiff({ report }: { report: Report }) {
 }
 
 const GROUPS: { title: string; icon: React.ReactNode; match: (p: QualityProblem) => boolean }[] = [
-  { title: 'Dialogue', icon: <Mic className="size-3.5" />, match: (p) => /^dialogue|trailing|speaker|lip|performance|abrupt/.test(p.category) },
-  { title: 'Action', icon: <TimerReset className="size-3.5" />, match: (p) => p.category === 'action_incomplete' || p.category === 'unfinished_movement' },
-  { title: 'Continuity', icon: <ListChecks className="size-3.5" />, match: (p) => ['character_identity', 'costume', 'hairstyle', 'location', 'time_of_day', 'props', 'storyboard_mismatch', 'previous_shot_mismatch', 'story_continuity', 'screen_direction'].includes(p.category) },
-  { title: 'Audio', icon: <Mic className="size-3.5" />, match: (p) => p.category === 'audio_quality' || p.category === 'music_over_dialogue' },
-  { title: 'Picture', icon: <Clapperboard className="size-3.5" />, match: () => true },
+  ...PROBLEM_GROUPS.map((g) => ({ title: g.title, icon: g.key === 'dialogue' ? <Mic className="size-3.5" /> : <ShieldCheck className="size-3.5" />, match: (p: QualityProblem) => g.categories.includes(p.category) })),
+  { title: 'Sound & other', icon: <Mic className="size-3.5" />, match: () => true },
 ];
 
 function Problems({ report, production, onWaive }: { report: Report; production: Production; onWaive: (cats: string[], waive: boolean) => void }) {
@@ -497,6 +520,30 @@ function VersionCompare({ versions, onClose }: { versions: WithId<Version>[]; on
 
 const STAGE_INDEX = new Map(PRODUCTION_STAGES.map((s, i) => [s, i]));
 
+const COST_ACTIONS = ['repair', 'approve_pending_repair', 'extend', 'regenerate', 'split', 'color_match', 'screen_composite', 'correct_blocking', 'regenerate_with_references'] as const;
+type CostAction = (typeof COST_ACTIONS)[number];
+
+/** The fifteen take-evaluation categories (not applicable ones are shown as such). */
+function CategoryScores({ scores, threshold }: { scores: NonNullable<Report['categoryScores']>; threshold: number }) {
+  return (
+    <details className="rounded-lg border border-line px-3 py-2">
+      <summary className="cursor-pointer text-xs text-dim">Take evaluation · 15 categories</summary>
+      <ul className="mt-2 space-y-1">
+        {CATEGORY_KEYS.map((k) => {
+          const v = scores[k];
+          return (
+            <li key={k} className="grid grid-cols-[150px_minmax(0,1fr)_36px] items-center gap-2 text-xs">
+              <span className="text-dim">{CATEGORY_LABELS[k]}</span>
+              {v === null ? <span className="text-faint">not applicable</span> : <ProgressBar value={v / 100} tone={v >= threshold ? 'success' : v >= 60 ? 'accent' : 'danger'} label={CATEGORY_LABELS[k]} />}
+              <span className="timecode text-right text-fg">{v ?? '—'}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </details>
+  );
+}
+
 export function DirectorReview({ productionId, compact }: { productionId: string; compact?: boolean }) {
   const prod = useProduction(productionId);
   const p = prod.data;
@@ -511,7 +558,8 @@ export function DirectorReview({ productionId, compact }: { productionId: string
   const [direction, setDirection] = useState('');
   const [extendSec, setExtendSec] = useState(4);
   const [showLog, setShowLog] = useState(false);
-  const [confirm, setConfirm] = useState<{ action: 'repair' | 'approve_pending_repair' | 'extend' | 'regenerate' | 'split'; usd: number; message: string } | null>(null);
+  const [confirm, setConfirm] = useState<{ action: CostAction; usd: number; message: string } | null>(null);
+  const attempts = useProjectCollection<RepairAttemptDoc>(p?.projectId ?? null, 'repairAttempts', { where: [['shotId', '==', p?.shotId ?? '_']], order: 'at', dir: 'desc' });
   if (prod.loading) return <Skeleton className="h-64" />;
   if (!p) return <EmptyState title="Production not found" />;
   const active = ['planning', 'generating', 'inspecting', 'repairing'].includes(p.status);
@@ -523,8 +571,8 @@ export function DirectorReview({ productionId, compact }: { productionId: string
       else if (r.status) toast.success(`${String(r.status).replace(/_/g, ' ')}`);
     } catch (e) {
       const details = e instanceof ApiError ? (e.details as { reason?: string; estimate?: { usd: number } } | null) : null;
-      if (details?.reason === 'confirmation_required' && (action === 'repair' || action === 'approve_pending_repair' || action === 'extend' || action === 'regenerate' || action === 'split')) {
-        setConfirm({ action, usd: details.estimate?.usd ?? 0, message: errorMessage(e) });
+      if (details?.reason === 'confirmation_required' && (COST_ACTIONS as readonly string[]).includes(action)) {
+        setConfirm({ action: action as CostAction, usd: details.estimate?.usd ?? 0, message: errorMessage(e) });
       } else toast.error('Action failed', { description: errorMessage(e) });
     } finally {
       setBusy(null);
@@ -597,6 +645,41 @@ export function DirectorReview({ productionId, compact }: { productionId: string
         </Notice>
       )}
 
+      {p.comparison && p.comparison.ranked.length > 1 && (
+        <Card className="space-y-2 p-4">
+          <p className="eyebrow flex items-center gap-1.5">
+            <Trophy className="size-3.5" /> Take comparison
+          </p>
+          <p className="text-sm text-dim">{p.comparison.reason}</p>
+          <ul className="divide-y divide-line">
+            {p.comparison.ranked.map((r, i) => (
+              <li key={r.versionId} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <span className={cx('w-6 text-center', i === 0 ? 'text-warning' : 'text-faint')}>{i + 1}</span>
+                <span className="text-fg">Take {r.take}</span>
+                <Badge tone={r.passed ? 'success' : 'danger'}>{r.passed ? 'passes' : 'fails'} · {r.overall ?? '—'}</Badge>
+                {r.weakest && <span className="text-xs text-faint">weakest: {r.weakest} {r.weakestScore ?? ''}</span>}
+                {p.comparison!.recommendedVersionId === r.versionId && <Badge tone="warning">recommended</Badge>}
+                <span className="ml-auto flex gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => setViewId(r.versionId)}>
+                    View
+                  </Button>
+                  <Button size="sm" variant={p.currentVersionId === r.versionId ? 'subtle' : 'secondary'} loading={busy === 'choose_version'} disabled={active || p.currentVersionId === r.versionId} onClick={() => void run('choose_version', { versionId: r.versionId })}>
+                    {p.currentVersionId === r.versionId ? 'Current' : 'Choose'}
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Button size="sm" variant="ghost" icon={<Columns2 className="size-3.5" />} onClick={() => setComparing(true)}>
+            Side-by-side preview
+          </Button>
+        </Card>
+      )}
+      {p.continuity && (
+        <p className="text-xs text-faint">
+          Continuity established {new Date(p.continuity.plannedAt).toLocaleString()} · {p.continuity.constraints} protected constraints · {p.continuity.refs.length} reference{p.continuity.refs.length === 1 ? '' : 's'} checked by the reviewer{p.continuity.openWarnings ? ` · ${p.continuity.openWarnings} plan warning${p.continuity.openWarnings === 1 ? '' : 's'}` : ''}
+        </p>
+      )}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="space-y-3">
           {shown?.assetId ? <VideoPlayer key={shown.assetId} assetId={shown.assetId} /> : <div className="grid aspect-video place-items-center rounded-xl bg-black/30 text-xs text-dim">{active ? 'Working…' : 'No version yet'}</div>}
@@ -639,6 +722,21 @@ export function DirectorReview({ productionId, compact }: { productionId: string
               <Button size="sm" variant="ghost" icon={<Scissors className="size-3.5" />} loading={busy === 'reinspect'} disabled={active || !shown?.assetId} onClick={() => void run('reinspect')}>
                 Re-inspect
               </Button>
+            </div>
+            <p className="eyebrow pt-1">Continuity repairs</p>
+            <div className="flex flex-wrap gap-1.5">
+              <Button size="sm" icon={<Images className="size-3.5" />} loading={busy === 'regenerate_with_references'} disabled={active} onClick={() => void run('regenerate_with_references', direction.trim() ? { instruction: direction.trim() } : {})}>
+                Regenerate with stronger references
+              </Button>
+              <Button size="sm" icon={<Crosshair className="size-3.5" />} loading={busy === 'correct_blocking'} disabled={active || !shown} onClick={() => void run('correct_blocking', direction.trim() ? { instruction: direction.trim() } : {})}>
+                Correct blocking (blocking frame)
+              </Button>
+              <Button size="sm" icon={<ScanText className="size-3.5" />} loading={busy === 'screen_composite'} disabled={active || !shown?.assetId || !p.continuity?.compositeScreenIds.length} title={p.continuity?.compositeScreenIds.length ? undefined : 'No protected screen with approved content in this shot'} onClick={() => void run('screen_composite')}>
+                Composite screen content
+              </Button>
+              <Button size="sm" icon={<Palette className="size-3.5" />} loading={busy === 'color_match'} disabled={active || !shown?.assetId || !p.continuity?.colourRefAssetId} title={p.continuity?.colourRefAssetId ? undefined : 'Approve the previous shot of the scene first — it is the colour reference'} onClick={() => void run('color_match')}>
+                Colour-match to the previous shot
+              </Button>
               {active && (
                 <Button size="sm" variant="danger" loading={busy === 'cancel'} onClick={() => void run('cancel')}>
                   Cancel
@@ -666,11 +764,25 @@ export function DirectorReview({ productionId, compact }: { productionId: string
                   </Badge>
                 </div>
                 <ScoreBars report={report.data} />
+                {report.data.categoryScores && <CategoryScores scores={report.data.categoryScores} threshold={report.data.threshold} />}
                 {report.data.summary && <p className="text-xs text-dim">{report.data.summary}</p>}
                 <p className="text-[11px] text-faint">
-                  Reviewed by {report.data.modelIds.review} · transcript by {report.data.modelIds.transcription} · {formatUsd(report.data.costUsd, { precise: true })}
+                  Reviewed by {report.data.modelIds.review} · transcript by {report.data.modelIds.transcription}
+                  {report.data.modelIds.vision ? ` · frames read by ${report.data.modelIds.vision}` : ''} · {formatUsd(report.data.costUsd, { precise: true })}
                 </p>
               </Card>
+              {report.data.continuity && report.data.continuity.warnings.length > 0 && (
+                <Card className="space-y-2 p-3">
+                  <p className="eyebrow flex items-center gap-1.5">
+                    <GitBranch className="size-3.5" /> Continuity: expected vs detected
+                  </p>
+                  <ul className="space-y-1.5">
+                    {report.data.continuity.warnings.map((w) => (
+                      <WarningItem key={w.id} projectId={p.projectId} shotId={p.shotId} warning={w} shotTitle={() => null} />
+                    ))}
+                  </ul>
+                </Card>
+              )}
               <Card className="space-y-2 p-3">
                 <p className="eyebrow">Expected vs detected dialogue</p>
                 <DialogueDiff report={report.data} />
@@ -696,6 +808,25 @@ export function DirectorReview({ productionId, compact }: { productionId: string
             <Skeleton className="h-64" />
           ) : (
             <p className="text-sm text-faint">{active ? 'The inspection report appears here as soon as the scene has been reviewed.' : 'Not inspected yet.'}</p>
+          )}
+          {attempts.data.filter((a) => a.productionId === p.id).length > 0 && (
+            <Card className="space-y-1.5 p-3">
+              <p className="eyebrow">Repair attempts (every original is kept)</p>
+              {attempts.data
+                .filter((a) => a.productionId === p.id)
+                .map((a) => (
+                  <div key={a.id} className="rounded-lg border border-line px-2.5 py-1.5 text-xs">
+                    <p className="text-fg">
+                      {a.label} <span className={a.outcome === 'fixed' ? 'text-success' : a.outcome === 'pending' ? 'text-accent-2' : 'text-warning'}>· {a.outcome.replace('_', ' ')}</span>
+                      {a.resultOverall !== null ? ` · ${a.resultOverall}/100` : ''}
+                    </p>
+                    <p className="text-dim">{a.reason}</p>
+                    <p className="text-faint">
+                      Instruction: “{a.instruction.slice(0, 220)}{a.instruction.length > 220 ? '…' : ''}” · est. {formatUsd(a.estimateUsd)}{a.costUsd !== null ? ` · recorded ${formatUsd(a.costUsd, { precise: true })}` : ''}{a.directorRequested ? ' · requested by the director' : ''}
+                    </p>
+                  </div>
+                ))}
+            </Card>
           )}
           {p.repairs.length > 0 && (
             <Card className="space-y-1.5 p-3">

@@ -1,5 +1,6 @@
 import { HttpsError } from 'firebase-functions/v2/https';
 import {
+  applyCorrections,
   applyFinalFix,
   exportReadiness,
   finalScore,
@@ -105,6 +106,22 @@ async function musicVersion(projectId: string, musicProjectId: string, versionId
   if (!mp.exists) throw new HttpsError('not-found', 'Music project not found.');
   if (!v.exists || v.get('musicProjectId') !== musicProjectId) throw new HttpsError('not-found', 'Version not found in this music project.');
   return { mp: { ...(mp.data() as MusicProjectDoc), id: mp.id }, v: { ...(v.data() as MusicVersionDoc), id: v.id } };
+}
+
+/** The director corrects an automatic analysis (tempo, key, metre, sections, downbeats); re-analysis keeps it. */
+export async function musicCorrectAnalysis(owner: Owner, p: Payload<'musicCorrectAnalysis'>) {
+  await ownedProject(owner.uid, p.projectId);
+  const ref = col.sub(p.projectId, 'musicVersions').doc(p.versionId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Version not found.');
+  const v = snap.data() as MusicVersionDoc;
+  if (!v.analysis) throw new HttpsError('failed-precondition', 'Analyse this version first, then correct the analysis.');
+  const sections = p.corrections.sections?.slice().sort((a, b) => a.start - b.start);
+  if (sections?.some((s) => s.end <= s.start)) throw new HttpsError('invalid-argument', 'Every section must end after it starts.');
+  if (sections?.some((s, i) => i > 0 && s.start < sections[i - 1]!.end - 0.05)) throw new HttpsError('invalid-argument', 'Sections may not overlap.');
+  const analysis = applyCorrections(v.analysis, { ...p.corrections, ...(sections ? { sections } : {}), ...(p.corrections.downbeats ? { downbeats: [...p.corrections.downbeats].sort((a, b) => a - b) } : {}) });
+  await ref.set({ analysis }, { merge: true });
+  return { analysis };
 }
 
 /** The version used for exports, videos and lyric sync. */

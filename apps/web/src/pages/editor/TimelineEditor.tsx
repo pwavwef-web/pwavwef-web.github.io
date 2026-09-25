@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ArrowLeft, Captions as CaptionsIcon, Clapperboard, Download, History as HistoryIcon, Magnet, Monitor, Pause, Play, Plus, Redo2, RotateCcw, Save, SkipBack, SkipForward, Smartphone, Square, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, Captions as CaptionsIcon, Clapperboard, Download, History as HistoryIcon, Magnet, Monitor, Pause, Play, Plus, Redo2, RotateCcw, Save, SkipBack, SkipForward, RectangleVertical, Smartphone, Square, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import {
   addClip,
   addClips,
@@ -65,12 +65,12 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved, sheets, onRes
   const { submit, busy, dialog } = useJobSubmitter();
   const [watching, setWatching] = useState<string | null>(null);
   const renders = useQuery<RenderDoc>(() => (uid ? query(collection(db, 'renders'), where('ownerUid', '==', uid), where('timelineId', '==', timeline.id), orderBy('createdAt', 'desc'), limit(8)) : null), [uid, timeline.id]);
-  const icons = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square };
+  const icons = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square, portrait_4x5: RectangleVertical };
   const syncIssues = checkLyricSync(timeline, sheets);
   const [acceptSync, setAcceptSync] = useState(false);
   const run = async (preset: ExportPreset['id']) => {
     if (!(await ensureSaved())) return;
-    await submit([{ type: 'render.timeline', projectId, timelineId: timeline.id, preset, quality, acceptLyricSync: acceptSync }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
+    await submit([{ type: 'render.timeline', projectId, timelineId: timeline.id, preset, quality, inspect: quality === 'final', acceptLyricSync: acceptSync }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
   };
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Render" description="FFmpeg on Cloud Run renders the saved timeline. Draft is fast; final uses full quality and loudness normalisation." size="lg">

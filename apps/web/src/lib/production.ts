@@ -16,6 +16,8 @@ export interface ProductionOptions {
   /** Review this existing take instead of generating a new one. */
   reviewTakeId?: string | null;
   settings?: Partial<QualitySettings>;
+  /** Independent takes generated side by side (the strongest is recommended). */
+  takes?: number;
 }
 
 export interface ProductionEstimate {
@@ -27,9 +29,11 @@ export interface ProductionEstimate {
   audioMode: string;
   repairBudgetUsd: number;
   review: { takeId: string; label: string; durationSec: number | null } | null;
+  takes: number;
+  continuity: { constraints: number; preferences: number; added: number; dropped: number; references: number; screens: number; warnings: { kind: string; severity: string; message: string }[] };
 }
 
-const opts = (o: ProductionOptions) => ({ requestedSec: o.requestedSec, uploadedAudio: o.uploadedAudio ?? [], identifyFromTakeId: o.identifyFromTakeId ?? null, reviewTakeId: o.reviewTakeId ?? null, ...(o.settings ? { settings: o.settings } : {}) });
+const opts = (o: ProductionOptions) => ({ requestedSec: o.requestedSec, uploadedAudio: o.uploadedAudio ?? [], identifyFromTakeId: o.identifyFromTakeId ?? null, reviewTakeId: o.reviewTakeId ?? null, takes: Math.max(1, Math.min(4, o.takes ?? 1)), ...(o.settings ? { settings: o.settings } : {}) });
 
 export const estimateProduction = (projectId: string, shotId: string, job: VideoJobRequest, o: ProductionOptions) => api<ProductionEstimate, 'estimateProduction'>('estimateProduction', { projectId, shotId, job, options: opts(o) });
 

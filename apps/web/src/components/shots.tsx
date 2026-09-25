@@ -1,5 +1,6 @@
 import { forwardRef, useMemo, useRef, useState } from 'react';
 import { collection, doc, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { ChevronDown, ChevronRight, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckCheck, CircleCheck, Clapperboard, Columns2, Copy, Film, ImagePlus, Lock, LockOpen, Play, ShieldCheck, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
 import {
@@ -34,7 +35,9 @@ import { EstimateText, useJobSubmitter } from './jobs';
 import { AssetPicker, AssetThumb, useAsset, VideoPlayer, type Asset } from './media';
 import { DirectionsEditor, PromptPreview } from './video-controls';
 import { BatchProduceDialog, DirectorReview, DurationPreview, previewPlan, ProduceDialog, ProductionBadge, ShotProductionPanel } from './director';
-import { productionAction } from '../lib/production';
+import { takeAction, useProjectCollection, type Snapshot } from '../lib/continuity';
+import { ContinuityBadge, ContinuityModal, DirectionArrows, ShotContinuityPanel } from './continuity-ui';
+import { ShotContinuityEditor } from './shot-continuity';
 import { Badge, Button, Card, cx, EmptyState, Field, IconButton, Input, Modal, Notice, Segmented, Select, Skeleton, Slider, Textarea, Toggle } from './ui';
 
 export type Shot = WithId<ShotDoc>;
@@ -154,18 +157,19 @@ function approvalBlock(take: Pick<TakeDoc, 'quality' | 'productionId'>): string 
   return null;
 }
 
-/** Approves one take for the edit (a shot has at most one) or withdraws the approval. */
+/**
+ * Approves one take for the edit (a shot has at most one) or withdraws the approval. Both go through the
+ * API: approval makes the take canonical for continuity (character, prop and axis state, the final frame
+ * the next shot continues from); withdrawal removes those records.
+ */
 async function approveTake(projectId: string, shot: Shot, takeId: string, approve: boolean, take?: Pick<TakeDoc, 'quality' | 'productionId' | 'versionId'>) {
   if (approve && take?.productionId) {
     const block = approvalBlock(take);
     if (block) throw new Error(block);
-    await productionAction(take.productionId, 'approve', { versionId: take.versionId ?? null });
-    return;
   }
-  const takeDoc = (id: string) => doc(db, 'projects', projectId, 'shots', shot.id, 'takes', id);
-  if (approve && shot.approvedTakeId && shot.approvedTakeId !== takeId) await updateDoc(takeDoc(shot.approvedTakeId), { approved: false }).catch(() => undefined);
-  await updateDoc(takeDoc(takeId), { approved: approve });
-  await updateShot(projectId, shot.id, approve ? { approvedTakeId: takeId, selectedTakeId: takeId, status: 'approved' } : { approvedTakeId: null, status: 'ready' });
+  const r = await takeAction(projectId, shot.id, takeId, approve ? 'approve' : 'withdraw');
+  if (approve) toast.success('Take approved', { description: r.continuity === 'needs_review' ? 'Continuity updated from this take (it was not inspected, so the shot is marked “Needs review”).' : 'Continuity state updated from the approved take.' });
+  else toast.success('Approval withdrawn', { description: 'The shot’s canonical continuity records were removed.' });
 }
 
 const CompareVideo = forwardRef<HTMLVideoElement, { assetId: string }>(function CompareVideo({ assetId }, ref) {
@@ -363,14 +367,16 @@ function withLiveFields(edits: Shot, live: Shot): Shot {
     selectedTakeId: live.selectedTakeId,
     approvedTakeId: live.approvedTakeId,
     takeCount: live.takeCount,
+    production: live.production ?? null,
+    continuityStatus: live.continuityStatus ?? null,
     refs: { ...edits.refs, storyboardAssetId: live.refs.storyboardAssetId },
   };
 }
 
 /** The fields the editor writes, with refs as dotted paths so the storyboard frame is left untouched. */
 function editorPatch(s: Shot): Record<string, unknown> {
-  const { id, status, selectedTakeId, approvedTakeId, takeCount, createdAt, updatedAt, refs, ...rest } = s;
-  void [id, status, selectedTakeId, approvedTakeId, takeCount, createdAt, updatedAt];
+  const { id, status, selectedTakeId, approvedTakeId, takeCount, createdAt, updatedAt, refs, production, continuityStatus, ...rest } = s;
+  void [id, status, selectedTakeId, approvedTakeId, takeCount, createdAt, updatedAt, production, continuityStatus];
   const { storyboardAssetId, ...editableRefs } = refs;
   void storyboardAssetId;
   return { ...rest, ...Object.fromEntries(Object.entries(editableRefs).map(([k, v]) => [`refs.${k}`, v])) };
@@ -387,6 +393,10 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
   const [comparing, setComparing] = useState(false);
   const [producing, setProducing] = useState(false);
   const [reviewing, setReviewing] = useState<WithId<TakeDoc> | null>(null);
+  const [showPlan, setShowPlan] = useState(false);
+  const [showState, setShowState] = useState(false);
+  const shotsList = useSub<ShotDoc>(ctx.project.id, 'shots');
+  const names = useMemo(() => ({ characters: Object.fromEntries(ctx.characters.map((c) => [c.id, c.name])), props: Object.fromEntries(ctx.elements.map((e) => [e.id, e.name])) }), [ctx.characters, ctx.elements]);
   const qc = qualitySettings(ctx.project.quality);
   const [editPrompt, setEditPrompt] = useState('');
   const [editMode, setEditMode] = useState<'edit' | 'extend'>('edit');
@@ -500,6 +510,18 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
             {dropped > 0 && <Notice tone="warning">{dropped} reference image(s) exceed Omni’s {caps.maxImageInputs}-image limit and will be left out.</Notice>}
             {!draft.lockRefs && <p className="text-xs text-faint">Unlocked: characters and locations are described in words only.</p>}
           </Card>
+          <Card className="space-y-3 p-4">
+            <button type="button" className="flex w-full cursor-pointer items-center justify-between text-left" onClick={() => setShowPlan((v) => !v)} aria-expanded={showPlan}>
+              <span className="eyebrow flex items-center gap-1.5">
+                <GitBranch className="size-3.5" /> Continuity plan
+              </span>
+              <span className="flex items-center gap-2 text-xs text-faint">
+                {draft.continuity ? 'changes recorded' : 'continues from the previous shot'}
+                {showPlan ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+              </span>
+            </button>
+            {showPlan && <ShotContinuityEditor projectId={ctx.project.id} shot={draft} value={draft.continuity} onChange={(c) => setDraft({ ...draft, continuity: c })} characters={ctx.characters} elements={ctx.elements} />}
+          </Card>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label={`Preferred duration ${draft.durationSec}s`} hint="A preference: the scene is lengthened or split when dialogue or action needs more time.">
               <Slider label="Duration" min={caps.durationSec.min} max={caps.durationSec.max} step={1} value={draft.durationSec} onChange={(v) => setDraft({ ...draft, durationSec: v })} className="mt-2" />
@@ -522,17 +544,25 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
             </Field>
           </div>
           {(qc.ensureCompleteDialogue || qc.ensureCompleteAction) && <DurationPreview plan={plan} measured={false} />}
-          {!qc.autoQualityReview && (
-            <Field label={`Takes per generation: ${takes}`} hint="Alternate takes are separate generations, each billed.">
-              <Slider label="Takes" min={1} max={4} step={1} value={takes} onChange={setTakes} />
-            </Field>
-          )}
+          <Field label={`Takes per generation: ${takes}`} hint={qc.autoQualityReview ? `Independent takes are each generated and inspected (billed separately); the strongest is recommended. Project limit ${qc.maxTakesPerShot}.` : 'Alternate takes are separate generations, each billed.'}>
+            <Slider label="Takes" min={1} max={qc.autoQualityReview ? Math.max(1, qc.maxTakesPerShot) : 4} step={1} value={Math.min(takes, qc.autoQualityReview ? Math.max(1, qc.maxTakesPerShot) : 4)} onChange={setTakes} />
+          </Field>
           <PromptPreview declaration={prompt.declaration} body={prompt.body} override={draft.promptOverride} onOverride={(v) => setDraft({ ...draft, promptOverride: v })} />
           <Field label="Production notes">
             <Textarea rows={2} value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
           </Field>
         </div>
         <div className="space-y-4">
+          <Card className="space-y-3 p-3">
+            <button type="button" className="flex w-full cursor-pointer items-center justify-between text-left" onClick={() => setShowState((v) => !v)} aria-expanded={showState}>
+              <span className="eyebrow">Continuity state</span>
+              <span className="flex items-center gap-2">
+                <ContinuityBadge status={shot.continuityStatus?.status ?? null} openWarnings={shot.continuityStatus?.openWarnings} />
+                {showState ? <ChevronDown className="size-4 text-faint" /> : <ChevronRight className="size-4 text-faint" />}
+              </span>
+            </button>
+            {showState && <ShotContinuityPanel projectId={ctx.project.id} shot={shot} shots={shotsList.data} names={names} />}
+          </Card>
           <ShotProductionPanel projectId={ctx.project.id} shotId={shot.id} />
           <div className="flex items-center justify-between gap-2">
             <p className="eyebrow">Takes ({takeDocs.data.length})</p>
@@ -585,7 +615,7 @@ export function ShotEditor({ ctx, shot, onClose, timedCues }: { ctx: ShotContext
         title={picker === 'refs' ? 'Reference images' : picker === 'first' ? 'First frame' : 'Last frame'}
       />
       {dialog}
-      {producing && <ProduceDialog projectId={ctx.project.id} shot={draft} job={shotJob(draft, ctx, caps, timedCues) as VideoJobRequest} onClose={() => setProducing(false)} />}
+      {producing && <ProduceDialog projectId={ctx.project.id} shot={draft} job={shotJob(draft, ctx, caps, timedCues) as VideoJobRequest} takes={Math.min(takes, Math.max(1, qc.maxTakesPerShot))} onClose={() => setProducing(false)} />}
       {reviewing && <ProduceDialog projectId={ctx.project.id} shot={draft} job={shotJob(draft, ctx, caps, timedCues) as VideoJobRequest} reviewTake={reviewing} onClose={() => setReviewing(null)} />}
     </Modal>
   );
@@ -616,8 +646,12 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
   const [filter, setFilter] = useState<'all' | 'planned' | 'ready' | 'approved' | 'failed'>('all');
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [batch, setBatch] = useState<Shot[] | null>(null);
+  const [continuityOf, setContinuityOf] = useState<string | null>(null);
   const { submit, busy, dialog } = useJobSubmitter();
   const qc = qualitySettings(ctx.project.quality);
+  const snapshots = useProjectCollection<Snapshot>(ctx.project.id, 'continuitySnapshots');
+  const travelOf = useMemo(() => new Map(snapshots.data.map((x) => [x.shotId, (x.approvedState ?? x.plannedState)?.camera.travel ?? {}])), [snapshots.data]);
+  const names = useMemo(() => ({ characters: Object.fromEntries(ctx.characters.map((c) => [c.id, c.name])), props: Object.fromEntries(ctx.elements.map((e) => [e.id, e.name])) }), [ctx.characters, ctx.elements]);
   if (!boot || !caps) return null;
   const visible = shots.filter((s) => filter === 'all' || s.status === filter || (filter === 'ready' && s.status === 'generating'));
   const chosen = shots.filter((s) => selected.includes(s.id));
@@ -690,6 +724,7 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
                     <Badge tone={s.status === 'approved' ? 'success' : s.status === 'failed' ? 'danger' : s.status === 'planned' ? 'neutral' : 'accent'}>{s.status}</Badge>
                     {s.takeCount > 0 && <span className="text-[11px] text-faint">{s.takeCount} take{s.takeCount > 1 ? 's' : ''}</span>}
                     <ProductionBadge summary={s.production ?? null} />
+                    <DirectionArrows travel={travelOf.get(s.id)} names={names.characters} />
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-xs text-dim">{s.description || s.directions.action || 'No description'}</p>
                   <p className="mt-1 text-[11px] text-faint">
@@ -699,7 +734,8 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
                   </p>
                 </div>
               </button>
-              <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
+              <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center">
+                <ContinuityBadge status={s.continuityStatus?.status ?? null} openWarnings={s.continuityStatus?.openWarnings} onClick={() => setContinuityOf(s.id)} />
                 {s.production && (
                   <IconButton label="AI Director Review" onClick={() => setReviewing(s.production!.id)}>
                     <ShieldCheck className="size-4" />
@@ -722,6 +758,7 @@ export function ShotQueue({ ctx, shots, timedCuesFor, emptyAction }: { ctx: Shot
           <DirectorReview productionId={reviewing} />
         </Modal>
       )}
+      {continuityOf && shots.find((x) => x.id === continuityOf) && <ContinuityModal projectId={ctx.project.id} shot={shots.find((x) => x.id === continuityOf)!} shots={shots} names={names} onClose={() => setContinuityOf(null)} />}
       {batch && <BatchProduceDialog projectId={ctx.project.id} items={batch.map((s) => ({ shot: s, job: shotJob(s, ctx, caps, timedCuesFor?.(s)) as VideoJobRequest }))} onClose={() => setBatch(null)} onStarted={() => setSelected([])} />}
       {dialog}
     </div>

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { AudioWaveform, Ban, CircleAlert, Clapperboard, Coins, Film, Image as ImageIcon, Languages, Mic, Music2, NotebookPen, RotateCcw, Scissors, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert } from 'lucide-react';
 import {
   formatDuration,
   formatUsd,
@@ -36,6 +36,18 @@ const TYPE_ICON: Record<JobType, ReactNode> = {
   'lyrics.transcribe': <Languages className="size-4" />,
   'lyrics.align': <Languages className="size-4" />,
   'media.composite': <Scissors className="size-4" />,
+  'reference.pack': <LayoutGrid className="size-4" />,
+  'continuity.compare': <GitCompareArrows className="size-4" />,
+  'media.screen_replace': <ScanText className="size-4" />,
+  'media.color_match': <Palette className="size-4" />,
+  'media.analyze_subjects': <ScanEye className="size-4" />,
+  'lyrics.resync_audio': <Languages className="size-4" />,
+  'final.inspect': <ShieldCheck className="size-4" />,
+  'music.analyze': <AudioWaveform className="size-4" />,
+  'music.arrange': <Blend className="size-4" />,
+  'music.mix': <SlidersHorizontal className="size-4" />,
+  'music.replace_section': <Music2 className="size-4" />,
+  'audio.stems': <AudioLines className="size-4" />,
 };
 
 export function statusTone(status: JobDoc['status']) {
