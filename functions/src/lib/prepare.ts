@@ -50,6 +50,7 @@ import { PRICING } from '../config/pricing';
 import { TEXT_TASK_SPECS } from '../workers/text-tasks';
 import { applyContinuityToRequest, loadShotContinuity, planContinuity } from './continuity';
 import { musicSurface } from './music-model';
+import { renderInputs } from './render-inputs';
 import {
   prepareAnalyzeSubjects,
   prepareColorMatch,
@@ -474,6 +475,10 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
   const dims = presetDimensions(req.preset, req.quality);
   const renderId = col.renders().doc().id;
   const estimate = estimateRender({ durationSec, quality: req.quality }, PRICING);
+  // Lyric styles, credits, fonts, face tracks and face-safe reframe paths for this export shape.
+  const inputs = await renderInputs(uid, req.projectId, tl, req.preset, assets);
+  estimate.notes.push(...inputs.notes);
+  if (req.quality === 'final' || req.inspect) estimate.notes.push('The finished film is inspected before export (sound, picture, text, structure).');
   const assetMap = Object.fromEntries(
     [...assets.values()].map((a) => [a.id, { storagePath: a.storagePath, kind: a.kind, mimeType: a.mimeType, width: a.width ?? null, height: a.height ?? null, durationSec: a.durationSec ?? null, hasAudio: a.hasAudio ?? null, title: a.title, provenance: a.generation?.provenance ?? null, modelId: a.generation?.modelId ?? null }]),
   );
@@ -499,7 +504,8 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         height: dims.height,
         fps: tl.fps,
         durationSec,
-        snapshot: { tracks: tl.tracks, clips: tl.clips, aspectRatio: tl.aspectRatio, fps: tl.fps },
+        snapshot: { tracks: tl.tracks, clips: inputs.clips, aspectRatio: tl.aspectRatio, fps: tl.fps },
+        text: inputs.text,
         lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
         // Final renders are always inspected before export; drafts only when asked.
         inspect: req.inspect || req.quality === 'final',

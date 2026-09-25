@@ -34,3 +34,4 @@ export * from './music-analysis';
 export * from './music-studio';
 export * from './final-inspection';
 export * from './coverage';
+export * from './render-text';

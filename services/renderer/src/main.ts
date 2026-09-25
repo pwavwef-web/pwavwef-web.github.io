@@ -5,15 +5,16 @@ import path from 'node:path';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { Storage } from '@google-cloud/storage';
-import { dayKey, monthKey, safeFileName, type Clip, type JobStatus, type Track } from '@az-studio/shared';
+import { dayKey, monthKey, safeFileName, sceneEvents, sceneToAss, type Clip, type JobStatus, type Track } from '@az-studio/shared';
+import { FontBook } from './fonts';
 import { buildAudioMix, buildSegment, concatList, muxArgs, planSegments, type RenderAssetInfo, type RenderSnapshot } from './graph';
+import { blurRegions, buildTextScene, type RenderTextInputs } from './text';
 
 const RENDER_ID = process.env.RENDER_ID ?? '';
 const JOB_ID = process.env.JOB_ID ?? '';
 const DATABASE = process.env.AZS_FIRESTORE_DATABASE ?? 'az-studio';
 const BUCKET = process.env.AZS_MEDIA_BUCKET ?? 'az-studio-media-az-learner';
 const MEDIA_ROOT = process.env.MEDIA_ROOT ?? '/media';
-const FONTS_DIR = process.env.FONTS_DIR ?? '/app/fonts';
 const WORK = process.env.WORK_DIR ?? '/tmp/render';
 const FFMPEG = process.env.FFMPEG_BIN ?? 'ffmpeg';
 const FFPROBE = process.env.FFPROBE_BIN ?? 'ffprobe';
@@ -107,6 +108,8 @@ interface RenderDocData {
   snapshot: { tracks: Track[]; clips: Clip[]; aspectRatio: string; fps: number };
   assets: Record<string, RenderAssetInfo & { title?: string; provenance?: { synthId?: boolean; c2pa?: string } | null; modelId?: string | null }>;
   computeRates?: { vcpu: number; memoryGiB: number; perVcpuSecond: number; perGiBSecond: number };
+  /** Lyric styles, credits, uploaded fonts and face tracks resolved when the render was requested. */
+  text?: RenderTextInputs | null;
 }
 
 async function resolveMedia(r: RenderDocData): Promise<(assetId: string) => string> {
@@ -171,16 +174,34 @@ async function main() {
     quality: r.quality,
     assets: r.assets,
   };
+  // Fonts: uploaded ones (licence confirmed) join libass's font directory and the metrics book.
+  const fontsDir = path.join(WORK, 'fonts');
+  await mkdir(fontsDir, { recursive: true });
+  const book = new FontBook();
+  const fontsByLabel = new Map<string, string>();
+  for (const [i, font] of (r.text?.fonts ?? []).entries()) {
+    const dest = path.join(fontsDir, `upload${i}${path.extname(font.storagePath) || '.ttf'}`);
+    await bucket.file(font.storagePath).download({ destination: dest });
+    const family = await book.register(dest);
+    if (family) fontsByLabel.set(font.family, family);
+  }
+  const text = await buildTextScene(snap, r.text, book, fontsByLabel);
+  // The measured layout (with the real fonts) is what the final-film inspection checks.
+  await renderRef.set({ textLayout: { issues: text.issues.slice(0, 200), credits: text.credits, notes: text.notes.slice(0, 20) }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  const aspect = r.text?.aspect ?? (Math.abs(snap.width / snap.height - 16 / 9) < 0.02 ? '16:9' : Math.abs(snap.width / snap.height - 9 / 16) < 0.02 ? '9:16' : Math.abs(snap.width / snap.height - 1) < 0.02 ? '1:1' : '4:5');
   const segments = planSegments(snap, 90);
-  log('render plan', { segments: segments.length, durationSec: snap.durationSec, width: snap.width, height: snap.height, quality: snap.quality });
+  log('render plan', { segments: segments.length, durationSec: snap.durationSec, width: snap.width, height: snap.height, quality: snap.quality, textBlocks: text.scene?.blocks.length ?? 0, textIssues: text.issues.length });
 
   const segFiles: string[] = [];
   let doneSeconds = 0;
   for (const seg of segments) {
     const base = path.join(WORK, `seg${seg.index}`);
-    const plan = buildSegment(snap, seg, { resolve, filterScriptPath: `${base}.filter`, assPath: `${base}.ass`, fontsDir: FONTS_DIR, outputPath: `${base}.mp4` });
+    const window = { start: seg.start, end: seg.end };
+    const sceneAss = text.scene && sceneEvents(text.scene, { fontScale: book.fontScale, window }).length ? sceneToAss(text.scene, { fontScale: book.fontScale, window }) : null;
+    const plan = buildSegment(snap, seg, { resolve, filterScriptPath: `${base}.filter`, assPath: `${base}.ass`, fontsDir, outputPath: `${base}.mp4`, aspect, sceneAss, sceneAssPath: `${base}.scene.ass`, handledText: text.handled, blurs: blurRegions(text.scene, window) });
     await writeFile(`${base}.filter`, plan.filter);
     if (plan.ass) await writeFile(`${base}.ass`, plan.ass);
+    if (sceneAss) await writeFile(`${base}.scene.ass`, sceneAss);
     const segLen = seg.end - seg.start;
     await run(plan.args, (t) => {
       reportProgress(`Rendering picture · segment ${seg.index + 1}/${segments.length}`, 0.15 + 0.65 * ((doneSeconds + Math.min(t, segLen)) / snap.durationSec));

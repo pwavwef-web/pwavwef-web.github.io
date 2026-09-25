@@ -222,6 +222,8 @@ export interface LyricInputLine {
   part?: string | null;
   /** Detected faces/objects/text to avoid during this line (0–1 boxes). */
   avoid?: { x: number; y: number; w: number; h: number }[];
+  /** Position the director set for this line in this aspect ratio (0–1 anchor); locked lines never move. */
+  placement?: { x: number; y: number; locked: boolean } | null;
 }
 
 export interface LyricLayoutInput {
@@ -578,8 +580,11 @@ function buildBlock(
     }
     return { left, top };
   };
+  // A placement the director set for this line overrides the style anchor.
+  const placement = input.lines.find((l) => l.id === refs[0])?.placement ?? null;
+  if (placement) anchor = { x: placement.x, y: placement.y };
   const covers = (left: number, top: number) => avoid.some((a) => rectsOverlap({ x: (left - pad) / W, y: (top - pad) / H, w: (blockW + 2 * pad) / W, h: (blockH + 2 * pad) / H }, a));
-  const locked = s.aspects[input.aspect]?.locked ?? false;
+  const locked = placement?.locked ?? s.aspects[input.aspect]?.locked ?? false;
   let pos = placeAt(anchor.x, anchor.y);
   let moved = false;
   let coversFace = covers(pos.left, pos.top);

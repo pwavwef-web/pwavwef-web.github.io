@@ -1,4 +1,4 @@
-import { ENCODE_SETTINGS, type Clip, type RenderQuality, type TextStyle, type Track } from '@az-studio/shared';
+import { ENCODE_SETTINGS, reframeCropExpressions, type Clip, type RenderQuality, type TextStyle, type Track } from '@az-studio/shared';
 
 /**
  * Pure FFmpeg planning for AZ Studio renders. The timeline is rendered as a sequence of video-only
@@ -148,9 +148,9 @@ export function karaokeText(units: { text: string; start: number; end: number }[
 }
 
 /** Builds the ASS script for all caption and title text visible in a segment (times relative to it). */
-export function buildAss(snap: RenderSnapshot, seg: Segment): string | null {
+export function buildAss(snap: RenderSnapshot, seg: Segment, skip: ReadonlySet<string> = new Set()): string | null {
   const visible = new Set(snap.tracks.filter((t) => !t.muted).map((t) => t.id));
-  const texts = snap.clips.filter((c) => (c.kind === 'caption' || c.kind === 'title') && c.text.trim() && visible.has(c.trackId) && c.start < seg.end && c.start + c.duration > seg.start);
+  const texts = snap.clips.filter((c) => (c.kind === 'caption' || c.kind === 'title') && c.text.trim() && visible.has(c.trackId) && !skip.has(c.id) && c.start < seg.end && c.start + c.duration > seg.start);
   if (!texts.length) return null;
   const W = snap.width;
   const H = snap.height;
@@ -241,6 +241,23 @@ export interface GraphContext {
   assPath: string;
   fontsDir: string;
   outputPath: string;
+  /** Output aspect key (16:9, 9:16, 1:1, 4:5): picks each clip's face-safe reframe path. */
+  aspect?: string;
+  /** Styled lyrics and credits for this segment (ASS with absolute timeline times). */
+  sceneAss?: string | null;
+  sceneAssPath?: string;
+  /** Clips drawn by the text engine (not by the caption renderer). */
+  handledText?: ReadonlySet<string>;
+  /** Background-blur regions behind text boxes (absolute seconds, output px). */
+  blurs?: { x: number; y: number; w: number; h: number; radius: number; start: number; end: number }[];
+}
+
+/** Face-safe reframe: a time-varying crop following the clip's subject path, scaled to the frame. */
+export function reframeChain(c: Clip, aspect: string | undefined, src: { w: number | null; h: number | null }, W: number, H: number, timeOffset: number, label: string, out: string): string | null {
+  const track = aspect ? c.reframe?.[aspect] : null;
+  if (!track || !track.keyframes.length || !src.w || !src.h) return null;
+  const e = reframeCropExpressions(track.keyframes, src.w, src.h, track.crop, Math.round(timeOffset * 1000) / 1000);
+  return `[${label}]crop=w=${e.w}:h=${e.h}:x='${e.x}':y='${e.y}',scale=${W}:${H},setsar=1,format=yuva420p[${out}]`;
 }
 
 function fitChain(fit: Clip['fit'], W: number, H: number, label: string, out: string): string {
@@ -292,6 +309,7 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
         const asset = c.assetId ? snap.assets[c.assetId] : undefined;
         if (!c.assetId || !asset) return;
         const file = ctx.resolve(c.assetId);
+        let reframed: string | null = null;
         if (c.kind === 'video') {
           // Source time at the start of the visible window; freeze the first frame if the pre-roll needs handles.
           const srcAtVisible = c.inPoint + (seg.start + localStart - c.start);
@@ -299,6 +317,8 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
           const pad = Math.max(0, -srcAtVisible);
           args.push('-ss', String(r3(seek)), '-t', String(r3(span - pad + 0.1)), '-i', file);
           filters.push(`[${inputIndex}:v]fps=${fps},setsar=1${pad > 0 ? `,tpad=start_duration=${r3(pad)}:start_mode=clone` : ''}[${label}src]`);
+          // Stream time t shows source time seek + t − pad, i.e. clip-local time t + (seek − pad − inPoint).
+          reframed = reframeChain(c, ctx.aspect, { w: asset.width, h: asset.height }, W, H, seek - pad - c.inPoint, `${label}src`, `${label}fit`);
         } else {
           args.push('-loop', '1', '-framerate', String(fps), '-t', String(span), '-i', file);
           const frames = Math.max(1, Math.round(span * fps));
@@ -310,7 +330,7 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
               : `[${inputIndex}:v]fps=${fps},setsar=1[${label}src]`,
           );
         }
-        filters.push(fitChain(c.kenBurns && c.kind === 'image' ? 'fill' : c.fit, W, H, `${label}src`, `${label}fit`));
+        filters.push(reframed ?? fitChain(c.kenBurns && c.kind === 'image' ? 'fill' : c.fit, W, H, `${label}src`, `${label}fit`));
         filters.push(`[${label}fit]trim=duration=${span},setpts=PTS-STARTPTS${fadeFilters(c, 0, localStart, seg, span, next)},setpts=PTS+${vs}/TB[${label}]`);
         inputIndex++;
       }
@@ -332,11 +352,25 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
     });
   }
 
-  const ass = buildAss(snap, seg);
+  (ctx.blurs ?? []).forEach((b, k) => {
+    const x = Math.max(0, Math.round(b.x));
+    const y = Math.max(0, Math.round(b.y));
+    const w = Math.max(2, Math.min(W - x, Math.round(b.w)));
+    const h = Math.max(2, Math.min(H - y, Math.round(b.h)));
+    const radius = Math.max(1, Math.min(Math.floor(Math.min(w, h) / 2) - 1, Math.round(b.radius)));
+    filters.push(`[${current}]split=2[bl${k}a][bl${k}b];[bl${k}b]crop=${w}:${h}:${x}:${y},boxblur=luma_radius=${radius}:luma_power=2:chroma_radius=${Math.max(1, Math.floor(radius / 2))}[bl${k}c];[bl${k}a][bl${k}c]overlay=${x}:${y}:enable='between(t,${r3(b.start - seg.start)},${r3(b.end - seg.start)})'[blo${k}]`);
+    current = `blo${k}`;
+  });
+  const ass = buildAss(snap, seg, ctx.handledText);
   let final = current;
   if (ass) {
     filters.push(`[${current}]subtitles=filename=${filterPath(ctx.assPath)}:fontsdir=${filterPath(ctx.fontsDir)}[subs]`);
     final = 'subs';
+  }
+  if (ctx.sceneAss && ctx.sceneAssPath) {
+    // Scene events carry absolute timeline times: shift the frames there for libass, then back.
+    filters.push(`[${final}]setpts=PTS+${r3(seg.start)}/TB,subtitles=filename=${filterPath(ctx.sceneAssPath)}:fontsdir=${filterPath(ctx.fontsDir)},setpts=PTS-${r3(seg.start)}/TB[scene]`);
+    final = 'scene';
   }
   filters.push(`[${final}]format=yuv420p,trim=duration=${segDur},setpts=PTS-STARTPTS[vout]`);
   const filter = filters.join(';\n');
@@ -364,6 +398,8 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
   );
   return { args, filter, ass };
 }
+
+export { fitChain };
 
 /** Alpha fades for fade in/out and the incoming/outgoing halves of transitions (times in clip-local stream time). */
 function fadeFilters(c: Clip, visLocal: number, localStart: number, seg: Segment, span: number, next?: Clip): string {
