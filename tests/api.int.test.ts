@@ -67,6 +67,25 @@ function waitFor<T>(db: Firestore, path: string, pred: (d: T) => boolean, ms = 4
   });
 }
 
+/** Firestore REST value for plain JSON (server-written documents are seeded through the emulator's admin bypass). */
+function fsValue(v: unknown): unknown {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'string') return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(fsValue) } };
+  return { mapValue: { fields: Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, fsValue(x)])) } };
+}
+
+async function adminSet(docPath: string, data: Record<string, unknown>) {
+  const res = await fetch(`http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/az-studio/documents/${docPath}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+    body: JSON.stringify({ fields: (fsValue(data) as { mapValue: { fields: unknown } }).mapValue.fields }),
+  });
+  if (!res.ok) throw new Error(`adminSet ${docPath} failed: ${res.status} ${await res.text()}`);
+}
+
 let owner: Session;
 let intruder: Session;
 
@@ -322,5 +341,58 @@ describe('uploads', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  }, 120_000);
+});
+
+describe('export gate', () => {
+  it('refuses to export an inspected render until its final inspection passes or is overridden', async () => {
+    const renderId = 'it-render-gate';
+    const assetId = 'it-render-asset';
+    await adminSet(`renders/${renderId}`, { ownerUid: OWNER.uid, projectId: 'it-project', timelineId: 't1', timelineVersion: 1, preset: 'youtube_16x9', quality: 'final', inspect: true, status: 'completed', finalInspection: { id: renderId, status: 'completed', readiness: 'blocked', score: 40, errors: 3, warnings: 1 } });
+    await adminSet(`assets/${assetId}`, { ownerUid: OWNER.uid, projectId: 'it-project', kind: 'video', source: 'render', status: 'ready', title: 'Film', fileName: 'film.mp4', mimeType: 'video/mp4', storagePath: `users/${OWNER.uid}/renders/${renderId}/film.mp4`, thumbPath: null, posterPath: null, waveformPath: null });
+    const blocked = await call(owner.token, 'mediaUrls', { assetIds: [assetId], variants: ['file'], download: true });
+    expect(blocked.error).toBeUndefined();
+    expect(blocked.result.urls[assetId].file).toBeUndefined();
+    expect(blocked.result.urls[assetId].blocked).toMatch(/Export is blocked: the final inspection found 3 critical problems/);
+    // Playback (not a download) is still allowed so the director can review the film.
+    const play = await call(owner.token, 'mediaUrls', { assetIds: [assetId], variants: ['file'], download: false });
+    expect(play.result.urls[assetId].file).toBeTruthy();
+    await adminSet(`renders/${renderId}`, { ownerUid: OWNER.uid, projectId: 'it-project', timelineId: 't1', timelineVersion: 1, preset: 'youtube_16x9', quality: 'final', inspect: true, status: 'completed', finalInspection: { id: renderId, status: 'completed', readiness: 'overridden', score: 40, errors: 3, warnings: 1 } });
+    const allowed = await call(owner.token, 'mediaUrls', { assetIds: [assetId], variants: ['file'], download: true });
+    expect(allowed.result.urls[assetId].blocked).toBeUndefined();
+    expect(allowed.result.urls[assetId].file).toBeTruthy();
+  });
+});
+
+describe('music studio', () => {
+  it('turns an upload into an analysable version with a linked song, and keeps server-owned links through stale saves', async () => {
+    await setDoc(doc(owner.db, 'projects', 'it-music'), { ownerUid: OWNER.uid, title: 'Music Integration', type: 'music', status: 'active', format: { aspectRatio: '16:9', fps: 24 }, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    const brief = { title: 'River song', concept: 'A walk to the river', language: 'en', genre: 'highlife', subgenre: '', mood: 'hopeful', tempoBpm: null, key: '', timeSignature: '4/4', durationSec: 60, vocals: 'lead', vocalCharacter: '', instrumentation: [], structure: [], introSec: null, verseCount: 1, chorusCount: 1, bridge: false, outro: true, energy: '', culturalDirection: '', avoidInstruments: [], explicit: 'clean' };
+    const body = { mode: 'upload', brief, lyricsText: '', lyricsSheetId: null, songId: null, masterVersionId: null, sections: [], markers: [], mix: { limiter: true, targetLufs: -14, preset: 'balanced' } };
+    const created = await call(owner.token, 'continuitySave', { projectId: 'it-music', collection: 'musicProjects', data: body, id: null });
+    expect(created.error).toBeUndefined();
+    const mpId = created.result.id as string;
+    const storage = getStorage(owner.app, 'gs://az-studio-media-az-learner');
+    connectStorageEmulator(storage, '127.0.0.1', 9199);
+    const data = wav(2);
+    const up = await call(owner.token, 'createUpload', { kind: 'audio', fileName: 'demo.wav', mimeType: 'audio/wav', sizeBytes: data.length, projectId: 'it-music' });
+    await uploadBytes(ref(storage, up.result.storagePath), data, { contentType: 'audio/wav' });
+    await waitFor<{ status: string }>(owner.db, `assets/${up.result.assetId}`, (d) => d.status === 'ready', 60_000);
+    const added = await call(owner.token, 'musicAddVersion', { projectId: 'it-music', musicProjectId: mpId, assetId: up.result.assetId, source: 'upload' });
+    expect(added.error).toBeUndefined();
+    const version = (await getDoc(doc(owner.db, 'projects', 'it-music', 'musicVersions', added.result.versionId))).data()!;
+    expect(version).toMatchObject({ musicProjectId: mpId, index: 1, source: 'upload', assetId: up.result.assetId });
+    expect(version.method).toMatch(/nothing generated/);
+    const song = (await getDoc(doc(owner.db, 'projects', 'it-music', 'songs', added.result.songId))).data()!;
+    expect(song.audioAssetId).toBe(up.result.assetId);
+    // A stale editor saving the brief must not undo the master version or the linked song.
+    const stale = await call(owner.token, 'continuitySave', { projectId: 'it-music', collection: 'musicProjects', data: { ...body, brief: { ...brief, mood: 'joyful' } }, id: mpId });
+    expect(stale.error).toBeUndefined();
+    const mp = (await getDoc(doc(owner.db, 'projects', 'it-music', 'musicProjects', mpId))).data()!;
+    expect(mp).toMatchObject({ songId: added.result.songId, masterVersionId: added.result.versionId, versionCount: 1 });
+    expect(mp.brief.mood).toBe('joyful');
+    // Nobody else can attach audio to the owner's music.
+    const foreign = await call(intruder.token, 'musicAddVersion', { projectId: 'it-music', musicProjectId: mpId, assetId: up.result.assetId, source: 'upload' });
+    expect(foreign.error?.status).toBe('PERMISSION_DENIED');
   }, 120_000);
 });

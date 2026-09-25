@@ -114,6 +114,16 @@ export async function recordUsage(u: UsageInput): Promise<number> {
  * Rejects work that would take a project past its own budget (recorded usage + running jobs + this).
  * Projects without a budget are only bound by the owner's daily and monthly limits.
  */
+/** A project's budget position (null when the project has no budget). */
+export async function projectBudget(uid: string, projectId: string): Promise<{ projectId: string; title: string; limitUsd: number; spentUsd: number; pendingUsd: number } | null> {
+  const p = await col.projects().doc(projectId).get();
+  if (!p.exists || p.get('ownerUid') !== uid) return null;
+  const limit = p.get('budget.limitUsd') as number | null | undefined;
+  if (typeof limit !== 'number' || limit <= 0) return null;
+  const active = await col.jobs().where('ownerUid', '==', uid).where('projectId', '==', projectId).where('status', 'in', [...ACTIVE_STATUSES]).get();
+  return { projectId, title: String(p.get('title') ?? ''), limitUsd: limit, spentUsd: Number(p.get('usage.costUsd') ?? 0), pendingUsd: active.docs.reduce((s, d) => s + Number(d.get('estimate.usd') ?? 0), 0) };
+}
+
 export async function assertProjectBudget(uid: string, projectId: string | null | undefined, addUsd: number): Promise<void> {
   if (!projectId || addUsd <= 0) return;
   const p = await col.projects().doc(projectId).get();

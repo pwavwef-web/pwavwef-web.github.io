@@ -197,6 +197,26 @@ function CostDialog({ estimate, count, loading, onCancel, onConfirm }: { estimat
           </div>
         </div>
       </div>
+      {estimate.summary && (
+        <p className="mt-3 text-xs text-dim">
+          {[
+            estimate.summary.videoGenerations && `${estimate.summary.videoGenerations} video generation${estimate.summary.videoGenerations === 1 ? '' : 's'}`,
+            estimate.summary.imageGenerations && `${estimate.summary.imageGenerations} image${estimate.summary.imageGenerations === 1 ? '' : 's'}`,
+            estimate.summary.musicRequests && `${estimate.summary.musicRequests} music request${estimate.summary.musicRequests === 1 ? '' : 's'}`,
+            estimate.summary.renders && `${estimate.summary.renders} render${estimate.summary.renders === 1 ? '' : 's'}`,
+            estimate.summary.inspections && `${estimate.summary.inspections} inspection${estimate.summary.inspections === 1 ? '' : 's'}`,
+            estimate.summary.compute && `${estimate.summary.compute} processing job${estimate.summary.compute === 1 ? '' : 's'}`,
+            estimate.summary.referenceImages && `${estimate.summary.referenceImages} reference image${estimate.summary.referenceImages === 1 ? '' : 's'}`,
+          ]
+            .filter(Boolean)
+            .join(' · ') || null}
+        </p>
+      )}
+      {(estimate.budgets ?? []).map((b) => (
+        <p key={b.projectId} className={cx('mt-1 text-xs', b.remainingUsd < 0 ? 'text-danger' : b.remainingUsd < b.limitUsd * 0.15 ? 'text-warning' : 'text-dim')}>
+          Project budget “{b.title}”: {formatUsd(b.limitUsd)} · spent ≈ {formatUsd(b.spentUsd)} · in progress ≈ {formatUsd(b.pendingUsd)} · remaining after this ≈ {formatUsd(Math.max(0, b.remainingUsd))}
+        </p>
+      ))}
       {estimate.confirmation.reasons.length > 0 && (
         <Notice tone="warning" icon={<TriangleAlert className="size-4" />} className="mt-4">
           {estimate.confirmation.reasons.join(' · ')}

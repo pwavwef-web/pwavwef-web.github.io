@@ -26,7 +26,7 @@ import { trimVideo, videoFrame } from '../lib/media';
 import type { Owner } from '../lib/owner';
 import { deletePrefix, signedReadUrl } from '../lib/storage';
 import { mediaInputUrl } from '../lib/media-proxy';
-import { assertRateLimit, assertWithinLimits, getSettings, spendSnapshot } from '../lib/usage';
+import { assertRateLimit, assertWithinLimits, getSettings, projectBudget, spendSnapshot } from '../lib/usage';
 import { genai } from '../lib/vertex';
 import { cancelExecution } from '../workers/render';
 
@@ -151,7 +151,27 @@ export async function estimate(owner: Owner, p: Payload<'estimate'>) {
   } catch (e) {
     limitProblem = (e as Error).message;
   }
+  // Project budgets touched by this batch (remaining after it).
+  const byProject = new Map<string, number>();
+  for (const [i, j] of p.jobs.entries()) if (j.projectId) byProject.set(j.projectId, (byProject.get(j.projectId) ?? 0) + prepared[i]!.estimate.usd);
+  const budgets = (await Promise.all([...byProject.keys()].map((id) => projectBudget(owner.uid, id)))).filter((b): b is NonNullable<typeof b> => Boolean(b)).map((b) => ({ ...b, thisUsd: byProject.get(b.projectId) ?? 0, remainingUsd: b.limitUsd - b.spentUsd - b.pendingUsd - (byProject.get(b.projectId) ?? 0) }));
+  const over = budgets.find((b) => b.remainingUsd < -1e-9);
+  if (over && !limitProblem) limitProblem = `This would exceed the project budget of $${over.limitUsd.toFixed(2)} for “${over.title}” (spent ≈ $${over.spentUsd.toFixed(2)} + in progress ≈ $${over.pendingUsd.toFixed(2)} + this ≈ $${over.thisUsd.toFixed(2)}). Raise the budget in the project settings, reuse approved takes, or cancel queued work.`;
+  // What the batch will actually run.
+  const count = (t: string) => prepared.filter((x) => x.type === t).length;
+  const media = (x: (typeof prepared)[number]) => (Array.isArray((x.params as { media?: unknown[] }).media) ? ((x.params as { media: { kind?: string; role?: string }[] }).media.filter((m) => m.role === 'image_ref' || m.role === 'first_frame' || m.role === 'last_frame').length) : Array.isArray((x.params as { referenceAssetIds?: unknown[] }).referenceAssetIds) ? (x.params as { referenceAssetIds: unknown[] }).referenceAssetIds.length : 0);
+  const summary = {
+    videoGenerations: count('video.generate'),
+    imageGenerations: count('image.generate') + count('reference.pack'),
+    musicRequests: count('music.generate') + count('music.replace_section'),
+    renders: count('render.timeline') + count('music.mix') + count('music.arrange'),
+    inspections: count('quality.inspect') + count('final.inspect') + count('continuity.compare'),
+    referenceImages: prepared.reduce((s, x) => s + media(x), 0),
+    compute: count('audio.stems') + count('media.color_match') + count('media.screen_replace') + count('media.composite'),
+  };
   return {
+    budgets,
+    summary,
     estimate: total,
     perJob: prepared.map((x) => ({ type: x.type, label: x.label, modelId: x.modelId, estimate: x.estimate })),
     confirmation: confirm,

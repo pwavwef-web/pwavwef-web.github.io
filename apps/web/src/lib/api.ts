@@ -56,6 +56,10 @@ export interface BootstrapData {
 }
 
 export interface EstimateResponse {
+  /** Budgets of the projects this batch touches, with what remains after it. */
+  budgets?: { projectId: string; title: string; limitUsd: number; spentUsd: number; pendingUsd: number; thisUsd: number; remainingUsd: number }[];
+  /** What the batch runs. */
+  summary?: { videoGenerations: number; imageGenerations: number; musicRequests: number; renders: number; inspections: number; referenceImages: number; compute: number };
   estimate: CostEstimate;
   perJob: { type: string; label: string; modelId: string | null; estimate: CostEstimate }[];
   confirmation: { required: boolean; reasons: string[] };

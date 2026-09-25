@@ -14,27 +14,13 @@ service firebase.storage {
 
     // Owner uploads go to a path reserved by the API (users/{uid}/uploads/{assetId}/{file}).
     // Every upload is re-validated server-side (size per kind, magic-byte sniffing, ffprobe).
+    // Fonts (for lyric and credit styles) arrive as font/* or the legacy application/* font types.
     match /users/{uid}/uploads/{assetId}/{fileName} {
       allow read: if isOwner() && request.auth.uid == uid;
       allow create: if isOwner() && request.auth.uid == uid
         && request.resource.size > 0
         && request.resource.size <= 2 * 1024 * 1024 * 1024
-        && request.resource.contentType.matches('^(image|video|audio|font)/[-+.a-zA-Z0-9]+$|^text/plain$|^application/pdf$|^application/octet-stream$|^application/(x-font-ttf|x-font-otf|vnd.ms-opentype)
-      allow update, delete: if false;
-    }
-
-    // Generated media, derivatives and renders are written by the backend only.
-    match /users/{uid}/{rest=**} {
-      allow read: if isOwner() && request.auth.uid == uid;
-      allow write: if false;
-    }
-
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-  }
-}
-);
+        && request.resource.contentType.matches('^(image|video|audio|font)/[-+.a-zA-Z0-9]+$|^text/plain$|^application/pdf$|^application/octet-stream$|^application/(x-font-ttf|x-font-otf|vnd[.]ms-opentype)$');
       allow update, delete: if false;
     }
 

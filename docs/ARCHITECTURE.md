@@ -11,9 +11,9 @@ The Firebase project also hosts other apps (Hosting sites `az-learner`/“Last H
 | Firestore database | `az-studio` (us-central1, delete protection on) |
 | Storage bucket | `az-studio-media-az-learner` (us-central1, uniform access, public access prevention) |
 | Functions codebase | `az-studio` (`azsApi`, `azsJobWorker`, `azsOnUpload`, `azsMaintenance`) |
-| Cloud Run job | `az-studio-renderer` |
+| Cloud Run jobs | `az-studio-renderer` (FFmpeg + libass, real font metrics), `az-studio-stems` (Demucs) |
 | Service accounts | `az-studio-api@` (functions), `az-studio-renderer@` (render job) |
-| Secrets | `AZ_STUDIO_OWNER_UID`, `AZ_STUDIO_OWNER_EMAIL` |
+| Secrets | `AZ_STUDIO_OWNER_UID`, `AZ_STUDIO_OWNER_EMAIL`, `AZ_STUDIO_GEMINI_API_KEY` (Lyria 3.5 on the Gemini Developer API; optional) |
 | API key | `AZ Studio Web (restricted)` — referrer-restricted to AZ Studio domains |
 | App Check | reCAPTCHA Enterprise key `AZ Studio App Check` |
 
@@ -49,6 +49,36 @@ A production (`productions/{id}`) is a durable state machine driven by Cloud Tas
 - **Inspection** (`functions/src/workers/inspect.ts`) measures the real file (speech bounds, trailing room, clipping, loudness, scene cuts, black frames, end motion), transcribes it with word timestamps (`gemini-3.5-transcribe-preview`), aligns the transcript to the screenplay (`packages/shared/src/text-align.ts`: missing, altered, repeated, truncated words, early/late start, cutoff time), and has `gemini-3.1-pro-preview` watch the video with the reference images for speaker attribution, lip-sync, action beats, continuity, artefacts, first/last frames and seven scores. The verdict (`evaluateQuality`) is deterministic: incomplete dialogue caps the score at 55, incomplete action at 60, critical faults at 40; a failing version can only be approved through the API with the waived issues recorded. Picture cuts are checked against the plan: joins between connected shots and the reaction-shot / reverse-angle cuts a continuation part was directed to make (up to two per part) are intended; any other cut is reported, and fails the scene when the reviewer also sees it.
 - **Repair** (`chooseRepair`) escalates from the least destructive fix: trim a spoiled ending → extend the scene (Omni extension) → Omni conversational edit → cutaway → regenerate a failed section → regenerate longer / split into connected shots. Defaults: 3 automatic attempts, $6 cost ceiling per production, approval required for retries above $1.50.
 
+## Models (single registry: `functions/src/config/models.ts`)
+
+| Role | Model | Surface |
+| --- | --- | --- |
+| Video | `gemini-omni-1.1-flash-preview` (Gemini Omni 1.1 Flash) | Vertex AI Interactions API |
+| Image | `gemini-3-pro-image` (Nano Banana Pro) | Vertex AI |
+| Reasoning, review, planning | `gemini-3.8-flash` (no fallback) | Vertex AI |
+| Transcription | `gemini-3.5-transcribe-preview` | Vertex AI |
+| Speech (guide audio) | `gemini-2.5-pro-tts` | Vertex AI |
+| Music | `lyria-3.5` | Vertex AI when served, otherwise Gemini Developer API (server-side key) |
+| Vision (faces, objects, OCR) | Cloud Vision v1 | Vertex / Cloud Vision API |
+| Stem separation | Demucs `htdemucs` | Cloud Run job |
+
+No model ID appears outside the registry (a unit test enforces it); capabilities reach the browser through `bootstrap`.
+
+## Continuity Director
+
+Every shot carries a continuity lifecycle in `continuitySnapshots/{shotId}`: **continuityBefore** (the previous approved shot's state) → **plannedState** (bibles + the shot's plan + blocking + axis) → **continuityAfter** (what inspection detected in the latest take) → **approvedState** (only when a take is approved). Warnings carry expected/detected/difference, a proposed repair with an estimate, and the previous/next shots affected; they are resolved, reopened or overridden with a recorded note. Canonical per-shot records (`characterStates`, `propStates`) and the scene's 180° line (`cameraAxes`) are written only by approvals.
+
+- **Bibles.** Visual Bible (constraint levels Locked / Preferred / Flexible / Scene-specific, lookbook, Colour Director), Character Bible (approved identity references, costumes, protected identity), Set Bible (canonical views generated as a coherent reference pack with Nano Banana Pro and approved by the director, floor plan, protected features, readable signs, what may and must never change) and the prop ledger. Only approved versions reach generation.
+- **Compilation.** `packages/shared/src/continuity-prompt.ts` turns the plan into protected constraints and optional preferences and picks the reference images (canonical set view for the camera direction, approved faces, props, screens) within the video model's image limit.
+- **Blocking.** A top-down stage plan per shot (positions, orientation, gaze, paths, layers, intentional occlusion, protected visibility and zones) analysed from the camera (`packages/shared/src/spatial.ts`): faces blocked while speaking, bodies merging, wrong depth order, broken eyelines, walking through furniture, hidden important actions, line crossings; blocking also becomes precise camera-relative direction.
+- **Inspection and repair.** Frames are read with Cloud Vision (faces, objects, text — also mirrored), measured over time (flicker, freezes, colour drift, subject tracks) and reviewed by the reasoning model against the plan; repairs escalate from the least destructive (colour match, screen composite, blocking frame, conversational edit, background replacement, trim, cutaway, section regeneration, stronger references, another approved take) and every repaired version is re-inspected.
+- **Screens.** Protected screens and signs are checked with OCR (normal and mirrored); with compositing on, the approved content is tracked onto the surface (perspective, brightness, blur) and read back.
+- **Final film.** `final.inspect` measures the rendered film end to end and gates export (see OPERATIONS.md).
+
+## Music Studio
+
+Music projects (`musicProjects`, `musicVersions`, `audioTracks`, `stems`) hold a brief, lyrics, sections and markers, a mix and numbered versions that say how they were made: Lyria generations (whole songs, instrumentals, jingles, cues, alternates), uploads and microphone recordings (analysed with DSP: tempo, key, bars, sections, energy, vocals, edit points; corrections are kept), arrangements of the real audio (FFmpeg, with a time map lyric timing can follow), section replacements (a newly generated passage blended in on the beat — the model cannot edit part of a recording), stems (Demucs) and FFmpeg mixdowns (EQ, compression, noise reduction, ducking, loudness normalisation, limiter, measured LUFS and true peak).
+
 ## Lyrics and film score
 
 - **Lyric sheets** (`packages/shared/src/lyrics.ts`) keep the user’s text as the source of truth: uploaded or approved text is never rewritten to match a transcription. Plain text, `.txt`, `.lrc` (incl. enhanced word tags), `.srt`, `.vtt` and Lyria’s timed output are parsed; untimed text is aligned to word timestamps (Needleman–Wunsch with accent/West-African-letter folding), low-confidence and unaligned lines are flagged, and a Gemini anchor pass places lines the transcriber missed. Kasem (`xsm`) and other low-resource languages keep spelling and diacritics exactly; AI-written lyrics in them are marked for language verification. Instrumental songs never get lyrics.
@@ -57,4 +87,4 @@ A production (`productions/{id}`) is a durable state machine driven by Cloud Tas
 
 ## Data model (database `az-studio`)
 
-`users/{uid}` (settings, stats) · `projects/{id}` with subcollections `scripts` (+`versions`), `sequences`, `scenes`, `shots` (+`takes`), `characters`, `locations`, `elements`, `songs` (+ lyric sheet, vocals analysis, transcript), `timelines` (+`versions`), `scores`, `notes`, `aiRuns` · `productions` (+`versions`, `reports`, `events`; server-written) · `assets` · `chains` (+`turns`) · `jobs` · `batches` · `renders` · `usage`, `usageDaily`, `usageMonthly` · `interactions` (model call log) · `aiRuns` (project-less) · `runtime` (rate limits, concurrency slots, model availability cache; never client-readable).
+`users/{uid}` (settings, stats) · `projects/{id}` with subcollections `scripts` (+`versions`), `sequences`, `scenes`, `shots` (+`takes`), `characters` (+ Character Bible), `locations`, `elements`, `songs` (+ lyric sheet, vocals analysis, transcript, `lyricsHistory`), `timelines` (+`versions`), `scores`, `notes`, `aiRuns`, and the typed collections written through the API — `visualBibles`, `setBibles`, `props`, `blockingPlans`, `cameraAxes`, `protectedScreens`, `lyricStyles`, `lyricsTracks`, `creditSequences`, `musicProjects`, `audioTracks` — and by the backend only — `continuitySnapshots`, `characterStates`, `propStates`, `qualityReviews`, `repairAttempts`, `finalInspections` (+`events`), `musicVersions`, `stems`, `scoreBibles`, `cueSheets`, `subjectTracks` · `productions` (+`versions`, `reports`, `events`; server-written) · `assets` · `chains` (+`turns`) · `jobs` · `batches` · `renders` · `usage`, `usageDaily`, `usageMonthly` · `interactions` (model call log) · `aiRuns` (project-less) · `runtime` (rate limits, concurrency slots, model availability cache; never client-readable).

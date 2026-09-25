@@ -25,7 +25,8 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "rules:render": "node scripts/render-rules.mjs",
     "web:env": "node scripts/write-web-env.mjs",
-    "deploy": "node scripts/deploy.mjs"
+    "deploy": "node scripts/deploy.mjs",
+    "test:e2e": "node scripts/render-rules.mjs --test && npm run build -w functions && firebase emulators:exec --project demo-az-studio --only auth,firestore,storage,functions,tasks \"vitest run --config tests/e2e/vitest.config.ts\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -36,6 +37,7 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "firebase": "^12.19.0",
     "globals": "^17.12.0",
+    "playwright-core": "^1.63.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.1"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { blockAlpha, blockAt, blockTransform, sweepProgress, type MeasureText, type SceneBlock, type SceneLine, type SceneWord, type TextPaint, type TextScene } from '@az-studio/shared';
-import { getMediaUrls } from './media';
+
 
 /**
  * Browser drawing of a text scene (lyrics, credits). It uses the same measured layout the exporter turns
@@ -47,6 +47,7 @@ export function loadUploadedFont(family: string, assetId: string): Promise<void>
   let p = loadedUploads.get(key);
   if (!p) {
     p = (async () => {
+      const { getMediaUrls } = await import('./media');
       const urls = await getMediaUrls(assetId);
       if (!urls.file) throw new Error('Font file unavailable');
       const face = new FontFace(family, `url(${urls.file})`);

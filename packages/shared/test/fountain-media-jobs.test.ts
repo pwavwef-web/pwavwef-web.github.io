@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { characterName, parseFountain, parseHeading } from '../src/fountain';
 import { kindForMime, parseUploadPath, safeFileName, storagePaths, validateDeclaredUpload } from '../src/media';
-import { canTransition, isTerminal, JOB_TRANSITIONS } from '../src/jobs';
+import { canTransition, isTerminal, JOB_PHASE_LABELS, JOB_TRANSITIONS, jobPhase } from '../src/jobs';
 import { formatBytes, formatTimecode, formatUsd } from '../src/format';
 import { apiRequestSchema, jobRequestSchema } from '../src/schemas';
 
@@ -99,6 +99,21 @@ describe('job state machine', () => {
     expect(canTransition('failed', 'generating')).toBe(false);
     expect(isTerminal('cancelled')).toBe(true);
     for (const s of ['completed', 'failed', 'cancelled'] as const) expect(JOB_TRANSITIONS[s]).toEqual([]);
+  });
+
+  it('shows the studio phases: queued, preparing, processing, inspecting, repairing, rendering and the end states', () => {
+    const job = (status: Parameters<typeof jobPhase>[0]['status'], type: Parameters<typeof jobPhase>[0]['type'], label = '', productionId: string | null = null) => ({ status, type, label, productionId });
+    expect(jobPhase(job('queued', 'video.generate'))).toBe('queued');
+    expect(jobPhase(job('validating', 'video.generate'))).toBe('preparing');
+    expect(jobPhase(job('generating', 'video.generate', 'Shot 1A · generation', 'p1'))).toBe('processing');
+    expect(jobPhase(job('generating', 'quality.inspect', 'Quality review · v1', 'p1'))).toBe('inspecting');
+    expect(jobPhase(job('generating', 'final.inspect'))).toBe('inspecting');
+    expect(jobPhase(job('generating', 'video.generate', 'Market · repair · conversational edit', 'p1'))).toBe('repairing');
+    expect(jobPhase(job('rendering', 'media.color_match', 'Market · repair · colour match', 'p1'))).toBe('repairing');
+    expect(jobPhase(job('generating', 'video.generate', 'repair ideas', null))).toBe('processing');
+    expect(jobPhase(job('rendering', 'render.timeline'))).toBe('rendering');
+    for (const s of ['completed', 'failed', 'cancelled'] as const) expect(jobPhase(job(s, 'render.timeline'))).toBe(s);
+    expect(Object.values(JOB_PHASE_LABELS)).toEqual(['Queued', 'Preparing', 'Processing', 'Inspecting', 'Repairing', 'Rendering', 'Completed', 'Failed', 'Cancelled']);
   });
 });
 
