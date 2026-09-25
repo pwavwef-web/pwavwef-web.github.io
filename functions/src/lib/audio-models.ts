@@ -1,7 +1,7 @@
 import type { GenerateContentResponse, Part } from '@google/genai';
 import { Modality } from '@google/genai';
 import { parseOffset, type DetectedWord } from '@az-studio/shared';
-import { MODEL_REGISTRY, SPEECH_VOICES, TRANSCRIPTION_LANGUAGE_HINTS } from '../config/models';
+import { MODEL_REGISTRY, SPEECH_VOICES, TRANSCRIPTION_CAPABILITIES, TRANSCRIPTION_LANGUAGE_HINTS } from '../config/models';
 import { fail, isSafetyMessage } from './errors';
 import { pcm16ToFloat, pcm16ToWav, speechBounds } from './signal';
 import { genai } from './vertex';
@@ -28,6 +28,17 @@ export interface TranscribeInput {
   languageCode?: string | null;
   /** Terms to bias recognition toward (character names, lyric words). */
   vocabulary?: string[];
+}
+
+/** Leave a minute of room under Google's 15-minute word-timestamp limit for duration rounding. */
+export function timedAudioSegments(durationSec: number): { startSec: number; durationSec: number }[] {
+  if (!Number.isFinite(durationSec) || durationSec <= 0) return [];
+  const step = TRANSCRIPTION_CAPABILITIES.maxTimedAudioSeconds - 60;
+  const segments: { startSec: number; durationSec: number }[] = [];
+  for (let startSec = 0; startSec < durationSec; startSec += step) {
+    segments.push({ startSec, durationSec: Math.min(step, durationSec - startSec) });
+  }
+  return segments;
 }
 
 /** Only hint languages the model handles reliably; everything else is auto-detected. */

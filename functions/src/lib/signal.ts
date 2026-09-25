@@ -185,8 +185,12 @@ export async function silentSpans(input: string, noiseDb = -45, minSec = 1.5): P
 }
 
 /** 16 kHz mono FLAC for transcription (small, lossless for speech). */
-export async function extractSpeechAudio(input: string, output: string): Promise<void> {
-  await run(['-loglevel', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', output], { stdout: false });
+export async function extractSpeechAudio(input: string, output: string, segment?: { startSec: number; durationSec: number }): Promise<void> {
+  await run([
+    '-loglevel', 'error', '-y',
+    ...(segment ? ['-ss', String(segment.startSec), '-t', String(segment.durationSec)] : []),
+    '-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'flac', output,
+  ], { stdout: false });
 }
 
 /** Hard cuts (scene-change score above the threshold), in seconds. */

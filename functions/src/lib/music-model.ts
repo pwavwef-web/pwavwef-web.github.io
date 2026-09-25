@@ -68,7 +68,15 @@ async function run(ai: GoogleGenAI, input: unknown, allowBackground: boolean): P
 
 /** Which surface would serve Lyria 3.5 right now (for Settings → Models and estimates). */
 export async function musicSurface(): Promise<'vertex' | 'developer-api' | null> {
-  if (Date.now() - vertexRefusedAt >= VERTEX_RECHECK_MS) return 'vertex';
+  if (Date.now() - vertexRefusedAt >= VERTEX_RECHECK_MS) {
+    try {
+      await genai().models.get({ model: MODEL_REGISTRY.music.id });
+      return 'vertex';
+    } catch (e) {
+      if (!isModelUnavailable(e)) throw e;
+      vertexRefusedAt = Date.now();
+    }
+  }
   return (await geminiDeveloperApi()) ? 'developer-api' : null;
 }
 

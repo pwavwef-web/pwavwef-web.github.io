@@ -219,8 +219,8 @@ export const TRANSCRIPTION_CAPABILITIES: TranscriptionCapabilities = {
   displayName: MODEL_REGISTRY.transcription.displayName,
   launchStage: MODEL_REGISTRY.transcription.launchStage,
   wordTimestamps: true,
-  maxTimedAudioSeconds: 30 * 60,
-  notes: ['Word-level timestamps for dialogue validation and lyric synchronisation. Automatic language detection; languages with little training data (e.g. Kasem) are transcribed approximately and never replace uploaded lyrics.'],
+  maxTimedAudioSeconds: 15 * 60,
+  notes: ['Word-level timestamps for dialogue validation and lyric synchronisation. Timed audio requests are limited to 15 minutes; longer final films are transcribed in segments. Automatic language detection; languages with little training data (e.g. Kasem) are transcribed approximately and never replace uploaded lyrics.'],
 };
 
 export const MUSIC_CAPABILITIES: MusicCapabilities = {

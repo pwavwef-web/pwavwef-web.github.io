@@ -8,7 +8,7 @@ import { buildImageParts, type ImageParams } from '../src/workers/image';
 import { sniffUpload } from '../src/triggers/upload';
 import { normaliseSongAnalysis } from '../src/workers/text';
 import { INSPECTION_SCHEMA, LYRIC_ANCHORS_SCHEMA, SONG_ANALYSIS_SCHEMA, TEXT_TASK_SPECS, VOCALS_SCHEMA } from '../src/workers/text-tasks';
-import { parseTranscription } from '../src/lib/audio-models';
+import { parseTranscription, timedAudioSegments } from '../src/lib/audio-models';
 import { extractMusic, isModelUnavailable } from '../src/lib/music-model';
 import { normalizeReview } from '../src/workers/inspect';
 import { productionEstimate, segmentPrompt } from '../src/lib/production';
@@ -18,6 +18,18 @@ import { PRICING } from '../src/config/pricing';
 import { detectC2pa } from '../src/lib/media';
 
 const owner = { uid: 'owner-uid', email: 'owner@example.com' };
+
+describe('word-timed transcription windows', () => {
+  it('covers a long film with requests below the model limit', () => {
+    const segments = timedAudioSegments(31 * 60);
+    expect(segments).toEqual([
+      { startSec: 0, durationSec: 840 },
+      { startSec: 840, durationSec: 840 },
+      { startSec: 1680, durationSec: 180 },
+    ]);
+    expect(segments.every((segment) => segment.durationSec < 15 * 60)).toBe(true);
+  });
+});
 
 describe('owner guard', () => {
   it('requires the configured uid and verified email', () => {

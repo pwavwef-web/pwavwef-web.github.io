@@ -33,7 +33,7 @@ import {
   type TimelineState,
 } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
-import { transcribe } from '../lib/audio-models';
+import { timedAudioSegments, transcribe } from '../lib/audio-models';
 import { withTmpDir } from '../lib/assets';
 import { bucket, col, db, FieldValue, gsUri } from '../lib/firebase';
 import { fail } from '../lib/errors';
@@ -130,12 +130,14 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
       let words: { text: string; start: number; end: number }[] = [];
       if (info.hasAudio) {
         await progress(job.id, 'Transcribing the dialogue', 0.3);
-        const flac = path.join(dir, 'speech.flac');
-        await extractSpeechAudio(local, flac);
         const project = (await col.projects().doc(job.projectId!).get()).data() as { language?: string } | undefined;
-        const tr = await transcribe({ data: await readFile(flac), mimeType: 'audio/flac', languageCode: project?.language ?? null, vocabulary: [] });
-        await recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: tr.modelId, kind: 'transcription', inputTokens: tr.usage.input, outputTokens: tr.usage.output, thoughtTokens: tr.usage.thoughts });
-        words = tr.words.map((w) => ({ text: w.text, start: w.start, end: w.end }));
+        for (const [index, segment] of timedAudioSegments(D).entries()) {
+          const flac = path.join(dir, `speech-${index}.flac`);
+          await extractSpeechAudio(local, flac, segment);
+          const tr = await transcribe({ data: await readFile(flac), mimeType: 'audio/flac', languageCode: project?.language ?? null, vocabulary: [] });
+          await recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: tr.modelId, kind: 'transcription', inputTokens: tr.usage.input, outputTokens: tr.usage.output, thoughtTokens: tr.usage.thoughts });
+          words.push(...tr.words.map((w) => ({ text: w.text, start: w.start + segment.startSec, end: w.end + segment.startSec })));
+        }
       }
       await progress(job.id, 'Reading text in the frames', 0.45);
       const fps = Math.min(1, 90 / Math.max(1, D));
