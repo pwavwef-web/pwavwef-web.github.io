@@ -84,6 +84,7 @@ export function ScoreTab({ project }: { project: WithId<ProjectDoc> }) {
   const ai = useAiRun(project.id);
   const { submit, busy, dialog } = useJobSubmitter();
   const [music, setMusic] = useState<ModelAvailability | null>(null);
+  const [checkingMusic, setCheckingMusic] = useState(false);
   const [picker, setPicker] = useState(false);
   const [direction, setDirection] = useState('');
   const score = scores.data[0] ?? null;
@@ -96,6 +97,18 @@ export function ScoreTab({ project }: { project: WithId<ProjectDoc> }) {
       .then((r) => setMusic(r.models.find((m) => m.role === 'music') ?? null))
       .catch(() => setMusic(null));
   }, []);
+
+  const refreshMusic = async () => {
+    setCheckingMusic(true);
+    try {
+      const result = await modelStatus(true);
+      setMusic(result.models.find((m) => m.role === 'music') ?? null);
+    } catch (e) {
+      toast.error('Could not check Lyria availability', { description: errorMessage(e) });
+    } finally {
+      setCheckingMusic(false);
+    }
+  };
 
   const save = async (patch: Partial<ScoreDoc>) => {
     const id = score?.id ?? doc(db, 'projects', project.id, 'scores', 'main').id;
@@ -190,6 +203,11 @@ export function ScoreTab({ project }: { project: WithId<ProjectDoc> }) {
         {unavailable && (
           <Notice tone="danger" icon={<AlertTriangle className="size-4" />}>
             {music!.detail} You can still write the bible and cue sheet, and import an existing soundtrack below.
+            <div className="mt-2">
+              <Button size="sm" variant="ghost" loading={checkingMusic} icon={<RefreshCw className="size-3.5" />} onClick={() => void refreshMusic()}>
+                Check again
+              </Button>
+            </div>
           </Notice>
         )}
       </Card>

@@ -29,7 +29,7 @@ import { prepareJob } from '../lib/prepare';
 import { CAPS, chooseVersion, continuable, estimateRepairUsd, loadProduction, loadReport, mirrorShot, planFor, productionEstimate, productionSpend, reevaluate, reinspectVersion, startRepair } from '../lib/production';
 import { confirmationPolicy } from '../lib/submit';
 import { assertRateLimit, assertWithinLimits, getSettings, spendSnapshot } from '../lib/usage';
-import { genai } from '../lib/vertex';
+import { geminiDeveloperApi, genai } from '../lib/vertex';
 import { toJobError } from '../lib/errors';
 import { cancelJob } from './actions';
 
@@ -430,7 +430,12 @@ async function probeRole(role: keyof typeof MODEL_REGISTRY): Promise<ModelAvaila
     return { ...base, status: 'available', detail: `Listed for this project on Vertex AI (${m.location}).` };
   } catch (e) {
     const err = toJobError(e);
-    if (err.code === 'not_found') return { ...base, status: 'unavailable', detail: role === 'music' ? MUSIC_MODEL_LIMITATION : `${m.id} is not available on Vertex AI for this project (${(err.details ?? err.message).slice(0, 200)}).` };
+    if (err.code === 'not_found') {
+      if (role === 'music' && await geminiDeveloperApi()) {
+        return { ...base, status: 'available', detail: 'Lyria 3.5 is configured on the Gemini Developer API with a server-side key in Secret Manager.' };
+      }
+      return { ...base, status: 'unavailable', detail: role === 'music' ? MUSIC_MODEL_LIMITATION : `${m.id} is not available on Vertex AI for this project (${(err.details ?? err.message).slice(0, 200)}).` };
+    }
     return { ...base, status: 'unknown', detail: err.message };
   }
 }
@@ -439,10 +444,22 @@ export async function modelStatus(_owner: Owner, p: Payload<'modelStatus'>) {
   const ref = col.runtime().doc('modelStatus');
   const cached = await ref.get();
   const at = Number(cached.get('checkedAt') ?? 0);
-  if (!p.refresh && cached.exists && Date.now() - at < STATUS_TTL_MS) return { models: cached.get('models') as ModelAvailability[], checkedAt: at };
+  if (!p.refresh && cached.exists && Date.now() - at < STATUS_TTL_MS) {
+    const models = cached.get('models') as ModelAvailability[];
+    const music = models.find((m) => m.role === 'music');
+    const keyConfigured = Boolean(await geminiDeveloperApi());
+    const cachedDeveloper = music?.status === 'available' && music.detail.includes('Gemini Developer API');
+    if ((music?.status === 'unavailable' && keyConfigured) || (cachedDeveloper && !keyConfigured)) {
+      const refreshed = await probeRole('music');
+      const updated = models.map((m) => m.role === 'music' ? refreshed : m);
+      const checkedAt = Date.now();
+      await ref.set({ models: updated, checkedAt });
+      return { models: updated, checkedAt };
+    }
+    return { models, checkedAt: at };
+  }
   const roles = Object.keys(MODEL_REGISTRY) as (keyof typeof MODEL_REGISTRY)[];
   const models = await Promise.all(roles.map((r) => probeRole(r)));
   await ref.set({ models, checkedAt: Date.now() });
   return { models, checkedAt: Date.now() };
 }
-
