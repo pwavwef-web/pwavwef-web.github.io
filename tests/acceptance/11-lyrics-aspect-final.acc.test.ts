@@ -101,14 +101,15 @@ async function finalInspection(projectId: string, renderId: string, log: Log): P
 function jpegAt(file: string, t: number, width: number): Buffer {
   return spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', file, '-frames:v', '1', '-vf', `scale=${width}:-2`, '-q:v', '3', '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1'], { maxBuffer: 64 << 20 }).stdout;
 }
-function grayAt(file: string, t: number): Uint8Array {
-  return new Uint8Array(spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', file, '-frames:v', '1', '-vf', 'scale=192:108,format=gray', '-f', 'rawvideo', 'pipe:1'], { maxBuffer: 16 << 20 }).stdout);
+function rgbAt(file: string, t: number): Uint8Array {
+  return new Uint8Array(spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', file, '-frames:v', '1', '-vf', 'scale=384:216', '-pix_fmt', 'rgb24', '-f', 'rawvideo', 'pipe:1'], { maxBuffer: 16 << 20 }).stdout);
 }
-function meanDiff(a: Uint8Array, b: Uint8Array): number {
-  const n = Math.min(a.length, b.length);
-  let s = 0;
-  for (let i = 0; i < n; i++) s += Math.abs(a[i]! - b[i]!);
-  return n ? s / n : 0;
+/** Share of pixels (%) that differ visibly in colour between two frames (a gold word sweep over white text counts). */
+function changedPct(a: Uint8Array, b: Uint8Array): number {
+  const n = Math.floor(Math.min(a.length, b.length) / 3);
+  let changed = 0;
+  for (let i = 0; i < n; i++) if (Math.max(Math.abs(a[3 * i]! - b[3 * i]!), Math.abs(a[3 * i + 1]! - b[3 * i + 1]!), Math.abs(a[3 * i + 2]! - b[3 * i + 2]!)) > 40) changed++;
+  return n ? (100 * changed) / n : 0;
 }
 /** Momentary loudness every 100 ms (EBU R128), to compare the sound of two exports. */
 function loudness(file: string): number[] {
@@ -222,11 +223,12 @@ describe('Acceptance 11 — lyric styles, 16:9 and 9:16 exports, final-film insp
         for (let k = i + 1; k < PRESETS.length; k++) {
           const a = PRESETS[i]!;
           const b = PRESETS[k]!;
-          diffs[`${a}~${b}`] = Math.round(Math.max(...probeTimes.map((t) => meanDiff(grayAt(renders[a].file, t), grayAt(renders[b].file, t)))) * 100) / 100;
+          diffs[`${a}~${b}`] = Math.round(Math.max(...probeTimes.map((t) => changedPct(rgbAt(renders[a].file, t), rgbAt(renders[b].file, t)))) * 1000) / 1000;
         }
       }
-      log(`frame differences between presets: ${JSON.stringify(diffs)}`);
-      for (const d of Object.values(diffs)) expect(d).toBeGreaterThan(0.8);
+      log(`pixels that differ between presets (% of the frame): ${JSON.stringify(diffs)}`);
+      // The picture is identical in every render, so any visible difference is the lyric rendering itself.
+      for (const d of Object.values(diffs)) expect(d).toBeGreaterThan(0.3);
       results.presets = { report: presetReport, differences: diffs };
 
       // ---------------------------------------------------------------------------------------------
