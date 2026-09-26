@@ -248,11 +248,18 @@ async function update(id: string, patch: Record<string, unknown>, message: strin
 }
 
 /** Approves a version that passes review (after any recorded waivers) and makes it the shot's take. */
-async function approveVersion(uid: string, p: NonNullable<Awaited<ReturnType<typeof loadProduction>>>, v: ProductionVersionDoc, waived: string[], note: string, override: boolean) {
+async function approveVersion(uid: string, p: NonNullable<Awaited<ReturnType<typeof loadProduction>>>, v: ProductionVersionDoc, waived: string[], requestedNote: string, requestedOverride: boolean, keepAnyway = false) {
   const report = await loadReport(p, v.reportId);
   if (!report) throw new HttpsError('failed-precondition', 'This version has not been inspected yet. AZ Studio only approves inspected scenes.');
   const verdict = reevaluate(report, p, waived, v.plannedCuts, v.editorialCuts ?? []);
-  if (!verdict.passed) {
+  let note = requestedNote;
+  let override = requestedOverride;
+  // Keeping the original is the director's explicit call: when no blocking issue is left open, what still
+  // fails the review (a score below the threshold, an unfinished action) is accepted and recorded with it.
+  if (!verdict.passed && keepAnyway && !verdict.problems.some((x) => x.blocking)) {
+    override = true;
+    note = `${note} — accepted below review: ${verdict.reasons.join(' ') || `${verdict.overall}/100`}`.slice(0, 600);
+  } else if (!verdict.passed) {
     const open = verdict.problems.filter((x) => x.blocking).map((x) => x.description);
     throw new HttpsError('failed-precondition', `Version ${v.index} does not pass quality review (${verdict.overall}/100, threshold ${p.settings.minApprovalScore}). ${open.length ? `Open issues: ${open.slice(0, 4).join(' ')}` : verdict.reasons.join(' ')} Mark the issues as acceptable first if you want to use it anyway.`, { reason: 'quality_review_failed', problems: verdict.problems.filter((x) => x.blocking) });
   }
@@ -261,17 +268,19 @@ async function approveVersion(uid: string, p: NonNullable<Awaited<ReturnType<typ
   const shot = (await shotRef.get()).data() as ShotDoc;
   const batch = db.batch();
   if (shot.approvedTakeId && shot.approvedTakeId !== v.takeId) batch.set(shotRef.collection('takes').doc(shot.approvedTakeId), { approved: false }, { merge: true });
-  batch.set(shotRef.collection('takes').doc(v.takeId), { approved: true, quality: { verdict: 'passed', overall: verdict.overall, reportId: report.id } }, { merge: true });
+  // A version accepted below review stays marked as failed; the approval carries the override and its note.
+  const verdictLabel = verdict.passed ? 'passed' : 'failed';
+  batch.set(shotRef.collection('takes').doc(v.takeId), { approved: true, quality: { verdict: verdictLabel, overall: verdict.overall, reportId: report.id } }, { merge: true });
   batch.set(shotRef, { approvedTakeId: v.takeId, selectedTakeId: v.takeId, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  batch.set(col.productions().doc(p.id).collection('versions').doc(v.id), { verdict: 'passed', overall: verdict.overall, scores: verdict.scores }, { merge: true });
+  batch.set(col.productions().doc(p.id).collection('versions').doc(v.id), { verdict: verdictLabel, overall: verdict.overall, scores: verdict.scores }, { merge: true });
   batch.set(col.productions().doc(p.id), { status: 'approved', stage: 'render', approvedVersionId: v.id, currentVersionId: v.id, waivedCategories: waived, pendingRepair: null, approval: { at: Date.now(), versionId: v.id, override, note }, stageMessage: `Approved version ${v.index} (${verdict.overall}/100)${override ? ' with issues marked acceptable' : ''} — ready for the edit and render`, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   await batch.commit();
-  await col.productions().doc(p.id).collection('events').add({ at: Date.now(), stage: 'approve', status: 'approved', message: `Director approved version ${v.index}${override ? ` — accepted: ${waived.join(', ')}` : ''}${note ? ` (${note})` : ''}`, detail: { versionId: v.id, uid }, createdAt: FieldValue.serverTimestamp() });
+  await col.productions().doc(p.id).collection('events').add({ at: Date.now(), stage: 'approve', status: 'approved', message: `Director approved version ${v.index}${override && waived.length ? ` — accepted: ${waived.join(', ')}` : ''}${note ? ` (${note})` : ''}`, detail: { versionId: v.id, uid }, createdAt: FieldValue.serverTimestamp() });
   // Update continuity state: the approved take becomes canonical (states, props, axis, final frame).
   await approveContinuity(p.projectId, p.shotId, { versionId: v.id, productionId: p.id, waivedKinds: waived, takeAssetId: v.assetId, repaired: v.kind === 'repair', inspected: true, ownerUid: uid });
   await col.productions().doc(p.id).collection('events').add({ at: Date.now(), stage: 'update_continuity', status: 'approved', message: `Continuity state updated from version ${v.index}: character, prop and camera-axis records and the final frame for the next shot`, detail: { versionId: v.id }, createdAt: FieldValue.serverTimestamp() });
   const fresh = await loadProduction(p.id);
-  if (fresh) await mirrorShot(fresh, { overall: verdict.overall, passed: true });
+  if (fresh) await mirrorShot(fresh, { overall: verdict.overall, passed: verdict.passed });
   return { status: 'approved', versionId: v.id, overall: verdict.overall };
 }
 
@@ -293,7 +302,7 @@ export async function productionAction(owner: Owner, a: Payload<'productionActio
       // Keeping the original means explicitly accepting each of its open issues (recorded, never silent).
       const open = reevaluate(report, p, p.waivedCategories, v.plannedCuts, v.editorialCuts ?? []).problems.filter((x) => x.blocking).map((x) => x.category);
       const waived = [...new Set([...p.waivedCategories, ...open])];
-      return approveVersion(owner.uid, p, v, waived, a.note || 'Director kept the original version', open.length > 0);
+      return approveVersion(owner.uid, p, v, waived, a.note || 'Director kept the original version', open.length > 0, true);
     }
     case 'waive':
     case 'unwaive': {
