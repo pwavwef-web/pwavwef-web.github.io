@@ -86,7 +86,7 @@ npm run test:integration   # auth/firestore/storage/functions/tasks emulators; r
 AZS_ACCEPTANCE=1 npm run test:acceptance   # live acceptance suite (billable, ≈ $3 per full run at 360p)
 ```
 
-The acceptance suite (`tests/acceptance`) runs the same server code as the API with your Application Default Credentials; Cloud Tasks deliver the work to the deployed worker. Each run creates `QA · …` projects in the studio (delete them from the Projects page when done) and writes logs and production records to `tests/acceptance/.results/`. On a busy workstation, set `FUNCTIONS_DISCOVERY_TIMEOUT=90` for `test:integration` (the deploy script sets 120 s itself).
+The acceptance suite (`tests/acceptance`) runs the same server code as the API with your Application Default Credentials; Cloud Tasks deliver the work to the deployed worker. Each run creates `QA · …` projects in the studio (delete them from the Projects page when done) and writes logs and production records to `tests/acceptance/.results/`. On a busy workstation the Functions emulator can exceed the CLI's 10 s discovery timeout (every API test then fails with `Cannot determine backend specification`): run `test:integration` and `test:e2e` with `FUNCTIONS_DISCOVERY_TIMEOUT=120` (the deploy script sets it itself).
 
 ## Export gate
 
