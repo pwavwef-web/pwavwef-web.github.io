@@ -194,6 +194,46 @@ const s = (v: unknown) => (typeof v === 'string' ? v.slice(0, 600) : '');
 const b = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
 const n = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 const sev = (v: unknown): ProblemSeverity => (SEV.includes(v as ProblemSeverity) ? (v as ProblemSeverity) : 'minor');
+
+/** The reviewer's own word for a temporal fault, mapped to the nearest known kind (a fault is never dropped). */
+export function temporalKind(v: unknown): TemporalKind {
+  const k = String(v ?? '').toLowerCase();
+  if ((TEMPORAL_KINDS as readonly string[]).includes(k)) return k as TemporalKind;
+  const rules: [RegExp, TemporalKind][] = [
+    [/morph|warp|melt|distort/, 'morphing'],
+    [/flicker/, /light|bright|exposure/.test(k) ? 'lighting_flicker' : 'texture_flicker'],
+    [/face/, 'face_instability'],
+    [/hand|finger/, 'hand_quality'],
+    [/body|limb|pose/, 'body_instability'],
+    [/costume|cloth|outfit/, 'costume_change'],
+    [/background|set|scenery/, 'background_mutation'],
+    [/duplicat|clone/, 'duplicate_object'],
+    [/vanish|disappear|pop/, 'disappearance'],
+    [/physic|gravity|collision|clip|penetrat/, 'physics'],
+    [/unfinished|incomplete/, 'unfinished_action'],
+    [/jump|cut/, 'camera_jump'],
+  ];
+  return rules.find(([re]) => re.test(k))?.[1] ?? 'broken_motion';
+}
+
+/** The reviewer's own word for a set difference, mapped to the nearest known aspect (never dropped). */
+export function backgroundAspect(v: unknown): BackgroundAspect {
+  const k = String(v ?? '').toLowerCase();
+  if ((BACKGROUND_ASPECTS as readonly string[]).includes(k)) return k as BackgroundAspect;
+  const rules: [RegExp, BackgroundAspect][] = [
+    [/door|window/, 'door_window_moved'],
+    [/furniture|table|bench|chair|desk|bed|shelf/, 'furniture_moved'],
+    [/wall|paint|colou?r/, 'wall_colour'],
+    [/layout|mirror|revers|flip/, 'layout_reversed'],
+    [/weather|rain|sky|fog/, 'weather'],
+    [/light|shadow|sun/, 'lighting_change'],
+    [/people|crowd|extra|person/, 'background_people'],
+    [/duplicat|clone/, 'duplicate_object'],
+    [/location|replac|different place/, 'location_replaced'],
+    [/landscape|terrain|tree|field|road/, 'landscape'],
+  ];
+  return rules.find(([re]) => re.test(k))?.[1] ?? 'architecture_mutation';
+}
 const arr = (v: unknown): R[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as R[]) : []);
 const obj = (v: unknown): R => (v && typeof v === 'object' && !Array.isArray(v) ? (v as R) : {});
 const dir = (v: unknown): ScreenDirection | 'mixed' => (['left_to_right', 'right_to_left', 'toward_camera', 'away_from_camera', 'static', 'mixed'].includes(String(v)) ? (v as ScreenDirection) : 'static');
@@ -229,9 +269,11 @@ export function normalizeDirectorReview(raw: unknown): DirectorReview {
       severity: sev(c.severity),
       note: s(c.note),
     })),
-    background: arr(r.background)
-      .filter((x) => (BACKGROUND_ASPECTS as readonly string[]).includes(String(x.aspect)))
-      .map((x) => ({ aspect: x.aspect as BackgroundAspect, ok: b(x.ok, true), severity: sev(x.severity), startSec: n(x.startSec), note: s(x.note) })),
+    background: arr(r.background).map((x) => {
+      const aspect = backgroundAspect(x.aspect);
+      const said = String(x.aspect ?? '');
+      return { aspect, ok: b(x.ok, true), severity: sev(x.severity), startSec: n(x.startSec), note: aspect === said || !said ? s(x.note) : `${said.replace(/_/g, ' ')}: ${s(x.note)}` };
+    }),
     blocking: {
       characterCount: Math.max(0, Math.round(Number(bl.characterCount) || 0)),
       expectedCount: Math.max(0, Math.round(Number(bl.expectedCount) || 0)),
@@ -289,9 +331,12 @@ export function normalizeDirectorReview(raw: unknown): DirectorReview {
       note: s(p.note),
     })),
     temporal: {
-      problems: arr(tp.problems)
-        .filter((x) => (TEMPORAL_KINDS as readonly string[]).includes(String(x.kind)))
-        .map((x) => ({ kind: x.kind as TemporalKind, startSec: n(x.startSec), endSec: n(x.endSec), severity: sev(x.severity), description: s(x.description) })),
+      // A kind outside the list is mapped to the nearest one (never dropped): the fault was still seen.
+      problems: arr(tp.problems).map((x) => {
+        const kind = temporalKind(x.kind);
+        const said = String(x.kind ?? '');
+        return { kind, startSec: n(x.startSec), endSec: n(x.endSec), severity: sev(x.severity), description: kind === said || !said ? s(x.description) : `${said.replace(/_/g, ' ')}: ${s(x.description)}` };
+      }),
       note: s(tp.note),
     },
     edges: {

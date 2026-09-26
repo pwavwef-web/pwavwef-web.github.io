@@ -3,6 +3,7 @@ import {
   analyzeBlocking,
   applyPropEvents,
   axisSide,
+  backgroundAspect,
   blockingDirection,
   chooseRepair,
   compareStates,
@@ -29,6 +30,7 @@ import {
   projectPoint,
   qualitySettings,
   rankTakes,
+  temporalKind,
   textOrientation,
   trackDirection,
   travelDirection,
@@ -297,6 +299,22 @@ describe('continuity-aware inspection', () => {
     expect(heldFrameRatio([0, 0])).toBe(0);
   });
 
+  it('keeps a reviewer’s fault even when it uses its own word for the kind', () => {
+    // Seen live: “frozen_frames” as a temporal kind and “none” as a severity.
+    const d = normalizeDirectorReview({
+      temporal: { problems: [{ kind: 'frozen_frames', startSec: 1, endSec: 2, severity: 'minor', description: 'The picture holds.' }, { kind: 'face_melting', severity: 'major', description: 'Face warps.' }], note: '' },
+      background: [{ aspect: 'bench_moved', ok: false, severity: 'major', note: 'A second bench appears.' }, { aspect: 'furniture_moved', ok: true, severity: 'none', note: '' }],
+    });
+    expect(d.temporal.problems.map((p) => p.kind)).toEqual(['broken_motion', 'morphing']);
+    expect(d.temporal.problems[0]!.description).toBe('frozen frames: The picture holds.');
+    expect(d.background.map((b) => b.aspect)).toEqual(['furniture_moved', 'furniture_moved']);
+    expect(d.background[0]).toMatchObject({ ok: false, severity: 'major' });
+    expect(temporalKind('texture_flicker')).toBe('texture_flicker');
+    expect(temporalKind('strobing light flicker')).toBe('lighting_flicker');
+    expect(backgroundAspect('different location')).toBe('location_replaced');
+    expect(backgroundAspect('something odd')).toBe('architecture_mutation');
+  });
+
   it('tracks the main subject across frames', () => {
     const frames: VisionFrame[] = [0, 1, 2, 3, 4, 5].map((t) => ({ t, faces: [], objects: [], text: [], people: [{ box: { x: 0.1 + t * 0.12, y: 0.3, w: 0.1, h: 0.5 }, score: 0.9 }] }));
     expect(trackDirection(frames).direction).toBe('left_to_right');
@@ -320,7 +338,8 @@ describe('continuity-aware inspection', () => {
 
   it('normalises a partial model report and ranks takes', () => {
     const d = normalizeDirectorReview({ characters: [{ name: 'Ama', faceMatchesReference: false, severity: 'critical' }], background: [{ aspect: 'door_window_moved', ok: false, severity: 'major', note: 'door moved to the right wall' }, { aspect: 'nonsense', ok: false }], categoryScores: { characterConsistency: 30, backgroundConsistency: 150 } });
-    expect(d.background).toHaveLength(1);
+    // A set fault in the reviewer's own words is kept (mapped to the nearest aspect), never dropped.
+    expect(d.background.map((b) => b.aspect)).toEqual(['door_window_moved', 'architecture_mutation']);
     expect(d.categoryScores.backgroundConsistency).toBe(100);
     const probs = directorProblems(d, emptyExpectations());
     expect(probs.map((p) => p.category)).toEqual(expect.arrayContaining(['face_change', 'door_window_moved']));

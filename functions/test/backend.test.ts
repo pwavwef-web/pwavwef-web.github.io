@@ -334,7 +334,9 @@ describe('structured reply check', () => {
     expect(schemaErrors(bad, schema)).toEqual(['$: missing “scores”', '$.actions[0].completed: expected true or false', '$.lipSync.drift: “slight” is not one of none, minor, severe']);
     expect(schemaErrors(null, schema)).toEqual(['$: expected an object']);
     // The real inspection schema: an empty reply lists every required section.
-    expect(schemaErrors({}, INSPECTION_SCHEMA as Record<string, unknown>, '$', [], 100).length).toBe(Object.keys((INSPECTION_SCHEMA as { properties: object }).properties).length);
+    expect(schemaErrors({}, INSPECTION_SCHEMA as Record<string, unknown>, { limit: 100 }).length).toBe(Object.keys((INSPECTION_SCHEMA as { properties: object }).properties).length);
+    // Structure-only mode leaves words outside an enum to the normalisers.
+    expect(schemaErrors(bad, schema, { enums: false })).toEqual(['$: missing “scores”', '$.actions[0].completed: expected true or false']);
   });
 });
 

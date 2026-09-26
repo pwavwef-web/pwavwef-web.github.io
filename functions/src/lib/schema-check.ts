@@ -1,12 +1,14 @@
 /**
  * Checks a model's structured reply against the JSON Schema subset our structured-output schemas use
- * (object/array/string/number/integer/boolean, `required`, `enum`, `items`). The API enforces the schema
- * when it accepts it; this is the second line of defence, so a reply with a missing or mistyped field is
- * refused instead of being read with default values that could let a faulty take pass.
+ * (object/array/string/number/integer/boolean, `required`, `enum`, `items`), so a reply with a missing or
+ * mistyped field is refused instead of being read with default values that could let a faulty take pass.
+ * With `enums: false` only the structure is checked: values outside an enum are left to the normalisers,
+ * which map them to the nearest known value conservatively (a reported fault is never dropped).
  */
 type Schema = Record<string, unknown>;
 
-export function schemaErrors(value: unknown, schema: Schema, at = '$', out: string[] = [], limit = 20): string[] {
+export function schemaErrors(value: unknown, schema: Schema, opts: { enums?: boolean; limit?: number } = {}, at = '$', out: string[] = []): string[] {
+  const limit = opts.limit ?? 20;
   if (out.length >= limit) return out;
   const err = (msg: string) => {
     if (out.length < limit) out.push(`${at}: ${msg}`);
@@ -19,7 +21,7 @@ export function schemaErrors(value: unknown, schema: Schema, at = '$', out: stri
       }
       const props = (schema.properties ?? {}) as Record<string, Schema>;
       for (const k of (schema.required as string[] | undefined) ?? []) if (!(k in (value as object))) err(`missing “${k}”`);
-      for (const [k, v] of Object.entries(value as Record<string, unknown>)) if (props[k]) schemaErrors(v, props[k], `${at}.${k}`, out, limit);
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) if (props[k]) schemaErrors(v, props[k], opts, `${at}.${k}`, out);
       break;
     }
     case 'array':
@@ -27,7 +29,7 @@ export function schemaErrors(value: unknown, schema: Schema, at = '$', out: stri
         err('expected an array');
         return out;
       }
-      if (schema.items) value.forEach((v, i) => schemaErrors(v, schema.items as Schema, `${at}[${i}]`, out, limit));
+      if (schema.items) value.forEach((v, i) => schemaErrors(v, schema.items as Schema, opts, `${at}[${i}]`, out));
       break;
     case 'string':
       if (typeof value !== 'string') err('expected a string');
@@ -44,6 +46,6 @@ export function schemaErrors(value: unknown, schema: Schema, at = '$', out: stri
     default:
       break;
   }
-  if (Array.isArray(schema.enum) && !schema.enum.includes(value as never)) err(`“${String(value)}” is not one of ${schema.enum.join(', ')}`);
+  if (opts.enums !== false && Array.isArray(schema.enum) && !schema.enum.includes(value as never)) err(`“${String(value)}” is not one of ${schema.enum.join(', ')}`);
   return out;
 }

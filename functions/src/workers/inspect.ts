@@ -398,7 +398,8 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
   ];
   const r = await callReasoning(parts, { systemInstruction: INSPECTOR_SYSTEM }, 'MEDIUM');
   const reviewCost = await usageFor(job, r, 'text', false);
-  const invalid = schemaErrors(r.json, INSPECTION_SCHEMA);
+  // Structure is strict (missing or mistyped fields); words outside an enum are mapped by the normalisers.
+  const invalid = schemaErrors(r.json, INSPECTION_SCHEMA, { enums: false });
   if (invalid.length) fail('invalid_output', `The reviewer's reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
   const review = normalizeReview(r.json);
   review.director = normalizeDirectorReview(r.json);
