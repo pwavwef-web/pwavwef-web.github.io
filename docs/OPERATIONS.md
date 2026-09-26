@@ -40,7 +40,9 @@ node scripts/deploy.mjs --skip-checks --only=rules,functions   # re-render rules
 
 The API requires the UID **and** the verified email to match. Rules require the UID and a verified email.
 
-## Lyria 3.5 (music) — one-time key setup
+## Lyria 3.5 (music) — server-side key
+
+**Status (2026-09-26): configured.** `AZ_STUDIO_GEMINI_API_KEY` exists (created 2026-09-25, readable only by `az-studio-api`); live jobs generated complete songs and film-score movements. The steps below are for rotating or re-creating it.
 
 Vertex AI does not serve `lyria-3.5` to `az-learner` (it answers `400 Unsupported model interaction`). The Gemini Developer API does, so music generation uses it **server-side** with a key kept in Secret Manager. Without the key, song, cue and section generation fail fast with the exact limitation (nothing is billed, no older model is used); uploads, recording, analysis, arrangement, stems and mixing keep working.
 
@@ -65,7 +67,7 @@ Edit `functions/src/config/models.ts` (ID + capabilities) and `functions/src/con
 
 Settings → Models probes every role live (`modelStatus`, cached 6 h in `runtime/modelStatus`). Status on 2026-09-24 for project `az-learner`:
 
-- `lyria-3.5`: Vertex AI answers `400 Unsupported model interaction: lyria-3.5` (the publisher model is not found for the project in `global` or `us-central1`). Music is generated with the same model on the Gemini Developer API when `AZ_STUDIO_GEMINI_API_KEY` is set (above); without the key, song, cue and section generation fail fast with this limitation — nothing is billed and no older Lyria model is used. When Google enables it on Vertex AI for the project, the existing jobs switch to it unchanged.
+- `lyria-3.5`: Vertex AI answers `400 Unsupported model interaction: lyria-3.5` (the publisher model is not found for the project in `global` or `us-central1`). Music is generated with the same model on the Gemini Developer API with `AZ_STUDIO_GEMINI_API_KEY` (configured since 2026-09-25, above); without the key, song, cue and section generation fail fast with this limitation — nothing is billed and no older Lyria model is used. When Google enables it on Vertex AI for the project, the existing jobs switch to it unchanged.
 - `gemini-omni-1.1-flash` is served as `gemini-omni-1.1-flash-preview`; `gemini-3.5-transcribe` (GA ID) and `gemini-3.5-flash-tts` return 404 for the project, so `gemini-3.5-transcribe-preview` and `gemini-2.5-pro-tts` are used.
 
 ## Cost controls
@@ -88,7 +90,9 @@ The acceptance suite (`tests/acceptance`) runs the same server code as the API w
 
 ## Export gate
 
-Final renders (and any render requested with inspection) are inspected automatically when the render finishes (`final.inspect`: FFmpeg measurements, transcription, OCR, the reviewer). A download of such a render is refused by the API (`mediaUrls` with `download`) until its inspection is **ready** or **overridden** with a recorded note; playback for review is always allowed. Automatic fixes change the timeline and mark the inspection `needsRerender` — the next render is inspected again to verify them. `azsMaintenance` starts inspections that were missed (e.g. a deploy during a render).
+Final renders (and any render requested with inspection) are inspected automatically when the render finishes (`final.inspect`: FFmpeg measurements, transcription, OCR, the reviewer). A download of such a render is refused by the API (`mediaUrls` with `download`) until its inspection is **ready** or **overridden** with a recorded note; playback for review is always allowed. Automatic fixes change the timeline (or, for styled lyrics, the song's lyric style for that aspect ratio) and mark the inspection `needsRerender` — the next render is inspected again to verify them. `azsMaintenance` starts inspections that were missed (e.g. a deploy during a render).
+
+What counts as a fault: black stretches (reported once — the frozen-picture check skips spans that are black), frozen pictures, sample peaks at the limiter, and sudden loud peaks — momentary loudness of at least −12 LUFS that is 10 LU above what played in the five seconds before (an error at −5 LUFS or +18 LU). A line spoken louder than the rest of a quiet mix is dynamics, not a fault. Black after the last picture offers holding the last shot when its source runs longer.
 
 ## Security notes
 

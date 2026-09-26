@@ -393,18 +393,37 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
     { text: brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary) },
   ];
   // Two structured passes over the same video, each schema-enforced by the API (the combined schema is too
-  // complex to enforce): the scene review, then the continuity-director details.
-  const passes = [
-    { name: 'review', schema: REVIEW_SCHEMA, note: 'THIS PASS: return the scene review sections (summary, dialogue and speakers, lip sync, action beats, continuity list, artefacts, first/last frame, scores, problems, recommended repair). The continuity-director details are collected in a separate pass.' },
-    { name: 'continuity director', schema: DIRECTOR_REVIEW_SCHEMA, note: 'THIS PASS: return only the continuity-director sections (characters, background, blocking, direction, text, props, temporal, edges, detected state and category scores). The scene review is collected in a separate pass.' },
-  ];
-  const results = await Promise.all(passes.map((x) => callReasoning([...parts, { text: x.note }], { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: x.schema }, 'MEDIUM')));
-  // Nothing is scored from an incomplete reply: a missing or mistyped field would otherwise read as “fine”.
-  results.forEach((res, i) => {
-    const invalid = schemaErrors(res.json, passes[i]!.schema);
-    if (invalid.length) fail('invalid_output', `The ${passes[i]!.name} reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
-  });
-  const [r, d] = results as [ReasoningResult, ReasoningResult];
+  // complex to enforce). The continuity director looks first; the scene review then works from its findings,
+  // so its scores rest on the same evidence (on its own it hedges with flat, unexplained scores).
+  const checked = (res: ReasoningResult, schema: Record<string, unknown>, name: string) => {
+    // Nothing is scored from an incomplete reply: a missing or mistyped field would otherwise read as “fine”.
+    const invalid = schemaErrors(res.json, schema);
+    if (invalid.length) fail('invalid_output', `The ${name} reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
+    return res;
+  };
+  const d = checked(
+    await callReasoning([...parts, { text: 'THIS PASS: return only the continuity-director sections (characters, background, blocking, direction, text, props, temporal, edges, detected state and category scores). The scene review is written in a second pass from your findings.' }], { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: DIRECTOR_REVIEW_SCHEMA }, 'MEDIUM'),
+    DIRECTOR_REVIEW_SCHEMA,
+    'continuity director',
+  );
+  const r = checked(
+    await callReasoning(
+      [
+        ...parts,
+        {
+          text: [
+            'THIS PASS: return the scene review sections (summary, dialogue and speakers, lip sync, action beats, continuity list, artefacts, first/last frame, scores, problems, recommended repair).',
+            `CONTINUITY DIRECTOR FINDINGS for this same take (first pass): ${JSON.stringify(d.json).slice(0, 12000)}`,
+            'Use those findings and what you see and hear. Scores follow the evidence: every score below 85 must be explained by at least one listed problem (with its time); an aspect with no problem you can point to is scored for what it is.',
+          ].join('\n\n'),
+        },
+      ],
+      { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: REVIEW_SCHEMA },
+      'MEDIUM',
+    ),
+    REVIEW_SCHEMA,
+    'review',
+  );
   const reviewCost = (await usageFor(job, r, 'text', false)) + (await usageFor(job, d, 'text', false));
   const review = normalizeReview(r.json);
   review.director = normalizeDirectorReview(d.json);
