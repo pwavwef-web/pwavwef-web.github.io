@@ -386,9 +386,17 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
   const parts: Part[] = [
     { fileData: { fileUri: gsUri(p.storagePath), mimeType: 'video/mp4' }, videoMetadata: { fps } },
     ...references.map((r) => ({ fileData: { fileUri: gsUri(r.storagePath), mimeType: r.mimeType } })),
-    { text: brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary) },
+    {
+      text:
+        `${brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary)}\n\n` +
+        // Gemini 3.8 Flash rejects this 32-section schema when it is sent through
+        // responseJsonSchema (400 INVALID_ARGUMENT). JSON mode accepts the same contract in the
+        // prompt, while normalizeReview/normalizeDirectorReview still validate every field before
+        // it can affect a verdict.
+        `Return one JSON object that follows this exact JSON Schema:\n${JSON.stringify(INSPECTION_SCHEMA)}`,
+    },
   ];
-  const r = await callReasoning(parts, { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: INSPECTION_SCHEMA }, 'MEDIUM');
+  const r = await callReasoning(parts, { systemInstruction: INSPECTOR_SYSTEM }, 'MEDIUM');
   const reviewCost = await usageFor(job, r, 'text', false);
   const review = normalizeReview(r.json);
   review.director = normalizeDirectorReview(r.json);
