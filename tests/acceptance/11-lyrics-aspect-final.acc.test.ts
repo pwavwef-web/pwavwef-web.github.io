@@ -124,12 +124,15 @@ async function read(r: Rendered, times: number[]): Promise<AnnotatedFrame[]> {
   return annotateFrames({ frames: times.map((t) => ({ t, jpeg: jpegAt(r.file, t, width), width, height })), features: ['TEXT_DETECTION', 'FACE_DETECTION'] });
 }
 
+const LYRIC_WORDS = new Set(words(UPLOADED));
+/** OCR words that are lyrics — OCR also “reads” text in picture textures (ripples on the river), which is not ours. */
+const lyricWords = (f: AnnotatedFrame) => f.text.filter((w) => words(w.text).some((x) => LYRIC_WORDS.has(x)));
 /** Share of a face covered by lyric text (0 = clear). */
-const faceCover = (f: AnnotatedFrame) => Math.max(0, ...f.faces.filter((x) => x.confidence >= 0.5).map((face) => f.text.reduce((s, w) => s + (w.box ? overlap(w.box, face.box) : 0), 0) / Math.max(1e-6, area(face.box))));
+const faceCover = (f: AnnotatedFrame) => Math.max(0, ...f.faces.filter((x) => x.confidence >= 0.5).map((face) => lyricWords(f).reduce((s, w) => s + (w.box ? overlap(w.box, face.box) : 0), 0) / Math.max(1e-6, area(face.box))));
 /** Text boxes outside a safe area (fractions of the frame, with a small tolerance). */
 function outsideSafe(f: AnnotatedFrame, safe: { top: number; bottom: number; left: number; right: number }, horizontalOnly = false): string[] {
   const tol = 0.02;
-  return f.text.filter((w) => w.box && (w.box.x < safe.left - tol || w.box.x + w.box.w > 1 - safe.right + tol || (!horizontalOnly && (w.box.y < safe.top - tol || w.box.y + w.box.h > 1 - safe.bottom + tol)))).map((w) => w.text);
+  return lyricWords(f).filter((w) => w.box && (w.box.x < safe.left - tol || w.box.x + w.box.w > 1 - safe.right + tol || (!horizontalOnly && (w.box.y < safe.top - tol || w.box.y + w.box.h > 1 - safe.bottom + tol)))).map((w) => w.text);
 }
 
 async function useStyle(owner: Owner, projectId: string, songId: string, name: string, global: LyricStyle): Promise<string> {
