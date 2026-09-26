@@ -20,6 +20,7 @@ import {
   emptySetBible,
   emptyShotContinuity,
   evaluateQuality,
+  heldFrameRatio,
   horizontalFov,
   measuredContinuityProblems,
   mergeApprovedState,
@@ -277,6 +278,23 @@ describe('continuity-aware inspection', () => {
     expect(textOrientation('AZ Studio', 'AZ Studio', 'oibutS ZA').verdict).toBe('correct');
     expect(textOrientation('AZ Studio', 'oibutS ZA', 'AZ Studio').verdict).toBe('mirrored');
     expect(textOrientation('AZ Studio', 'AZ Stuido', '').verdict).toBe('misspelled');
+  });
+
+  it('counts stutter only where frames are held while the picture moves', () => {
+    // Per-frame luma differences measured on real 360p Omni takes (see the acceptance evidence): a seated,
+    // almost still shot changes ~0.2–0.4 on every frame — calm, not stutter.
+    const still = [0, 0.17, 0.17, 0.17, 0.35, 0.26, 0.2, 0.22, 0.31, 0.3, 0.24, 0.22, 0.29, 0.24, 0.24, 0.2, 0.37, 0.3, 0.24, 0.23, 0.34, 0.27, 0.24, 0.23, 0.33, 0.28, 0.27, 0.25];
+    expect(heldFrameRatio(still)).toBe(0);
+    // A moving shot with every other frame held (duplicated, then re-encoded: not exactly zero).
+    const stutter = [0, ...Array.from({ length: 40 }, (_, i) => (i % 2 ? 0.1 + (i % 3) * 0.02 : 0.8 + (i % 5) * 0.2))];
+    expect(heldFrameRatio(stutter)).toBeGreaterThan(0.4);
+    // Smooth motion that speeds up and slows down, and a single dropped frame (a jump, not a hold).
+    const smooth = [0, 0.11, 0.1, 0.17, 0.3, 0.24, 0.21, 0.21, 0.37, 0.37, 0.41, 0.46, 0.55, 0.46, 0.39, 0.48, 0.66, 0.44, 0.47, 0.55, 0.58, 0.73, 0.95, 1.09, 0.56, 0.54, 0.55];
+    expect(heldFrameRatio(smooth)).toBe(0);
+    // An exact duplicate in the middle of motion is one held frame.
+    const hitch = [0, 0.9, 1, 0.95, 1.1, 1, 0, 1.05, 0.98, 1.02, 0.97, 1];
+    expect(heldFrameRatio(hitch)).toBeCloseTo(1 / 11, 3);
+    expect(heldFrameRatio([0, 0])).toBe(0);
   });
 
   it('tracks the main subject across frames', () => {

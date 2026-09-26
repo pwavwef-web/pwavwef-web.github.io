@@ -333,7 +333,7 @@ export function normalizeDirectorReview(raw: unknown): DirectorReview {
 
 export interface TemporalMeasurements {
   frozen: { start: number; end: number }[];
-  /** Duplicate consecutive frames (stutter) as a fraction of all frames. */
+  /** Frames held while the picture moves (stutter) as a fraction of all frames — see `heldFrameRatio`. */
   repeatedRatio: number;
   /** Luma oscillation energy (0 = steady; > 0.8 visible flicker). */
   flickerIndex: number;
@@ -467,6 +467,30 @@ export function trackDirection(frames: VisionFrame[]): { direction: ScreenDirect
   return { direction: 'static', dx: round3(dx), samples: pts.length };
 }
 
+/**
+ * Stutter: frames that are held (almost no change from the previous frame) while the frames around them
+ * move. `ydif` is the mean luma difference of each frame with the previous one (FFmpeg signalstats YDIF,
+ * measured at 160 px wide; index 0 has no previous frame). A calm or static shot changes little on every
+ * frame and is not stutter; re-encoded duplicates are not exactly zero, so a held frame is one that changes
+ * far less than its neighbours (below `ratio` × their 75th percentile) while they move (≥ `floor`).
+ */
+export function heldFrameRatio(ydif: number[], opts: { window?: number; ratio?: number; floor?: number } = {}): number {
+  const win = opts.window ?? 6;
+  const ratio = opts.ratio ?? 0.3;
+  const floor = opts.floor ?? 0.25;
+  if (ydif.length < 3) return 0;
+  let held = 0;
+  for (let i = 1; i < ydif.length; i++) {
+    const around: number[] = [];
+    for (let k = Math.max(1, i - win); k <= Math.min(ydif.length - 1, i + win); k++) if (k !== i) around.push(ydif[k]!);
+    if (!around.length) continue;
+    around.sort((a, b) => a - b);
+    const motion = around[Math.floor(0.75 * (around.length - 1))]!;
+    if (motion >= floor && ydif[i]! < ratio * motion) held++;
+  }
+  return round3(held / (ydif.length - 1));
+}
+
 /** Flicker: energy of frame-to-frame luma changes that immediately reverse (oscillation, not motion). */
 export function flickerIndex(yavg: number[]): number {
   if (yavg.length < 5) return 0;
@@ -552,7 +576,7 @@ export function measuredContinuityProblems(input: { temporal: TemporalMeasuremen
       if (f.end >= input.durationSec - 0.1) continue; // a held final frame is judged by the edge checks
       out.push(P('frozen_frames', f.end - f.start > 1 ? 'major' : 'minor', `The picture freezes from ${f.start.toFixed(1)} s to ${f.end.toFixed(1)} s.`, 'measured', f.start, f.end));
     }
-    if (t.repeatedRatio > 0.06) out.push(P('repeated_frames', t.repeatedRatio > 0.15 ? 'major' : 'minor', `${Math.round(t.repeatedRatio * 100)}% of frames repeat the previous frame (stutter).`, 'measured'));
+    if (t.repeatedRatio > 0.06) out.push(P('repeated_frames', t.repeatedRatio > 0.15 ? 'major' : 'minor', `${Math.round(t.repeatedRatio * 100)}% of frames freeze for a frame while the picture moves (stutter).`, 'measured'));
     if (t.flickerIndex > 0.8) out.push(P('lighting_flicker', t.flickerIndex > 2 ? 'major' : 'minor', `Brightness flickers (oscillation index ${t.flickerIndex.toFixed(2)}).`, 'measured'));
     for (const j of t.jumps.slice(0, 3)) out.push(P('camera_jump', 'minor', `Sudden picture jump at ${j.toFixed(1)} s.`, 'measured', j, j));
     if (t.decodeErrors > 0) out.push(P('corrupted_frames', t.decodeErrors > 3 ? 'critical' : 'major', `${t.decodeErrors} frame(s) failed to decode (corrupted data).`, 'measured'));

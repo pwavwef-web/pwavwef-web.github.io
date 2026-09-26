@@ -16,6 +16,7 @@ import { parseLyricsText, planSceneDuration } from '@az-studio/shared';
 import { IMAGE_CAPABILITIES, MODEL_REGISTRY, VIDEO_CAPABILITIES } from '../src/config/models';
 import { PRICING } from '../src/config/pricing';
 import { detectC2pa } from '../src/lib/media';
+import { schemaErrors } from '../src/lib/schema-check';
 
 const owner = { uid: 'owner-uid', email: 'owner@example.com' };
 
@@ -310,6 +311,30 @@ describe('Lyria output', () => {
     expect(isModelUnavailable(new Error('400 Unsupported model interaction: lyria-3.5'))).toBe(true);
     expect(isModelUnavailable(new Error('Publisher Model projects/az-learner/locations/global/publishers/google/models/lyria-3.5 not found.'))).toBe(true);
     expect(isModelUnavailable(new Error('Quota exceeded for aiplatform.googleapis.com'))).toBe(false);
+  });
+});
+
+describe('structured reply check', () => {
+  it('refuses an incomplete or mistyped inspection reply instead of filling passing defaults', () => {
+    // A reply that follows the schema passes.
+    const ok = { summary: 'Fine.', scores: { a: 1 }, actions: [{ beat: 'sit', completed: true }], lipSync: { drift: 'none' } };
+    const schema = {
+      type: 'object',
+      properties: {
+        summary: { type: 'string' },
+        scores: { type: 'object', properties: { a: { type: 'number' } }, required: ['a'] },
+        actions: { type: 'array', items: { type: 'object', properties: { beat: { type: 'string' }, completed: { type: 'boolean' } }, required: ['beat', 'completed'] } },
+        lipSync: { type: 'object', properties: { drift: { type: 'string', enum: ['none', 'minor', 'severe'] } }, required: ['drift'] },
+      },
+      required: ['summary', 'scores', 'actions', 'lipSync'],
+    };
+    expect(schemaErrors(ok, schema)).toEqual([]);
+    // Missing sections, a mistyped boolean and an unknown enum value are all reported.
+    const bad = { summary: 'Fine.', actions: [{ beat: 'sit', completed: 'yes' }], lipSync: { drift: 'slight' } };
+    expect(schemaErrors(bad, schema)).toEqual(['$: missing “scores”', '$.actions[0].completed: expected true or false', '$.lipSync.drift: “slight” is not one of none, minor, severe']);
+    expect(schemaErrors(null, schema)).toEqual(['$: expected an object']);
+    // The real inspection schema: an empty reply lists every required section.
+    expect(schemaErrors({}, INSPECTION_SCHEMA as Record<string, unknown>, '$', [], 100).length).toBe(Object.keys((INSPECTION_SCHEMA as { properties: object }).properties).length);
   });
 });
 

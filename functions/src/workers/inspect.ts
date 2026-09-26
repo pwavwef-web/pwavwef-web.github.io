@@ -2,6 +2,7 @@ import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import type { Part } from '@google/genai';
 import {
+  frozenOutsideBlack,
   analyzeDialogue,
   compareStates,
   detectedToState,
@@ -44,10 +45,11 @@ import { logInteraction } from '../lib/interactions';
 import { probe } from '../lib/media';
 import { progress, transition } from '../lib/jobs';
 import { audioMeasurements, decodeMono, extractSpeechAudio, integratedLoudness, lastFrameJpeg, visualMeasurements } from '../lib/signal';
+import { schemaErrors } from '../lib/schema-check';
 import { recordUsage } from '../lib/usage';
 import { annotateFrames, type AnnotatedFrame } from '../lib/vision';
-import { callReasoning, usageFor } from './text';
-import { INSPECTION_SCHEMA } from './text-tasks';
+import { callReasoning, usageFor, type ReasoningResult } from './text';
+import { DIRECTOR_REVIEW_SCHEMA, REVIEW_SCHEMA } from './text-tasks';
 
 export interface InspectReference {
   assetId: string;
@@ -299,7 +301,9 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
       languageCode = tr.languageCode;
     }
     await progress(job.id, 'Measuring cuts, black and frozen frames, flicker and motion', 0.28);
-    const [visual, temporal] = await Promise.all([visualMeasurements(local), temporalMeasurements(local).catch(() => null as TemporalMeasurements | null)]);
+    const [visual, measuredTemporal] = await Promise.all([visualMeasurements(local), temporalMeasurements(local).catch(() => null as TemporalMeasurements | null)]);
+    // Black stretches are reported as black frames; they are not a second, frozen-picture fault.
+    const temporal = measuredTemporal && { ...measuredTemporal, frozen: frozenOutsideBlack(measuredTemporal.frozen, visual.blackSegments) };
 
     // Frame analysis: faces, people, objects and text on sampled frames (plus the very last frame).
     await progress(job.id, 'Reading faces, people, objects and text in sampled frames', 0.36);
@@ -386,20 +390,24 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
   const parts: Part[] = [
     { fileData: { fileUri: gsUri(p.storagePath), mimeType: 'video/mp4' }, videoMetadata: { fps } },
     ...references.map((r) => ({ fileData: { fileUri: gsUri(r.storagePath), mimeType: r.mimeType } })),
-    {
-      text:
-        `${brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary)}\n\n` +
-        // Gemini 3.8 Flash rejects this 32-section schema when it is sent through
-        // responseJsonSchema (400 INVALID_ARGUMENT). JSON mode accepts the same contract in the
-        // prompt, while normalizeReview/normalizeDirectorReview still validate every field before
-        // it can affect a verdict.
-        `Return one JSON object that follows this exact JSON Schema:\n${JSON.stringify(INSPECTION_SCHEMA)}`,
-    },
+    { text: brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary) },
   ];
-  const r = await callReasoning(parts, { systemInstruction: INSPECTOR_SYSTEM }, 'MEDIUM');
-  const reviewCost = await usageFor(job, r, 'text', false);
+  // Two structured passes over the same video, each schema-enforced by the API (the combined schema is too
+  // complex to enforce): the scene review, then the continuity-director details.
+  const passes = [
+    { name: 'review', schema: REVIEW_SCHEMA, note: 'THIS PASS: return the scene review sections (summary, dialogue and speakers, lip sync, action beats, continuity list, artefacts, first/last frame, scores, problems, recommended repair). The continuity-director details are collected in a separate pass.' },
+    { name: 'continuity director', schema: DIRECTOR_REVIEW_SCHEMA, note: 'THIS PASS: return only the continuity-director sections (characters, background, blocking, direction, text, props, temporal, edges, detected state and category scores). The scene review is collected in a separate pass.' },
+  ];
+  const results = await Promise.all(passes.map((x) => callReasoning([...parts, { text: x.note }], { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: x.schema }, 'MEDIUM')));
+  // Nothing is scored from an incomplete reply: a missing or mistyped field would otherwise read as “fine”.
+  results.forEach((res, i) => {
+    const invalid = schemaErrors(res.json, passes[i]!.schema);
+    if (invalid.length) fail('invalid_output', `The ${passes[i]!.name} reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
+  });
+  const [r, d] = results as [ReasoningResult, ReasoningResult];
+  const reviewCost = (await usageFor(job, r, 'text', false)) + (await usageFor(job, d, 'text', false));
   const review = normalizeReview(r.json);
-  review.director = normalizeDirectorReview(r.json);
+  review.director = normalizeDirectorReview(d.json);
   const measurements: Measurements = { durationSec: measured.durationSec, fps: measured.fps, hasAudio: measured.hasAudio, audio: measured.audio, visual: measured.visual, temporal: measured.temporal, vision: measured.vision, colour: measured.colour };
   const verdict = evaluateQuality({ expect: c?.expectations ?? null, dialogue, review, measurements, settings: p.settings, plannedCuts: p.plan.plannedCuts, editorialCuts: p.plan.editorialCuts ?? [], hasCharacters: e.characters.length > 0, waivedCategories: p.waivedCategories });
 
@@ -488,7 +496,7 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
     modelId: r.modelId,
     api: 'generateContent',
     request: { task: 'quality_inspection', durationSec: measured.durationSec, fps, references: references.length, lines: e.lines.length, visionFrames: measured.annotated.length, continuity: Boolean(c) },
-    response: { passed: verdict.passed, overall: verdict.overall, problems: verdict.problems.length, continuityWarnings: continuity?.warnings.length ?? 0, usage: r.res.usageMetadata ?? null },
+    response: { passed: verdict.passed, overall: verdict.overall, problems: verdict.problems.length, continuityWarnings: continuity?.warnings.length ?? 0, usage: { review: r.res.usageMetadata ?? null, director: d.res.usageMetadata ?? null } },
     latencyMs: Date.now() - started,
   });
   const blocking = verdict.problems.filter((x) => x.blocking).length;

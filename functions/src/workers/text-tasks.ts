@@ -484,7 +484,12 @@ const DIRECTOR_SECTIONS: Record<string, Schema> = {
 };
 
 /** Structured scene review returned by the reasoning model during quality inspection. */
-export const INSPECTION_SCHEMA: Schema = obj({
+/**
+ * The scene review, and the continuity-director details, are asked for in two structured passes over the
+ * same video: Gemini refuses the combined 32-section schema as too complex to enforce (400 INVALID_ARGUMENT),
+ * while each half is accepted and enforced by the API.
+ */
+const REVIEW_SECTIONS: Record<string, Schema> = {
   summary: str('Two or three sentences a director can act on'),
   speakerAttribution: arr(obj({ lineIndex: { type: 'integer' }, expectedCharacter: str(), deliveredBy: str('Who actually speaks the line on screen (character name, "off-screen", or "nobody")'), correct: { type: 'boolean' }, note: str() })),
   lipSync: obj({ applicable: { type: 'boolean' }, drift: { type: 'string', enum: ['none', 'minor', 'severe'] }, note: str() }),
@@ -520,8 +525,14 @@ export const INSPECTION_SCHEMA: Schema = obj({
     sectionEndSec: SECONDS('End of the faulty section'),
     rationale: str(),
   }),
-  ...DIRECTOR_SECTIONS,
-});
+};
+
+/** Pass 1: the scene review (dialogue, action, picture, scores, problems, repair). */
+export const REVIEW_SCHEMA: Schema = obj(REVIEW_SECTIONS);
+/** Pass 2: the continuity director (characters, set, blocking, direction, text, props, time, edges, state, category scores). */
+export const DIRECTOR_REVIEW_SCHEMA: Schema = obj(DIRECTOR_SECTIONS);
+/** Everything the inspection collects (the two passes together). */
+export const INSPECTION_SCHEMA: Schema = obj({ ...REVIEW_SECTIONS, ...DIRECTOR_SECTIONS });
 
 const POINT: Schema = obj({ x: num('0–1 of the frame width from the left'), y: num('0–1 of the frame height from the top') });
 

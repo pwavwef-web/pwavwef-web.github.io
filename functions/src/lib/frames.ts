@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { flickerIndex, statsFromRgb, type ColourStats, type Rgb, type RgbStats, type TemporalMeasurements } from '@az-studio/shared';
+import { flickerIndex, heldFrameRatio, statsFromRgb, type ColourStats, type Rgb, type RgbStats, type TemporalMeasurements } from '@az-studio/shared';
 import { FFMPEG } from './media';
 
 /**
@@ -113,11 +113,10 @@ export async function rgbStats(input: string, opts: { isImage?: boolean; fps?: n
 
 /** Freezes, stutter, flicker, camera jumps and decode errors of a clip. */
 export async function temporalMeasurements(input: string): Promise<TemporalMeasurements> {
-  const [freeze, luma, decode, dec] = await Promise.all([
+  const [freeze, luma, decode] = await Promise.all([
     ffmpeg(['-i', input, '-an', '-vf', 'freezedetect=n=-55dB:d=0.3', '-f', 'null', '-']),
     ffmpeg(['-loglevel', 'error', '-i', input, '-an', '-vf', "scale=160:-2,signalstats,select='gte(scene\\,0)',metadata=print:file=-", '-f', 'null', '-']),
     ffmpeg(['-v', 'error', '-i', input, '-f', 'null', '-']),
-    ffmpeg(['-i', input, '-an', '-vf', 'mpdecimate=hi=768:lo=320:frac=0.33', '-f', 'null', '-']),
   ]);
   const frozen: { start: number; end: number }[] = [];
   let open: number | null = null;
@@ -136,6 +135,7 @@ export async function temporalMeasurements(input: string): Promise<TemporalMeasu
     frozen.push({ start: open, end: dur });
   }
   const yavg: number[] = [];
+  const ydif: number[] = [];
   const scenes: { t: number; s: number }[] = [];
   let t = 0;
   for (const line of luma.stdout.toString().split('\n')) {
@@ -143,17 +143,17 @@ export async function temporalMeasurements(input: string): Promise<TemporalMeasu
     if (pt) t = Number(pt[1]);
     const y = /lavfi\.signalstats\.YAVG=([\d.]+)/.exec(line);
     if (y) yavg.push(Number(y[1]));
+    const yd = /lavfi\.signalstats\.YDIF=([\d.]+)/.exec(line);
+    if (yd) ydif.push(Number(yd[1]));
     const sc = /lavfi\.scene_score=([\d.]+)/.exec(line);
     if (sc) scenes.push({ t, s: Number(sc[1]) });
   }
   const jumps = scenes.filter((x) => x.s >= 0.22 && x.s < 0.45).map((x) => Math.round(x.t * 100) / 100);
-  const total = /frame=\s*(\d+)/g;
-  let decFrames = 0;
-  for (const m of dec.stderr.matchAll(total)) decFrames = Number(m[1]);
   const frames = yavg.length;
-  const repeatedRatio = frames > 0 && decFrames > 0 ? Math.max(0, Math.min(1, 1 - decFrames / frames)) : 0;
+  // Held frames while the picture moves; a calm shot that changes little on every frame is not stutter.
+  const repeatedRatio = heldFrameRatio(ydif);
   const decodeErrors = decode.stderr.split('\n').filter((l) => /error|corrupt|invalid|concealing/i.test(l)).length;
-  return { frozen, repeatedRatio: Math.round(repeatedRatio * 1000) / 1000, flickerIndex: flickerIndex(yavg), jumps: [...new Set(jumps)].slice(0, 12), decodeErrors, frames };
+  return { frozen, repeatedRatio, flickerIndex: flickerIndex(yavg), jumps: [...new Set(jumps)].slice(0, 12), decodeErrors, frames };
 }
 
 /** RGB statistics as the colour-continuity measure (mean colour, luma and skin tone). */

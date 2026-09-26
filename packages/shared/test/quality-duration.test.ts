@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actionBeats, estimateSpeechSeconds, planSceneDuration, segmentTimingDirections, splitSentences, type PlanLine } from '../src/duration';
 import { analyzeDialogue, chooseRepair, DEFAULT_QUALITY_SETTINGS, evaluateQuality, isBlocking, parseOffset, type DetectedWord, type ModelReview, type RepairContext } from '../src/quality';
-import { decideAfterInspection } from '../src/production';
+import { decideAfterInspection, screenCompositeForPassedTake } from '../src/production';
 import { alignWords, normalizeWord, tokenize } from '../src/text-align';
 
 const CAPS = { minSec: 3, maxSec: 10, maxChainSec: 40 };
@@ -364,5 +364,15 @@ describe('automatic repair selection', () => {
     expect(decideAfterInspection({ passed: false, settings: s, repairCount: 1, spentUsd: 1, repair, repairEstimateUsd: 2.1 })).toMatchObject({ action: 'await_repair_approval', waitingFor: 'expensive_retry' });
     expect(decideAfterInspection({ passed: false, settings: { ...s, autoFixIncomplete: false }, repairCount: 0, spentUsd: 1, repair, repairEstimateUsd: 0.6 }).action).toBe('fail');
     expect(decideAfterInspection({ passed: false, settings: s, repairCount: 1, spentUsd: 1, repair: null, repairEstimateUsd: null }).action).toBe('fail');
+  });
+
+  it('composites a protected screen onto a passing take once', () => {
+    const blank = [{ category: 'wrong_screen_content' as const }];
+    const composite = screenCompositeForPassedTake({ problems: blank, compositeScreenIds: ['phone'], triedTypes: [] });
+    expect(composite).toMatchObject({ type: 'screen_composite', keepAudio: true, data: { screenIds: ['phone'] } });
+    // Never again once a composite was made or tried, never without an approved screen, never without a text problem.
+    expect(screenCompositeForPassedTake({ problems: blank, compositeScreenIds: ['phone'], triedTypes: ['screen_composite'] })).toBeNull();
+    expect(screenCompositeForPassedTake({ problems: blank, compositeScreenIds: [], triedTypes: [] })).toBeNull();
+    expect(screenCompositeForPassedTake({ problems: [{ category: 'lighting_flicker' as const }], compositeScreenIds: ['phone'], triedTypes: [] })).toBeNull();
   });
 });

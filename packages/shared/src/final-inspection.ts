@@ -192,18 +192,36 @@ export function blackFindings(segments: { start: number; end: number }[], state:
     const under = pics.filter((c) => mid >= c.start && mid < clipEnd(c));
     let fix: FinalFix | null = null;
     let clipIds: string[] = [];
+    let where = under[0] ? ` (in “${under[0].label || 'a clip'}”)` : ' (a gap between clips)';
     if (!under.length) {
       const next = pics.find((c) => c.start >= b.end - 0.05);
+      const prev = [...pics].reverse().find((c) => clipEnd(c) <= b.start + 0.05);
       if (next) fix = { type: 'close_gap', label: `Close the ${r2(b.end - b.start)} s gap`, clipId: next.id, params: { from: r2(b.start), to: r2(b.end) } };
+      else if (prev) {
+        // The picture ends before the sound: carry the last shot on when its source runs longer.
+        where = ' (after the last picture — the sound runs on)';
+        const room = prev.kind === 'image' ? Infinity : prev.sourceDuration !== null ? prev.sourceDuration - prev.inPoint - prev.duration : 0;
+        if (room >= b.end - b.start - 0.01) fix = { type: 'trim_clip_end', label: `Hold “${prev.label || 'the last shot'}” over the ${r2(b.end - b.start)} s of black at the end`, clipId: prev.id, params: { to: r2(clipEnd(prev) + (b.end - b.start)) } };
+      }
     } else {
       const c = under[0]!;
       clipIds = [c.id];
       if (b.start - c.start < 0.2) fix = { type: 'trim_clip_start', label: `Trim ${r2(b.end - c.start)} s of black from the start of “${c.label || 'the clip'}”`, clipId: c.id, params: { to: r2(b.end + 0.02) } };
       else if (clipEnd(c) - b.end < 0.2) fix = { type: 'trim_clip_end', label: `Trim ${r2(clipEnd(c) - b.start)} s of black from the end of “${c.label || 'the clip'}”`, clipId: c.id, params: { to: r2(b.start - 0.02) } };
     }
-    out.push(finding('black_frames', 'error', `Black frames from ${r2(b.start)} s to ${r2(b.end)} s${under[0] ? ` (in “${under[0].label || 'a clip'}”)` : ' (a gap between clips)'}.`, 'measured', { startSec: r2(b.start), endSec: r2(b.end), clipIds, fix, manual: !fix }));
+    out.push(finding('black_frames', 'error', `Black frames from ${r2(b.start)} s to ${r2(b.end)} s${where}.`, 'measured', { startSec: r2(b.start), endSec: r2(b.end), clipIds, fix, manual: !fix }));
   }
   return out;
+}
+
+/** Frozen spans that are not just black: a black stretch is also a frozen picture, and it is reported once, as black frames. */
+export function frozenOutsideBlack(frozen: { start: number; end: number }[], black: { start: number; end: number }[]): { start: number; end: number }[] {
+  return frozen.filter((f) => {
+    const len = f.end - f.start;
+    if (len <= 0) return false;
+    const covered = black.reduce((sum, b) => sum + Math.max(0, Math.min(f.end, b.end) - Math.max(f.start, b.start)), 0);
+    return covered / len < 0.8;
+  });
 }
 
 export function frozenFindings(frozen: { start: number; end: number }[], state: Pick<TimelineState, 'clips' | 'tracks'>): FinalFinding[] {
@@ -238,27 +256,35 @@ export interface LoudSpike {
 
 /**
  * Sudden loud moments. The master limiter keeps a render from clipping, so a blast of sound only shows
- * in its loudness: momentary loudness (EBU R128, 400 ms windows every 100 ms) far above the film's
- * typical level (the median of its audible moments — the integrated value would be pulled up by the
- * spike itself).
+ * in its loudness: momentary loudness (EBU R128, 400 ms windows every 100 ms) that is loud in absolute
+ * terms (≥ `floorLufs`) and far above what the audience heard just before (the median of the preceding
+ * `contextSec`, or of the whole film when there is too little before it). A line spoken louder than the
+ * rest of a quiet mix is dynamics, not a blast, so it stays below the floor.
  */
-export function loudSpikes(momentary: { t: number; m: number }[], opts: { aboveLu?: number; floorLufs?: number } = {}): LoudSpike[] {
+export function loudSpikes(momentary: { t: number; m: number }[], opts: { aboveLu?: number; floorLufs?: number; contextSec?: number } = {}): LoudSpike[] {
   const audible = momentary.filter((s) => Number.isFinite(s.m) && s.m > -60).sort((a, b) => a.t - b.t);
   if (audible.length < 5) return [];
-  const sorted = audible.map((s) => s.m).sort((a, b) => a - b);
-  const reference = sorted[Math.floor(sorted.length / 2)]!;
-  // Relative to the film (a quiet film is blasted by less); nothing below the floor counts as loud.
-  const limit = Math.max(opts.floorLufs ?? -30, reference + (opts.aboveLu ?? 10));
-  const spans: { start: number; end: number; lufs: number }[] = [];
+  const floor = opts.floorLufs ?? -12;
+  const above = opts.aboveLu ?? 10;
+  const context = opts.contextSec ?? 5;
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
+  const overall = median(audible.map((s) => s.m));
+  const spans: { start: number; end: number; lufs: number; reference: number }[] = [];
+  let lo = 0;
+  let hi = 0;
   for (const s of audible) {
-    if (s.m < limit) continue;
+    // The preceding window [t − 0.5 − context, t − 0.5): what was playing before this moment.
+    while (lo < audible.length && audible[lo]!.t < s.t - 0.5 - context) lo++;
+    while (hi < audible.length && audible[hi]!.t < s.t - 0.5) hi++;
+    if (s.m < floor) continue;
+    const reference = hi - lo >= 10 ? median(audible.slice(lo, hi).map((x) => x.m)) : overall;
     const last = spans[spans.length - 1];
     if (last && s.t - last.end <= 0.35) {
       last.end = s.t;
       last.lufs = Math.max(last.lufs, s.m);
-    } else spans.push({ start: Math.max(0, s.t - 0.4), end: s.t, lufs: s.m });
+    } else if (s.m >= reference + above) spans.push({ start: Math.max(0, s.t - 0.4), end: s.t, lufs: s.m, reference });
   }
-  return spans.map((s) => ({ start: r2(s.start), end: r2(s.end), lufs: Math.round(s.lufs * 10) / 10, referenceLufs: Math.round(reference * 10) / 10 }));
+  return spans.map((s) => ({ start: r2(s.start), end: r2(s.end), lufs: Math.round(s.lufs * 10) / 10, referenceLufs: Math.round(s.reference * 10) / 10 }));
 }
 
 export function loudnessFindings(m: LoudnessMeasure, state: Pick<TimelineState, 'clips' | 'tracks'>, target = -14): FinalFinding[] {
@@ -273,7 +299,7 @@ export function loudnessFindings(m: LoudnessMeasure, state: Pick<TimelineState, 
     const db = Math.max(3, Math.ceil(s.lufs - (s.referenceLufs + 3)));
     const fix: FinalFix = culprit ? { type: 'reduce_gain', label: `Lower “${culprit.label || 'the clip'}” by ${db} dB`, clipId: culprit.id, params: { db } } : { type: 'enable_limiter', label: 'Add a limiter to the master', clipId: null, params: {} };
     out.push(
-      finding('audio_clipping', over >= 15 || s.lufs >= -5 ? 'error' : 'warning',`A sudden loud peak reaches ${s.lufs.toFixed(1)} LUFS (momentary) from ${r2(s.start)} s to ${r2(s.end)} s — ${Math.round(over)} LU above the rest of the film${culprit ? ` (“${culprit.label || 'a clip'}”)` : ''}.`, 'measured', {
+      finding('audio_clipping', over >= 18 || s.lufs >= -5 ? 'error' : 'warning', `A sudden loud peak reaches ${s.lufs.toFixed(1)} LUFS (momentary) from ${r2(s.start)} s to ${r2(s.end)} s — ${Math.round(over)} LU above what plays just before${culprit ? ` (“${culprit.label || 'a clip'}”)` : ''}.`, 'measured', {
         startSec: r2(s.start),
         endSec: r2(s.end),
         clipIds: under.map((c) => c.id),

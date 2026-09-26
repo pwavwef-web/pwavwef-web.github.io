@@ -19,6 +19,7 @@ import {
   detectKey,
   emptyTimeline,
   exportReadiness,
+  frozenOutsideBlack,
   headsCut,
   layoutCredits,
   layoutLyrics,
@@ -320,6 +321,37 @@ describe('final-film inspection', () => {
     expect(lowered.clips.find((c) => c.id === beep.id)!.volume).toBeLessThan(0.6);
     // Ordinary dynamics (a chorus a few LU louder) are not a spike.
     expect(loudSpikes(momentary.map((s) => ({ ...s, m: s.t >= 6 && s.t <= 7 ? -9 : s.m })))).toEqual([]);
+  });
+
+  it('does not call ordinary speech in a quiet mix a loud peak', () => {
+    // Measured on a real 7.8-minute draft: the film sits around −25 LUFS and lines of dialogue reach
+    // −13…−14 LUFS. That is dynamics, not a blast; a snap at −9 LUFS after quiet dialogue still is one.
+    const quiet = Array.from({ length: 300 }, (_, i) => {
+      const t = Math.round((i + 1) * 100) / 1000;
+      const speech = (t >= 10 && t <= 11.5) || (t >= 20 && t <= 21);
+      const snap = t >= 25 && t <= 25.3;
+      return { t, m: snap ? -9 : speech ? -13.5 : -25 + (i % 4) * 0.5 };
+    });
+    const spikes = loudSpikes(quiet);
+    expect(spikes).toHaveLength(1);
+    expect(spikes[0]).toMatchObject({ lufs: -9 });
+    expect(spikes[0]!.referenceLufs).toBeLessThan(-23);
+    // A loud moment that is loud against the film but follows equally loud sound is not sudden.
+    const sustained = Array.from({ length: 200 }, (_, i) => ({ t: Math.round((i + 1) * 100) / 1000, m: i < 60 ? -30 : -8 }));
+    expect(loudSpikes(sustained).map((s) => s.start)).toEqual([5.7]);
+  });
+
+  it('reports a black stretch once, and holds the last shot over black at the end', () => {
+    const v = tl.tracks.find((t) => t.kind === 'video')!.id;
+    const shot = makeClip({ trackId: v, kind: 'video', start: 0, duration: 6, assetId: 'x', sourceDuration: 10, label: 'Last shot' });
+    const song = makeClip({ trackId: a1, kind: 'audio', start: 0, duration: 10, assetId: 'song', sourceDuration: 60, label: 'Song' });
+    const ending = { ...tl, clips: [shot, song] };
+    const [black] = blackFindings([{ start: 6, end: 10 }], ending);
+    expect(black!.message).toMatch(/after the last picture/);
+    expect(black!.fix).toMatchObject({ type: 'trim_clip_end', clipId: shot.id });
+    expect(applyFinalFix(ending, black!.fix!)!.clips.find((c) => c.id === shot.id)!.duration).toBeCloseTo(10, 3);
+    // freezedetect also sees the black stretch as a frozen picture: it is not reported twice.
+    expect(frozenOutsideBlack([{ start: 6.02, end: 10 }, { start: 2, end: 3 }], [{ start: 6, end: 10 }])).toEqual([{ start: 2, end: 3 }]);
   });
 
   it('fixes a cropped styled lyric in its lyric style, not on the caption clip', () => {

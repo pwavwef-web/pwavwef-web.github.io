@@ -12,6 +12,7 @@ import {
   finding,
   formatFindings,
   frozenFindings,
+  frozenOutsideBlack,
   loudnessFindings,
   loudSpikes,
   lyricLayoutFindings,
@@ -127,7 +128,7 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
         info.hasAudio ? peakMoments(local).catch(() => []) : Promise.resolve([]),
         info.hasAudio ? momentaryLoudness(local).catch(() => []) : Promise.resolve([]),
       ]);
-      let words: { text: string; start: number; end: number }[] = [];
+      const words: { text: string; start: number; end: number }[] = [];
       if (info.hasAudio) {
         await progress(job.id, 'Transcribing the dialogue', 0.3);
         const project = (await col.projects().doc(job.projectId!).get()).data() as { language?: string } | undefined;
@@ -166,7 +167,7 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
     // Picture.
     findings.push(...blackFindings(m.black, state));
     if (m.temporal) {
-      findings.push(...frozenFindings(m.temporal.frozen, state));
+      findings.push(...frozenFindings(frozenOutsideBlack(m.temporal.frozen, m.black), state));
       if (m.temporal.decodeErrors > 0) findings.push(finding('corrupted_frames', m.temporal.decodeErrors > 3 ? 'error' : 'warning', `${m.temporal.decodeErrors} frame(s) failed to decode in the export.`, 'measured'));
     }
     // Sound.
