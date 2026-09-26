@@ -3,7 +3,7 @@ import { emptySetBible, SET_VIEW_LABELS, type JobDoc, type SetBibleDoc, type Set
 import { MODEL_REGISTRY } from '../config/models';
 import { createAsset, saveBufferToFile, withTmpDir } from '../lib/assets';
 import { bucket, col, db, FieldValue, gsUri } from '../lib/firebase';
-import { JobFailure } from '../lib/errors';
+import { JobFailure, toJobError } from '../lib/errors';
 import { logInteraction } from '../lib/interactions';
 import { progress, transition } from '../lib/jobs';
 import { recordUsage } from '../lib/usage';
@@ -34,6 +34,22 @@ export async function runReferencePackJob(job: JobDoc): Promise<void> {
     const a = await col.assets().doc(p.anchorAssetId).get();
     if (a.exists && a.get('status') === 'ready') anchor = { storagePath: String(a.get('storagePath')), mimeType: String(a.get('mimeType')) };
   }
+  // A view that hits the image quota (or a temporary outage) is retried with backoff, like any job; only
+  // a real refusal is recorded as a failed view.
+  const RETRY_DELAYS_SEC = [15, 30, 60];
+  const generateView = async (parts: Part[], label: string, step: number) => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await genai().models.generateContent({ model, contents: [{ role: 'user', parts }], config: { responseModalities: [Modality.TEXT, Modality.IMAGE], imageConfig: { aspectRatio: p.aspectRatio, imageSize: p.imageSize } } });
+      } catch (e) {
+        const err = toJobError(e);
+        const wait = RETRY_DELAYS_SEC[attempt];
+        if (!err.retryable || wait === undefined) throw e;
+        await progress(job.id, `${err.message.split('.')[0]} — retrying the ${label} in ${wait} s`, step);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+      }
+    }
+  };
   const created: Partial<Record<SetView, string>> = {};
   const failures: string[] = [];
   let totalCost = 0;
@@ -46,7 +62,7 @@ export async function runReferencePackJob(job: JobDoc): Promise<void> {
     parts.push({ text: `${anchor ? 'Reference image 1: the approved view of this set — the same room.\n' : ''}${v.prompt}` });
     const started = Date.now();
     try {
-      const res = await genai().models.generateContent({ model, contents: [{ role: 'user', parts }], config: { responseModalities: [Modality.TEXT, Modality.IMAGE], imageConfig: { aspectRatio: p.aspectRatio, imageSize: p.imageSize } } });
+      const res = await generateView(parts, SET_VIEW_LABELS[v.view].toLowerCase(), 0.08 + (0.8 * i) / ordered.length);
       const usage = res.usageMetadata;
       const imageTokens = usage?.candidatesTokensDetails?.find((d) => String(d.modality) === 'IMAGE')?.tokenCount ?? 0;
       totalCost += await recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: model, kind: 'image', inputTokens: usage?.promptTokenCount ?? 0, outputTokens: usage?.candidatesTokenCount ?? 0, thoughtTokens: usage?.thoughtsTokenCount ?? 0, outputByModality: { image: imageTokens } });
