@@ -336,7 +336,7 @@ function visionFrames(durationSec: number, screens: number): number {
 }
 
 export function inspectionEstimate(durationSec: number, referenceImages: number, screens = 0): CostEstimate {
-  return sumEstimates([estimateInspection({ modelId: MODEL_REGISTRY.reasoning.id, durationSec, referenceImages, promptChars: 9000, passes: 2 }, PRICING), estimateVision({ images: visionFrames(durationSec, screens), features: 3 }, PRICING)], PRICING);
+  return sumEstimates([estimateInspection({ modelId: MODEL_REGISTRY.reasoning.id, durationSec, referenceImages, promptChars: 9000 }, PRICING), estimateVision({ images: visionFrames(durationSec, screens), features: 3 }, PRICING)], PRICING);
 }
 
 async function createInspectionJob(p: Prod, v: ProductionVersionDoc): Promise<string> {

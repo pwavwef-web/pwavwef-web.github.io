@@ -48,8 +48,8 @@ import { audioMeasurements, decodeMono, extractSpeechAudio, integratedLoudness, 
 import { schemaErrors } from '../lib/schema-check';
 import { recordUsage } from '../lib/usage';
 import { annotateFrames, type AnnotatedFrame } from '../lib/vision';
-import { callReasoning, usageFor, type ReasoningResult } from './text';
-import { DIRECTOR_REVIEW_SCHEMA, REVIEW_SCHEMA } from './text-tasks';
+import { callReasoning, usageFor } from './text';
+import { INSPECTION_SCHEMA } from './text-tasks';
 
 export interface InspectReference {
   assetId: string;
@@ -387,46 +387,21 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
   await progress(job.id, c ? 'Reviewing picture, performance and continuity against the bibles' : 'Reviewing picture, performance and continuity', 0.5);
   const references = [...p.references, ...(measured.previousFrame ? [{ assetId: '', storagePath: measured.previousFrame.storagePath, mimeType: 'image/jpeg', label: `Last frame of the previous approved shot (${c?.previousFrame?.title ?? p.previousShot?.title ?? 'previous shot'}) — continuity reference` }] : [])];
   const fps = measured.durationSec <= 12 ? 4 : measured.durationSec <= 24 ? 3 : 2;
+  // Gemini refuses this 32-section schema as a response schema (too complex to enforce), and enforcing it in
+  // parts makes its scores collapse to flat values that no finding explains. The schema goes in the prompt
+  // (JSON mode) and every reply is checked against it before anything is scored: a missing or mistyped
+  // field fails the inspection (retried) instead of being read as a passing default.
   const parts: Part[] = [
     { fileData: { fileUri: gsUri(p.storagePath), mimeType: 'video/mp4' }, videoMetadata: { fps } },
     ...references.map((r) => ({ fileData: { fileUri: gsUri(r.storagePath), mimeType: r.mimeType } })),
-    { text: brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary) },
+    { text: `${brief({ ...p, references }, measured.durationSec, measured.words, dialogueSummary, measuredSummary)}\n\nReturn one JSON object that follows this JSON Schema exactly — every property is required:\n${JSON.stringify(INSPECTION_SCHEMA)}` },
   ];
-  // Two structured passes over the same video, each schema-enforced by the API (the combined schema is too
-  // complex to enforce). The continuity director looks first; the scene review then works from its findings,
-  // so its scores rest on the same evidence (on its own it hedges with flat, unexplained scores).
-  const checked = (res: ReasoningResult, schema: Record<string, unknown>, name: string) => {
-    // Nothing is scored from an incomplete reply: a missing or mistyped field would otherwise read as “fine”.
-    const invalid = schemaErrors(res.json, schema);
-    if (invalid.length) fail('invalid_output', `The ${name} reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
-    return res;
-  };
-  const d = checked(
-    await callReasoning([...parts, { text: 'THIS PASS: return only the continuity-director sections (characters, background, blocking, direction, text, props, temporal, edges, detected state and category scores). The scene review is written in a second pass from your findings.' }], { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: DIRECTOR_REVIEW_SCHEMA }, 'MEDIUM'),
-    DIRECTOR_REVIEW_SCHEMA,
-    'continuity director',
-  );
-  const r = checked(
-    await callReasoning(
-      [
-        ...parts,
-        {
-          text: [
-            'THIS PASS: return the scene review sections (summary, dialogue and speakers, lip sync, action beats, continuity list, artefacts, first/last frame, scores, problems, recommended repair).',
-            `CONTINUITY DIRECTOR FINDINGS for this same take (first pass): ${JSON.stringify(d.json).slice(0, 12000)}`,
-            'Use those findings and what you see and hear. Scores follow the evidence: every score below 85 must be explained by at least one listed problem (with its time); an aspect with no problem you can point to is scored for what it is.',
-          ].join('\n\n'),
-        },
-      ],
-      { systemInstruction: INSPECTOR_SYSTEM, responseJsonSchema: REVIEW_SCHEMA },
-      'MEDIUM',
-    ),
-    REVIEW_SCHEMA,
-    'review',
-  );
-  const reviewCost = (await usageFor(job, r, 'text', false)) + (await usageFor(job, d, 'text', false));
+  const r = await callReasoning(parts, { systemInstruction: INSPECTOR_SYSTEM }, 'MEDIUM');
+  const reviewCost = await usageFor(job, r, 'text', false);
+  const invalid = schemaErrors(r.json, INSPECTION_SCHEMA);
+  if (invalid.length) fail('invalid_output', `The reviewer's reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
   const review = normalizeReview(r.json);
-  review.director = normalizeDirectorReview(d.json);
+  review.director = normalizeDirectorReview(r.json);
   const measurements: Measurements = { durationSec: measured.durationSec, fps: measured.fps, hasAudio: measured.hasAudio, audio: measured.audio, visual: measured.visual, temporal: measured.temporal, vision: measured.vision, colour: measured.colour };
   const verdict = evaluateQuality({ expect: c?.expectations ?? null, dialogue, review, measurements, settings: p.settings, plannedCuts: p.plan.plannedCuts, editorialCuts: p.plan.editorialCuts ?? [], hasCharacters: e.characters.length > 0, waivedCategories: p.waivedCategories });
 
@@ -515,7 +490,7 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
     modelId: r.modelId,
     api: 'generateContent',
     request: { task: 'quality_inspection', durationSec: measured.durationSec, fps, references: references.length, lines: e.lines.length, visionFrames: measured.annotated.length, continuity: Boolean(c) },
-    response: { passed: verdict.passed, overall: verdict.overall, problems: verdict.problems.length, continuityWarnings: continuity?.warnings.length ?? 0, usage: { review: r.res.usageMetadata ?? null, director: d.res.usageMetadata ?? null } },
+    response: { passed: verdict.passed, overall: verdict.overall, problems: verdict.problems.length, continuityWarnings: continuity?.warnings.length ?? 0, usage: r.res.usageMetadata ?? null },
     latencyMs: Date.now() - started,
   });
   const blocking = verdict.problems.filter((x) => x.blocking).length;

@@ -183,22 +183,19 @@ export function estimateTranscription(input: { seconds: number; words?: number }
 }
 
 /** Watching a generated scene with the reasoning model (video + audio + reference images). */
-export function estimateInspection(input: { modelId: string; durationSec: number; referenceImages: number; promptChars: number; passes?: number }, table: PricingTable): CostEstimate {
+export function estimateInspection(input: { modelId: string; durationSec: number; referenceImages: number; promptChars: number }, table: PricingTable): CostEstimate {
   const t = table.text[input.modelId];
   const q = table.inspection;
   if (!t) return finish([], 'low', [`No pricing configured for ${input.modelId}.`], table, 'none');
-  // Each structured pass reads the whole video again (the shot inspection makes two: review + continuity director).
-  const passes = Math.max(1, input.passes ?? 1);
-  const perPass = Math.ceil(input.durationSec * (q.framesPerSecond * q.videoTokensPerFrame + q.audioTokensPerSecond)) + input.referenceImages * 560 + approxTokens(input.promptChars);
-  const inTokens = perPass * passes;
-  const long = perPass > t.longContextThreshold;
+  const inTokens = Math.ceil(input.durationSec * (q.framesPerSecond * q.videoTokensPerFrame + q.audioTokensPerSecond)) + input.referenceImages * 560 + approxTokens(input.promptChars);
+  const long = inTokens > t.longContextThreshold;
   const review = finish(
     [
-      { label: `Scene review${passes > 1 ? ` (${passes} passes)` : ''} (≈${inTokens.toLocaleString('en-US')} input tokens incl. video at ${q.framesPerSecond} fps)`, usd: perM(inTokens, long ? t.inputPerMLong : t.inputPerM) },
-      { label: `Review output & reasoning (≈${(q.expectedOutputTokens * passes).toLocaleString('en-US')} tokens, estimated)`, usd: perM(q.expectedOutputTokens * passes, long ? t.outputPerMLong : t.outputPerM) },
+      { label: `Scene review (≈${inTokens.toLocaleString('en-US')} input tokens incl. video at ${q.framesPerSecond} fps)`, usd: perM(inTokens, long ? t.inputPerMLong : t.inputPerM) },
+      { label: `Review output & reasoning (≈${q.expectedOutputTokens.toLocaleString('en-US')} tokens, estimated)`, usd: perM(q.expectedOutputTokens, long ? t.outputPerMLong : t.outputPerM) },
     ],
     'medium',
-    [passes > 1 ? `Inspection = transcription with word timestamps + ${passes} structured reviews of the same video by the reasoning model.` : 'Inspection = transcription with word timestamps + a structured review by the reasoning model.'],
+    ['Inspection = transcription with word timestamps + a structured review by the reasoning model.'],
     table,
   );
   return sumEstimates([review, estimateTranscription({ seconds: input.durationSec }, table)], table);
