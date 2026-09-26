@@ -502,7 +502,9 @@ export function buildAudioMix(snap: RenderSnapshot, resolve: (assetId: string) =
   const D = r3(snap.durationSec);
   const all = [...buses.dialogue, ...buses.music, ...buses.other];
   const master = snap.quality === 'final' ? 'loudnorm=I=-14:TP=-1.5:LRA=11' : 'alimiter=limit=0.95';
-  const tail = `apad,atrim=duration=${D},${master},aresample=48000[aout]`;
+  // Debian's FFmpeg 5.1 cannot pick a channel layout between loudnorm/aresample and the AAC encoder on its own
+  // ("Cannot select channel layout"): the output format is stated explicitly.
+  const tail = `apad,atrim=duration=${D},${master},aresample=48000,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[aout]`;
   if (!all.length) {
     args.push('-f', 'lavfi', '-t', String(D), '-i', 'anullsrc=r=48000:cl=stereo');
     filters.push(`[0:a]atrim=duration=${D}[aout]`);

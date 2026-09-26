@@ -436,6 +436,6 @@ export function mixFilterGraph(tracks: MixTrack[], settings: MixSettings, durati
   if (settings.targetLufs !== null) master.push(`loudnorm=I=${settings.targetLufs}:TP=-1.5:LRA=11`);
   if (settings.limiter) master.push('alimiter=limit=0.94:level=disabled');
   if (!all.length) return { filter: `anullsrc=r=48000:cl=stereo,atrim=duration=${f2(durationSec)}[out]`, inputs: [] };
-  parts.push(`${all.join('')}amix=inputs=${all.length}:normalize=0:dropout_transition=0${master.length ? `,${master.join(',')}` : ''},aresample=48000[out]`);
+  parts.push(`${all.join('')}amix=inputs=${all.length}:normalize=0:dropout_transition=0${master.length ? `,${master.join(',')}` : ''},aresample=48000,aformat=channel_layouts=stereo[out]`);
   return { filter: parts.join(';'), inputs: live.map((t) => t.assetId) };
 }
