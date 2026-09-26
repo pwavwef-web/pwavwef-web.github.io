@@ -105,10 +105,14 @@ describe('Acceptance 9 — three-person blocking and screen direction', () => {
     const measured = snap?.continuityAfter?.camera.travel.kofi ?? null;
     const wv = walkRun.record.versions.find((v) => v.version.id === walkRun.record.currentVersionId) ?? walkRun.record.versions.at(-1)!;
     const flagged = (wv.report?.problems ?? []).filter((p) => DIRECTION_CATEGORIES.includes(p.category));
-    log(`w1 measured travel: ${measured ?? 'not measured'}; direction problems ${JSON.stringify(flagged.map((p) => p.category))}; screen direction ${walkRun.categoryScores[String(wv.version.index)]?.screenDirection}`);
-    expect(measured === 'left_to_right' || flagged.length > 0 || measured === null).toBe(true);
-    if (measured && measured !== 'left_to_right') expect(flagged.length).toBeGreaterThan(0);
-    results.walk = { measured, flagged, categoryScores: walkRun.categoryScores, status: walkRun.record.status };
+    // Travel while the shot plays (the reviewer's reading) — the end state is 'static' when he stops at the end.
+    const lastReport = (await col.productions().doc(walkRun.productionId).collection('reports').orderBy('createdAt', 'desc').limit(1).get()).docs[0]?.data() as { review?: { director?: { direction?: { travel?: { name: string; direction: string }[] } } } } | undefined;
+    const during = lastReport?.review?.director?.direction?.travel?.find((t) => t.name.toUpperCase() === 'KOFI')?.direction ?? null;
+    log(`w1 travel while it plays: ${during ?? 'not seen'}; end state: ${measured ?? 'not measured'}; direction problems ${JSON.stringify(flagged.map((p) => p.category))}; screen direction ${walkRun.categoryScores[String(wv.version.index)]?.screenDirection}; review ${wv.report?.overall}/100 passed=${wv.report?.passed}`);
+    // A reversal is always flagged; a walk that does not happen as directed never passes.
+    if (during === 'right_to_left' || measured === 'right_to_left') expect(flagged.length).toBeGreaterThan(0);
+    if (during !== 'left_to_right') expect(wv.report?.passed).toBe(false);
+    results.walk = { during, endState: measured, flagged, categoryScores: walkRun.categoryScores, status: walkRun.record.status, overall: wv.report?.overall, passed: wv.report?.passed };
     save({ projectId, ...results });
   });
 });

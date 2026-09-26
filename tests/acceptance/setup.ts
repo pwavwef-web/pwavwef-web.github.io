@@ -8,6 +8,9 @@ if (process.env.AZS_ACCEPTANCE !== '1') throw new Error('Acceptance tests create
 const PROJECT = process.env.AZS_PROJECT ?? 'az-learner';
 process.env.GCLOUD_PROJECT = PROJECT;
 process.env.GOOGLE_CLOUD_PROJECT = PROJECT;
+// Bill the developer credentials' API calls (e.g. Cloud Vision in the checks) to the studio project, whatever
+// quota project the local ADC file names.
+process.env.GOOGLE_CLOUD_QUOTA_PROJECT = PROJECT;
 if (!getApps().length) {
   // Tasks are enqueued with an OIDC token for the runtime service account, exactly as the API does.
   initializeApp({ projectId: PROJECT, serviceAccountId: `az-studio-api@${PROJECT}.iam.gserviceaccount.com` });
