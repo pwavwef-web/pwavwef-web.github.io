@@ -384,4 +384,19 @@ describe('final-film inspection', () => {
     const f = privateInfoFindings([{ t: 2, text: 'Call me on +233 24 555 0199 or mail ama@example.com' }]);
     expect(f.map((x) => x.check)).toEqual(['private_information', 'private_information']);
   });
+
+  it('does not read counters on an app screen, split over lines, as a phone number', () => {
+    // OCR of a genuine app screenshot: streak, XP and goal counters on separate lines.
+    expect(privateInfoFindings([{ t: 25.5, text: ['41', '1', '415', '1'].join(String.fromCharCode(10)) }])).toEqual([]);
+    expect(privateInfoFindings([{ t: 25.5, text: '1 15 1/3 Learning Kasem' }])).toEqual([]);
+    expect(privateInfoFindings([{ t: 3, text: 'Call 024 123 4567' }])).toHaveLength(1);
+  });
+
+  it('treats a dark colour card (a brand ground behind type or a logo) as designed, not as black frames', () => {
+    const card = makeClip({ trackId: v1, kind: 'title', start: 4, duration: 1, text: '', style: { font: 'Inter', sizePct: 5, color: '#FFFFFF', background: '#0F1830', bold: true, italic: false, uppercase: false, outline: 0, shadow: false }, label: 'Brand ground' });
+    const withCard = { ...state, clips: [...state.clips, card] };
+    expect(blackFindings([{ start: 4.0, end: 5.0 }], withCard)).toEqual([]);
+    // Black that runs past the card is still reported.
+    expect(blackFindings([{ start: 4.0, end: 6.5 }], withCard)).toHaveLength(1);
+  });
 });

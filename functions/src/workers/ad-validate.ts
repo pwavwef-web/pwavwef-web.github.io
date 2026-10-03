@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { logger } from 'firebase-functions';
-import { evaluateAdScene, isGeneratedScene, normalizeAdSpec, type AdSceneKind, type AdSceneValidation, type AdSceneValidationSummary, type AdSpec, type JobDoc } from '@az-studio/shared';
+import { evaluateAdScene, isGeneratedScene, normalizeAdSpec, reconcileTextIssues, summarizeTextEvidence, type AdSceneKind, type AdSceneValidation, type AdSceneValidationSummary, type AdSpec, type AdTextEvidence, type JobDoc } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { lockScene, sceneJobRequest, unlockScene, type Scene } from '../lib/ads';
 import { fail } from '../lib/errors';
@@ -11,6 +11,8 @@ import { progress, transition } from '../lib/jobs';
 import { FFMPEG, probe } from '../lib/media';
 import { mediaInputUrl } from '../lib/media-proxy';
 import { blackSegments } from '../lib/signal';
+import { jpegAt, sampleFrames } from '../lib/frames';
+import { annotateFrames } from '../lib/vision';
 import { createJobs } from '../lib/submit';
 import { callReasoning, usageFor } from './text';
 
@@ -60,6 +62,7 @@ export const AD_REVIEW_SCHEMA = {
 const REVIEW_SYSTEM =
   'You review generated footage for a short video advert before it is edited. Report only what you can actually see in the picture. ' +
   'Text, captions and logos are added later in the edit, so any readable text, letters, logo or watermark inside the picture is an issue. ' +
+  'Readable words or brand names (on vehicles, clothing, packaging, signs or screens) and any recognisable logo, emblem or watermark are at least major — another brand must never appear in the advert; only blurred, unreadable marks are minor. ' +
   'Be strict about hands (extra or merged fingers), faces that morph, people who change appearance during the shot, and staging that looks like generic corporate stock footage. Return only JSON.';
 
 export function normalizeAdReview(raw: unknown): NonNullable<AdSceneValidation['review']> {
@@ -70,11 +73,13 @@ export function normalizeAdReview(raw: unknown): NonNullable<AdSceneValidation['
     matchesBrief: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null,
     summary: String(r.summary ?? '').slice(0, 600),
     issues: issues
-      .map((i) => ({
-        type: (ISSUE_TYPES as readonly string[]).includes(String(i.type)) ? String(i.type) : 'other',
-        severity: (['minor', 'major', 'critical'].includes(String(i.severity)) ? String(i.severity) : 'minor') as 'minor' | 'major' | 'critical',
-        note: String(i.note ?? '').slice(0, 300),
-      }))
+      .map((i) => {
+        const type = (ISSUE_TYPES as readonly string[]).includes(String(i.type)) ? String(i.type) : 'other';
+        let severity = (['minor', 'major', 'critical'].includes(String(i.severity)) ? String(i.severity) : 'minor') as 'minor' | 'major' | 'critical';
+        // A visible logo or watermark is someone else's mark in the advert: never a minor issue.
+        if ((type === 'logo' || type === 'watermark') && severity === 'minor') severity = 'major';
+        return { type, severity, note: String(i.note ?? '').slice(0, 300) };
+      })
       .slice(0, 12),
   };
 }
@@ -129,6 +134,11 @@ export async function runAdValidateJob(job: JobDoc): Promise<void> {
 
   let review: AdSceneValidation['review'] = null;
   let modelId: string | null = null;
+  let textEvidence: AdTextEvidence | null = null;
+  if (p.review && probeOk) {
+    await progress(job.id, 'Reading text and logos in the picture', 0.3);
+    textEvidence = await recogniseText(job, projectId, input, isVideo, info, p);
+  }
   if (p.review && probeOk) {
     await progress(job.id, 'Reviewing the picture against the scene brief', 0.45);
     const prompt =
@@ -138,12 +148,12 @@ export async function runAdValidateJob(job: JobDoc): Promise<void> {
       'Score how well the picture shows the brief, describe what it shows, and list every issue (type, severity, note).';
     const r = await callReasoning([{ fileData: { fileUri: gsUri(p.storagePath), mimeType: p.mimeType } }, { text: prompt }], { systemInstruction: REVIEW_SYSTEM, responseJsonSchema: AD_REVIEW_SCHEMA }, 'LOW');
     await usageFor(job, r, 'text');
-    review = normalizeAdReview(r.json);
+    review = reconcileTextIssues(normalizeAdReview(r.json), textEvidence);
     modelId = r.modelId;
     await logInteraction({ uid: job.ownerUid, projectId, jobId: job.id, modelId: r.modelId, api: 'generateContent', request: { task: 'ad_scene_review', sceneId: p.sceneId }, response: { matchesBrief: review.matchesBrief, issues: review.issues.length, usage: r.res.usageMetadata ?? null }, latencyMs: r.latencyMs });
   }
 
-  const validation = evaluateAdScene({ kind: p.sceneKind, windowSec: p.windowSec, neededSec: p.neededSec, expectedAspect: p.expectedAspect, outputHeight: p.outputHeight, measurements, probeOk, review, modelId });
+  const validation: AdSceneValidation = { ...evaluateAdScene({ kind: p.sceneKind, windowSec: p.windowSec, neededSec: p.neededSec, expectedAspect: p.expectedAspect, outputHeight: p.outputHeight, measurements, probeOk, review, modelId }), textEvidence };
   const summary: AdSceneValidationSummary = { takeId: p.takeId ?? '', verdict: validation.verdict, checkedAt: validation.checkedAt, failed: validation.checks.filter((c) => !c.ok && c.severity === 'error').map((c) => c.label) };
 
   // Save on the take; the scene shows the validation of its selected take, and a passing take replaces a failed one.
@@ -174,6 +184,24 @@ export async function runAdValidateJob(job: JobDoc): Promise<void> {
   }
   const verdictText = validation.verdict === 'pass' ? 'Passed every check' : validation.verdict === 'warn' ? `Passed with ${validation.checks.filter((c) => !c.ok).length} warning(s)` : `Failed: ${summary.failed.join(', ')}`;
   await transition(job.id, 'completed', { stage: `${verdictText}${repairJobId ? ' · one automatic regeneration started' : ''}`, modelId: modelId ?? job.modelId, result: { data: { verdict: validation.verdict, failed: summary.failed, repairJobId } } });
+}
+
+/**
+ * Text and logo recognition (Cloud Vision) on frames from the part of the take the edit uses: the evidence that
+ * confirms or rejects the reviewer's text findings. Recognition problems leave the review as it is.
+ */
+async function recogniseText(job: JobDoc, projectId: string, input: string, isVideo: boolean, info: Awaited<ReturnType<typeof probe>> | null, p: AdValidateParams): Promise<AdTextEvidence | null> {
+  try {
+    const frames = isVideo
+      ? await sampleFrames(input, { durationSec: info?.durationSec ?? p.neededSec, fps: 1.5, width: 960, srcWidth: info?.width ?? null, srcHeight: info?.height ?? null, max: 10, to: Math.min(info?.durationSec ?? p.neededSec, p.neededSec) })
+      : await jpegAt(input, 0, 1280).then((jpeg) => (jpeg ? [{ t: 0, jpeg, width: 1280, height: info?.width && info.height ? Math.round((1280 * info.height) / info.width) : 720 }] : []));
+    if (!frames.length) return null;
+    const annotated = await annotateFrames({ frames, features: ['TEXT_DETECTION', 'LOGO_DETECTION'], usage: { uid: job.ownerUid, projectId, jobId: job.id } });
+    return summarizeTextEvidence(annotated);
+  } catch (e) {
+    logger.warn('text recognition unavailable for scene validation', { jobId: job.id, error: String(e) });
+    return null;
+  }
 }
 
 async function maybeRepair(job: JobDoc, projectId: string, p: AdValidateParams, validation: AdSceneValidation): Promise<string | null> {

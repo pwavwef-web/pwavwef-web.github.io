@@ -139,6 +139,12 @@ const pictureClips = (s: Pick<TimelineState, 'clips' | 'tracks'>) => {
   return s.clips.filter((c) => visual.has(c.trackId) && (c.kind === 'video' || c.kind === 'image')).sort((a, b) => a.start - b.start);
 };
 
+/** Colour cards (titles with a background on a picture track): designed frames such as a brand ground, never a gap. */
+const colourCards = (s: Pick<TimelineState, 'clips' | 'tracks'>) => {
+  const visual = new Set(s.tracks.filter((t) => t.kind === 'video' && !t.muted).map((t) => t.id));
+  return s.clips.filter((c) => visual.has(c.trackId) && c.kind === 'title' && Boolean(c.style?.background));
+};
+
 // ---------------------------------------------------------------------------
 // Structure: missing, repeated and out-of-order shots (timeline vs the approved shot list)
 // ---------------------------------------------------------------------------
@@ -182,10 +188,14 @@ export function missingMediaFindings(state: Pick<TimelineState, 'clips'>, availa
 export function blackFindings(segments: { start: number; end: number }[], state: Pick<TimelineState, 'clips' | 'tracks'>, opts: { intentional?: { start: number; end: number }[] } = {}): FinalFinding[] {
   const out: FinalFinding[] = [];
   const pics = pictureClips(state);
+  const cards = colourCards(state);
   const dur = Math.max(0, ...state.clips.map((c) => clipEnd(c)));
   for (const b of segments) {
     if (b.end - b.start < 0.04) continue;
     if ((opts.intentional ?? []).some((x) => b.start >= x.start - 0.1 && b.end <= x.end + 0.1)) continue;
+    // A dark colour card (e.g. a navy brand ground behind type or a logo) measures as black but is designed.
+    const onCards = cards.reduce((sum, c) => sum + Math.max(0, Math.min(b.end, clipEnd(c)) - Math.max(b.start, c.start)), 0);
+    if (onCards >= (b.end - b.start) * 0.9) continue;
     // Fade-to-black at the very start/end of the film is intentional when it is short.
     if ((b.start < 0.05 || b.end > dur - 0.05) && b.end - b.start <= 1.5) continue;
     const mid = (b.start + b.end) / 2;
@@ -489,8 +499,15 @@ export function formatFindings(probe: { width: number; height: number; durationS
 }
 
 const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/;
-const PHONE = /(?:\+?\d[\d\s().-]{7,}\d)/;
+const PHONE = /\+?\d[\d \t().-]{6,}\d/g;
 const URL = /\b(?:https?:\/\/|www\.)\S+/i;
+
+/** A phone number has 8–15 digits on one line, in at most five groups with one of three or more digits. */
+function isPhoneLike(s: string): boolean {
+  const digits = s.replace(/\D/g, '');
+  const groups = s.split(/[^\d]+/).filter(Boolean);
+  return digits.length >= 8 && digits.length <= 15 && groups.length <= 5 && groups.some((g) => g.length >= 3);
+}
 
 /** Personal data visible in the picture (emails, phone numbers, web addresses not approved). */
 export function privateInfoFindings(frames: { t: number; text: string }[], allowed: string[] = []): FinalFinding[] {
@@ -502,7 +519,11 @@ export function privateInfoFindings(frames: { t: number; text: string }[], allow
       [PHONE, 'a phone number'],
       [URL, 'a web address'],
     ] as const) {
-      const m = re.exec(f.text);
+      re.lastIndex = 0;
+      let m = re.exec(f.text);
+      if (re === PHONE) {
+        while (m && !isPhoneLike(m[0])) m = re.exec(f.text);
+      }
       if (m && !ok(m[0])) out.push(finding('private_information', 'error', `${label[0]!.toUpperCase()}${label.slice(1)} is readable at ${r2(f.t)} s: “${m[0].slice(0, 40)}”.`, 'ocr', { startSec: r2(f.t) }));
     }
   }

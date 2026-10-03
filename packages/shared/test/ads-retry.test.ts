@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  adCaptionStyle,
   adReadiness,
+  approximateMeasure,
+  layoutLyrics,
   assembleAdTimeline,
   backoffDelaySec,
   checkLyricSync,
@@ -310,5 +313,26 @@ describe('scene validation verdicts and readiness', () => {
     const r = adReadiness({ ad, sheet: null, scenes: [] });
     expect(r.some((x) => x.step === 'assets' && x.severity === 'error')).toBe(true);
     expect(r.some((x) => x.step === 'storyboard')).toBe(true);
+  });
+});
+
+describe('advert typography line breaks', () => {
+  const style = adCaptionStyle(defaultAdSpec('audio_first', '9:16').brand);
+  const rows = (text: string, section: 'hook' | 'outro' | null) => {
+    const { scene } = layoutLyrics({ lines: [{ id: 'l1', text, start: 1, end: 3, section, words: null, translation: null }], doc: style, aspect: '9:16', width: 1080, height: 1920, measure: approximateMeasure, fps: 24 });
+    return scene.blocks.flatMap((b) => b.lines.map((l) => l.words.map((w) => w.text).join(' ')));
+  };
+
+  it('balances wrapped lines instead of stranding the last word', () => {
+    for (const [text, section] of [['Start with one word.', 'hook'], ['Let’s keep the conversation going.', 'outro'], ['when someone speaks your language,', null]] as const) {
+      const r = rows(text, section);
+      expect(r.join(' ')).toBe(text);
+      if (r.length > 1) {
+        const lengths = r.map((x) => x.length);
+        expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(Math.ceil(text.length / r.length));
+        expect(r.every((x) => x.includes(' '))).toBe(true);
+      }
+    }
+    expect(rows('Let’s keep the conversation going.', 'outro')).toHaveLength(2);
   });
 });

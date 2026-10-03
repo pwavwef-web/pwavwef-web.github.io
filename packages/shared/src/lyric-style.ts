@@ -285,36 +285,58 @@ interface WordTiming {
   end: number | null;
 }
 
-/** Splits words into rows that fit `maxWidth` and `maxChars`; shrinks the font when a row cannot fit. */
+/**
+ * Splits words into rows that fit `maxWidth` and `maxChars`; shrinks the font when a row cannot fit. Rows are
+ * balanced (subtitle practice): the same number of rows at the narrowest width that still needs no more, so a
+ * caption never ends on a stranded word ("Start with one / word." becomes "Start with / one word.").
+ */
 function wrapWords(words: WordTiming[], paint: TextPaint, measure: MeasureText, maxWidth: number, maxChars: number, maxLines: number): { rows: WordTiming[][]; sizePx: number; shrunk: boolean } {
   let size = paint.sizePx;
   const minSize = paint.sizePx * 0.55;
   for (;;) {
     const font = { family: paint.fontFamily, weight: paint.fontWeight, italic: paint.italic, sizePx: size, letterSpacingPx: paint.letterSpacingPx };
     const space = measure(' ', font).width || size * 0.28;
-    const rows: WordTiming[][] = [];
-    let row: WordTiming[] = [];
-    let rowW = 0;
-    let rowChars = 0;
-    let tooWide = false;
-    for (const w of words) {
-      const ww = measure(w.text, font).width;
-      if (ww > maxWidth) tooWide = true;
-      const nextW = row.length ? rowW + space + ww : ww;
-      const nextChars = rowChars + (row.length ? 1 : 0) + [...w.text].length;
-      if (row.length && (nextW > maxWidth || nextChars > maxChars)) {
-        rows.push(row);
-        row = [w];
-        rowW = ww;
-        rowChars = [...w.text].length;
-      } else {
-        row.push(w);
-        rowW = nextW;
-        rowChars = nextChars;
+    const widths = words.map((w) => measure(w.text, font).width);
+    const greedy = (limit: number): WordTiming[][] => {
+      const rows: WordTiming[][] = [];
+      let row: WordTiming[] = [];
+      let rowW = 0;
+      let rowChars = 0;
+      words.forEach((w, i) => {
+        const ww = widths[i]!;
+        const nextW = row.length ? rowW + space + ww : ww;
+        const nextChars = rowChars + (row.length ? 1 : 0) + [...w.text].length;
+        if (row.length && (nextW > limit || nextChars > maxChars)) {
+          rows.push(row);
+          row = [w];
+          rowW = ww;
+          rowChars = [...w.text].length;
+        } else {
+          row.push(w);
+          rowW = nextW;
+          rowChars = nextChars;
+        }
+      });
+      if (row.length) rows.push(row);
+      return rows;
+    };
+    const tooWide = widths.some((ww) => ww > maxWidth);
+    let rows = greedy(maxWidth);
+    if ((!tooWide && rows.length <= maxLines) || size <= minSize) {
+      if (rows.length > 1 && !tooWide) {
+        // Narrowest width that keeps the same number of rows.
+        let lo = Math.max(...widths);
+        let hi = maxWidth;
+        for (let k = 0; k < 14 && hi - lo > 0.5; k++) {
+          const mid = (lo + hi) / 2;
+          if (greedy(mid).length <= rows.length) hi = mid;
+          else lo = mid;
+        }
+        const balanced = greedy(hi);
+        if (balanced.length === rows.length) rows = balanced;
       }
+      return { rows, sizePx: size, shrunk: size < paint.sizePx };
     }
-    if (row.length) rows.push(row);
-    if ((!tooWide && rows.length <= maxLines) || size <= minSize) return { rows, sizePx: size, shrunk: size < paint.sizePx };
     size = Math.max(minSize, size * 0.92);
   }
 }

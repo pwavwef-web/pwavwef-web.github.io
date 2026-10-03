@@ -78,6 +78,8 @@ Per project (header → settings): **Draft / Final** generation quality (Draft g
 
 Quality control (per project, Quality tab): at most 3 automatic repairs per production, a repair cost ceiling (default $6 per production, counting everything the production has spent), and director approval for any single retry above $1.50. When a limit is reached the production stops in “Awaiting repair approval” or “Failed quality review” with the reason, the report and the best version so far.
 
+Generation retries (Settings): attempts for temporary failures, the first and longest wait between attempts, the longest Retry-After to honour, failed status checks before an accepted job pauses as resumable, how long to keep checking an accepted job, one automatic rewrite of a blocked prompt and one repaired resubmission of an invalid configuration (each can be switched off). A banner there lists active provider pauses (access, billing or exhausted quota) with their reason and when they lift; resolve the cause, then resume.
+
 ## Emulators & tests
 
 ```bash

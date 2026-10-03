@@ -186,6 +186,75 @@ export interface AdSceneValidation {
   review: { matchesBrief: number | null; summary: string; issues: { type: string; severity: 'minor' | 'major' | 'critical'; note: string }[] } | null;
   measurements: { durationSec: number | null; width: number | null; height: number | null; fps: number | null; decodeErrors: number; blackSec: number };
   modelId: string | null;
+  /** What text and logo recognition read on frames sampled from the part of the take the edit uses. */
+  textEvidence?: AdTextEvidence | null;
+}
+
+/** What a scene shows about its selected take's validation (null when that take has not been validated). */
+export function validationSummary(takeId: string, v: AdSceneValidation | null | undefined): AdSceneValidationSummary | null {
+  if (!v) return null;
+  return { takeId, verdict: v.verdict, checkedAt: v.checkedAt, failed: v.checks.filter((c) => !c.ok && c.severity === 'error').map((c) => c.label) };
+}
+
+/** Text and logos recognised (Cloud Vision) on sampled frames: evidence for or against the reviewer's text findings. */
+export interface AdTextEvidence {
+  frames: number;
+  words: { text: string; frames: number; heightPct: number }[];
+  logos: { name: string; score: number; frames: number }[];
+}
+
+/** Summarises per-frame recognition into words (letters only, deduplicated) and logos, with how many frames showed each. */
+export function summarizeTextEvidence(frames: { text: { text: string; box: { h: number } | null }[]; logos: { name: string; score: number }[] }[]): AdTextEvidence {
+  const words = new Map<string, { frames: Set<number>; heightPct: number }>();
+  const logos = new Map<string, { frames: Set<number>; score: number }>();
+  frames.forEach((f, i) => {
+    for (const t of f.text) {
+      const key = t.text.normalize('NFC').replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
+      if (!key) continue;
+      const w = words.get(key) ?? { frames: new Set<number>(), heightPct: 0 };
+      w.frames.add(i);
+      w.heightPct = Math.max(w.heightPct, Math.round((t.box?.h ?? 0) * 1000) / 10);
+      words.set(key, w);
+    }
+    for (const l of f.logos) {
+      const key = l.name.trim();
+      if (!key) continue;
+      const g = logos.get(key) ?? { frames: new Set<number>(), score: 0 };
+      g.frames.add(i);
+      g.score = Math.max(g.score, l.score);
+      logos.set(key, g);
+    }
+  });
+  return {
+    frames: frames.length,
+    words: [...words].map(([text, w]) => ({ text, frames: w.frames.size, heightPct: w.heightPct })).sort((a, b) => b.frames - a.frames).slice(0, 20),
+    logos: [...logos].map(([name, g]) => ({ name, score: Math.round(g.score * 100) / 100, frames: g.frames.size })).sort((a, b) => b.score - a.score).slice(0, 10),
+  };
+}
+
+const TEXT_ISSUES = ['text_in_frame', 'logo', 'watermark'];
+
+/**
+ * Reconciles the reviewer's text and logo findings with recognition on the actual frames. A recognised logo, or a
+ * word of three or more letters read on two frames (or large on one), is a major issue whatever the reviewer said;
+ * a text finding with nothing recognised on any sampled frame is kept as minor, marked unconfirmed (reviewers
+ * sometimes infer subtitles from speech they hear).
+ */
+export function reconcileTextIssues(review: NonNullable<AdSceneValidation['review']>, evidence: AdTextEvidence | null): NonNullable<AdSceneValidation['review']>;
+export function reconcileTextIssues(review: AdSceneValidation['review'], evidence: AdTextEvidence | null): AdSceneValidation['review'];
+export function reconcileTextIssues(review: AdSceneValidation['review'], evidence: AdTextEvidence | null): AdSceneValidation['review'] {
+  if (!review || !evidence || !evidence.frames) return review;
+  const words = evidence.words.filter((w) => w.text.replace(/\p{N}/gu, '').length >= 3 && (w.frames >= 2 || w.heightPct >= 3));
+  const logos = evidence.logos.filter((l) => l.score >= 0.5);
+  let issues = review.issues;
+  if (!words.length && !logos.length) {
+    issues = issues.map((i) => (TEXT_ISSUES.includes(i.type) ? { ...i, severity: 'minor' as const, note: `${i.note} (not confirmed: no text or logo recognised on ${evidence.frames} sampled frames)`.slice(0, 300) } : i));
+  } else {
+    issues = issues.filter((i) => !TEXT_ISSUES.includes(i.type) || i.severity !== 'minor');
+    if (logos.length) issues = [...issues, { type: 'logo', severity: 'major' as const, note: `Logo recognised in the picture: ${logos.map((l) => `${l.name} (${l.frames} frame${l.frames === 1 ? '' : 's'})`).join(', ')}`.slice(0, 300) }];
+    if (words.length) issues = [...issues, { type: 'text_in_frame', severity: 'major' as const, note: `Readable text recognised: ${words.slice(0, 6).map((w) => `“${w.text}”`).join(', ')}`.slice(0, 300) }];
+  }
+  return { ...review, issues };
 }
 
 export interface AdSceneValidationSummary {
@@ -982,7 +1051,7 @@ export function adCaptionStyle(brand: Pick<AdBrand, 'font' | 'accent' | 'text' |
     maxLines: 3,
     lineSpacing: 1.12,
     y: AD_CAPTION_Y['16:9'][key],
-    aspects: { '9:16': { y: AD_CAPTION_Y['9:16'][key], fontSizePct: key === 'hook' ? 4.4 : 3.6, maxCharsPerLine: 16 }, '1:1': { y: AD_CAPTION_Y['1:1'][key], fontSizePct: key === 'hook' ? 6.4 : 5.4 }, '16:9': { y: AD_CAPTION_Y['16:9'][key] } },
+    aspects: { '9:16': { y: AD_CAPTION_Y['9:16'][key], fontSizePct: key === 'hook' ? 5 : 3.8, maxCharsPerLine: 20 }, '1:1': { y: AD_CAPTION_Y['1:1'][key], fontSizePct: key === 'hook' ? 6.4 : 5.4 }, '16:9': { y: AD_CAPTION_Y['16:9'][key] } },
   });
   return { name: 'Short ad captions', global, sections: { hook: typography('hook'), outro: typography('outro') }, fonts: [] };
 }
@@ -1146,7 +1215,7 @@ export function assembleAdTimeline(input: AdAssemblyInput): { state: TimelineSta
           start,
           duration: round3(end - start),
           text: tg.text.trim(),
-          style: { ...DEFAULT_TEXT_STYLE, font: brand.font as TextStyle['font'], sizePct: input.aspect === '9:16' ? 2.1 : 3.2, color: brand.text, background: brand.primary, bold: true, uppercase: true, outline: 0, shadow: false },
+          style: { ...DEFAULT_TEXT_STYLE, font: brand.font as TextStyle['font'], sizePct: input.aspect === '9:16' ? 2.8 : 3.8, color: brand.text, background: brand.primary, bold: true, uppercase: true, outline: 0, shadow: false },
           position: { anchor: 'top', offset: input.aspect === '9:16' ? 0.14 : 0.08, align: 'center' },
           fadeIn: 0.3,
           fadeOut: 0.3,

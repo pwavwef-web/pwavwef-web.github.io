@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { ArrowRight, CircleCheck, CircleX, Clapperboard, Eye, Hammer, ListChecks, Play, RefreshCw, TriangleAlert } from 'lucide-react';
-import { AD_ASPECT_PRESETS, AD_SCENE_KIND_LABELS, formatTimecode, isGeneratedScene, type AssetDoc, type RenderDoc, type SongDoc, type TakeDoc } from '@az-studio/shared';
+import { AD_ASPECT_PRESETS, AD_SCENE_KIND_LABELS, formatTimecode, isGeneratedScene, validationSummary, type AssetDoc, type RenderDoc, type SongDoc, type TakeDoc } from '@az-studio/shared';
 import { db } from '../../lib/firebase';
 import { api, errorMessage } from '../../lib/api';
 import { useDoc, useQuery, type WithId } from '../../lib/data';
@@ -43,7 +43,9 @@ function SceneReview({ project, scene, index }: { project: StepProps['project'];
   const v = selected?.validation ?? null;
   const [busy, setBusy] = useState(false);
   const choose = async (takeId: string) => {
-    await updateSubDoc(project.id, 'shots', scene.id, { selectedTakeId: takeId });
+    // The scene shows the validation of the take it uses (none until that take has been checked).
+    const chosen = takes.data.find((t) => t.id === takeId);
+    await updateSubDoc(project.id, 'shots', scene.id, { selectedTakeId: takeId, 'ad.validation': validationSummary(takeId, chosen?.validation) });
   };
   const recheck = async () => {
     setBusy(true);

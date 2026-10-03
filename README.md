@@ -13,6 +13,8 @@ Private AI filmmaking portal for Indigen World music videos, promotional films, 
 
 All model IDs live in one server-side registry: [`functions/src/config/models.ts`](functions/src/config/models.ts). A unit test fails if a model ID appears anywhere else. Settings → Models checks live availability of every role.
 
+**Short Ads** (sidebar → Short Ads, `/ads`) produces 40–60 s promotional videos in 9:16, 16:9 or 1:1, built either around an approved narration or soundtrack (audio-first) or from a brief (brief-first): Brief → Audio & assets → Storyboard → Generate → Review → Export. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#short-ads).
+
 Every shot can be produced under **quality control**: plan (duration from measured dialogue) → generate → inspect (FFmpeg measurements + word-timed transcript + Gemini review of the actual video) → score → repair (least destructive first, at most 3 automatic attempts within a cost ceiling) → reinspect → approve. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#quality-controlled-production).
 
 ## Workspaces
