@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { AudioLines, Clapperboard, Film, Image as ImageIcon, Music2, Scissors } from 'lucide-react';
+import { AudioLines, Clapperboard, Film, Image as ImageIcon, Megaphone, Music2, Scissors } from 'lucide-react';
 import { formatUsd, PROJECT_TYPE_LABELS, relativeTime, toMillis, type FrameAspect, type ProjectDoc, type ProjectType } from '@az-studio/shared';
 import type { WithId } from '../lib/data';
 import { useMediaUrls } from '../lib/media';
 import { useBoot, useUid } from '../lib/session';
 import { createProject } from '../lib/studio';
+import { createAdProject } from '../lib/ads';
 import { usePresenterPrivacy } from '../lib/presenter';
 import { Badge, Button, cx, Field, Input, Modal, Segmented, Textarea } from './ui';
 
@@ -17,6 +18,7 @@ export const PROJECT_ICON: Record<ProjectType, ReactNode> = {
   image: <ImageIcon className="size-4" />,
   remix: <Scissors className="size-4" />,
   music: <AudioLines className="size-4" />,
+  short_ad: <Megaphone className="size-4" />,
 };
 
 const GRADIENT: Record<ProjectType, string> = {
@@ -26,6 +28,7 @@ const GRADIENT: Record<ProjectType, string> = {
   image: 'from-[#123a45] via-[#0b1a24] to-[#05070b]',
   remix: 'from-[#3a1f2e] via-[#150f1c] to-[#05070b]',
   music: 'from-[#3b2a12] via-[#1a1208] to-[#05070b]',
+  short_ad: 'from-[#0f2f4a] via-[#0b1830] to-[#05070b]',
 };
 
 export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): string {
@@ -36,6 +39,8 @@ export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): strin
       return `/projects/${p.id}/music`;
     case 'music':
       return `/projects/${p.id}/studio`;
+    case 'short_ad':
+      return `/ads/${p.id}`;
     default:
       return `/projects/${p.id}`;
   }
@@ -90,7 +95,7 @@ export function NewProjectDialog({ open, onOpenChange, defaultType = 'film' }: {
     if (!title.trim()) return;
     setBusy(true);
     try {
-      const id = await createProject(uid, { title, type, logline, aspectRatio: aspect, fps, ...(makesVideo ? { videoResolution: shotQuality } : {}) });
+      const id = type === 'short_ad' ? await createAdProject(uid, { title, mode: 'audio_first', aspect: aspect === '4:5' ? '9:16' : aspect, logline }) : await createProject(uid, { title, type, logline, aspectRatio: aspect, fps, ...(makesVideo ? { videoResolution: shotQuality } : {}) });
       onOpenChange(false);
       setTitle('');
       setLogline('');

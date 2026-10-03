@@ -19,7 +19,7 @@ export const JOB_PHASE_LABELS: Record<JobPhase, string> = {
   cancelled: 'Cancelled',
 };
 
-const INSPECTION_JOBS: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare'];
+const INSPECTION_JOBS: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare', 'ad.validate'];
 
 export function jobPhase(job: Pick<JobDoc, 'status' | 'type' | 'label'> & { productionId?: string | null; params?: Record<string, unknown> }): JobPhase {
   if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') return job.status;
@@ -102,12 +102,14 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   'music.mix': 'Mixdown',
   'music.replace_section': 'Replacement passage',
   'audio.stems': 'Stem separation',
+  'narration.transcribe': 'Narration transcript',
+  'ad.validate': 'Scene validation',
 };
 
 /** The nine states AZ Studio shows for background work (derived from the durable job status). */
 export type DisplayJobStatus = 'Queued' | 'Preparing' | 'Processing' | 'Inspecting' | 'Repairing' | 'Rendering' | 'Completed' | 'Failed' | 'Cancelled';
 
-const INSPECTING_TYPES: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare'];
+const INSPECTING_TYPES: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare', 'ad.validate'];
 const REPAIR_TYPES_: readonly JobType[] = ['media.composite', 'media.screen_replace', 'media.color_match'];
 const RENDER_TYPES: readonly JobType[] = ['render.timeline', 'music.mix', 'music.arrange'];
 

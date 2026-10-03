@@ -37,7 +37,7 @@ service cloud.firestore {
       allow create: if isOwner()
         && request.resource.data.ownerUid == request.auth.uid
         && validTitle(request.resource.data.title)
-        && request.resource.data.type in ['quick_video', 'music_video', 'film', 'image', 'remix', 'music']
+        && request.resource.data.type in ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad']
         && request.resource.data.status in ['active', 'archived']
         && !('usage' in request.resource.data);
       allow update: if ownsExisting()

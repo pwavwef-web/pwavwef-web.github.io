@@ -38,7 +38,8 @@ export async function runMaintenance(): Promise<{ repolled: number; failed: numb
         repolled++;
       }
     } else if ((job.lease?.until ?? 0) < now && now - updated > 12 * MINUTE) {
-      await failJob(job, { code: 'interrupted', message: 'The worker stopped unexpectedly. Retry to run it again — this may incur a new charge.', retryable: false });
+      const inFlight = Boolean(job.external?.submission);
+      await failJob(job, { code: 'interrupted', message: inFlight ? 'The worker stopped while a request to Google was in flight. Google may have accepted it, so it was not resent automatically. Retry when ready — this may incur a new charge.' : 'The worker stopped unexpectedly before sending anything to Google. Retry to run it again.', retryable: false, category: 'unknown', remedy: 'retry', ambiguous: inFlight });
       failed++;
     }
   }

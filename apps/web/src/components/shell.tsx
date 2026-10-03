@@ -1,16 +1,17 @@
 import { collection, query, where } from 'firebase/firestore';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { Clapperboard, FolderOpen, House, Layers, ListChecks, LogOut, Settings2, Sparkles } from 'lucide-react';
+import { Clapperboard, FolderOpen, House, Layers, ListChecks, LogOut, Megaphone, Settings2, Sparkles } from 'lucide-react';
 import { ACTIVE_STATUSES, formatUsd, type JobDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery } from '../lib/data';
 import { useSession } from '../lib/session';
 import { cx, Tip } from './ui';
 
-const NAV = [
+export const NAV = [
   { to: '/', label: 'Home', icon: House, end: true },
   { to: '/projects', label: 'Projects', icon: FolderOpen },
   { to: '/create', label: 'Create', icon: Sparkles },
+  { to: '/ads', label: 'Short Ads', icon: Megaphone },
   { to: '/assets', label: 'Assets', icon: Layers },
   { to: '/jobs', label: 'Jobs', icon: ListChecks },
   { to: '/settings', label: 'Settings', icon: Settings2 },
@@ -119,9 +120,9 @@ export function AppShell() {
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Primary" className="glass fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-x-0 border-b-0 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+      <nav aria-label="Primary" className="glass fixed inset-x-0 bottom-0 z-30 grid grid-cols-7 border-x-0 border-b-0 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
         {NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium', isActive ? 'text-accent-2' : 'text-faint')}>
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex min-w-0 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium whitespace-nowrap', isActive ? 'text-accent-2' : 'text-faint')}>
             <n.icon className="size-5" aria-hidden />
             {n.label}
           </NavLink>

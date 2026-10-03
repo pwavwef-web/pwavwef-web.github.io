@@ -133,7 +133,7 @@ function Inspection({ project, render }: { project: WithId<ProjectDoc>; render: 
     }
   };
   const rerender = async () => {
-    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: render.timelineId, preset: render.preset as ExportPreset['id'], quality: render.quality, inspect: true, acceptLyricSync: false }], { label: `Re-render · ${EXPORT_PRESETS[render.preset as ExportPreset['id']]?.label ?? render.preset}`, alwaysConfirm: true });
+    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: render.timelineId, preset: render.preset as ExportPreset['id'], quality: render.quality, inspect: true, acceptLyricSync: false, audioMaster: render.audioMaster ?? 'normalize' }], { label: `Re-render · ${EXPORT_PRESETS[render.preset as ExportPreset['id']]?.label ?? render.preset}`, alwaysConfirm: true });
   };
   const reinspect = async () => {
     await submit([{ type: 'final.inspect', projectId: project.id, renderId: render.id, label: 'Final inspection' }], { label: 'Final inspection', alwaysConfirm: true });

@@ -44,6 +44,8 @@ export interface LyricSheetSection {
   id: string;
   label: SectionLabel;
   name: string;
+  /** Narration transcripts: the script paragraph (beat) this sentence belongs to. */
+  paragraph?: number;
 }
 
 export type TimingStatus = 'none' | 'approximate' | 'aligned' | 'manual' | 'needs_review';

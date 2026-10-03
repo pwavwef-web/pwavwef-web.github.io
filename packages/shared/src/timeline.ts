@@ -31,7 +31,8 @@ export const DEFAULT_TITLE_POSITION: TextPosition = { anchor: 'middle', offset: 
 export function trackAccepts(kind: TrackKind, clip: ClipKind): boolean {
   switch (kind) {
     case 'video':
-      return clip === 'video' || clip === 'image';
+      // Title clips on a picture track are colour cards (a background colour, with or without text).
+      return clip === 'video' || clip === 'image' || clip === 'title';
     case 'overlay':
       return clip === 'image' || clip === 'title' || clip === 'video';
     case 'caption':
@@ -570,7 +571,13 @@ export function validateTimeline(state: TimelineState): string[] {
     if (!(c.duration >= MIN_CLIP_SECONDS)) problems.push(`Clip “${c.label || c.id}” is too short.`);
     if (c.start < -EPS) problems.push(`Clip “${c.label || c.id}” starts before zero.`);
     if ((c.kind === 'video' || c.kind === 'image' || c.kind === 'audio') && !c.assetId) problems.push(`Clip “${c.label || c.id}” has no media.`);
-    if ((c.kind === 'caption' || c.kind === 'title') && !c.text.trim()) problems.push(`A ${c.kind} clip has no text.`);
+    // A title with a background colour and no text is a colour card.
+    if ((c.kind === 'caption' || (c.kind === 'title' && !c.style?.background)) && !c.text.trim()) problems.push(`A ${c.kind} clip has no text.`);
+    if (c.layout) {
+      const b = c.layout.box;
+      if (!(b.w > 0.01 && b.h > 0.01 && b.x >= -0.001 && b.y >= -0.001 && b.x + b.w <= 1.001 && b.y + b.h <= 1.001)) problems.push(`Clip “${c.label || c.id}” is placed outside the frame.`);
+      if (c.kind !== 'image' && c.kind !== 'video') problems.push(`Only pictures can be placed in a box (“${c.label || c.id}”).`);
+    }
     if (c.sourceDuration !== null && c.inPoint + c.duration > c.sourceDuration + 0.05) problems.push(`Clip “${c.label || c.id}” runs past the end of its media.`);
   }
   for (const t of state.tracks) {

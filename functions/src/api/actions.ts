@@ -4,9 +4,11 @@ import {
   ACTIVE_STATUSES,
   DEFAULT_SETTINGS,
   dayKey,
+  EMPTY_RETRY_COUNTERS,
   isTerminal,
   jobRequestSchema,
   monthKey,
+  resolveRetryPolicy,
   storagePaths,
   sumEstimates,
   validateDeclaredUpload,
@@ -14,6 +16,7 @@ import {
   type AssetDoc,
   type JobDoc,
   type JobRequest,
+  type PromptRevision,
 } from '@az-studio/shared';
 import { studioCapabilities } from '../config/models';
 import { PRICING } from '../config/pricing';
@@ -29,6 +32,10 @@ import { mediaInputUrl } from '../lib/media-proxy';
 import { assertRateLimit, assertWithinLimits, getSettings, projectBudget, spendSnapshot } from '../lib/usage';
 import { genai } from '../lib/vertex';
 import { cancelExecution } from '../workers/render';
+import { failureFromJobError } from '../lib/errors';
+import { blockKey, clearBlocks, listBlocks } from '../lib/provider-health';
+import { enqueueJob } from '../lib/jobs';
+import { currentPromptBody, PROMPT_JOBS, rewriteBlockedPrompt, surfaceOf } from '../workers/recovery';
 
 type Payload<A extends ApiRequest['action']> = Extract<ApiRequest, { action: A }>['payload'];
 
@@ -58,6 +65,7 @@ export async function bootstrap(owner: Owner) {
     spend,
     stats: (user.get('stats') as { storageBytes?: number; assetCount?: number } | undefined) ?? { storageBytes: 0, assetCount: 0 },
     activeSlots: slots.length,
+    providerBlocks: await listBlocks().catch(() => []),
     serverTime: Date.now(),
   };
 }
@@ -221,20 +229,107 @@ export async function cancelJob(owner: Owner, p: Payload<'cancelJob'>) {
   return { status: job.status, message: 'This generation is already running and finishes within seconds; it cannot be stopped mid-request.' };
 }
 
+/** Points an advert scene at its newest generation job. */
+async function followScene(job: JobDoc, newJobId: string): Promise<void> {
+  if (job.target?.kind !== 'shot' || !job.projectId) return;
+  const ref = col.projects().doc(job.projectId).collection('shots').doc(job.target.id);
+  const shot = await ref.get();
+  if (shot.exists && shot.get('ad')) await ref.update({ 'ad.jobId': newJobId, updatedAt: FieldValue.serverTimestamp() });
+}
+
+/**
+ * Continues checking an accepted Omni generation after AZ Studio stopped polling it (status checks kept
+ * failing, or it ran past the waiting time). No new request is sent and nothing new is billed.
+ */
+async function resumeJob(owner: Owner, job: JobDoc & { request?: JobRequest }) {
+  const interactionId = job.external?.interactionId;
+  if (job.type !== 'video.generate' || !interactionId) throw new HttpsError('failed-precondition', 'Only an accepted video generation can be resumed; retry this job instead.');
+  if (job.status === 'cancelled') throw new HttpsError('failed-precondition', 'This generation was cancelled at Google, so it cannot be resumed. Retry it instead.');
+  const acceptedAt = job.external?.acceptedAt ?? null;
+  if (acceptedAt && Date.now() - acceptedAt > 6.5 * 86_400_000) throw new HttpsError('failed-precondition', 'Google keeps an accepted generation for 7 days; this one is older. Retry it instead.');
+  const ref = col.jobs().doc();
+  const now = FieldValue.serverTimestamp();
+  await ref.set({
+    ownerUid: owner.uid,
+    projectId: job.projectId,
+    type: job.type,
+    status: 'generating',
+    stage: 'Resuming: checking the accepted generation (no new request)',
+    progress: 0.1,
+    modelId: job.modelId,
+    params: job.params,
+    estimate: job.estimate,
+    batchId: null,
+    target: job.target,
+    label: `${job.label} (resumed)`.slice(0, 160),
+    attempt: 0,
+    retryOf: job.id,
+    resumedFrom: job.id,
+    external: { interactionId, pollCount: 0, acceptedAt: Date.now(), submission: null },
+    result: null,
+    error: null,
+    cancelRequested: false,
+    usageUsd: null,
+    productionId: job.productionId ?? null,
+    ...(job.request ? { request: job.request } : {}),
+    retry: { ...EMPTY_RETRY_COUNTERS, submissions: job.retry?.submissions ?? 0 },
+    attempts: [{ n: 1, at: Date.now(), kind: 'resume', outcome: 'accepted', operationId: interactionId, note: `Resumed from job ${job.id}` }],
+    prompts: job.prompts ?? [],
+    createdAt: now,
+    updatedAt: now,
+    startedAt: now,
+  });
+  await followScene(job, ref.id);
+  await enqueueJob(ref.id, 'poll', { delaySec: 2, seq: 1 });
+  return { jobIds: [ref.id], batchId: null, estimate: job.estimate, resumed: true };
+}
+
 export async function retryJob(owner: Owner, p: Payload<'retryJob'>) {
   const job = (await ownedJob(owner.uid, p.jobId)) as JobDoc & { request?: JobRequest };
   if (job.status !== 'failed' && job.status !== 'cancelled') throw new HttpsError('failed-precondition', 'Only failed or cancelled jobs can be retried.');
+  if (p.resume) return resumeJob(owner, job);
   if (!job.request) throw new HttpsError('failed-precondition', 'This job cannot be retried automatically.');
-  const request = jobRequestSchema.parse(job.request);
+  let request = jobRequestSchema.parse(job.request);
+  let prompts: PromptRevision[] = job.prompts ?? [];
+  if (p.prompt) {
+    if (request.type !== 'video.generate' && request.type !== 'image.generate') throw new HttpsError('invalid-argument', 'Only image and video prompts can be revised here.');
+    // The revised text replaces the prompt as sent (it already carries any continuity direction).
+    request = request.type === 'video.generate' ? { ...request, prompt: p.prompt, promptFinal: true } : { ...request, prompt: p.prompt, applyStyleBible: false };
+    if (!prompts.length) prompts = [{ version: 0, prompt: currentPromptBody(job), source: 'original', at: Date.now() }];
+    prompts = [...prompts, { version: Math.max(0, ...prompts.map((x) => x.version)) + 1, prompt: p.prompt, source: 'director', at: Date.now(), ...(p.explanation ? { explanation: p.explanation } : {}) }];
+  }
+  // Retrying is the director saying the cause is fixed: a pause on this model is lifted for the retry.
+  const surface = surfaceOf(job);
+  if (surface && job.error?.category === 'auth_quota') await clearBlocks([blockKey(surface, job.modelId, job.error.code), blockKey(surface, null, job.error.code)]);
   // The owner acknowledged the possible charge; that acknowledgement counts as confirmation.
   const res = await submitJobs(owner, { jobs: [request], confirmedUsd: Number.MAX_SAFE_INTEGER, batchLabel: `Retry of ${job.label}` });
-  await col.jobs().doc(res.jobIds[0]!).update({ retryOf: job.id, attempt: 0 });
+  await col.jobs().doc(res.jobIds[0]!).update({ retryOf: job.id, attempt: 0, ...(prompts.length ? { prompts } : {}) });
+  await followScene(job, res.jobIds[0]!);
   return res;
+}
+
+/** Proposes one compliant rewrite of a prompt that was blocked or rejected (the director edits it before retrying). */
+export async function proposePromptFix(owner: Owner, p: Payload<'proposePromptFix'>) {
+  const job = await ownedJob(owner.uid, p.jobId);
+  if (!PROMPT_JOBS.has(job.type)) throw new HttpsError('failed-precondition', 'Only image and video prompts can be revised.');
+  if (job.status !== 'failed') throw new HttpsError('failed-precondition', 'Only a failed job needs a revised prompt.');
+  const failure = failureFromJobError(job.error ?? { code: 'unknown', message: 'Failed', retryable: false });
+  const out = await rewriteBlockedPrompt(job, failure);
+  const prompts = [...(job.prompts?.length ? job.prompts : [{ version: 0, prompt: currentPromptBody(job), source: 'original' as const, at: Date.now() }])];
+  if (out.revised) prompts.push({ version: Math.max(0, ...prompts.map((x) => x.version)) + 1, prompt: out.revised, source: 'proposal', at: Date.now(), explanation: out.explanation, changes: out.changes });
+  await col.jobs().doc(job.id).set({ prompts }, { merge: true });
+  return { original: currentPromptBody(job), proposal: out.revised, explanation: out.explanation, changes: out.changes, usable: out.ok, reason: out.reason, category: failure.category, code: failure.code };
+}
+
+/** Automatic generation paused by access, billing or quota failures; `clear` lifts named pauses (`*` = all). */
+export async function providerHealth(_owner: Owner, p: Payload<'providerHealth'>) {
+  if (p.clear.length) await clearBlocks(p.clear.includes('*') ? undefined : p.clear);
+  return { blocks: await listBlocks(Date.now(), true) };
 }
 
 export async function updateSettings(owner: Owner, p: Payload<'updateSettings'>) {
   const current = await getSettings(owner.uid);
-  const next = { ...current, ...p };
+  const next = { ...current, ...p, retryPolicy: resolveRetryPolicy({ ...current.retryPolicy, ...(p.retryPolicy ?? {}) }) };
   if (next.monthlyLimitUsd < next.dailyLimitUsd) throw new HttpsError('invalid-argument', 'The monthly limit must be at least the daily limit.');
   await col.users().doc(owner.uid).set({ settings: next, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   return { settings: next };

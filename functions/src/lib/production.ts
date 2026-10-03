@@ -608,7 +608,7 @@ async function stepPlan(p: Prod): Promise<void> {
   if (p.dialogueAudio.mode === 'generated' && lines.length) {
     const res = await createJobs(
       p.ownerUid,
-      [{ type: 'speech.generate', projectId: p.projectId, lines: lines.map((l) => ({ index: l.index, character: l.character, text: l.text, voice: l.voice ?? null, direction: [p.expected.performance, p.expected.mood].filter(Boolean).join(', ').slice(0, 280) || 'Say naturally' })), languageCode: p.expected.language ?? null, label: `${p.title} · dialogue guide audio`, target: { kind: 'production', id: p.id } }],
+      [{ type: 'speech.generate', projectId: p.projectId, lines: lines.map((l) => ({ index: l.index, character: l.character, text: l.text, voice: l.voice ?? null, direction: [p.expected.performance, p.expected.mood].filter(Boolean).join(', ').slice(0, 280) || 'Say naturally' })), languageCode: p.expected.language ?? null, voiceover: false, label: `${p.title} · dialogue guide audio`, target: { kind: 'production', id: p.id } }],
       { productionId: p.id, preconfirmed: true },
     );
     await setState(p, { stage: 'audio_prepare', waitingOn: res.jobIds, run: { kind: 'generation', type: null, step: 'speech', baseVersionId: null, decision: null, data: {} }, stageMessage: `Speaking ${lines.length} dialogue line${lines.length === 1 ? '' : 's'} to measure their real length` });

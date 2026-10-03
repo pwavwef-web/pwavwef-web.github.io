@@ -24,6 +24,8 @@ export interface RenderSnapshot {
   durationSec: number;
   quality: RenderQuality;
   assets: Record<string, RenderAssetInfo>;
+  /** `preserve`: an approved soundtrack is passed through unchanged (no loudness normalisation, limiting or fades). */
+  audioMaster?: 'normalize' | 'preserve';
 }
 
 export interface Segment {
@@ -260,6 +262,65 @@ export function reframeChain(c: Clip, aspect: string | undefined, src: { w: numb
   return `[${label}]crop=w=${e.w}:h=${e.h}:x='${e.x}':y='${e.y}',scale=${W}:${H},setsar=1,format=yuva420p[${out}]`;
 }
 
+const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
+
+/** geq expression: 255 inside a rectangle with rounded corners of radius r (pixels), 0 outside. */
+export function roundedMaskExpr(r: number): string {
+  if (r <= 0) return '255';
+  const R = Math.round(r);
+  const corner = (cx: string, cy: string, xs: string, ys: string) => `${xs}*${ys}*gt(hypot(X-(${cx}),Y-(${cy})),${R})`;
+  const parts = [corner(`${R}`, `${R}`, `lt(X,${R})`, `lt(Y,${R})`), corner(`W-${R}`, `${R}`, `gt(X,W-${R})`, `lt(Y,${R})`), corner(`${R}`, `H-${R}`, `lt(X,${R})`, `gt(Y,H-${R})`), corner(`W-${R}`, `H-${R}`, `gt(X,W-${R})`, `gt(Y,H-${R})`)];
+  return `255*(1-min(1,${parts.join('+')}))`;
+}
+
+/**
+ * A picture placed in a box (product screens, logos): fitted inside the box with its aspect ratio kept,
+ * optional rounded corners and soft shadow, an optional gentle push-in, on a transparent full frame.
+ * `src` is the decoded input (`[n:v]`); the result is a W×H yuva420p layer.
+ */
+export function layoutFilters(c: Clip, asset: { width: number | null; height: number | null }, W: number, H: number, fps: number, span: number, frameOffset: number, totalFrames: number, src: string, out: string, isImage: boolean): string[] {
+  const L = c.layout!;
+  const bx = Math.round(L.box.x * W);
+  const by = Math.round(L.box.y * H);
+  const bw = Math.max(2, Math.round(L.box.w * W));
+  const bh = Math.max(2, Math.round(L.box.h * H));
+  const aw = asset.width ?? bw;
+  const ah = asset.height ?? bh;
+  const s = Math.min(bw / aw, bh / ah);
+  const fw = Math.min(even(aw * s), bw - (bw % 2));
+  const fh = Math.min(even(ah * s), bh - (bh % 2));
+  const ox = bx + Math.round((bw - fw) / 2);
+  const oy = by + Math.round((bh - fh) / 2);
+  const radius = L.radius > 0 ? Math.max(0, Math.min(Math.min(fw, fh) / 2 - 1, L.radius * fw)) : 0;
+  const d = r3(span);
+  const f: string[] = [];
+  const frames = Math.max(1, Math.round(span * fps));
+  if (isImage && L.push > 0) {
+    f.push(`${src}scale=${fw * 2}:${fh * 2},setsar=1,zoompan=z='1+${r3(L.push)}*(on+${frameOffset})/${Math.max(1, totalFrames)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${fw}x${fh}:fps=${fps},trim=end_frame=${frames},format=rgba[${out}m]`);
+  } else {
+    f.push(`${src}fps=${fps},scale=${fw}:${fh},setsar=1,format=rgba[${out}m]`);
+  }
+  let card = `${out}m`;
+  const margin = L.shadow ? even(Math.max(fw, fh) * 0.04) : 0;
+  if (radius > 0 || L.shadow) {
+    f.push(`color=c=white:s=${fw}x${fh}:r=${fps}:d=${r3(1 / fps)},format=gray,geq=lum='${roundedMaskExpr(radius)}',loop=loop=-1:size=1:start=0,trim=duration=${d},setpts=PTS-STARTPTS${L.shadow ? `,split=2[${out}k][${out}k2]` : `[${out}k]`}`);
+    f.push(`[${card}][${out}k]alphamerge[${out}c]`);
+    card = `${out}c`;
+  }
+  if (L.shadow) {
+    const sw = fw + 2 * margin;
+    const sh = fh + 2 * margin;
+    const blur = Math.max(2, Math.round(margin * 0.6));
+    f.push(`[${out}k2]pad=${sw}:${sh}:${margin}:${margin + Math.round(margin / 3)}:color=black,boxblur=luma_radius=${blur}:luma_power=2,format=gray[${out}sa]`);
+    f.push(`color=c=black:s=${sw}x${sh}:r=${fps}:d=${d},format=rgba[${out}sb]`);
+    f.push(`[${out}sb][${out}sa]alphamerge,colorchannelmixer=aa=0.55[${out}sh]`);
+    f.push(`[${out}sh][${card}]overlay=${margin}:${margin}:format=auto,format=rgba[${out}cs]`);
+    card = `${out}cs`;
+  }
+  f.push(`[${card}]pad=${W}:${H}:${ox - margin}:${oy - margin}:color=black@0,format=yuva420p[${out}]`);
+  return f;
+}
+
 function fitChain(fit: Clip['fit'], W: number, H: number, label: string, out: string): string {
   if (fit === 'fit') return `[${label}]scale=${W}:${H}:force_original_aspect_ratio=decrease,format=yuva420p,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0[${out}]`;
   if (fit === 'blur') {
@@ -305,6 +366,22 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
         // Title card background (text itself is drawn by libass).
         if (!c.style?.background) return;
         filters.push(`color=c=${c.style.background.replace('#', '0x')}:s=${W}x${H}:r=${fps}:d=${span},format=yuva420p${fadeFilters(c, 0, localStart, seg, span)},setpts=PTS-STARTPTS+${vs}/TB[${label}]`);
+      } else if (c.layout && (c.kind === 'image' || c.kind === 'video')) {
+        // A picture placed in a box on a transparent layer (screens, logos).
+        const asset = c.assetId ? snap.assets[c.assetId] : undefined;
+        if (!c.assetId || !asset) return;
+        const file = ctx.resolve(c.assetId);
+        const frames = Math.max(1, Math.round((c.duration + pre) * fps));
+        const offset = Math.round((seg.start + localStart - visStart) * fps);
+        if (c.kind === 'video') {
+          const srcAtVisible = c.inPoint + (seg.start + localStart - c.start);
+          args.push('-ss', String(r3(Math.max(0, srcAtVisible))), '-t', String(r3(span + 0.1)), '-i', file);
+        } else {
+          args.push('-loop', '1', '-framerate', String(fps), '-t', String(span), '-i', file);
+        }
+        filters.push(...layoutFilters(c, { width: asset.width, height: asset.height }, W, H, fps, span, offset, frames, `[${inputIndex}:v]`, `${label}fit`, c.kind === 'image'));
+        filters.push(`[${label}fit]trim=duration=${span},setpts=PTS-STARTPTS${fadeFilters(c, 0, localStart, seg, span, next)},setpts=PTS+${vs}/TB[${label}]`);
+        inputIndex++;
       } else {
         const asset = c.assetId ? snap.assets[c.assetId] : undefined;
         if (!c.assetId || !asset) return;
@@ -485,23 +562,25 @@ export function buildAudioMix(snap: RenderSnapshot, resolve: (assetId: string) =
     const gain = r3(c.volume * (track.kind === 'audio' ? track.volume : 1));
     if (gain <= 0) continue;
     args.push('-ss', String(r3(c.inPoint)), '-t', String(r3(c.duration)), '-i', resolve(c.assetId));
-    const fi = Math.max(0.02, c.fadeIn);
-    const fo = Math.max(0.02, c.fadeOut);
+    const preserve = snap.audioMaster === 'preserve';
+    const fi = preserve ? c.fadeIn : Math.max(0.02, c.fadeIn);
+    const fo = preserve ? c.fadeOut : Math.max(0.02, c.fadeOut);
     const delay = Math.round(c.start * 1000);
     const bus = busOf(c);
     // Music crossfades use an equal-power curve so the level never dips between movements.
     const curve = bus === 'music' ? ':curve=qsin' : '';
-    const volume = c.volumeAutomation?.length ? `volume='${automationExpr(c.volumeAutomation, gain)}':eval=frame` : `volume=${gain}`;
-    filters.push(
-      `[${i}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=duration=${r3(c.duration)},asetpts=PTS-STARTPTS,${volume},afade=t=in:st=0:d=${r3(fi)}${curve},afade=t=out:st=${r3(Math.max(0, c.duration - fo))}:d=${r3(fo)}${curve},adelay=${delay}:all=1[a${i}]`,
-    );
+    const volume = c.volumeAutomation?.length ? `volume='${automationExpr(c.volumeAutomation, gain)}':eval=frame` : gain === 1 ? 'anull' : `volume=${gain}`;
+    // A preserved soundtrack gets no fades unless the clip asks for them (the approved mix already has its own).
+    const fades = [fi > 0 ? `afade=t=in:st=0:d=${r3(fi)}${curve}` : '', fo > 0 ? `afade=t=out:st=${r3(Math.max(0, c.duration - fo))}:d=${r3(fo)}${curve}` : ''].filter(Boolean);
+    filters.push(`[${i}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=duration=${r3(c.duration)},asetpts=PTS-STARTPTS,${[volume, ...fades].join(',')},adelay=${delay}:all=1[a${i}]`);
     buses[bus].push(`[a${i}]`);
     if (bus === 'music' && c.duck) duckDb = Math.max(duckDb, c.duckDb ?? 12);
     i++;
   }
   const D = r3(snap.durationSec);
   const all = [...buses.dialogue, ...buses.music, ...buses.other];
-  const master = snap.quality === 'final' ? 'loudnorm=I=-14:TP=-1.5:LRA=11' : 'alimiter=limit=0.95';
+  // An approved soundtrack is passed through: no loudness normalisation and no limiter (only AAC encoding).
+  const master = snap.audioMaster === 'preserve' ? 'anull' : snap.quality === 'final' ? 'loudnorm=I=-14:TP=-1.5:LRA=11' : 'alimiter=limit=0.95';
   // Debian's FFmpeg 5.1 cannot pick a channel layout between loudnorm/aresample and the AAC encoder on its own
   // ("Cannot select channel layout"): the output format is stated explicitly.
   const tail = `apad,atrim=duration=${D},${master},aresample=48000,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[aout]`;

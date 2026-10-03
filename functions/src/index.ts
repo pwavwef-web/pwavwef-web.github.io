@@ -21,6 +21,7 @@ import * as continuity from './api/continuity';
 import * as production from './api/production';
 import * as studio from './api/studio';
 import * as takes from './api/takes';
+import * as ads from './api/ads';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
@@ -98,6 +99,16 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return studio.musicCorrectAnalysis(owner, req.payload);
     case 'takeAction':
       return takes.takeAction(owner, req.payload);
+    case 'proposePromptFix':
+      return actions.proposePromptFix(owner, req.payload);
+    case 'providerHealth':
+      return actions.providerHealth(owner, req.payload);
+    case 'adGenerate':
+      return ads.adGenerate(owner, req.payload);
+    case 'adValidateScene':
+      return ads.adValidateScene(owner, req.payload);
+    case 'adCancel':
+      return ads.adCancel(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;

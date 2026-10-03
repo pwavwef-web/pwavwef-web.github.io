@@ -1,15 +1,18 @@
 import { logger } from 'firebase-functions';
-import { toMillis, type JobDoc } from '@az-studio/shared';
+import { resolveRetryPolicy, toMillis, type JobDoc } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { OMNI_POLL } from '../config/runtime';
 import { applyTarget, createAsset, withTmpDir } from '../lib/assets';
 import { bucket, col, gsUri, pathFromGsUri } from '../lib/firebase';
-import { isSafetyMessage, JobFailure } from '../lib/errors';
+import { GenerationFailure, JobFailure, providerFailure } from '../lib/errors';
+import { classifyInteractionFailure } from '../lib/provider-errors';
 import { logInteraction } from '../lib/interactions';
-import { cancelJobDoc, enqueueJob, failJob, getJob, progress, transition } from '../lib/jobs';
+import { cancelJobDoc, enqueueJob, getJob, progress, transition } from '../lib/jobs';
 import { releaseSlot } from '../lib/concurrency';
-import { recordUsage } from '../lib/usage';
+import { getSettings, recordUsage } from '../lib/usage';
 import { genai } from '../lib/vertex';
+import { afterSceneGenerated } from '../lib/ads';
+import { noteSubmission, stopJob } from './recovery';
 import type { PreparedMedia } from '../lib/prepare';
 
 export interface VideoParams {
@@ -66,20 +69,55 @@ function expectedSeconds(p: VideoParams): number {
   return base * (resFactor[p.resolution] ?? 1) * (p.mode === 'generate' ? 1 : 1.3);
 }
 
+const OMNI = { model: MODEL_REGISTRY.video.id, what: 'video', surface: 'vertex' as const };
+
+/** Records the accepted interaction (a few quick attempts: losing it would orphan a paid generation). */
+async function recordAccepted(jobId: string, interactionId: string): Promise<'ok' | 'gone'> {
+  for (let i = 0; ; i++) {
+    try {
+      const res = await transition(jobId, 'generating', { stage: 'Gemini Omni is generating', progress: 0.1, external: { interactionId, pollCount: 0, acceptedAt: Date.now(), submission: null }, lease: null }, { interactionId });
+      return res ? 'ok' : 'gone';
+    } catch (e) {
+      if (i >= 3) throw e;
+      await new Promise((r) => setTimeout(r, 800 * 2 ** i));
+    }
+  }
+}
+
 export async function startVideoJob(job: JobDoc): Promise<void> {
   const p = job.params as unknown as VideoParams;
   const outputPrefix = `users/${job.ownerUid}/generated/${job.id}/`;
   const body = buildInteractionRequest(p, outputPrefix);
-  if (!(await transition(job.id, 'generating', { stage: 'Submitting to Gemini Omni', progress: 0.05, lease: { until: Date.now() + 5 * 60_000 } }))) return;
+  // The in-flight marker makes an interrupted submission visible: it is never resent automatically.
+  if (!(await transition(job.id, 'generating', { stage: 'Submitting to Gemini Omni', progress: 0.05, lease: { until: Date.now() + 5 * 60_000 }, external: { submission: { at: Date.now(), n: (job.retry?.submissions ?? 0) + 1 } } }))) return;
+  await noteSubmission(job);
   const started = Date.now();
-  // Interactions API types are broad; the body above follows the Vertex AI REST reference exactly.
-  const created = (await genai().interactions.create(body as never)) as unknown as InteractionLike;
-  await transition(
-    job.id,
-    'generating',
-    { stage: 'Gemini Omni is generating', progress: 0.1, external: { interactionId: created.id, pollCount: 0 }, lease: null },
-    { interactionId: created.id },
-  );
+  let created: InteractionLike;
+  try {
+    // The SDK's own retries are off: resending a creation could start a second paid generation. AZ Studio
+    // retries only failures that prove nothing was accepted, under its bounded policy.
+    created = (await genai().interactions.create(body as never, { maxRetries: 0, timeout: 120_000 })) as unknown as InteractionLike;
+  } catch (e) {
+    const gf = providerFailure(e, { modelId: OMNI.model, what: OMNI.what, surface: OMNI.surface });
+    if (!gf.failure.ambiguous) await col.jobs().doc(job.id).set({ external: { submission: null } }, { merge: true });
+    throw gf;
+  }
+  let recorded: 'ok' | 'gone';
+  try {
+    recorded = await recordAccepted(job.id, created.id);
+  } catch (e) {
+    logger.error('accepted Omni interaction could not be recorded', { jobId: job.id, interactionId: created.id, error: String(e) });
+    throw new GenerationFailure({ category: 'unknown', code: 'unrecorded_operation', message: `Gemini Omni accepted the request (interaction ${created.id}) but AZ Studio could not record it.`, httpStatus: null, providerStatus: null, reason: null, retryAfterSec: null, quotaScope: null, ambiguous: true, promptRelated: false, details: `interaction ${created.id}` }, 'finish');
+  }
+  if (recorded === 'gone') {
+    // Cancelled while the request was in flight: stop the generation that was just accepted.
+    try {
+      await genai().interactions.cancel(created.id);
+    } catch (e) {
+      logger.warn('could not cancel an interaction accepted after cancellation', { jobId: job.id, error: String(e) });
+    }
+    return;
+  }
   await logInteraction({
     uid: job.ownerUid,
     projectId: job.projectId,
@@ -94,23 +132,12 @@ export async function startVideoJob(job: JobDoc): Promise<void> {
   await enqueueJob(job.id, 'poll', { delaySec: OMNI_POLL.firstDelaySec, seq: 1 });
 }
 
-function failureFrom(it: InteractionLike): JobFailure {
-  // Only what the model said: the echoed prompt (a user_input step) must not be read as a safety message.
+/** Why an interaction ended without a video (an ended interaction can only be followed by a new submission). */
+export function failureFrom(it: InteractionLike): GenerationFailure {
+  // Only what the model said: the echoed prompt (a user_input step) must not be read as a policy message.
   const modelSteps = (it.steps ?? []).filter((s) => s.type === 'model_output');
-  const messages = [...(it.errors ?? []).map((e) => e.message ?? ''), it.output_text ?? '', ...modelSteps.flatMap((s) => (s.content ?? []).map((c) => c.text ?? ''))].filter(Boolean).join(' ');
-  if (/unable to process speech edits/i.test(messages)) {
-    return new JobFailure({ code: 'speech_edit_unsupported', message: 'Gemini Omni cannot edit or extend speech in a re-sent video. Only a take generated in AZ Studio within the last 7 days can be continued with dialogue — regenerate the scene instead.', retryable: false, details: messages.slice(0, 600) });
-  }
-  if (isSafetyMessage(messages)) {
-    return new JobFailure({ code: 'safety_blocked', message: 'Google’s safety filters rejected this video request. Adjust the prompt or references and try again.', retryable: false, safety: true, details: messages.slice(0, 600) });
-  }
-  const status = it.status;
-  return new JobFailure({
-    code: status === 'budget_exceeded' ? 'budget_exceeded' : status === 'incomplete' ? 'incomplete' : 'omni_failed',
-    message: `Gemini Omni ${status === 'cancelled' ? 'cancelled' : 'did not finish'} the video (${status}).${messages ? ` ${messages.slice(0, 300)}` : ''}`,
-    retryable: false,
-    details: messages.slice(0, 600),
-  });
+  const modelText = modelSteps.flatMap((s) => (s.content ?? []).map((c) => c.text ?? '')).filter(Boolean).join(' ');
+  return new GenerationFailure(classifyInteractionFailure({ status: it.status, errors: it.errors, output_text: it.output_text, modelText }, { modelId: OMNI.model, what: OMNI.what, surface: OMNI.surface }), 'submit');
 }
 
 export async function pollVideoJob(job: JobDoc, seq: number): Promise<void> {
@@ -129,24 +156,28 @@ export async function pollVideoJob(job: JobDoc, seq: number): Promise<void> {
     return;
   }
 
-  const it = (await ai.interactions.get(interactionId)) as unknown as InteractionLike;
-  const startedMs = toMillis(job.startedAt as never) ?? Date.now();
-  const elapsed = (Date.now() - startedMs) / 1000;
+  let it: InteractionLike;
+  try {
+    it = (await ai.interactions.get(interactionId, {}, { maxRetries: 1, timeout: 60_000 })) as unknown as InteractionLike;
+  } catch (e) {
+    // A failed status check never leads to a new submission: the same interaction is checked again.
+    throw providerFailure(e, { modelId: OMNI.model, what: OMNI.what, surface: OMNI.surface, phase: 'poll' });
+  }
+  const acceptedMs = job.external?.acceptedAt ?? toMillis(job.startedAt as never) ?? Date.now();
+  const elapsed = (Date.now() - acceptedMs) / 1000;
 
   if (it.status === 'in_progress' || it.status === 'queued' || it.status === 'requires_action') {
-    if (elapsed > OMNI_POLL.maxWaitMinutes * 60) {
-      try {
-        await ai.interactions.cancel(interactionId);
-      } catch {
-        /* best effort */
-      }
-      await failJob(job, { code: 'timeout', message: `Gemini Omni did not finish within ${OMNI_POLL.maxWaitMinutes} minutes. The request was cancelled.`, retryable: false });
+    const policy = resolveRetryPolicy((await getSettings(job.ownerUid)).retryPolicy);
+    const maxWait = Math.min(policy.pollMaxWaitMinutes, OMNI_POLL.maxWaitMinutes * 2);
+    if (elapsed > maxWait * 60) {
+      // Not cancelled and not resubmitted: the director can resume checking the same interaction.
+      await stopJob(job, { category: 'transient', code: 'poll_timeout', message: `Gemini Omni has not finished after ${Math.round(elapsed / 60)} minutes. AZ Studio stopped checking; the generation was neither cancelled nor resubmitted.`, action: 'Resume checking the same interaction (no new charge), or cancel it.', httpStatus: null, providerStatus: it.status, reason: null, retryAfterSec: null, quotaScope: null, ambiguous: false, promptRelated: false, details: `interaction ${interactionId} still ${it.status} after ${Math.round(elapsed)} s` }, 'resume', 'Polling deadline reached.');
       return;
     }
     const pollCount = (job.external?.pollCount ?? 0) + 1;
     const est = expectedSeconds(p);
     const pct = Math.min(0.9, 0.1 + 0.8 * (1 - Math.exp(-elapsed / est)));
-    await progress(job.id, `Gemini Omni is generating · ${Math.floor(elapsed / 60)}m ${Math.round(elapsed % 60)}s`, pct, { external: { interactionId, pollCount } });
+    await progress(job.id, `Gemini Omni is generating · ${Math.floor(elapsed / 60)}m ${Math.round(elapsed % 60)}s`, pct, { external: { ...job.external, interactionId, pollCount }, ...(job.retry?.pollFailures ? { 'retry.pollFailures': 0 } : {}) });
     const delay = pollCount > OMNI_POLL.slowAfterPolls ? OMNI_POLL.slowIntervalSec : OMNI_POLL.intervalSec;
     await enqueueJob(job.id, 'poll', { delaySec: delay, seq: seq + 1 });
     return;
@@ -230,6 +261,7 @@ export async function pollVideoJob(job: JobDoc, seq: number): Promise<void> {
   });
   await transition(job.id, 'completed', { stage: 'Done', result: { assetIds: [assetId], interactionId, ...(modelText ? { text: modelText.slice(0, 2000) } : {}) } }, { assetId, interactionId });
   await releaseSlot(job.ownerUid, job.id);
+  await afterSceneGenerated(job, assetId);
 }
 
 /** Used by maintenance: resumes polling for generating Omni jobs whose poll chain was lost. */

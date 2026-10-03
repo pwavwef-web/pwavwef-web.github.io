@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Cpu, LogOut, MonitorPlay, RefreshCw, Save, ShieldCheck } from 'lucide-react';
-import { formatUsd, type ModelAvailability, type StudioSettings } from '@az-studio/shared';
+import { Cpu, KeyRound, LogOut, MonitorPlay, RefreshCw, RotateCcw, Save, ShieldCheck } from 'lucide-react';
+import { DEFAULT_RETRY_POLICY, formatUsd, RETRY_POLICY_LIMITS, resolveRetryPolicy, type ModelAvailability, type RetryPolicy, type StudioSettings } from '@az-studio/shared';
 import { modelStatus } from '../lib/production';
 import { api, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
@@ -10,7 +10,7 @@ import { Badge, Button, Card, Field, Input, Kbd, SectionHeader, Select, Skeleton
 
 export default function Settings() {
   const { boot, user, setSettings, signOut } = useSession();
-  const [draft, setDraft] = useState<StudioSettings | null>(boot?.settings ?? null);
+  const [draft, setDraft] = useState<StudioSettings | null>(boot?.settings ? { ...boot.settings, retryPolicy: resolveRetryPolicy(boot.settings.retryPolicy), autoPromptRewrite: boot.settings.autoPromptRewrite ?? true } : null);
   const [saving, setSaving] = useState(false);
   const [availability, setAvailability] = useState<ModelAvailability[] | null>(null);
   const [checking, setChecking] = useState(false);
@@ -100,6 +100,7 @@ export default function Settings() {
             Save settings
           </Button>
         </Card>
+        <RetryCard draft={draft} onChange={(retryPolicy, autoPromptRewrite) => setDraft({ ...draft, retryPolicy, autoPromptRewrite })} onSave={() => void save()} saving={saving} />
         <div className="space-y-6">
           <PresenterCard />
           <Card className="space-y-4 p-6">
@@ -156,6 +157,72 @@ export default function Settings() {
         </div>
       </div>
     </div>
+  );
+}
+
+const RETRY_FIELDS: { key: keyof RetryPolicy; label: string; hint: string }[] = [
+  { key: 'transientAttempts', label: 'Attempts for temporary failures', hint: 'Including the first request (timeouts, rate limits, 503).' },
+  { key: 'baseDelaySec', label: 'First wait (s)', hint: 'Doubles each retry, with jitter; never shorter than Google asks.' },
+  { key: 'maxDelaySec', label: 'Longest wait (s)', hint: 'Upper bound between two automatic attempts.' },
+  { key: 'maxRetryAfterSec', label: 'Stop if Google asks to wait longer than (s)', hint: 'Then the job stops and you retry later.' },
+  { key: 'pollFailures', label: 'Failed status checks before pausing', hint: 'An accepted job is never resubmitted; it can be resumed.' },
+  { key: 'pollMaxWaitMinutes', label: 'Keep checking an accepted job for (min)', hint: 'Then AZ Studio stops checking (resumable, nothing cancelled).' },
+];
+
+function RetryCard({ draft, onChange, onSave, saving }: { draft: StudioSettings; onChange: (p: RetryPolicy, autoPromptRewrite: boolean) => void; onSave: () => void; saving: boolean }) {
+  const boot = useSession((s) => s.boot);
+  const refresh = useSession((s) => s.refresh);
+  const p = resolveRetryPolicy(draft.retryPolicy);
+  const set = (k: keyof RetryPolicy, v: number) => onChange({ ...p, [k]: v }, draft.autoPromptRewrite);
+  const blocks = (boot?.providerBlocks ?? []).filter((b) => b.until > Date.now());
+  const clear = async () => {
+    try {
+      await api('providerHealth', { clear: ['*'] });
+      await refresh();
+      toast.success('Automatic generation resumed');
+    } catch (e) {
+      toast.error('Could not resume', { description: errorMessage(e) });
+    }
+  };
+  return (
+    <Card className="space-y-5 p-6 lg:col-start-1">
+      <div>
+        <p className="eyebrow">Generation retries</p>
+        <p className="mt-1 text-sm text-dim">How AZ Studio recovers when a Google request fails. Limits are never nested: one job sends at most {p.transientAttempts + p.promptRewrites + p.configRepairs} requests.</p>
+      </div>
+      {blocks.length > 0 && (
+        <div className="rounded-xl border border-violet/30 bg-violet/[0.06] p-3 text-xs text-dim">
+          <p className="flex items-center gap-1.5 text-fg">
+            <KeyRound className="size-3.5" /> Automatic generation is paused
+          </p>
+          {blocks.map((b) => (
+            <p key={b.key} className="mt-1">
+              {b.message} {b.action ? `— ${b.action}` : ''} (until {new Date(b.until).toLocaleString()})
+            </p>
+          ))}
+          <Button size="sm" variant="secondary" className="mt-2" onClick={() => void clear()}>
+            It’s fixed — resume
+          </Button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {RETRY_FIELDS.map((f) => (
+          <Field key={f.key} label={f.label} hint={f.hint}>
+            <Input type="number" min={RETRY_POLICY_LIMITS[f.key].min} max={RETRY_POLICY_LIMITS[f.key].max} value={p[f.key]} onChange={(e) => set(f.key, Number(e.target.value))} />
+          </Field>
+        ))}
+      </div>
+      <Toggle checked={draft.autoPromptRewrite && p.promptRewrites > 0} onChange={(v) => onChange({ ...p, promptRewrites: v ? 1 : 0 }, v)} label="One automatic rewrite of a blocked prompt" description="Removes accidental ambiguity and keeps the creative intent; never coded language, never weaker restrictions. Both versions stay in the job history; a second block waits for you." />
+      <Toggle checked={p.configRepairs > 0} onChange={(v) => set('configRepairs', v ? 1 : 0)} label="One repaired resubmission of an invalid configuration" description="Only for values established by the model registry or a verified Google rule; an unchanged invalid request is never resent." />
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" loading={saving} onClick={onSave} icon={<Save className="size-4" />}>
+          Save settings
+        </Button>
+        <Button variant="ghost" icon={<RotateCcw className="size-4" />} onClick={() => onChange({ ...DEFAULT_RETRY_POLICY }, true)}>
+          Recommended values
+        </Button>
+      </div>
+    </Card>
   );
 }
 

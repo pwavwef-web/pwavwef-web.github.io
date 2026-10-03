@@ -4,6 +4,7 @@ import { SET_VIEWS } from './continuity';
 import { characterBibleSchema, CONTINUITY_COLLECTIONS } from './continuity-schemas';
 import { COVERAGE_TYPES } from './coverage';
 import { MUSIC_MODES } from './music-studio';
+import { RETRY_POLICY_LIMITS } from './generation-errors';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -45,6 +46,8 @@ export const imageJobSchema = z.object({
   title: text(160).optional(),
   label: text(160).optional(),
   target: jobTargetSchema.nullable().optional(),
+  /** A Short Ads scene: the result is validated before composition. */
+  adScene: z.boolean().optional(),
 });
 
 export const videoJobSchema = z.object({
@@ -65,6 +68,10 @@ export const videoJobSchema = z.object({
   title: text(160).optional(),
   label: text(160).optional(),
   target: jobTargetSchema.nullable().optional(),
+  /** A Short Ads scene: the result is validated before composition. */
+  adScene: z.boolean().optional(),
+  /** The prompt is final as written (a director-revised prompt): no continuity direction is added again. */
+  promptFinal: z.boolean().optional(),
 });
 
 export const TEXT_TASKS = [
@@ -86,6 +93,8 @@ export const TEXT_TASKS = [
   'film.cue_sheet',
   'film.coverage',
   'music.brief_from_media',
+  'ad.storyboard',
+  'ad.script',
 ] as const;
 export type TextTask = (typeof TEXT_TASKS)[number];
 
@@ -117,6 +126,8 @@ export const renderJobSchema = z.object({
   inspect: z.boolean().default(false),
   /** Render even though lyric captions are out of sync with the vocals (the issues are recorded). */
   acceptLyricSync: z.boolean().default(false),
+  /** `preserve`: the approved soundtrack is passed through unchanged (no loudness normalisation or limiting). */
+  audioMaster: z.enum(['normalize', 'preserve']).default('normalize'),
   label: text(160).optional(),
 });
 
@@ -130,6 +141,8 @@ export const speechJobSchema = z.object({
     .min(1)
     .max(40),
   languageCode: languageCode.nullable().optional(),
+  /** Short Ads: also join the spoken lines into one voice-over file (lines in order, short pauses between). */
+  voiceover: z.boolean().default(false),
   label: text(160).optional(),
   target: jobTargetSchema.nullable().optional(),
 });
@@ -161,6 +174,18 @@ export const lyricsTranscribeJobSchema = z.object({
   projectId: id,
   songId: id,
   audioAssetId: id,
+  languageCode: languageCode.nullable().optional(),
+  label: text(160).optional(),
+});
+
+/** Word-timed transcript of an advert's narration, reconciled with the approved script (a reference, never proof). */
+export const narrationTranscribeJobSchema = z.object({
+  type: z.literal('narration.transcribe'),
+  projectId: id,
+  songId: id,
+  audioAssetId: id,
+  reference: z.string().max(20000).nullable().optional(),
+  protectedTerms: z.array(text(80)).max(30).default([]),
   languageCode: languageCode.nullable().optional(),
   label: text(160).optional(),
 });
@@ -246,6 +271,7 @@ export const jobRequestSchema = z.discriminatedUnion('type', [
   musicJobSchema,
   lyricsTranscribeJobSchema,
   lyricsAlignJobSchema,
+  narrationTranscribeJobSchema,
   referencePackJobSchema,
   continuityCompareJobSchema,
   screenReplaceJobSchema,
@@ -269,6 +295,7 @@ export type SpeechJobRequest = z.infer<typeof speechJobSchema>;
 export type MusicJobRequest = z.infer<typeof musicJobSchema>;
 export type LyricsTranscribeJobRequest = z.infer<typeof lyricsTranscribeJobSchema>;
 export type LyricsAlignJobRequest = z.infer<typeof lyricsAlignJobSchema>;
+export type NarrationTranscribeJobRequest = z.infer<typeof narrationTranscribeJobSchema>;
 export type ReferencePackJobRequest = z.infer<typeof referencePackJobSchema>;
 export type ContinuityCompareJobRequest = z.infer<typeof continuityCompareJobSchema>;
 export type ScreenReplaceJobRequest = z.infer<typeof screenReplaceJobSchema>;
@@ -316,6 +343,19 @@ export const productionOptionsSchema = z.object({
 export const PRODUCTION_ACTIONS = ['approve', 'repair', 'extend', 'split', 'regenerate', 'keep_original', 'waive', 'unwaive', 'cancel', 'reinspect', 'approve_pending_repair', 'dismiss_pending_repair', 'choose_version', 'color_match', 'screen_composite', 'correct_blocking', 'regenerate_with_references'] as const;
 export type ProductionAction = (typeof PRODUCTION_ACTIONS)[number];
 
+const bounded = (k: keyof typeof RETRY_POLICY_LIMITS) => z.number().int().min(RETRY_POLICY_LIMITS[k].min).max(RETRY_POLICY_LIMITS[k].max);
+
+export const retryPolicySchema = z.object({
+  transientAttempts: bounded('transientAttempts'),
+  promptRewrites: bounded('promptRewrites'),
+  configRepairs: bounded('configRepairs'),
+  baseDelaySec: bounded('baseDelaySec'),
+  maxDelaySec: bounded('maxDelaySec'),
+  maxRetryAfterSec: bounded('maxRetryAfterSec'),
+  pollFailures: bounded('pollFailures'),
+  pollMaxWaitMinutes: bounded('pollMaxWaitMinutes'),
+});
+
 export const settingsSchema = z.object({
   maxConcurrentGenerations: z.number().int().min(1).max(8),
   dailyLimitUsd: z.number().min(0).max(5000),
@@ -324,6 +364,8 @@ export const settingsSchema = z.object({
   maxBatchSize: z.number().int().min(1).max(100),
   defaultVideoResolution: z.string().max(8),
   defaultImageSize: z.string().max(3),
+  retryPolicy: retryPolicySchema,
+  autoPromptRewrite: z.boolean(),
 });
 
 export const apiRequestSchema = z.discriminatedUnion('action', [
@@ -359,7 +401,40 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
     }),
   }),
   z.object({ action: z.literal('cancelJob'), payload: z.object({ jobId: id }) }),
-  z.object({ action: z.literal('retryJob'), payload: z.object({ jobId: id, acknowledgeCharge: z.literal(true) }) }),
+  z.object({
+    action: z.literal('retryJob'),
+    payload: z.object({
+      jobId: id,
+      acknowledgeCharge: z.literal(true),
+      /** A revised prompt ("Fix prompt & retry"); the original stays in the job history. */
+      prompt: z.string().trim().min(1).max(12000).optional(),
+      /** Explanation shown with a revised prompt (kept in the history). */
+      explanation: text(600).optional(),
+      /** Resume checking the accepted operation instead of submitting again (no new charge). */
+      resume: z.boolean().default(false),
+    }),
+  }),
+  /** Proposes a compliant rewrite of a blocked prompt (the director reviews and edits it before retrying). */
+  z.object({ action: z.literal('proposePromptFix'), payload: z.object({ jobId: id }) }),
+  /** Provider status: automatic retries paused after an access, billing or quota failure; `clear` resumes them. */
+  z.object({ action: z.literal('providerHealth'), payload: z.object({ clear: z.array(text(120)).max(20).default([]) }).default({ clear: [] }) }),
+  /** Short Ads: generate the scenes that need it (missing or failed), never touching completed scenes. */
+  z.object({
+    action: z.literal('adGenerate'),
+    payload: z.object({
+      projectId: id,
+      /** Scenes to (re)generate; omitted = every generated scene without a usable result. */
+      sceneIds: z.array(id).max(40).optional(),
+      /** Regenerate even when a usable result exists (explicit regeneration of the listed scenes). */
+      force: z.boolean().default(false),
+      estimateOnly: z.boolean().default(false),
+      confirmedUsd: z.number().min(0).nullable().optional(),
+    }),
+  }),
+  /** Short Ads: validate a scene's selected take again (or a supplied asset). */
+  z.object({ action: z.literal('adValidateScene'), payload: z.object({ projectId: id, sceneId: id }) }),
+  /** Short Ads: stop every queued or running generation of the advert. */
+  z.object({ action: z.literal('adCancel'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({

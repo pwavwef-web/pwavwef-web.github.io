@@ -61,7 +61,7 @@ type SaveStatus = 'saved' | 'saving' | 'dirty' | 'conflict';
 
 const pick = (d: TimelineDoc): TimelineState => ({ tracks: d.tracks, clips: d.clips, markers: d.markers ?? [], fps: d.fps, aspectRatio: d.aspectRatio, beatGrid: d.beatGrid ?? null });
 
-function RenderDialog({ projectId, timeline, onClose, ensureSaved, sheets, onResync }: { projectId: string; timeline: WithId<TimelineDoc>; onClose: () => void; ensureSaved: () => Promise<boolean>; sheets: Record<string, LyricsSheet | null>; onResync: () => void }) {
+function RenderDialog({ projectId, timeline, onClose, ensureSaved, sheets, onResync, preserveAudio }: { projectId: string; timeline: WithId<TimelineDoc>; onClose: () => void; ensureSaved: () => Promise<boolean>; sheets: Record<string, LyricsSheet | null>; onResync: () => void; preserveAudio?: boolean }) {
   const boot = useBoot();
   const uid = useUid();
   const [quality, setQuality] = useState<RenderQuality>('draft');
@@ -73,7 +73,7 @@ function RenderDialog({ projectId, timeline, onClose, ensureSaved, sheets, onRes
   const [acceptSync, setAcceptSync] = useState(false);
   const run = async (preset: ExportPreset['id']) => {
     if (!(await ensureSaved())) return;
-    await submit([{ type: 'render.timeline', projectId, timelineId: timeline.id, preset, quality, inspect: quality === 'final', acceptLyricSync: acceptSync }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
+    await submit([{ type: 'render.timeline', projectId, timelineId: timeline.id, preset, quality, inspect: quality === 'final', acceptLyricSync: acceptSync, audioMaster: preserveAudio ? 'preserve' : 'normalize' }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
   };
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Render" description="FFmpeg on Cloud Run renders the saved timeline. Draft is fast; final uses full quality and loudness normalisation." size="lg">
@@ -428,7 +428,7 @@ export default function TimelineEditor() {
   return (
     <div className="flex h-dvh flex-col bg-obsidian">
       <header className="flex flex-wrap items-center gap-2 border-b border-line bg-ink px-3 py-2">
-        <Link to={project.data?.type === 'music_video' ? `/projects/${projectId}/music/edit` : project.data?.type === 'film' ? `/projects/${projectId}/film/assembly` : `/projects/${projectId}`} aria-label="Back to project">
+        <Link to={project.data?.type === 'music_video' ? `/projects/${projectId}/music/edit` : project.data?.type === 'film' ? `/projects/${projectId}/film/assembly` : project.data?.type === 'short_ad' ? `/ads/${projectId}/review` : `/projects/${projectId}`} aria-label="Back to project">
           <IconButton label="Back to project">
             <ArrowLeft className="size-4" />
           </IconButton>
@@ -554,7 +554,7 @@ export default function TimelineEditor() {
       {replacing && selected && (
         <AssetPicker open onOpenChange={(o) => !o && setReplacing(false)} kinds={[selected.kind === 'audio' ? 'audio' : selected.kind === 'image' ? 'image' : 'video']} projectId={projectId} onPick={(a) => a[0] && replaceMedia(a[0])} title="Replace media" />
       )}
-      {dialogOpen === 'render' && <RenderDialog projectId={projectId} timeline={{ ...remote.data, ...present }} sheets={sheets} onResync={() => commit(resyncLyricCaptions(present, sheets), 'Resync lyrics')} onClose={() => setDialogOpen(null)} ensureSaved={() => save(present)} />}
+      {dialogOpen === 'render' && <RenderDialog projectId={projectId} timeline={{ ...remote.data, ...present }} sheets={sheets} onResync={() => commit(resyncLyricCaptions(present, sheets), 'Resync lyrics')} onClose={() => setDialogOpen(null)} ensureSaved={() => save(present)} preserveAudio={project.data?.type === 'short_ad'} />}
       {dialogOpen === 'versions' && (
         <VersionsDialog
           projectId={projectId}

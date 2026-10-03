@@ -1,7 +1,8 @@
 import type { GoogleGenAI } from '@google/genai';
 import { MODEL_REGISTRY, MUSIC_MODEL_LIMITATION } from '../config/models';
 import { bucket } from './firebase';
-import { JobFailure, toJobError } from './errors';
+import { GenerationFailure, JobFailure, toJobError } from './errors';
+import { classifyInteractionFailure } from './provider-errors';
 import { geminiDeveloperApi, genai } from './vertex';
 
 /**
@@ -27,7 +28,7 @@ type InteractionLike = { id: string; status: string; steps?: { type?: string; co
 export function isModelUnavailable(e: unknown): boolean {
   const err = toJobError(e);
   const msg = `${err.message} ${err.details ?? ''}`;
-  return err.code === 'not_found' || /Unsupported model interaction|Publisher Model .* not found|does not have access|is not found for API version|not supported for/i.test(msg);
+  return err.code === 'model_not_found' || /Unsupported model interaction|Publisher Model .* not found|does not have access|is not found for API version|not supported for/i.test(msg);
 }
 
 function unavailable(detail: string): JobFailure {
@@ -108,8 +109,7 @@ export async function generateMusic(input: { prompt: string; imagePaths: { stora
     }
   }
   if (it.status && it.status !== 'completed') {
-    const msg = (it.errors ?? []).map((x) => x.message).filter(Boolean).join(' ');
-    throw new JobFailure({ code: 'music_failed', message: `Lyria did not finish the music (${it.status}).${msg ? ` ${msg.slice(0, 300)}` : ''}`, retryable: false });
+    throw new GenerationFailure(classifyInteractionFailure({ status: it.status, errors: it.errors as { code?: string; message?: string }[] | undefined, output_text: it.output_text }, { modelId: MODEL_REGISTRY.music.id, what: 'music', surface }));
   }
   const { audio, text } = extractMusic(it);
   if (!audio) throw new JobFailure({ code: 'no_audio', message: 'Lyria returned no audio.', retryable: false, details: text.slice(0, 400) });

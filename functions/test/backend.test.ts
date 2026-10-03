@@ -44,14 +44,15 @@ describe('owner guard', () => {
 
 describe('error mapping', () => {
   it('classifies safety, quota, permission and transient errors', () => {
-    expect(toJobError({ status: 400, message: 'The request was blocked by Responsible AI practices' })).toMatchObject({ code: 'safety_blocked', safety: true, retryable: false });
-    expect(toJobError({ status: 429, message: 'RESOURCE_EXHAUSTED' })).toMatchObject({ code: 'quota', retryable: true });
-    expect(toJobError({ status: 403, message: 'PERMISSION_DENIED' })).toMatchObject({ code: 'permission', retryable: false });
-    expect(toJobError({ status: 404, message: 'Publisher model not found' })).toMatchObject({ code: 'not_found' });
-    expect(toJobError({ status: 400, message: 'Unsupported model interaction: x' })).toMatchObject({ code: 'invalid_request', retryable: false });
+    expect(toJobError({ status: 400, message: 'The request was blocked by Responsible AI practices' })).toMatchObject({ code: 'safety_blocked', safety: true, retryable: false, category: 'policy' });
+    // A bare 429 is a rate limit (temporary); only a daily quota is persistent.
+    expect(toJobError({ status: 429, message: 'RESOURCE_EXHAUSTED' })).toMatchObject({ code: 'rate_limited', retryable: true, category: 'transient' });
+    expect(toJobError({ status: 403, message: 'PERMISSION_DENIED' })).toMatchObject({ code: 'permission_denied', retryable: false, category: 'auth_quota' });
+    expect(toJobError({ status: 404, message: 'Publisher model not found' })).toMatchObject({ code: 'model_not_found', category: 'invalid_request' });
+    expect(toJobError({ status: 400, message: 'Unsupported model interaction: x' })).toMatchObject({ code: 'unsupported_parameter', retryable: false, category: 'invalid_request' });
     // Seen live (2026-09-24): continuing an Omni interaction the moment it finishes.
     expect(toJobError({ status: 400, message: '400 Previous interaction ChA3NmQ5 is in an invalid state (current state: IN_PROGRESS).' })).toMatchObject({ code: 'previous_in_progress', retryable: true });
-    expect(toJobError({ status: 503, message: 'UNAVAILABLE' })).toMatchObject({ code: 'unavailable', retryable: true });
+    expect(toJobError({ status: 503, message: 'UNAVAILABLE' })).toMatchObject({ code: 'service_unavailable', retryable: true, category: 'transient' });
     expect(toJobError(new Error('fetch failed'))).toMatchObject({ retryable: true });
     const f = new JobFailure({ code: 'x', message: 'y', retryable: false });
     expect(toJobError(f)).toBe(f.jobError);

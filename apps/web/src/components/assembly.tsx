@@ -15,7 +15,7 @@ import { Badge, Button, Card, EmptyState, ProgressBar, Segmented, Select } from 
 
 const PRESET_ICON = { youtube_16x9: Monitor, vertical_9x16: Smartphone, square_1x1: Square, portrait_4x5: RectangleVertical };
 
-function RenderRow({ render, inspectionHref }: { render: WithId<RenderDoc>; inspectionHref: string | null }) {
+export function RenderRow({ render, inspectionHref }: { render: WithId<RenderDoc>; inspectionHref: string | null }) {
   const asset = useAsset(render.outputAssetId);
   const [watching, setWatching] = useState(false);
   const active = !['completed', 'failed', 'cancelled'].includes(render.status);
@@ -73,7 +73,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
 
   const render = async (preset: ExportPreset['id']) => {
     if (!tl) return;
-    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: tl.id, preset, quality, inspect: quality === 'final', acceptLyricSync: false }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
+    await submit([{ type: 'render.timeline', projectId: project.id, timelineId: tl.id, preset, quality, inspect: quality === 'final', acceptLyricSync: false, audioMaster: 'normalize' }], { label: `${EXPORT_PRESETS[preset].label} ${quality}`, alwaysConfirm: quality === 'final' });
   };
 
   return (
@@ -158,7 +158,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
       </div>
       <Card className="space-y-4 p-5">
         <p className="eyebrow">Renders</p>
-        {renders.data.length === 0 ? <p className="text-sm text-faint">Rendered films appear here with live progress.</p> : <ul className="space-y-2">{renders.data.map((r) => <RenderRow key={r.id} render={r} inspectionHref={project.type === 'film' ? `/projects/${project.id}/film/final` : project.type === 'music_video' ? `/projects/${project.id}/music/final` : null} />)}</ul>}
+        {renders.data.length === 0 ? <p className="text-sm text-faint">Rendered films appear here with live progress.</p> : <ul className="space-y-2">{renders.data.map((r) => <RenderRow key={r.id} render={r} inspectionHref={project.type === 'film' ? `/projects/${project.id}/film/final` : project.type === 'music_video' ? `/projects/${project.id}/music/final` : project.type === 'short_ad' ? `/ads/${project.id}/export` : null} />)}</ul>}
       </Card>
       {dialog}
     </div>

@@ -52,6 +52,8 @@ export interface BootstrapData {
   spend: SpendSnapshot;
   stats: { storageBytes?: number; assetCount?: number };
   activeSlots: number;
+  /** Automatic generation paused after an access, billing or quota failure (until fixed or reset). */
+  providerBlocks?: { key: string; code: string; message: string; action: string | null; at: number; until: number }[];
   serverTime: number;
 }
 

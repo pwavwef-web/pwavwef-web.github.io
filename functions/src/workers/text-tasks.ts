@@ -56,6 +56,70 @@ const need = (keys: string[]) => (input: Record<string, unknown>) => {
 
 const j = (v: unknown) => JSON.stringify(v ?? null, null, 1);
 
+const AD_DIRECTOR =
+  'You are the creative director of short (40–60 second) social video adverts made in AZ Studio. Plan warm, specific, human pictures that carry the voice-over — never generic corporate stock imagery. ' +
+  'Honesty rules: show the real product only through the supplied product screens and footage; never invent features, numbers, user counts, testimonials, awards, partners or contributor names; ' +
+  'people in generated scenes are anonymous and fictional — never name them or present them as the team, contributors or customers. ' +
+  'Generated pictures never contain readable text, signs, logos, app interfaces or watermarks: text, captions and branding are added in the edit. ' +
+  'Keep hands simple (relaxed, holding something, or out of frame) and avoid crowds of faces. Use few transitions; cut on the narration. Return only JSON that matches the schema.';
+
+const AD_SCENE_KINDS_LIST = ['generated_video', 'generated_image', 'product_screen', 'footage', 'photo', 'typography', 'end_card'];
+
+const AD_TASKS: Record<'ad.storyboard' | 'ad.script', TextTaskSpec> = {
+  'ad.storyboard': {
+    label: 'Advert storyboard',
+    system: AD_DIRECTOR,
+    expectedOutputTokens: 6000,
+    thinking: 'HIGH',
+    validate: need(['windows']),
+    schema: obj({
+      scenes: arr(
+        obj({
+          index: { type: 'integer', minimum: 0, description: 'The window index this scene fills' },
+          kind: { type: 'string', enum: AD_SCENE_KINDS_LIST },
+          title: str('Short scene name'),
+          visual: str('What the picture shows, concrete and visual (for generated scenes this becomes the prompt; no text in frame)'),
+          framing: str('Shot size / angle'),
+          cameraMovement: str(),
+          lighting: str(),
+          mood: str(),
+          action: str('Precise visible action, present tense'),
+          assetId: str('For product_screen, footage or photo: the id of the supplied asset to use; otherwise empty'),
+          onScreenText: str('Typography or end-card headline (composed in the edit); empty for other scenes'),
+          subText: str('Second line, e.g. the website on the end card; otherwise empty'),
+          captions: { type: 'boolean', description: 'Show the voice-over captions during this scene' },
+          replaceNote: str('If this is a stand-in for missing real material, what should replace it later; otherwise empty'),
+        }),
+      ),
+      notes: str('Anything the director should know: missing material, risky claims avoided, scenes that need real footage'),
+    }),
+    prompt: (i) =>
+      `Plan exactly one scene for every window below (use its index). Windows are cut on the real narration and already tile the advert.
+` +
+      `Brief: ${j(i.brief)}
+Aspect ratio: ${String(i.aspect ?? '9:16')}
+Windows (seconds, with the words heard): ${j(i.windows)}
+Supplied assets (use real product screens wherever the narration talks about the product): ${j(i.assets)}
+` +
+      `Official logo available: ${i.logoAvailable ? 'yes' : 'no — the end card uses typography only'}
+` +
+      'The last window is the end card (kind end_card) with onScreenText and subText from the brief\'s call to action and destination. Short emphatic lines may be typography scenes (kind typography, captions true: the words themselves are the typography). Generated video windows must be 3–10 seconds.',
+  },
+  'ad.script': {
+    label: 'Advert script',
+    system: `${AD_DIRECTOR} You also write the voice-over: plain, warm, spoken sentences that a narrator can say naturally in the time available.`,
+    expectedOutputTokens: 2500,
+    thinking: 'MEDIUM',
+    validate: need(['brief']),
+    schema: obj({
+      lines: arr(str('One spoken sentence of the voice-over, in order')),
+      tagline: str('A short on-screen line shown early, or empty'),
+      notes: str('Claims that need checking, or material to supply'),
+    }),
+    prompt: (i) => `Write the voice-over for this advert (about ${Number(i.durationSec ?? 45)} seconds spoken, about 2.4 words per second, ending on the call to action).\nBrief: ${j(i.brief)}\nSupplied assets: ${j(i.assets ?? [])}`,
+  },
+};
+
 const STUDIO_TASKS: Record<'film.coverage' | 'music.brief_from_media', TextTaskSpec> = {
   'film.coverage': {
   label: 'Coverage plan',
@@ -112,6 +176,7 @@ const STUDIO_TASKS: Record<'film.coverage' | 'music.brief_from_media', TextTaskS
 
 export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
   ...STUDIO_TASKS,
+  ...AD_TASKS,
   'film.treatment': {
     label: 'Treatment',
     system: WRITER,

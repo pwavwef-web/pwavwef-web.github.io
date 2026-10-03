@@ -127,9 +127,19 @@ export async function progress(jobId: string, stage: string, value?: number, ext
   });
 }
 
+/** The stage line shown for a stopped job. */
+export function failedStage(error: JobError): string {
+  if (error.category === 'policy' || error.safety) return 'Blocked by content policy';
+  if (error.remedy === 'resume') return 'Stopped checking — resumable without a new charge';
+  if (error.category === 'auth_quota') return 'Stopped: access, billing or quota';
+  if (error.category === 'invalid_request') return 'Stopped: request not accepted';
+  if (error.category === 'transient') return 'Stopped after temporary failures';
+  return 'Failed';
+}
+
 export async function failJob(job: Pick<JobDoc, 'id' | 'ownerUid'>, error: JobError): Promise<void> {
-  logger.warn('job failed', { jobId: job.id, code: error.code, message: error.message, details: error.details });
-  await transition(job.id, 'failed', { error, stage: error.safety ? 'Blocked by safety filters' : 'Failed' });
+  logger.warn('job failed', { jobId: job.id, code: error.code, category: error.category, message: error.message, details: error.details });
+  await transition(job.id, 'failed', { error, stage: failedStage(error) });
   await releaseSlot(job.ownerUid, job.id);
 }
 

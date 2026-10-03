@@ -3,7 +3,8 @@ import { ThinkingLevel } from '@google/genai';
 import { SECTION_LABELS, type JobDoc, type LyricLine, type SectionLabel, type SongSection, type TextTask } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { col, FieldValue, gsUri } from '../lib/firebase';
-import { fail, isSafetyMessage, toJobError } from '../lib/errors';
+import { fail, GenerationFailure, providerFailure, toJobError } from '../lib/errors';
+import { classifyBlockedResponse } from '../lib/provider-errors';
 import { logInteraction } from '../lib/interactions';
 import { transition } from '../lib/jobs';
 import { recordUsage } from '../lib/usage';
@@ -36,18 +37,23 @@ export async function callReasoning(parts: Part[], config: GenerateContentConfig
   let res: GenerateContentResponse;
   let modelId: string = primary;
   let usedFallback = false;
+  const ctx = { modelId: primary, what: 'request', surface: 'vertex' as const };
   try {
     res = await attempt(primary, true);
   } catch (e) {
-    const err = toJobError(e);
-    if (err.code !== 'not_found' || !fallback) throw e;
+    const err = toJobError(e, ctx);
+    if (err.code !== 'model_not_found' || !fallback) throw providerFailure(e, ctx);
     modelId = fallback;
     usedFallback = true;
-    res = await attempt(fallback, false);
+    try {
+      res = await attempt(fallback, false);
+    } catch (e2) {
+      throw providerFailure(e2, { ...ctx, modelId: fallback });
+    }
   }
   const latencyMs = Date.now() - started;
   const block = res.promptFeedback?.blockReason;
-  if (block) fail('safety_blocked', `Google’s safety filters blocked this request (${block}).`, { safety: true });
+  if (block) throw new GenerationFailure(classifyBlockedResponse({ blockReason: String(block), blockMessage: res.promptFeedback?.blockReasonMessage ?? null }, { ...ctx, modelId }));
   const cand = res.candidates?.[0];
   const text = (cand?.content?.parts ?? [])
     .filter((p) => p.text && !p.thought)
@@ -55,10 +61,7 @@ export async function callReasoning(parts: Part[], config: GenerateContentConfig
     .join('')
     .trim();
   const reason = String(cand?.finishReason ?? '');
-  if (!text) {
-    if (isSafetyMessage(reason)) fail('safety_blocked', 'Google’s safety filters stopped this response. Rephrase the request.', { safety: true, details: reason });
-    fail('empty_output', `The model returned no answer (${reason || 'no reason given'}).`);
-  }
+  if (!text) throw new GenerationFailure(classifyBlockedResponse({ finishReason: reason || null, finishMessage: cand?.finishMessage ?? null }, { ...ctx, modelId }));
   if (reason === 'MAX_TOKENS') fail('too_long', 'The answer hit the model’s output limit. Ask for a smaller portion (for example one sequence at a time).');
   let json: unknown;
   try {

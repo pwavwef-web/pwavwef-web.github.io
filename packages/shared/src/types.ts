@@ -5,6 +5,8 @@ import type { ReframeTrack } from './reframe';
 import type { ProductionSummary } from './production';
 import type { QualitySettings } from './quality';
 import type { ScoreMode } from './score';
+import { DEFAULT_RETRY_POLICY, type ErrorCategory, type GenerationAttempt, type PromptRevision, type RetryCounters, type RetryPolicy, type UserRemedy } from './generation-errors';
+import type { AdSceneSpec, AdSceneValidation, AdSpec, TranscriptReport } from './ads';
 
 /**
  * AZ Studio domain model. These shapes are shared by the web app, Cloud Functions and the renderer.
@@ -21,7 +23,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -31,6 +33,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   image: 'Image Studio',
   remix: 'Video Remix',
   music: 'Music Studio',
+  short_ad: 'Short Ad',
 };
 
 export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';
@@ -91,6 +94,8 @@ export interface ProjectDoc {
   credits?: { writer: string[]; director: string[]; producer: string[]; editors: string[]; brand: string } | null;
   /** Continuity Director: advanced workspaces are shown when on (simple projects keep defaults). */
   continuity?: { advanced: boolean } | null;
+  /** Short Ads: the advert's brief, audio, assets, brand and workflow state (draft saved as it is edited). */
+  ad?: AdSpec | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
@@ -201,16 +206,39 @@ export const JOB_TYPES = [
   'music.mix',
   'music.replace_section',
   'audio.stems',
+  'narration.transcribe',
+  'ad.validate',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
 export interface JobError {
   code: string;
   message: string;
+  /** True when AZ Studio may retry on its own (temporary failures within the policy). */
   retryable: boolean;
   /** True when a model safety filter rejected the prompt or output. */
   safety?: boolean;
+  /** Sanitised provider diagnostics (never keys or raw responses). */
   details?: string;
+  /** Structured classification (see generation-errors.ts). */
+  category?: ErrorCategory;
+  /** What the director can do next. */
+  remedy?: UserRemedy;
+  /** The specific action to take (e.g. "Enable billing for project az-learner"). */
+  action?: string;
+  httpStatus?: number | null;
+  /** Google's status or error code, e.g. RESOURCE_EXHAUSTED or rate_limit_exceeded. */
+  providerStatus?: string | null;
+  /** Google's machine-readable reason (ErrorInfo reason, block reason or finish reason). */
+  reason?: string | null;
+  /** Seconds Google asked to wait before retrying. */
+  retryAfterSec?: number | null;
+  /** The failure concerns the prompt text (content policy, unsupported language…). */
+  promptRelated?: boolean;
+  /** An accepted operation can be checked again without a new charge. */
+  resumable?: boolean;
+  /** Google did not confirm whether the request was accepted. */
+  ambiguous?: boolean;
 }
 
 export interface CostEstimate {
@@ -247,13 +275,34 @@ export interface JobDoc {
   label: string;
   attempt: number;
   retryOf: string | null;
-  external: { interactionId?: string; executionName?: string; pollCount?: number; renderId?: string } | null;
+  external: {
+    interactionId?: string;
+    executionName?: string;
+    pollCount?: number;
+    renderId?: string;
+    /** Set while a request that creates a billable operation is in flight (cleared on a definite rejection). */
+    submission?: { at: number; n: number } | null;
+    /** When the accepted operation was first seen (polling deadline). */
+    acceptedAt?: number | null;
+  } | null;
   result: { assetIds?: string[]; aiRunId?: string; interactionId?: string; text?: string; reportId?: string; data?: Record<string, unknown> } | null;
   error: JobError | null;
+  /** The failure AZ Studio is currently recovering from (shown while it retries). */
+  lastError?: JobError | null;
   cancelRequested: boolean;
   usageUsd: number | null;
   /** Set on jobs a production run submitted; their completion advances the run. */
   productionId?: string | null;
+  /** Configuration repairs applied automatically (documented values only). */
+  repairs?: { at: number; change: string; source: string; after: string }[];
+  /** Automatic-recovery counters (bounded by the retry policy). */
+  retry?: RetryCounters | null;
+  /** Attempt history: submissions, status checks, rewrites, repairs. */
+  attempts?: GenerationAttempt[];
+  /** Original, rewritten and director-revised prompts. */
+  prompts?: PromptRevision[];
+  /** A resumed job continues this job's accepted operation (no new submission). */
+  resumedFrom?: string | null;
   createdAt?: Time;
   updatedAt?: Time;
   startedAt?: Time;
@@ -446,6 +495,8 @@ export interface ShotDoc {
   continuity?: ShotContinuityInput | null;
   /** Continuity badge mirrored by the backend from the shot's snapshot. */
   continuityStatus?: { status: ContinuityStatus; openWarnings: number; updatedAt: number } | null;
+  /** Short Ads: this shot is a scene of an advert (kind, narration window, assets, generation state). */
+  ad?: AdSceneSpec | null;
   createdAt?: Time;
   updatedAt?: Time;
 }
@@ -468,6 +519,8 @@ export interface TakeDoc {
   productionId?: string | null;
   versionId?: string | null;
   quality?: { verdict: 'pending' | 'passed' | 'failed' | 'error'; overall: number | null; reportId: string | null; categoryScores?: CategoryScores | null } | null;
+  /** Short Ads: validation of this take before composition (written by the backend). */
+  validation?: AdSceneValidation | null;
   createdAt?: Time;
 }
 
@@ -564,6 +617,8 @@ export interface SongDoc {
   lyricsCandidate?: LyricsSheet | null;
   /** Present when the song itself was generated. */
   generation?: { jobId: string; modelId: string; prompt: string; caption: string; bpm: number | null } | null;
+  /** Short Ads: the narration transcript's reconciliation with the approved script. */
+  narration?: { report: TranscriptReport; reference: string; protectedTerms: string[]; heardText: string; transcribedAt: number; modelId: string; jobId: string } | null;
   createdAt?: Time;
   updatedAt?: Time;
 }
@@ -619,6 +674,20 @@ export interface TextPosition {
 /** `smart`: face-safe reframing (a tracked crop that follows faces, speakers and important objects). */
 export type FitMode = 'fill' | 'fit' | 'blur' | 'smart';
 
+/**
+ * Placement of a picture inside the frame instead of filling it (product screens, logos). Fractions of the
+ * output frame; the whole media stays visible (its aspect ratio is kept inside the box).
+ */
+export interface ClipLayout {
+  box: { x: number; y: number; w: number; h: number };
+  /** Corner radius as a fraction of the placed media's width (0 = square corners). */
+  radius: number;
+  /** Soft drop shadow behind the media. */
+  shadow: boolean;
+  /** Gentle scale-in over the clip, e.g. 0.04 = grows 4 % (0 = static). */
+  push: number;
+}
+
 export interface Clip {
   id: string;
   trackId: string;
@@ -663,6 +732,8 @@ export interface Clip {
   reframe?: Partial<Record<string, ReframeTrack>> | null;
   /** A credit sequence rendered by the Credits Studio engine. */
   credits?: { sequenceId: string } | null;
+  /** Picture placed in a box (screens, logos) instead of filling the frame. */
+  layout?: ClipLayout | null;
 }
 
 export interface TimelineMarker {
@@ -715,6 +786,8 @@ export interface RenderDoc {
   finalInspection?: { id: string; status: 'queued' | 'running' | 'completed' | 'failed'; readiness: 'ready' | 'blocked' | 'overridden' | null; score: number | null; errors: number; warnings: number; error?: string } | null;
   /** Final renders are inspected automatically before export. */
   inspect?: boolean;
+  /** `preserve`: the approved soundtrack was passed through unchanged. */
+  audioMaster?: 'normalize' | 'preserve';
   /** Text layout measured by the renderer with the real fonts (lyric issues, credit timings). */
   textLayout?: { issues: { lineId: string; kind: string; message: string; clipId?: string | null; start?: number | null }[]; credits: { clipId: string; name: string; finishesAt: number; issues: string[] }[] } | null;
   createdAt?: Time;
@@ -735,6 +808,10 @@ export interface StudioSettings {
   maxBatchSize: number;
   defaultVideoResolution: string;
   defaultImageSize: string;
+  /** Bounded automatic recovery for Google requests (see generation-errors.ts). */
+  retryPolicy: RetryPolicy;
+  /** Allow one automatic benign rewrite of a prompt that a content filter blocked. */
+  autoPromptRewrite: boolean;
 }
 
 export const DEFAULT_SETTINGS: StudioSettings = {
@@ -745,6 +822,8 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   maxBatchSize: 24,
   defaultVideoResolution: '720p',
   defaultImageSize: '2K',
+  retryPolicy: { ...DEFAULT_RETRY_POLICY },
+  autoPromptRewrite: true,
 };
 
 export interface UsageRecord {

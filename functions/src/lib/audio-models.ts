@@ -2,7 +2,8 @@ import type { GenerateContentResponse, Part } from '@google/genai';
 import { Modality } from '@google/genai';
 import { parseOffset, type DetectedWord } from '@az-studio/shared';
 import { MODEL_REGISTRY, SPEECH_VOICES, TRANSCRIPTION_CAPABILITIES, TRANSCRIPTION_LANGUAGE_HINTS } from '../config/models';
-import { fail, isSafetyMessage } from './errors';
+import { fail, GenerationFailure, providerFailure } from './errors';
+import { classifyBlockedResponse } from './provider-errors';
 import { pcm16ToFloat, pcm16ToWav, speechBounds } from './signal';
 import { genai } from './vertex';
 
@@ -73,13 +74,19 @@ export async function transcribe(input: TranscribeInput): Promise<TranscriptResu
   const languageCodes = transcriptionLanguageHint(input.languageCode);
   const vocabulary = [...new Set((input.vocabulary ?? []).map((v) => v.trim()).filter((v) => v.length > 1))].slice(0, 500);
   const started = Date.now();
-  const res = await genai().models.generateContent({
-    model: MODEL_REGISTRY.transcription.id,
-    contents: [{ role: 'user', parts: [part] }],
-    config: { audioTranscriptionConfig: { wordTimestamp: true, ...(languageCodes ? { languageCodes } : {}), ...(vocabulary.length ? { customVocabulary: vocabulary } : {}) } },
-  });
+  const ctx = { modelId: MODEL_REGISTRY.transcription.id, what: 'transcript', surface: 'vertex' as const };
+  let res: GenerateContentResponse;
+  try {
+    res = await genai().models.generateContent({
+      model: MODEL_REGISTRY.transcription.id,
+      contents: [{ role: 'user', parts: [part] }],
+      config: { audioTranscriptionConfig: { wordTimestamp: true, ...(languageCodes ? { languageCodes } : {}), ...(vocabulary.length ? { customVocabulary: vocabulary } : {}) } },
+    });
+  } catch (e) {
+    throw providerFailure(e, ctx);
+  }
   const block = res.promptFeedback?.blockReason;
-  if (block) fail('safety_blocked', `Google’s safety filters blocked the transcription (${block}).`, { safety: true });
+  if (block) throw new GenerationFailure(classifyBlockedResponse({ blockReason: String(block), blockMessage: res.promptFeedback?.blockReasonMessage ?? null }, ctx));
   return { ...parseTranscription(res), modelId: MODEL_REGISTRY.transcription.id, latencyMs: Date.now() - started };
 }
 
@@ -114,18 +121,24 @@ export interface SpokenLine {
 }
 
 export async function speakLine(text: string, voice: string, direction: string): Promise<SpokenLine> {
-  const res = await genai().models.generateContent({
-    model: MODEL_REGISTRY.speech.id,
-    contents: [{ role: 'user', parts: [{ text: direction ? `${direction}: ${text}` : text }] }],
-    config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
-  });
+  const ctx = { modelId: MODEL_REGISTRY.speech.id, what: 'dialogue audio', surface: 'vertex' as const };
+  let res: GenerateContentResponse;
+  try {
+    res = await genai().models.generateContent({
+      model: MODEL_REGISTRY.speech.id,
+      contents: [{ role: 'user', parts: [{ text: direction ? `${direction}: ${text}` : text }] }],
+      config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
+    });
+  } catch (e) {
+    throw providerFailure(e, ctx);
+  }
   const block = res.promptFeedback?.blockReason;
-  if (block) fail('safety_blocked', `Google’s safety filters blocked this line (${block}).`, { safety: true });
+  if (block) throw new GenerationFailure(classifyBlockedResponse({ blockReason: String(block), blockMessage: res.promptFeedback?.blockReasonMessage ?? null }, ctx));
   const part = res.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
   if (!part?.inlineData?.data) {
-    const reason = String(res.candidates?.[0]?.finishReason ?? 'unknown');
-    if (isSafetyMessage(reason)) fail('safety_blocked', 'Google’s safety filters stopped the dialogue audio.', { safety: true });
-    fail('no_audio', `The speech model returned no audio (${reason}).`);
+    const reason = res.candidates?.[0]?.finishReason;
+    if (reason && reason !== 'STOP') throw new GenerationFailure(classifyBlockedResponse({ finishReason: String(reason), finishMessage: res.candidates?.[0]?.finishMessage ?? null }, ctx));
+    fail('no_audio', `The speech model returned no audio (${reason ?? 'no reason given'}).`);
   }
   const mime = part!.inlineData!.mimeType ?? 'audio/L16;rate=24000';
   const rate = Number(/rate=(\d+)/.exec(mime)?.[1] ?? 24000);

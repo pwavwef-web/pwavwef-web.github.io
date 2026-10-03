@@ -110,6 +110,8 @@ interface RenderDocData {
   computeRates?: { vcpu: number; memoryGiB: number; perVcpuSecond: number; perGiBSecond: number };
   /** Lyric styles, credits, uploaded fonts and face tracks resolved when the render was requested. */
   text?: RenderTextInputs | null;
+  /** `preserve`: the approved soundtrack is passed through unchanged. */
+  audioMaster?: 'normalize' | 'preserve';
 }
 
 async function resolveMedia(r: RenderDocData): Promise<(assetId: string) => string> {
@@ -173,6 +175,7 @@ async function main() {
     durationSec: r.durationSec,
     quality: r.quality,
     assets: r.assets,
+    audioMaster: r.audioMaster ?? 'normalize',
   };
   // Fonts: uploaded ones (licence confirmed) join libass's font directory and the metrics book.
   const fontsDir = path.join(WORK, 'fonts');

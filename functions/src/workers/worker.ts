@@ -1,7 +1,5 @@
-import { logger } from 'firebase-functions';
-import { isTerminal, type JobDoc } from '@az-studio/shared';
+import { isTerminal } from '@az-studio/shared';
 import { acquireSlot, releaseSlot } from '../lib/concurrency';
-import { toJobError } from '../lib/errors';
 import { cancelJobDoc, claimJob, enqueueJob, failJob, getJob, transition, type WorkerPayload } from '../lib/jobs';
 import { getSettings } from '../lib/usage';
 import { runImageJob } from './image';
@@ -23,10 +21,9 @@ import { startStemsJob, watchStemsJob } from './stems';
 import { runAnalyzeSubjectsJob } from './subjects';
 import { afterRenderCompleted } from './after-render';
 import { advanceProduction } from '../lib/production';
-
-const MAX_AUTO_RETRIES = 4;
-/** Only image/video generations (including set reference packs) occupy the owner's concurrent-generation slots. */
-const usesSlot = (job: JobDoc) => job.type === 'image.generate' || job.type === 'video.generate' || job.type === 'reference.pack';
+import { runNarrationTranscribeJob } from './narration';
+import { runAdValidateJob } from './ad-validate';
+import { assertProviderAvailable, recoverFromFailure, usesSlot } from './recovery';
 
 async function startJob(jobId: string, seq: number): Promise<void> {
   const claimed = await claimJob(jobId);
@@ -35,6 +32,8 @@ async function startJob(jobId: string, seq: number): Promise<void> {
     await cancelJobDoc(claimed);
     return;
   }
+  // Access, billing or quota problems pause automatic work: nothing is sent to Google until they change.
+  await assertProviderAvailable(claimed);
   if (usesSlot(claimed)) {
     const settings = await getSettings(claimed.ownerUid);
     const ok = await acquireSlot(claimed.ownerUid, claimed.id, settings.maxConcurrentGenerations);
@@ -121,6 +120,12 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       // Demucs runs as a Cloud Run job execution; polling follows its progress.
       await startStemsJob(claimed);
       return;
+    case 'narration.transcribe':
+      await runNarrationTranscribeJob(claimed);
+      return;
+    case 'ad.validate':
+      await runAdValidateJob(claimed);
+      return;
     default: {
       const unknown: never = claimed.type;
       await failJob(claimed, { code: 'unsupported', message: `No worker handles ${String(unknown)} jobs.`, retryable: false });
@@ -148,24 +153,8 @@ export async function handleTask(payload: WorkerPayload): Promise<void> {
     else if (job.type === 'render.timeline') await watchRenderJob(job, payload.seq);
     else if (job.type === 'audio.stems') await watchStemsJob(job, payload.seq);
   } catch (e) {
-    const err = toJobError(e);
-    const fresh = await getJob(job.id);
-    if (!fresh || isTerminal(fresh.status)) return;
-    const retryableState = fresh.status === 'queued' || fresh.status === 'validating' || (fresh.status === 'generating' && !fresh.external?.interactionId);
-    if (err.retryable && retryableState && fresh.attempt < MAX_AUTO_RETRIES) {
-      const delay = Math.min(300, 15 * 2 ** fresh.attempt);
-      logger.info('retrying job after transient error', { jobId: job.id, code: err.code, attempt: fresh.attempt + 1, delay });
-      await transition(job.id, 'queued', { attempt: fresh.attempt + 1, stage: `Retrying in ${delay}s — ${err.message}`, lease: null });
-      if (usesSlot(fresh)) await releaseSlot(fresh.ownerUid, fresh.id);
-      await enqueueJob(job.id, 'start', { delaySec: delay, seq: payload.seq + 1 });
-      return;
-    }
-    if (err.retryable && fresh.status === 'generating' && fresh.external?.interactionId) {
-      // Transient error while polling: keep polling.
-      await enqueueJob(job.id, 'poll', { delaySec: 30, seq: payload.seq + 1 });
-      return;
-    }
-    // Failures after a billed response (e.g. while saving media) are never retried automatically.
-    await failJob(fresh, err);
+    // Classified, bounded recovery: retry with backoff, check the same accepted job again, repair a documented
+    // configuration once, rewrite a blocked prompt once, or stop with what the director can do next.
+    await recoverFromFailure(job.id, payload, e);
   }
 }

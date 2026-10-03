@@ -30,6 +30,7 @@ coverage/
 *.tsbuildinfo
 .vite/
 services/renderer/dist/
+exports/
 
 # Firebase local state
 .firebase/

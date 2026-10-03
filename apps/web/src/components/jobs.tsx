@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert } from 'lucide-react';
+import { AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert } from 'lucide-react';
 import {
   formatDuration,
   formatUsd,
@@ -22,6 +22,7 @@ import { useSession } from '../lib/session';
 import { usePresenterPrivacy } from '../lib/presenter';
 import { Badge, Button, ConfirmDialog, cx, Modal, Notice, ProgressBar, Tip } from './ui';
 import { AssetThumb, useAsset } from './media';
+import { CategoryBadge, JobErrorPanel } from './job-recovery';
 
 export type Job = WithId<JobDoc>;
 
@@ -49,6 +50,8 @@ const TYPE_ICON: Record<JobType, ReactNode> = {
   'music.mix': <SlidersHorizontal className="size-4" />,
   'music.replace_section': <Music2 className="size-4" />,
   'audio.stems': <AudioLines className="size-4" />,
+  'narration.transcribe': <Languages className="size-4" />,
+  'ad.validate': <ListChecks className="size-4" />,
 };
 
 export function statusTone(status: JobDoc['status']) {
@@ -292,7 +295,7 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
   const retry = async () => {
     setWorking(true);
     try {
-      await api('retryJob', { jobId: job.id, acknowledgeCharge: true });
+      await api('retryJob', { jobId: job.id, acknowledgeCharge: true, resume: false });
       toast.success('Retry queued');
       setRetryOpen(false);
     } catch (e) {
@@ -315,22 +318,31 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
         <div className="flex flex-wrap items-center gap-2">
           <p className="min-w-0 truncate text-sm font-medium text-fg">{job.label}</p>
           <Badge tone={statusTone(job.status)}>{JOB_PHASE_LABELS[jobPhase(job)]}</Badge>
-          {job.error?.safety && (
-            <Badge tone="warning" icon={<ShieldCheck className="size-3" />}>
-              Safety filter
-            </Badge>
+          {job.error?.category ? (
+            <CategoryBadge category={job.error.category} />
+          ) : (
+            job.error?.safety && (
+              <Badge tone="warning" icon={<ShieldCheck className="size-3" />}>
+                Safety filter
+              </Badge>
+            )
           )}
+          {active && job.lastError && <CategoryBadge category={job.lastError.category} />}
         </div>
         <p className="mt-0.5 truncate text-xs text-dim">
           {JOB_TYPE_LABELS[job.type]} · {job.stage}
           {job.modelId ? <span className="text-faint"> · {job.modelId}</span> : null}
         </p>
         {active && <ProgressBar value={job.status === 'queued' ? 0.02 : job.progress} className="mt-2" label={`${job.label} progress`} />}
-        {job.error && (
-          <p className={cx('mt-2 flex items-start gap-1.5 text-xs', job.error.safety ? 'text-warning' : 'text-[#ff9b9b]')}>
-            <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-            <span className="min-w-0 break-words">{job.error.message}</span>
-          </p>
+        {job.error && job.status === 'failed' && job.error.category ? (
+          <JobErrorPanel job={job} compact={compact} />
+        ) : (
+          job.error && (
+            <p className={cx('mt-2 flex items-start gap-1.5 text-xs', job.error.safety ? 'text-warning' : 'text-[#ff9b9b]')}>
+              <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              <span className="min-w-0 break-words">{job.error.message}</span>
+            </p>
+          )
         )}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-faint">
           <span>{relativeTime(toMillis(job.createdAt))}</span>
@@ -350,7 +362,7 @@ export function JobCard({ job, compact, showProject }: { job: Job; compact?: boo
             Cancel
           </Button>
         )}
-        {(job.status === 'failed' || job.status === 'cancelled') && (
+        {(job.status === 'cancelled' || (job.status === 'failed' && !job.error?.category)) && (
           <Button size="sm" variant="secondary" onClick={() => setRetryOpen(true)} icon={<RotateCcw className="size-3.5" />}>
             Retry
           </Button>

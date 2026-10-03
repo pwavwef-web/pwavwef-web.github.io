@@ -3,7 +3,10 @@ import type { JobDoc } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { applyTarget, createAsset, saveBufferToFile, withTmpDir } from '../lib/assets';
 import { bucket, col, gsUri } from '../lib/firebase';
-import { fail, isSafetyMessage, JobFailure } from '../lib/errors';
+import { GenerationFailure, JobFailure, providerFailure } from '../lib/errors';
+import { classifyBlockedResponse } from '../lib/provider-errors';
+import { afterSceneGenerated } from '../lib/ads';
+import { noteSubmission } from './recovery';
 import { logInteraction } from '../lib/interactions';
 import { progress, transition } from '../lib/jobs';
 import { recordUsage } from '../lib/usage';
@@ -32,7 +35,6 @@ export interface ImageParams {
 }
 
 export const IMAGE_EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
-const SAFETY_FINISH = new Set(['SAFETY', 'IMAGE_SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'SPII', 'IMAGE_PROHIBITED_CONTENT', 'RECITATION', 'IMAGE_RECITATION']);
 
 export function buildImageParts(p: ImageParams): Part[] {
   const parts: Part[] = [];
@@ -47,10 +49,9 @@ export function buildImageParts(p: ImageParams): Part[] {
 }
 
 export function extractImage(res: GenerateContentResponse): { data: string; mimeType: string; text: string } {
+  const ctx = { modelId: MODEL_REGISTRY.image.id, what: 'image', surface: 'vertex' as const };
   const block = res.promptFeedback?.blockReason;
-  if (block) {
-    fail('safety_blocked', `Google’s safety filters blocked this prompt (${block}). Rephrase it and try again.`, { safety: true, details: res.promptFeedback?.blockReasonMessage ?? block });
-  }
+  if (block) throw new GenerationFailure(classifyBlockedResponse({ blockReason: String(block), blockMessage: res.promptFeedback?.blockReasonMessage ?? null }, ctx));
   const cand = res.candidates?.[0];
   const parts = cand?.content?.parts ?? [];
   const text = parts
@@ -60,11 +61,8 @@ export function extractImage(res: GenerateContentResponse): { data: string; mime
     .trim();
   const image = parts.find((p) => !p.thought && p.inlineData?.data && (p.inlineData.mimeType ?? '').startsWith('image/'));
   if (!image?.inlineData?.data) {
-    const reason = String(cand?.finishReason ?? 'UNKNOWN');
-    if (SAFETY_FINISH.has(reason) || isSafetyMessage(`${reason} ${cand?.finishMessage ?? ''} ${text}`)) {
-      fail('safety_blocked', 'Google’s safety filters stopped this image. Adjust the prompt or references and try again.', { safety: true, details: `${reason} ${cand?.finishMessage ?? ''}`.trim() });
-    }
-    fail('no_image', `Nano Banana Pro returned no image (${reason}).${text ? ` Model said: “${text.slice(0, 300)}”` : ''}`, { details: reason });
+    // Read Google's finish reason: a policy stop, an unsupported language, or an unexplained empty answer.
+    throw new GenerationFailure(classifyBlockedResponse({ finishReason: cand?.finishReason ? String(cand.finishReason) : null, finishMessage: cand?.finishMessage ?? null, text }, ctx));
   }
   return { data: image!.inlineData!.data!, mimeType: image!.inlineData!.mimeType ?? 'image/png', text };
 }
@@ -76,15 +74,21 @@ export async function runImageJob(job: JobDoc): Promise<void> {
   if (!(await transition(job.id, 'generating', { stage: 'Nano Banana Pro is composing the image', progress: 0.15, lease: { until: Date.now() + 9 * 60_000 } }))) return;
 
   const started = Date.now();
-  const res = await genai().models.generateContent({
-    model,
-    contents: [{ role: 'user', parts }],
-    config: {
-      responseModalities: [Modality.TEXT, Modality.IMAGE],
-      imageConfig: { aspectRatio: p.aspectRatio, imageSize: p.imageSize },
-      ...(p.grounding ? { tools: [{ googleSearch: {} }] } : {}),
-    },
-  });
+  await noteSubmission(job);
+  let res: GenerateContentResponse;
+  try {
+    res = await genai().models.generateContent({
+      model,
+      contents: [{ role: 'user', parts }],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+        imageConfig: { aspectRatio: p.aspectRatio, imageSize: p.imageSize },
+        ...(p.grounding ? { tools: [{ googleSearch: {} }] } : {}),
+      },
+    });
+  } catch (e) {
+    throw providerFailure(e, { modelId: model, what: 'image', surface: 'vertex' });
+  }
   const latencyMs = Date.now() - started;
   const usage = res.usageMetadata;
   const imageTokens = usage?.candidatesTokensDetails?.find((d) => String(d.modality) === 'IMAGE')?.tokenCount ?? 0;
@@ -158,4 +162,5 @@ export async function runImageJob(job: JobDoc): Promise<void> {
   });
   await progress(job.id, 'Finishing', 0.95);
   await transition(job.id, 'completed', { stage: 'Done', result: { assetIds: [assetId], ...(image.text ? { text: image.text.slice(0, 2000) } : {}) } }, { assetId });
+  await afterSceneGenerated(job, assetId);
 }

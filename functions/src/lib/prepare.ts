@@ -34,6 +34,7 @@ import {
   type LyricsSheet,
   type LyricsAlignJobRequest,
   type LyricsTranscribeJobRequest,
+  type NarrationTranscribeJobRequest,
   type MusicJobRequest,
   type MusicProjectDoc,
   type OmniMediaRef,
@@ -207,7 +208,7 @@ async function prepareVideo(uid: string, reqIn: VideoJobRequest, opts: PrepareOp
     // Continuity Director: every new shot generation inherits the approved Visual Bible, the character,
     // set and prop bibles, the blocking plan, the camera axis and the previous approved state — as
     // structured direction plus the right reference images.
-    if (mode === 'generate' && !opts.skipContinuity) {
+    if (mode === 'generate' && !opts.skipContinuity && !req.adScene && !req.promptFinal) {
       const ctx = await loadShotContinuity(req.projectId!, target.id);
       const plan = planContinuity(ctx, req.media, { lockRefs: ctx.shot.lockRefs });
       const applied = applyContinuityToRequest({ prompt: req.prompt, media: req.media }, plan);
@@ -307,6 +308,7 @@ async function prepareVideo(uid: string, reqIn: VideoJobRequest, opts: PrepareOp
     chainFallback: chainFallbackAssetId ? 'reupload_previous_result' : null,
     characterIds: req.characterIds,
     title: req.title ?? null,
+    ...(req.adScene ? { adScene: true } : {}),
   };
   if (take) take.params = params;
   return {
@@ -357,6 +359,14 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
   }
   const prompt = compileImagePrompt(req.purpose, req.prompt, req.applyStyleBible ? project?.styleBible ?? null : null);
   const estimate = estimateImage({ imageSize: req.imageSize, referenceImages: refIds.length, promptChars: prompt.length, outputs: 1 }, PRICING);
+  let take: PreparedJob['take'];
+  if (target?.kind === 'shot' && !target.sub) {
+    if (!req.projectId) bad('Shot images need a project.');
+    const shotRef = col.projects().doc(req.projectId!).collection('shots').doc(target.id);
+    if (!(await shotRef.get()).exists) bad('Shot not found.');
+    take = { shotId: target.id, takeId: shotRef.collection('takes').doc().id, prompt, parentTakeId: null, params: { kind: 'image', aspectRatio: req.aspectRatio, imageSize: req.imageSize } };
+    target = { kind: 'shot', id: target.id, sub: take.takeId };
+  }
 
   if (!target) {
     const chainId = col.chains().doc().id;
@@ -385,10 +395,12 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
       collections: req.collections,
       characterIds: req.characterIds,
       title: req.title ?? null,
+      ...(req.adScene ? { adScene: true } : {}),
     },
     estimate,
     target,
     ...(chain ? { chain } : {}),
+    ...(take ? { take } : {}),
   };
 }
 
@@ -489,7 +501,7 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
     projectId: req.projectId,
     modelId: null,
     label: req.label ?? `${EXPORT_PRESETS[req.preset].label} · ${req.quality === 'final' ? 'Final' : 'Draft'} render`,
-    params: { renderId, timelineId: req.timelineId, preset: req.preset, quality: req.quality, width: dims.width, height: dims.height, fps: tl.fps, durationSec, lyricSyncIssues: lyricSync.length },
+    params: { renderId, timelineId: req.timelineId, preset: req.preset, quality: req.quality, width: dims.width, height: dims.height, fps: tl.fps, durationSec, lyricSyncIssues: lyricSync.length, audioMaster: req.audioMaster },
     estimate,
     target: { kind: 'timeline', id: req.timelineId, sub: renderId },
     render: {
@@ -511,6 +523,8 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
         // Final renders are always inspected before export; drafts only when asked.
         inspect: req.inspect || req.quality === 'final',
+        // `preserve`: an approved soundtrack is passed through without loudness normalisation or limiting.
+        audioMaster: req.audioMaster,
         finalInspection: null,
         assets: assetMap,
         computeRates: { vcpu: PRICING.render.vcpu, memoryGiB: PRICING.render.memoryGiB, perVcpuSecond: PRICING.render.perVcpuSecond, perGiBSecond: PRICING.render.perGiBSecond },
@@ -533,7 +547,7 @@ async function prepareSpeech(uid: string, req: SpeechJobRequest): Promise<Prepar
     projectId: req.projectId,
     modelId: MODEL_REGISTRY.speech.id,
     label: req.label ?? `Dialogue audio · ${req.lines.length} line${req.lines.length === 1 ? '' : 's'}`,
-    params: { lines: req.lines.map((l) => ({ index: l.index, character: l.character, text: l.text, voice: l.voice ?? null, direction: l.direction ?? '' })), languageCode: req.languageCode ?? null },
+    params: { lines: req.lines.map((l) => ({ index: l.index, character: l.character, text: l.text, voice: l.voice ?? null, direction: l.direction ?? '' })), languageCode: req.languageCode ?? null, voiceover: req.voiceover },
     estimate,
     target: req.target ?? { kind: 'project', id: req.projectId },
   };
@@ -658,6 +672,22 @@ async function prepareLyricsTranscribe(uid: string, req: LyricsTranscribeJobRequ
   };
 }
 
+async function prepareNarrationTranscribe(uid: string, req: NarrationTranscribeJobRequest): Promise<PreparedJob> {
+  const { asset, durationSec } = await songAudio(uid, req.projectId, req.songId, req.audioAssetId);
+  if (durationSec <= 0) bad('The audio has not been measured yet. Wait for the upload to finish processing.');
+  const estimate = estimateTranscription({ seconds: durationSec }, PRICING);
+  estimate.notes.push('The transcript is reconciled with your script locally (no extra model call); the recording is the authority.');
+  return {
+    type: 'narration.transcribe',
+    projectId: req.projectId,
+    modelId: MODEL_REGISTRY.transcription.id,
+    label: req.label ?? 'Narration transcript',
+    params: { songId: req.songId, audioAssetId: asset.id, storagePath: asset.storagePath, mimeType: asset.mimeType, durationSec, reference: req.reference?.trim() || null, protectedTerms: req.protectedTerms, languageCode: req.languageCode ?? null },
+    estimate,
+    target: { kind: 'song', id: req.songId },
+  };
+}
+
 async function prepareLyricsAlign(uid: string, req: LyricsAlignJobRequest): Promise<PreparedJob> {
   const { song, asset, durationSec } = await songAudio(uid, req.projectId, req.songId, req.audioAssetId);
   if (song.instrumental) bad('This song is marked instrumental — there are no lyrics to synchronise.');
@@ -698,6 +728,8 @@ export async function prepareJob(uid: string, req: JobRequest, opts: PrepareOpti
       return prepareLyricsTranscribe(uid, req);
     case 'lyrics.align':
       return prepareLyricsAlign(uid, req);
+    case 'narration.transcribe':
+      return prepareNarrationTranscribe(uid, req);
     case 'reference.pack':
       return prepareReferencePack(uid, req);
     case 'continuity.compare':
