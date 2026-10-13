@@ -174,9 +174,128 @@ const STUDIO_TASKS: Record<'film.coverage' | 'music.brief_from_media', TextTaskS
   },
 };
 
+const LITE_DIRECTOR =
+  `${WRITER} You are directing a narrated film made from still images, slow camera movement, voice, music and ambience (Film Studio Lite). ` +
+  'Every shot needs a reason to move or stay still; every pause needs a reason to exist. Plan images that are specific, visual and emotionally true — never generic stock imagery, never the same composition twice in a row. ' +
+  'Images contain no readable text, captions, logos or watermarks. Faces of recurring characters must match their descriptions exactly.';
+
+const LITE_MOTIONS = ['still', 'push_in', 'pull_out', 'pan_left', 'pan_right', 'tilt_up', 'tilt_down', 'drift'];
+
+const LITE_TASKS: Record<'lite.treatment' | 'lite.scenes' | 'lite.review', TextTaskSpec> = {
+  'lite.treatment': {
+    label: 'Story treatment and narration',
+    system: `${LITE_DIRECTOR} Write narration for the ear: short sentences, concrete images, rhythm, and room to breathe. Do not invent facts about real people, places or events; when the source text is factual, stay faithful to it.`,
+    expectedOutputTokens: 9000,
+    thinking: 'HIGH',
+    validate: (i) => (String(i.idea ?? '').trim() || String(i.sourceText ?? '').trim() || String(i.script ?? '').trim() ? null : 'Describe the story idea, paste a script or add source text.'),
+    schema: obj({
+      title: str(),
+      logline: str('One sentence'),
+      synopsis: str('One paragraph'),
+      beginning: str('How the film opens and what it establishes'),
+      development: str('How the story develops'),
+      turns: arr(str('An emotional turn or reveal')),
+      ending: str('How it resolves and the final image'),
+      tone: str('Emotional tone in a few words'),
+      paragraphs: arr(str('One narration paragraph (a scene), plain spoken text, no stage directions')),
+      characters: arr(obj({ name: str(), description: str('Age, face, hair, build — specific, for consistent images'), clothing: str() })),
+      locations: arr(obj({ name: str(), description: str('Architecture, landscape, materials, time of day') })),
+      palette: str(),
+      lighting: str(),
+      imageTreatment: str('Visual language for every image'),
+      pronunciation: arr(obj({ term: str('A name or word a voice may mispronounce'), sayAs: str('Respelling for a speech model, e.g. "Kah-SEH-nah"') })),
+      notes: str('Anything the director should verify'),
+    }),
+    prompt: (i) =>
+      [
+        `Direction: ${j(i.direction)}`,
+        `Target length: about ${Math.round(Number(i.targetSec ?? 300) / 60)} minutes at about ${Number(i.wordsPerMinute ?? 135)} spoken words per minute, so roughly ${Number(i.targetWords ?? 600)} words of narration in total (leave pauses: do not exceed it).`,
+        `Narration language: ${String(i.language ?? 'en')}.`,
+        `Story structure to follow: ${String(i.structure ?? '')}`,
+        String(i.idea ?? '').trim() ? `Idea: ${String(i.idea)}` : '',
+        String(i.script ?? '').trim() ? `The creator's script — keep its words; only split it into paragraphs (one per scene) and fill in the treatment around it:\n${String(i.script)}` : '',
+        String(i.sourceText ?? '').trim() ? `Source text (facts and voice to draw on):\n${String(i.sourceText).slice(0, 60000)}` : '',
+        i.characters ? `Characters already defined (keep them): ${j(i.characters)}` : '',
+        'Write the treatment, then the narration as paragraphs (each paragraph becomes one scene of 20–90 seconds). Give the film a clear beginning, development, emotional turns and an ending that lands.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+  },
+  'lite.scenes': {
+    label: 'Scene plan',
+    system: `${LITE_DIRECTOR} Plan like an editor: alternate wides, mediums, details and still holds; choose camera movement from the narrative intention (push in for attention or intimacy, pull out for scale or loneliness, pans and tilts to reveal an environment, still holds for emotional lines); vary shot lengths; give emotional lines and reveals breathing room. Use cuts by default and dissolves only for passages of time or mood.`,
+    expectedOutputTokens: 16000,
+    thinking: 'HIGH',
+    validate: need(['paragraphs']),
+    schema: obj({
+      scenes: arr(
+        obj({
+          paragraph: { type: 'integer', minimum: 0, description: 'Index of the narration paragraph this scene carries' },
+          title: str('Short scene name'),
+          purpose: str('Why the scene exists in the story'),
+          mood: str(),
+          pauseBeforeSec: num('Deliberate silence before the scene (0–4 s); use sparingly'),
+          pauseBlack: { type: 'boolean', description: 'The pause is on black (a chapter break) rather than a held image' },
+          transitionIn: { type: 'string', enum: ['cut', 'dissolve', 'fade_black'] },
+          musicIntensity: { type: 'integer', minimum: 0, maximum: 10 },
+          musicSilence: { type: 'boolean', description: 'Deliberate silence of the score in this scene' },
+          musicDirection: str('What the music does here'),
+          ambience: { type: 'string', enum: ['none', 'wind', 'rain', 'water', 'night', 'room'] },
+          soundCue: str('A specific sound to add, or empty'),
+          shots: arr(
+            obj({
+              brief: str('What the image shows: subject, action, setting, light — concrete and visual'),
+              composition: str('Where the subject sits and the space around it, for slow movement'),
+              scale: { type: 'string', enum: ['establishing', 'wide', 'medium', 'close', 'detail'] },
+              characters: arr(str('Character name exactly as given')),
+              location: str('Location name exactly as given, or empty'),
+              motion: { type: 'string', enum: LITE_MOTIONS },
+              focusX: num('Horizontal position of the focal subject, 0 (left) – 1 (right)'),
+              focusY: num('Vertical position of the focal subject, 0 (top) – 1 (bottom)'),
+              durationSec: num('Planned length, usually 7–20 s'),
+              reuseOfPrevious: { type: 'boolean', description: 'Reframe the previous shot’s image instead of a new image (economical)' },
+            }),
+          ),
+        }),
+      ),
+      notes: str('Continuity risks or material the director should supply'),
+    }),
+    prompt: (i) =>
+      [
+        `Direction: ${j(i.direction)}`,
+        `Format: ${String(i.aspect ?? '16:9')}${i.extraAspects ? ` (also ${j(i.extraAspects)})` : ''}. Visual plan: ${i.visualPlan === 'economical' ? 'economical — about one new image per 18–25 s, reframing an image for a second shot where it truly works (never more than twice)' : 'rich — a new image for most shots, about one per 9–15 s'}.`,
+        `Narration paragraphs with their estimated spoken length (s): ${j(i.paragraphs)}`,
+        `Characters: ${j(i.characters ?? [])}`,
+        `Locations: ${j(i.locations ?? [])}`,
+        `Treatment: ${j(i.treatment ?? null)}`,
+        'Plan exactly one scene per paragraph (use its index). Each scene’s shot lengths should add up to roughly the paragraph’s spoken length plus 3 s of breathing room; break long paragraphs into several visual beats, and never hold one unrelated image for a whole minute.',
+      ].join('\n'),
+  },
+  'lite.review': {
+    label: 'Continuity review',
+    system: `${LITE_DIRECTOR} You are reviewing approved images for a film before export. Report only problems you can actually see. Faces generated from text and references can drift; say which images show a different-looking person.`,
+    expectedOutputTokens: 5000,
+    thinking: 'MEDIUM',
+    validate: need(['shots']),
+    schema: obj({
+      findings: arr(
+        obj({
+          shotIndex: { type: 'integer', minimum: 0, description: 'Index in the list of shots (image order)' },
+          kind: { type: 'string', enum: ['character_inconsistency', 'irrelevant_image', 'style_mismatch', 'visible_text', 'artefact', 'other'] },
+          severity: { type: 'string', enum: ['warning', 'info'] },
+          message: str('What is wrong and what to change'),
+        }),
+      ),
+      summary: str(),
+    }),
+    prompt: (i) => `The images follow in this order (one per shot). Shots with what each should show and who appears: ${j(i.shots)}\nCharacters (descriptions): ${j(i.characters ?? [])}\nCheck: does each recurring character look like the same person across images; does each image fit its narration; does any image break the film’s look; is there readable text, a logo or an obvious artefact (extra fingers, warped faces)?`,
+  },
+};
+
 export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
   ...STUDIO_TASKS,
   ...AD_TASKS,
+  ...LITE_TASKS,
   'film.treatment': {
     label: 'Treatment',
     system: WRITER,

@@ -1,4 +1,4 @@
-import { ENCODE_SETTINGS, reframeCropExpressions, type Clip, type RenderQuality, type TextStyle, type Track } from '@az-studio/shared';
+import { ENCODE_SETTINGS, hasLook, isStill, lookFilters, reframeCropExpressions, type Clip, type ClipMotion, type MotionEase, type RenderQuality, type TextStyle, type Track } from '@az-studio/shared';
 
 /**
  * Pure FFmpeg planning for AZ Studio renders. The timeline is rendered as a sequence of video-only
@@ -321,6 +321,57 @@ export function layoutFilters(c: Clip, asset: { width: number | null; height: nu
   return f;
 }
 
+/** FFmpeg expression for eased progress at output frame `on` (same curve as the preview's easeValue). */
+export function easeExpr(ease: MotionEase, frameOffset: number, totalFrames: number): string {
+  const p = `min(1,max(0,(on+${frameOffset})/${Math.max(1, totalFrames)}))`;
+  if (ease === 'linear') return p;
+  if (ease === 'ease_in_out') return `(0.5-0.5*cos(PI*${p}))`;
+  return `(0.55*${p}+0.45*${p}*${p}*(3-2*${p}))`;
+}
+
+/**
+ * A camera move over a still: the source is cropped once to the area the move covers and scaled so the
+ * closest framing keeps full output resolution; a perspective map then samples the moving rectangle with
+ * sub-pixel (1/256 px) precision every frame — no integer rounding, so slow moves never judder. Still
+ * framings use a plain crop. The rectangle path is the one the preview draws (motionRectAt).
+ */
+export function motionFilters(m: ClipMotion, src: { w: number; h: number }, W: number, H: number, fps: number, frameOffset: number, totalFrames: number, frames: number, input: string, out: string): string[] {
+  const px = (r: ClipMotion['from']) => ({ x: r.x * src.w, y: r.y * src.h, w: r.w * src.w, h: r.h * src.h });
+  const a = px(m.from);
+  const b = px(m.to);
+  if (isStill(m)) {
+    const cw = Math.max(2, Math.floor(a.w));
+    const ch = Math.max(2, Math.floor(a.h));
+    const x = Math.max(0, Math.min(src.w - cw, Math.round(a.x)));
+    const y = Math.max(0, Math.min(src.h - ch, Math.round(a.y)));
+    return [`${input}crop=${cw}:${ch}:${x}:${y},scale=${W}:${H}:flags=lanczos,setsar=1,format=yuva420p,loop=loop=-1:size=1:start=0,trim=end_frame=${frames},setpts=N/${fps}/TB[${out}]`];
+  }
+  // Union of the move, padded a pixel and kept inside the image.
+  const ux = Math.max(0, Math.floor(Math.min(a.x, b.x)) - 1);
+  const uy = Math.max(0, Math.floor(Math.min(a.y, b.y)) - 1);
+  const uw = Math.min(src.w - ux, Math.ceil(Math.max(a.x + a.w, b.x + b.w)) + 1 - ux);
+  const uh = Math.min(src.h - uy, Math.ceil(Math.max(a.y + a.h, b.y + b.h)) + 1 - uy);
+  const s = W / Math.min(a.w, b.w);
+  const UW = Math.max(2, Math.round((uw * s) / 2) * 2);
+  const UH = Math.max(2, Math.round((uh * s) / 2) * 2);
+  const sx = UW / uw;
+  const sy = UH / uh;
+  const e = easeExpr(m.ease, frameOffset, totalFrames);
+  const f = (n: number) => (Math.round(n * 1e4) / 1e4).toString();
+  const cx = `(${f((a.x + a.w / 2 - ux) * sx)}+${f((b.x + b.w / 2 - a.x - a.w / 2) * sx)}*${e})`;
+  const cy = `(${f((a.y + a.h / 2 - uy) * sy)}+${f((b.y + b.h / 2 - a.y - a.h / 2) * sy)}*${e})`;
+  const hw = `(${f((a.w * sx) / 2)}*pow(${f(b.w / a.w)},${e}))`;
+  const hh = `(${f((a.h * sy) / 2)}*pow(${f(b.h / a.h)},${e}))`;
+  const L = `${cx}-${hw}`;
+  const R = `${cx}+${hw}`;
+  const T = `${cy}-${hh}`;
+  const B = `${cy}+${hh}`;
+  return [
+    `${input}crop=${uw}:${uh}:${ux}:${uy},scale=${UW}:${UH}:flags=lanczos,setsar=1,format=yuva420p,loop=loop=-1:size=1:start=0,trim=end_frame=${frames},setpts=N/${fps}/TB,` +
+      `perspective=x0='${L}':y0='${T}':x1='${R}':y1='${T}':x2='${L}':y2='${B}':x3='${R}':y3='${B}':interpolation=linear:eval=frame,scale=${W}:${H}:flags=bicubic,setsar=1[${out}]`,
+  ];
+}
+
 function fitChain(fit: Clip['fit'], W: number, H: number, label: string, out: string): string {
   if (fit === 'fit') return `[${label}]scale=${W}:${H}:force_original_aspect_ratio=decrease,format=yuva420p,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black@0[${out}]`;
   if (fit === 'blur') {
@@ -396,6 +447,14 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
           filters.push(`[${inputIndex}:v]fps=${fps},setsar=1${pad > 0 ? `,tpad=start_duration=${r3(pad)}:start_mode=clone` : ''}[${label}src]`);
           // Stream time t shows source time seek + t − pad, i.e. clip-local time t + (seek − pad − inPoint).
           reframed = reframeChain(c, ctx.aspect, { w: asset.width, h: asset.height }, W, H, seek - pad - c.inPoint, `${label}src`, `${label}fit`);
+        } else if (c.motion && asset.width && asset.height) {
+          // A still with a camera move: decoded once, moved sub-pixel smoothly (see motionFilters).
+          args.push('-i', file);
+          const frames = Math.max(1, Math.round(span * fps));
+          const total = Math.max(1, Math.round((c.duration + pre) * fps));
+          const offset = Math.round((seg.start + localStart - visStart) * fps);
+          filters.push(...motionFilters(c.motion, { w: asset.width, h: asset.height }, W, H, fps, offset, total, frames, `[${inputIndex}:v]`, `${label}mv`));
+          reframed = `[${label}mv]null[${label}fit]`;
         } else {
           args.push('-loop', '1', '-framerate', String(fps), '-t', String(span), '-i', file);
           const frames = Math.max(1, Math.round(span * fps));
@@ -408,7 +467,9 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
           );
         }
         filters.push(reframed ?? fitChain(c.kenBurns && c.kind === 'image' ? 'fill' : c.fit, W, H, `${label}src`, `${label}fit`));
-        filters.push(`[${label}fit]trim=duration=${span},setpts=PTS-STARTPTS${fadeFilters(c, 0, localStart, seg, span, next)},setpts=PTS+${vs}/TB[${label}]`);
+        // Optional deterministic image treatment (grain, vignette, haze, warmth), under the subtitles.
+        if (c.kind === 'image' && hasLook(c.look)) filters.push(`[${label}fit]${lookFilters(c.look).join(',')},format=yuva420p[${label}fitl]`);
+        filters.push(`[${label}fit${c.kind === 'image' && hasLook(c.look) ? 'l' : ''}]trim=duration=${span},setpts=PTS-STARTPTS${fadeFilters(c, 0, localStart, seg, span, next)},setpts=PTS+${vs}/TB[${label}]`);
         inputIndex++;
       }
       const overlayX = slideX(c, vs);
@@ -469,6 +530,9 @@ export function buildSegment(snap: RenderSnapshot, seg: Segment, ctx: GraphConte
     String(fps),
     '-g',
     String(fps * 2),
+    // A film made only of stills (Film Studio Lite) does not need CRF 14's bitrate — film grain alone would push it
+    // past 30 Mbit/s at 1080p. Cap it at a generous delivery rate; generated-video timelines are unchanged.
+    ...(snap.quality === 'final' && !snap.clips.some((c) => c.kind === 'video') ? ['-maxrate', `${Math.round((W * H) / 172_800)}M`, '-bufsize', `${Math.round((W * H) / 86_400)}M`] : []),
     '-t',
     String(segDur),
     ctx.outputPath,

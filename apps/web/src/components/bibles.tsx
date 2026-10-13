@@ -9,6 +9,7 @@ import { useProjectCollection } from '../lib/continuity';
 import { useBoot } from '../lib/session';
 import { addDocs, deleteSubDoc, newCharacter, newElement, newLocation, updateSubDoc, useSub } from '../lib/studio';
 import { CharacterBibleEditor } from './character-bible';
+import { ProjectCoverBible } from './project-cover-bible';
 import { useJobSubmitter } from './jobs';
 import { PropBibleEditor } from './prop-bible';
 import { SetBibleEditor } from './set-bible';
@@ -292,6 +293,7 @@ export function BibleBoard({ kind, project, onExtract, extracting }: { kind: Kin
   };
   return (
     <div className="space-y-4">
+      {kind === 'characters' && <ProjectCoverBible project={project} />}
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" size="sm" icon={<Plus className="size-4" />} onClick={() => void add()}>
           Add {label}

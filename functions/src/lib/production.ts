@@ -12,6 +12,7 @@ import {
   estimateLocalCompute,
   estimateSpeech,
   estimateSpeechSeconds,
+  implausibleGuideLength,
   estimateText,
   estimateVideo,
   estimateVision,
@@ -622,14 +623,19 @@ async function stepAudioPrepared(p: Prod, jobs: JobDoc[]): Promise<void> {
   let audio = p.dialogueAudio;
   if (job?.status === 'completed') {
     const measured = ((job.result?.data as { lines?: SpokenLineResult[] } | undefined)?.lines ?? []) as SpokenLineResult[];
+    const rejected: string[] = [];
     audio = {
       ...audio,
       jobId: job.id,
       lines: audio.lines.map((l) => {
         const m = measured.find((x) => x.index === l.index);
+        if (m && m.seconds !== null && implausibleGuideLength(m.seconds, l.text)) {
+          rejected.push(`“${l.text.slice(0, 40)}” measured ${m.seconds.toFixed(1)} s`);
+          return { ...l, assetId: m.assetId, voice: m.voice };
+        }
         return m ? { ...l, assetId: m.assetId, seconds: m.seconds, voice: m.voice } : l;
       }),
-      note: `Measured from generated guide audio (${MODEL_REGISTRY.speech.displayName}).`,
+      note: `Measured from generated guide audio (${MODEL_REGISTRY.speech.displayName}).${rejected.length ? ` Implausible guide lengths ignored (estimated from the text instead): ${rejected.join('; ')}.` : ''}`,
     };
   } else {
     audio = { ...audio, mode: 'estimated', jobId: job?.id ?? null, note: `Guide audio could not be generated (${job?.error?.message ?? job?.status ?? 'unknown'}); line lengths are estimated from the text.` };

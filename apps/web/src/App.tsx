@@ -23,6 +23,8 @@ const MusicStudio = lazy(() => import('./pages/music/MusicStudio'));
 const MusicProjectStudio = lazy(() => import('./pages/music/MusicProjectStudio'));
 const ShortAds = lazy(() => import('./pages/ads/ShortAds'));
 const AdStudio = lazy(() => import('./pages/ads/AdStudio'));
+const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
+const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
 const TimelineEditor = lazy(() => import('./pages/editor/TimelineEditor'));
 const PrintScreenplay = lazy(() => import('./pages/print/PrintScreenplay'));
 const PrintStoryboard = lazy(() => import('./pages/print/PrintStoryboard'));
@@ -93,6 +95,8 @@ const router = createBrowserRouter([
           { path: 'projects/:projectId/studio/:tab?', element: <Page><MusicProjectStudio /></Page> },
           { path: 'ads', element: <Page><ShortAds /></Page> },
           { path: 'ads/:projectId/:step?', element: <Page><AdStudio /></Page> },
+          { path: 'lite', element: <Page><LiteStudio /></Page> },
+          { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
           { path: 'create', element: <Page><Create /></Page> },
           { path: 'create/video', element: <Page><QuickVideo /></Page> },
           { path: 'create/image', element: <Page><ImageStudio /></Page> },

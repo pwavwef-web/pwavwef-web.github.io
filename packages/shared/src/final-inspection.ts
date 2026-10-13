@@ -192,7 +192,9 @@ export function blackFindings(segments: { start: number; end: number }[], state:
   const dur = Math.max(0, ...state.clips.map((c) => clipEnd(c)));
   for (const b of segments) {
     if (b.end - b.start < 0.04) continue;
-    if ((opts.intentional ?? []).some((x) => b.start >= x.start - 0.1 && b.end <= x.end + 0.1)) continue;
+    // Black the director marked as deliberate (a chapter pause) is not a fault.
+    const intentional = [...(opts.intentional ?? []), ...state.clips.filter((c) => c.intentional === 'black').map((c) => ({ start: c.start, end: clipEnd(c) }))];
+    if (intentional.some((x) => b.start >= x.start - 0.1 && b.end <= x.end + 0.1)) continue;
     // A dark colour card (e.g. a navy brand ground behind type or a logo) measures as black but is designed.
     const onCards = cards.reduce((sum, c) => sum + Math.max(0, Math.min(b.end, clipEnd(c)) - Math.max(b.start, c.start)), 0);
     if (onCards >= (b.end - b.start) * 0.9) continue;
@@ -234,11 +236,23 @@ export function frozenOutsideBlack(frozen: { start: number; end: number }[], bla
   });
 }
 
+function coveredBy(span: { start: number; end: number }, clips: Clip[]): boolean {
+  let t = span.start;
+  for (const c of [...clips].sort((a, b) => a.start - b.start)) {
+    if (c.start - 0.05 > t) break;
+    t = Math.max(t, clipEnd(c));
+    if (t >= span.end - 0.05) return true;
+  }
+  return t >= span.end - 0.05;
+}
+
 export function frozenFindings(frozen: { start: number; end: number }[], state: Pick<TimelineState, 'clips' | 'tracks'>): FinalFinding[] {
   const pics = pictureClips(state);
   return frozen
     .filter((f) => f.end - f.start >= 0.6)
     .filter((f) => !pics.some((c) => c.kind === 'image' && f.start >= c.start - 0.05 && f.end <= clipEnd(c) + 0.05 && !c.kenBurns))
+    // Designed stills (held images and very slow camera moves across several stills) are not frozen video.
+    .filter((f) => !coveredBy(f, pics.filter((c) => c.kind === 'image' && c.intentional === 'still')))
     .map((f) => finding('frozen_frames', f.end - f.start > 2 ? 'error' : 'warning', `The picture freezes from ${r2(f.start)} s to ${r2(f.end)} s.`, 'measured', { startSec: r2(f.start), endSec: r2(f.end), clipIds: clipsAt({ clips: pics }, (f.start + f.end) / 2).map((c) => c.id) }));
 }
 
@@ -306,6 +320,13 @@ export function loudnessFindings(m: LoudnessMeasure, state: Pick<TimelineState, 
     const under = state.clips.filter((c) => audible(c) && c.start < s.end + 0.1 && clipEnd(c) > s.start - 0.1).sort((a, b) => Number(b.duration <= 3) - Number(a.duration <= 3) || b.volume - a.volume);
     const culprit = under[0];
     const over = s.lufs - s.referenceLufs;
+    // Narration entering after a quiet passage (an opening, a deliberate pause) is dynamics, not a fault — unless the
+    // voice itself is hot. It is still reported, as information.
+    const speechOnset = culprit?.kind === 'audio' && culprit.role === 'dialogue' && Math.abs(culprit.start - s.start) < 1.5 && s.lufs < -8;
+    if (speechOnset) {
+      out.push(finding('audio_clipping', 'info', `Narration enters ${Math.round(over)} LU above the quiet passage before it (${r2(s.start)} s, “${culprit!.label || 'a line'}”) — intended dynamics; check it does not startle.`, 'measured', { startSec: r2(s.start), endSec: r2(s.end), clipIds: [culprit!.id], fix: null, manual: true }));
+      continue;
+    }
     const db = Math.max(3, Math.ceil(s.lufs - (s.referenceLufs + 3)));
     const fix: FinalFix = culprit ? { type: 'reduce_gain', label: `Lower “${culprit.label || 'the clip'}” by ${db} dB`, clipId: culprit.id, params: { db } } : { type: 'enable_limiter', label: 'Add a limiter to the master', clipId: null, params: {} };
     out.push(
@@ -462,7 +483,8 @@ export function applyLyricStyleFixes(style: Pick<LyricStyleDoc, 'global'>, place
 
 /** OCR of a rendered caption against its text: missing leading/trailing characters mean it is cropped. */
 export function ocrCropFinding(expected: string, ocr: string, at: number, clipId: string | null): FinalFinding | null {
-  const norm = (s: string) => s.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+  // OCR reads Kasem's open e as the Latin ɛ (U+025B); creators often type the lookalike Greek ε (U+03B5). Same letter here.
+  const norm = (s: string) => s.normalize('NFKC').toLowerCase().replace(/ε/g, 'ɛ').replace(/[^\p{L}\p{N}]+/gu, '');
   const e = norm(expected);
   const o = norm(ocr);
   if (!e || o.includes(e)) return null;

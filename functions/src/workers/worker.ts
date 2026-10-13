@@ -23,6 +23,10 @@ import { afterRenderCompleted } from './after-render';
 import { advanceProduction } from '../lib/production';
 import { runNarrationTranscribeJob } from './narration';
 import { runAdValidateJob } from './ad-validate';
+import { runLipSyncJob } from './lipsync';
+import { runLiteNarrationJob } from './lite-narration';
+import { runAmbienceJob } from './ambience';
+import { col } from '../lib/firebase';
 import { assertProviderAvailable, recoverFromFailure, usesSlot } from './recovery';
 
 async function startJob(jobId: string, seq: number): Promise<void> {
@@ -43,7 +47,19 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       return;
     }
   }
+  // Film Studio Lite never runs video generation or lip sync, whatever created the job.
+  if ((claimed.type === 'video.generate' || claimed.type === 'video.lipsync') && claimed.projectId && (await col.projects().doc(claimed.projectId).get()).get('type') === 'film_lite') {
+    await failJob(claimed, { code: 'not_in_lite', message: 'Film Studio Lite makes motion from still images and does not use video generation or lip sync.', retryable: false });
+    if (usesSlot(claimed)) await releaseSlot(claimed.ownerUid, claimed.id);
+    return;
+  }
   switch (claimed.type) {
+    case 'lite.narration':
+      await runLiteNarrationJob(claimed);
+      return;
+    case 'audio.ambience':
+      await runAmbienceJob(claimed);
+      return;
     case 'image.generate':
       await runImageJob(claimed);
       await releaseSlot(claimed.ownerUid, claimed.id);
@@ -125,6 +141,9 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       return;
     case 'ad.validate':
       await runAdValidateJob(claimed);
+      return;
+    case 'video.lipsync':
+      await runLipSyncJob(claimed);
       return;
     default: {
       const unknown: never = claimed.type;

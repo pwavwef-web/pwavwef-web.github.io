@@ -1,0 +1,20 @@
+// Captures the public progress page for design reference (and a clearly dated real-page cutaway).
+import { chromium } from 'playwright-core';
+import { mkdirSync } from 'node:fs';
+import path from 'node:path';
+const OUT = path.resolve('exports/indigen-contributor-series/_work/ui');
+mkdirSync(OUT, { recursive: true });
+const browser = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'en-GB' });
+const page = await ctx.newPage();
+await page.goto('https://indigenworld.com/progress', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(9000);
+await page.screenshot({ path: path.join(OUT, 'progress-top.png') });
+await page.evaluate(() => window.scrollBy(0, 700));
+await page.waitForTimeout(1500);
+await page.screenshot({ path: path.join(OUT, 'progress-jars.png') });
+await page.evaluate(() => window.scrollBy(0, 800));
+await page.waitForTimeout(1500);
+await page.screenshot({ path: path.join(OUT, 'progress-jars2.png') });
+console.log(await page.title());
+await browser.close();

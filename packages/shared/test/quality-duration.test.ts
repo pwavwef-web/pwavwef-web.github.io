@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actionBeats, estimateSpeechSeconds, planSceneDuration, segmentTimingDirections, splitSentences, type PlanLine } from '../src/duration';
+import { actionBeats, estimateSpeechSeconds, implausibleGuideLength, planSceneDuration, segmentTimingDirections, splitSentences, type PlanLine } from '../src/duration';
 import { analyzeDialogue, chooseRepair, DEFAULT_QUALITY_SETTINGS, evaluateQuality, isBlocking, parseOffset, type DetectedWord, type ModelReview, type RepairContext } from '../src/quality';
 import { decideAfterInspection, screenCompositeForPassedTake } from '../src/production';
 import { alignWords, normalizeWord, tokenize } from '../src/text-align';
@@ -374,5 +374,17 @@ describe('automatic repair selection', () => {
     expect(screenCompositeForPassedTake({ problems: blank, compositeScreenIds: ['phone'], triedTypes: ['screen_composite'] })).toBeNull();
     expect(screenCompositeForPassedTake({ problems: blank, compositeScreenIds: [], triedTypes: [] })).toBeNull();
     expect(screenCompositeForPassedTake({ problems: [{ category: 'lighting_flicker' as const }], compositeScreenIds: ['phone'], triedTypes: [] })).toBeNull();
+  });
+});
+
+describe('implausibleGuideLength', () => {
+  it('rejects a guide line far longer than its text could take (direction read aloud)', () => {
+    expect(implausibleGuideLength(14.04, 'Yes.')).toBe(true);
+    expect(implausibleGuideLength(9.5, 'Mm-hm.')).toBe(true);
+  });
+  it('keeps real measurements, including slow deliveries', () => {
+    expect(implausibleGuideLength(0.9, 'Yes.')).toBe(false);
+    expect(implausibleGuideLength(3.9, 'Good. Then go and bring me water.')).toBe(false);
+    expect(implausibleGuideLength(4.2, 'English?')).toBe(false);
   });
 });

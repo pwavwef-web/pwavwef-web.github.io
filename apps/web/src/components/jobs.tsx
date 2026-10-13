@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert } from 'lucide-react';
+import { AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert, Wind } from 'lucide-react';
 import {
   formatDuration,
   formatUsd,
@@ -52,6 +52,9 @@ const TYPE_ICON: Record<JobType, ReactNode> = {
   'audio.stems': <AudioLines className="size-4" />,
   'narration.transcribe': <Languages className="size-4" />,
   'ad.validate': <ListChecks className="size-4" />,
+  'video.lipsync': <Languages className="size-4" />,
+  'lite.narration': <Mic className="size-4" />,
+  'audio.ambience': <Wind className="size-4" />,
 };
 
 export function statusTone(status: JobDoc['status']) {

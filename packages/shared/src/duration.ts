@@ -92,6 +92,15 @@ const SYLLABLES_PER_SEC = 3.3;
 const clampRange = (v: number | undefined, r: { min: number; max: number; default: number }) => (v === undefined || !Number.isFinite(v) ? r.default : Math.min(r.max, Math.max(r.min, v)));
 
 /** Estimated spoken length of a line (s) when no audio exists yet. */
+/**
+ * A measured guide line that is far longer than its text could take (the speech model sometimes reads the
+ * direction aloud, or rambles on a one-word line) is not a measurement: the estimate is used instead.
+ */
+export function implausibleGuideLength(measuredSec: number, text: string): boolean {
+  const est = estimateSpeechSeconds(text);
+  return measuredSec > est * 3 && measuredSec - est > 4;
+}
+
 export function estimateSpeechSeconds(text: string): number {
   const words = tokenize(text);
   if (!words.length) return 0;

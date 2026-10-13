@@ -294,6 +294,9 @@ describe('final-film inspection', () => {
     expect(lowered.clips.find((c) => c.label === 'Song')!.volume).toBeLessThan(1.8);
     const crop = ocrCropFinding('Carry me home to the river of gold', 'rry me home to the river of gold', 3, 'cap1');
     expect(crop?.check).toBe('lyric_cropped');
+    // Kasem: the creator's Greek ε and the Latin ɛ that OCR returns are the same letter, so a fully rendered line is not "cropped".
+    expect(ocrCropFinding('A lage se a zamse de dεdε mo', 'A lage se a zamse de dɛdɛ mo', 3, 'cap2')).toBeNull();
+    expect(ocrCropFinding('Ba tage de mεεmε mo', 'Ba tage de mɛɛmɛ', 3, 'cap3')?.check).toBe('lyric_cropped');
     expect(exportReadiness([...black, ...loud, crop!], null)).toBe('blocked');
     expect(exportReadiness([...black, ...loud, crop!], { at: 1, note: 'client approved' })).toBe('overridden');
     expect(exportReadiness(loud.filter((f) => f.severity !== 'error'), null)).toBe('ready');

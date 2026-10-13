@@ -190,15 +190,22 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
     // Model review of the cuts and the ending.
     await progress(job.id, 'Reviewing the cuts and the ending', 0.65);
     const cuts = [...new Set(state.clips.filter((c) => state.tracks.find((t) => t.id === c.trackId)?.kind === 'video').map((c) => round1(c.start)).filter((t) => t > 0.2))].sort((a, b) => a - b);
+    // Deliberate black (a chapter pause) and still holds are part of the edit, not faults.
+    const deliberateBlack = state.clips.filter((c) => c.intentional === 'black').map((c) => ({ start: c.start, end: clipEnd(c) }));
+    const stills = state.clips.some((c) => c.intentional === 'still');
     const parts: Part[] = [
       { fileData: { fileUri: gsUri(p.output.storagePath), mimeType: 'video/mp4' }, videoMetadata: { fps: m.D <= 180 ? 1 : 0.5 } },
       {
         text: [
           'FINAL FILM REVIEW — this is the finished export of a film edited from separately generated shots.',
           `Length ${round1(m.D)} s. Cuts between clips at: ${cuts.slice(0, 80).join(', ') || 'none'} s.`,
+          deliberateBlack.length ? `Deliberate black pauses (intended chapter breaks — do not report them): ${deliberateBlack.map((b) => `${round1(b.start)}–${round1(b.end)} s`).join(', ')}.` : '',
+          stills ? 'The film is made from still images with slow camera movement on purpose: still or slowly moving pictures are intended, not frozen video.' : '',
           'Check each cut for continuity breaks between shots (costume, props, positions, screen direction, lighting), jarring colour jumps inside a scene, and abrupt cuts that chop a line or an action. Check that the film ends on a complete moment (the final action and line finish), that no text or caption is cut off at the frame edge, that lyrics or titles do not sit over faces, that credits finish before the end, that dialogue is not drowned by music, and that there is no unexpected visible logo or watermark, or readable private information.',
           'Report only real problems you can see or hear, with times. Measured checks (black frames, loudness, peaks, silence, OCR) are run separately — do not guess at those.',
-        ].join('\n'),
+        ]
+          .filter(Boolean)
+          .join('\n'),
       },
     ];
     const r = await callReasoning(parts, { systemInstruction: 'You are the final quality-control editor before a film is delivered. Return only JSON matching the schema.', responseJsonSchema: FINAL_REVIEW_SCHEMA }, 'MEDIUM');
@@ -208,6 +215,8 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
     for (const x of review.findings ?? []) {
       if (!(FINAL_CHECKS as readonly string[]).includes(String(x.check)) || !x.message) continue;
       const at = typeof x.startSec === 'number' && x.startSec >= 0 ? x.startSec : null;
+      // The reviewer was told about deliberate black; a report inside it is that pause, not a fault.
+      if (at !== null && deliberateBlack.some((b) => at >= b.start - 1 && at <= b.end + 1) && /black|cut/i.test(`${x.check} ${x.message}`)) continue;
       const clipIds = at === null ? [] : state.clips.filter((c) => at >= c.start && at < clipEnd(c)).map((c) => c.id);
       findings.push(finding(x.check as FinalCheck, x.severity === 'error' ? 'error' : x.severity === 'info' ? 'info' : 'warning', x.message.slice(0, 400), 'model', { startSec: at, endSec: typeof x.endSec === 'number' && x.endSec >= 0 ? x.endSec : null, clipIds }));
     }

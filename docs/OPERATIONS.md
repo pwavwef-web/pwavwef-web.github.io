@@ -15,8 +15,10 @@ node scripts/deploy.mjs --skip-checks --only=hosting   # partial deploys
 These are already in place for `az-learner`; recreate them if the functions are ever deployed to a new project:
 
 ```bash
-# Eventarc invokes the upload validator as the runtime service account.
+# Eventarc invokes the upload validator and automatic Bible covers as the runtime service account.
 gcloud run services add-iam-policy-binding azsonupload --region=us-central1 --project az-learner \
+  --member=serviceAccount:az-studio-api@az-learner.iam.gserviceaccount.com --role=roles/run.invoker
+gcloud run services add-iam-policy-binding azsonbiblecharacter --region=us-central1 --project az-learner \
   --member=serviceAccount:az-studio-api@az-learner.iam.gserviceaccount.com --role=roles/run.invoker
 # Firebase CLI 15.30 crashes ("reading 'filter'") when a new task queue has an empty IAM policy;
 # seeding the enqueuer binding lets the deploy finish.
@@ -89,6 +91,12 @@ AZS_ACCEPTANCE=1 npm run test:acceptance   # live acceptance suite (billable, �
 ```
 
 The acceptance suite (`tests/acceptance`) runs the same server code as the API with your Application Default Credentials; Cloud Tasks deliver the work to the deployed worker. Each run creates `QA · …` projects in the studio (delete them from the Projects page when done) and writes logs and production records to `tests/acceptance/.results/`. On a busy workstation the Functions emulator can exceed the CLI's 10 s discovery timeout (every API test then fails with `Cannot determine backend specification`): run `test:integration` and `test:e2e` with `FUNCTIONS_DISCOVERY_TIMEOUT=120` (the deploy script sets it itself).
+
+## Film Studio Lite
+
+- The renderer must be redeployed (`node scripts/deploy.mjs --only=renderer`) before Lite exports run on Cloud Run: earlier renderer images ignore camera moves and treatments. Functions (new `lite.narration` and `audio.ambience` jobs, the `liteGenerate` / `liteCancel` API) and rules (`film_lite` projects) deploy with the usual scoped deploy.
+- In the emulators, renders run the same renderer program locally (`services/renderer/dist/main.js`, built by `test:e2e`); paid providers are not reachable there, so `tests/e2e/lite.e2e.test.ts` writes the narration timing a transcription would return as a stand-in.
+- `AZS_ACCEPTANCE=1 npm run test:acceptance -- 12-film-lite` runs Film Studio Lite against the live providers in-process (one image, three narrated scenes, one score movement, ambience; capped at $1.50, about $0.25), renders locally against the live project and runs the final inspection. Rerunning with the same `AZS_ACCEPTANCE_RUN` resumes the film without repeating paid requests. Outputs land in `exports/film-studio-lite-verification/`.
 
 ## Export gate
 

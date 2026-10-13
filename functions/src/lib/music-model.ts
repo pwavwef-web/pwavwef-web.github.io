@@ -28,7 +28,7 @@ type InteractionLike = { id: string; status: string; steps?: { type?: string; co
 export function isModelUnavailable(e: unknown): boolean {
   const err = toJobError(e);
   const msg = `${err.message} ${err.details ?? ''}`;
-  return err.code === 'model_not_found' || /Unsupported model interaction|Publisher Model .* not found|does not have access|is not found for API version|not supported for/i.test(msg);
+  return err.code === 'model_not_found' || /Unsupported model interaction|Publisher Model .* not found|does not have access|is not found for API version|not supported (for|by the Interactions API)/i.test(msg);
 }
 
 function unavailable(detail: string): JobFailure {

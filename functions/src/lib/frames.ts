@@ -46,6 +46,20 @@ export function splitJpegs(buf: Buffer): Buffer[] {
   return out;
 }
 
+/** Pixel size of a JPEG from its start-of-frame marker (null when the header cannot be read). */
+export function jpegSize(buf: Buffer): { width: number; height: number } | null {
+  let i = 2;
+  while (i + 9 < buf.length) {
+    if (buf[i] !== 0xff) return null;
+    const marker = buf[i + 1]!;
+    const len = buf.readUInt16BE(i + 2);
+    // SOF0–SOF15, except DHT (C4), JPG (C8) and DAC (CC).
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) return { height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7) };
+    i += 2 + len;
+  }
+  return null;
+}
+
 export interface SampledFrame {
   t: number;
   jpeg: Buffer;

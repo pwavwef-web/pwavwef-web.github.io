@@ -60,6 +60,15 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
   for (const [i, x] of prepared.entries()) {
     const jobRef = col.jobs().doc();
     jobIds.push(jobRef.id);
+    // A newer cover request wins even if an older generation finishes afterwards.
+    let target = x.target;
+    if (x.projectId && x.type === 'image.generate' && x.params.purpose === 'thumbnail' && target?.kind === 'project') {
+      target = { ...target, sub: jobRef.id };
+      writes.update(col.projects().doc(x.projectId), { coverJobId: jobRef.id });
+    }
+    if (x.projectId && x.params.bibleCoverSignature) {
+      writes.update(col.projects().doc(x.projectId), { coverBible: { signature: x.params.bibleCoverSignature, jobId: jobRef.id } });
+    }
     const job: Omit<JobDoc, 'id'> & { request: JobRequest } = {
       ownerUid: uid,
       projectId: x.projectId,
@@ -71,7 +80,7 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
       params: x.params,
       estimate: x.estimate,
       batchId,
-      target: x.target,
+      target,
       label: x.label,
       attempt: 0,
       retryOf: null,
@@ -133,7 +142,7 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
 }
 
 export interface InternalJobInput {
-  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect' | 'music.analyze' | 'ad.validate'>;
+  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect' | 'music.analyze' | 'ad.validate' | 'video.lipsync'>;
   projectId: string;
   modelId: string | null;
   label: string;
@@ -146,6 +155,9 @@ export interface InternalJobInput {
 
 /** Jobs the production loop runs on its own (inspection, repair edits); they are not user-submittable. */
 export async function createInternalJob(uid: string, input: InternalJobInput): Promise<string> {
+  if (input.type === 'video.lipsync' && (await col.projects().doc(input.projectId).get()).get('type') === 'film_lite') {
+    throw new HttpsError('failed-precondition', 'Film Studio Lite does not use lip sync.');
+  }
   const settings = await getSettings(uid);
   if (input.estimate.usd > 0) {
     assertWithinLimits(settings, await spendSnapshot(uid), input.estimate.usd);

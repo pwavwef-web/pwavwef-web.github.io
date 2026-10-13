@@ -104,6 +104,9 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   'audio.stems': 'Stem separation',
   'narration.transcribe': 'Narration transcript',
   'ad.validate': 'Scene validation',
+  'video.lipsync': 'Lip sync',
+  'lite.narration': 'Narration',
+  'audio.ambience': 'Ambience',
 };
 
 /** The nine states AZ Studio shows for background work (derived from the durable job status). */

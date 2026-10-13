@@ -1,7 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { logger } from 'firebase-functions';
 import { isTerminal, type JobDoc } from '@az-studio/shared';
-import { PROJECT_ID, REGION, RENDER_JOB_NAME } from '../config/runtime';
+import { IS_EMULATOR, PROJECT_ID, REGION, RENDER_JOB_NAME } from '../config/runtime';
 import { col, FieldValue } from '../lib/firebase';
 import { JobFailure } from '../lib/errors';
 import { enqueueJob, failJob, getJob, progress, transition } from '../lib/jobs';
@@ -29,10 +29,45 @@ export async function cancelExecution(executionName: string): Promise<void> {
   await runApi(`${RUN_API}/${executionName}:cancel`, 'POST', {});
 }
 
+/**
+ * Emulator only: runs the same renderer program (services/renderer) on this machine against the emulators,
+ * so local verification produces a real MP4 without a Cloud Run job. Never used in production.
+ */
+async function startLocalRender(job: JobDoc, renderId: string): Promise<void> {
+  const { spawn } = await import('node:child_process');
+  const path = await import('node:path');
+  const { FFMPEG, FFPROBE } = await import('../lib/media');
+  const main = path.resolve(process.cwd(), '../services/renderer/dist/main.js');
+  await transition(job.id, 'rendering', { stage: 'Rendering locally (emulator)', progress: 0.04, external: { renderId }, lease: null });
+  const child = spawn(process.execPath, [main], {
+    cwd: path.dirname(main),
+    env: {
+      ...process.env,
+      RENDER_ID: renderId,
+      JOB_ID: job.id,
+      AZS_FIRESTORE_DATABASE: process.env.AZS_FIRESTORE_DATABASE ?? 'az-studio',
+      AZS_MEDIA_BUCKET: process.env.AZS_MEDIA_BUCKET ?? 'az-studio-media-az-learner',
+      FFMPEG_BIN: FFMPEG,
+      FFPROBE_BIN: FFPROBE,
+      WORK_DIR: path.join((await import('node:os')).tmpdir(), `azs-render-${renderId}`),
+      STORAGE_EMULATOR_HOST: process.env.STORAGE_EMULATOR_HOST ?? `http://${process.env.FIREBASE_STORAGE_EMULATOR_HOST ?? '127.0.0.1:9199'}`,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let tail = '';
+  child.stderr.on('data', (d: Buffer) => (tail = (tail + d.toString()).slice(-2000)));
+  child.on('close', (code) => {
+    logger.info('local render finished', { jobId: job.id, code, tail: code ? tail : '' });
+    // The renderer completes the job itself; this runs the after-render steps (as the Cloud Run watchdog does).
+    void enqueueJob(job.id, 'poll', { delaySec: 1, seq: 1000 }).catch(() => undefined);
+  });
+}
+
 /** Launches the FFmpeg renderer as a Cloud Run job execution for this render. */
 export async function startRenderJob(job: JobDoc): Promise<void> {
   const p = job.params as { renderId: string; durationSec: number; quality: string };
   if (!(await transition(job.id, 'rendering', { stage: 'Starting the renderer', progress: 0.02, lease: { until: Date.now() + 5 * 60_000 } }))) return;
+  if (IS_EMULATOR) return startLocalRender(job, p.renderId);
   const url = `${RUN_API}/projects/${PROJECT_ID}/locations/${REGION}/jobs/${RENDER_JOB_NAME}:run`;
   const hours = Math.min(12, Math.max(1, Math.ceil((p.durationSec * (p.quality === 'final' ? 3 : 1.5)) / 3600) + 1));
   let op: { name?: string; metadata?: { name?: string } };

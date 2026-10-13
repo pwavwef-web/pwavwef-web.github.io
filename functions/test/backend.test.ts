@@ -310,6 +310,8 @@ describe('Lyria output', () => {
   it('recognises the exact Vertex AI rejection for a model the project cannot use', () => {
     // Verbatim error returned for lyria-3.5 on project az-learner (2026-09-24).
     expect(isModelUnavailable(new Error('400 Unsupported model interaction: lyria-3.5'))).toBe(true);
+    // Vertex AI's wording since October 2026.
+    expect(isModelUnavailable(new Error("400 Model 'lyria-3.5' is not supported by the Interactions API."))).toBe(true);
     expect(isModelUnavailable(new Error('Publisher Model projects/az-learner/locations/global/publishers/google/models/lyria-3.5 not found.'))).toBe(true);
     expect(isModelUnavailable(new Error('Quota exceeded for aiplatform.googleapis.com'))).toBe(false);
   });

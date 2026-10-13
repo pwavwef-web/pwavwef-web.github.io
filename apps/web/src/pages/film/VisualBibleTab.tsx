@@ -22,6 +22,7 @@ import { useDoc, type WithId } from '../../lib/data';
 import { approveBible, saveContinuity, useProjectDoc } from '../../lib/continuity';
 import { useSub } from '../../lib/studio';
 import { useJobSubmitter } from '../../components/jobs';
+import { ProjectCoverBible } from '../../components/project-cover-bible';
 import { AssetPicker, AssetThumb, ImageView, useAsset, VideoPlayer, type Asset } from '../../components/media';
 import { Badge, Button, Card, cx, Field, Input, Notice, ProgressBar, Select, Slider, Textarea } from '../../components/ui';
 import { LookbookTab } from './LookbookTab';
@@ -318,6 +319,7 @@ export function VisualBibleTab({ project }: { project: WithId<ProjectDoc> }) {
   const locked = Object.values(draft.entries).filter((e) => e?.level === 'locked' && e.value.trim()).length;
   return (
     <div className="space-y-6">
+      <ProjectCoverBible project={project} />
       <Card className="space-y-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <p className="eyebrow">Visual Bible</p>

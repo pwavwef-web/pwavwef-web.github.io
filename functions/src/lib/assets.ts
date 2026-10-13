@@ -186,7 +186,10 @@ export async function applyTarget(projectId: string | null, target: JobTarget | 
     case 'project':
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(p);
-        if (snap.exists && !snap.get('coverAssetId')) tx.update(p, { coverAssetId: assetId });
+        if (!snap.exists) return;
+        if (purpose === 'thumbnail') {
+          if (!target.sub || snap.get('coverJobId') === target.sub) tx.update(p, { coverAssetId: assetId, updatedAt: FieldValue.serverTimestamp() });
+        } else if (!snap.get('coverAssetId')) tx.update(p, { coverAssetId: assetId, updatedAt: FieldValue.serverTimestamp() });
       });
       break;
     default:

@@ -85,10 +85,11 @@ export async function usageFor(job: JobDoc, r: ReasoningResult, kind: 'text' | '
 }
 
 export async function runTextJob(job: JobDoc): Promise<void> {
-  const { task, input } = job.params as { task: TextTask; input: Record<string, unknown> };
+  const { task, input, images } = job.params as { task: TextTask; input: Record<string, unknown>; images?: { storagePath: string; mimeType: string }[] };
   const spec = TEXT_TASK_SPECS[task];
   if (!(await transition(job.id, 'generating', { stage: `${MODEL_REGISTRY.reasoning.displayName} is writing`, progress: 0.2, lease: { until: Date.now() + 9 * 60_000 } }))) return;
-  const r = await callReasoning([{ text: spec.prompt(input) }], { systemInstruction: spec.system, responseJsonSchema: spec.schema }, spec.thinking);
+  const parts: Part[] = [...(images ?? []).map((m) => ({ fileData: { fileUri: gsUri(m.storagePath), mimeType: m.mimeType } })), { text: spec.prompt(input) }];
+  const r = await callReasoning(parts, { systemInstruction: spec.system, responseJsonSchema: spec.schema }, spec.thinking);
   const runId = await saveRun(job, task, r.modelId, r.json, r.text);
   const cost = await usageFor(job, r, 'text');
   await logInteraction({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: r.modelId, api: 'generateContent', request: { task, inputChars: JSON.stringify(input).length }, response: { finishReason: r.res.candidates?.[0]?.finishReason ?? null, usage: r.res.usageMetadata ?? null, usedFallback: r.usedFallback, costUsd: cost }, latencyMs: r.latencyMs });

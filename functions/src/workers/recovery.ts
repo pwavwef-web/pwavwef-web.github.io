@@ -48,6 +48,8 @@ export function whatOf(type: JobDoc['type']): string {
       return 'music';
     case 'speech.generate':
       return 'dialogue audio';
+    case 'lite.narration':
+      return 'narration';
     case 'lyrics.transcribe':
     case 'lyrics.align':
     case 'narration.transcribe':

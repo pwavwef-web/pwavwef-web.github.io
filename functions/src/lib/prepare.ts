@@ -54,6 +54,7 @@ import { TEXT_TASK_SPECS } from '../workers/text-tasks';
 import { applyContinuityToRequest, loadShotContinuity, planContinuity } from './continuity';
 import { musicSurface } from './music-model';
 import { renderInputs } from './render-inputs';
+import { loadBibleCover } from './bible-cover';
 import {
   prepareAnalyzeSubjects,
   prepareColorMatch,
@@ -68,10 +69,13 @@ import {
   prepareScreenReplace,
   prepareStems,
 } from './prepare-studio';
+import { prepareAmbience, prepareLiteNarration } from './prepare-lite';
 
 export interface PrepareOptions {
   /** The request already carries its continuity direction (productions compile it once at start). */
   skipContinuity?: boolean;
+  /** Scores planned in this request but not saved yet (a cost estimate runs before the first save), by id. */
+  scores?: Record<string, ScoreDoc>;
 }
 
 export interface PreparedMedia {
@@ -329,6 +333,13 @@ async function prepareVideo(uid: string, reqIn: VideoJobRequest, opts: PrepareOp
 // ---------------------------------------------------------------------------
 
 async function prepareImage(uid: string, req: ImageJobRequest): Promise<PreparedJob> {
+  let bibleCoverSignature: string | undefined;
+  if (req.bibleCover) {
+    if (!req.projectId) bad('Project covers need a project.');
+    const bible = await loadBibleCover(uid, req.projectId!);
+    req = bible.request;
+    bibleCoverSignature = bible.signature;
+  }
   const cap = IMAGE_CAPABILITIES;
   if (!cap.aspectRatios.includes(req.aspectRatio)) bad(`${cap.displayName} supports aspect ratios ${cap.aspectRatios.join(', ')}.`);
   if (!cap.imageSizes.includes(req.imageSize)) bad(`${cap.displayName} supports sizes ${cap.imageSizes.join(', ')}.`);
@@ -373,9 +384,10 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
     chain = { chainId, turnId: col.chains().doc().id, isNew: true, kind: 'image', title: req.title ?? req.prompt.slice(0, 80), parentTurnId: null, prompt: req.prompt, mode: sourceAssetId ? 'edit' : 'generate' };
     target = { kind: 'chain', id: chainId, sub: chain.turnId };
   }
+  const labels = new Map(req.referenceAssetIds.map((id, i) => [id, req.referenceLabels?.[i] ?? null]));
   const ref = (id: string) => {
     const a = assets.get(id)!;
-    return { assetId: id, storagePath: a.storagePath, mimeType: normMime(a.mimeType), title: a.title };
+    return { assetId: id, storagePath: a.storagePath, mimeType: normMime(a.mimeType), title: labels.get(id) || a.title };
   };
   return {
     type: 'image.generate',
@@ -395,7 +407,9 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
       collections: req.collections,
       characterIds: req.characterIds,
       title: req.title ?? null,
+      ...(bibleCoverSignature ? { bibleCoverSignature } : {}),
       ...(req.adScene ? { adScene: true } : {}),
+      ...(req.inputHash ? { inputHash: req.inputHash } : {}),
     },
     estimate,
     target,
@@ -416,13 +430,17 @@ async function prepareText(uid: string, req: TextJobRequest): Promise<PreparedJo
   const problem = spec.validate?.(req.input);
   if (problem) bad(problem);
   const modelId = MODEL_REGISTRY.reasoning.id;
-  const estimate = estimateText({ modelId, inputChars: inputChars + spec.system.length, expectedOutputTokens: spec.expectedOutputTokens }, PRICING);
+  const images = await loadAssets(uid, req.imageAssetIds ?? []);
+  for (const a of images.values()) if (a.kind !== 'image') bad(`“${a.title}” is not an image.`);
+  // Each image is read as about 1,120 input tokens (published image input rate for the reasoning model).
+  const estimate = estimateText({ modelId, inputChars: inputChars + spec.system.length + images.size * 4480, expectedOutputTokens: spec.expectedOutputTokens }, PRICING);
+  if (images.size) estimate.notes.push(`Includes ${images.size} image${images.size === 1 ? '' : 's'} read by the model.`);
   return {
     type: 'text.assist',
     projectId: req.projectId ?? null,
     modelId,
     label: req.label ?? spec.label,
-    params: { task: req.task, input: req.input },
+    params: { task: req.task, input: req.input, images: [...images.values()].map((a) => ({ assetId: a.id, storagePath: a.storagePath, mimeType: normMime(a.mimeType) })) },
     estimate,
     target: req.target ?? null,
   };
@@ -557,7 +575,7 @@ async function prepareSpeech(uid: string, req: SpeechJobRequest): Promise<Prepar
 // Music (Lyria)
 // ---------------------------------------------------------------------------
 
-async function prepareMusic(uid: string, req: MusicJobRequest): Promise<PreparedJob> {
+async function prepareMusic(uid: string, req: MusicJobRequest, opts: PrepareOptions = {}): Promise<PreparedJob> {
   const project = await loadProject(uid, req.projectId);
   if (req.instrumental && req.lyrics?.trim()) bad('Instrumental music cannot have lyrics. Turn off “instrumental” or remove the lyrics.');
   const images = await loadAssets(uid, req.imageAssetIds);
@@ -596,10 +614,13 @@ async function prepareMusic(uid: string, req: MusicJobRequest): Promise<Prepared
     }
   } else {
     if (!req.scoreId || !req.movementId) bad('A score movement needs its score and movement.');
-    if (project?.type !== 'film') bad('Film scores belong to film projects. Music videos keep their song as the master audio.');
-    const snap = await col.scores(req.projectId).doc(req.scoreId!).get();
-    if (!snap.exists) bad('Score not found.');
-    const score = { id: snap.id, ...snap.data() } as ScoreDoc;
+    if (project?.type !== 'film' && project?.type !== 'film_lite') bad('Film scores belong to film projects. Music videos keep their song as the master audio.');
+    let score = opts.scores?.[req.scoreId!] ?? null;
+    if (!score) {
+      const snap = await col.scores(req.projectId).doc(req.scoreId!).get();
+      if (!snap.exists) bad('Score not found.');
+      score = { id: snap.id, ...snap.data() } as ScoreDoc;
+    }
     if (score.mode === 'none') bad('This film is set to “No score”. Choose minimal or cinematic score first.');
     const movement = score.movements.find((m) => m.id === req.movementId);
     if (!movement) bad('Movement not found.');
@@ -708,8 +729,20 @@ async function prepareLyricsAlign(uid: string, req: LyricsAlignJobRequest): Prom
   };
 }
 
+/** Film Studio Lite never sends a request to a video-generation or lip-sync model (conversion to Film Studio is a separate, explicit action). */
+async function assertNotLite(projectId: string | null | undefined, what: string): Promise<void> {
+  if (!projectId) return;
+  const type = (await col.projects().doc(projectId).get()).get('type');
+  if (type === 'film_lite') throw new HttpsError('failed-precondition', `Film Studio Lite makes motion from still images and does not use ${what}. Convert the film to Film Studio first if you want generated video.`);
+}
+
 export async function prepareJob(uid: string, req: JobRequest, opts: PrepareOptions = {}): Promise<PreparedJob> {
+  if (req.type === 'video.generate') await assertNotLite(req.projectId, 'video generation');
   switch (req.type) {
+    case 'lite.narration':
+      return prepareLiteNarration(uid, req);
+    case 'audio.ambience':
+      return prepareAmbience(uid, req);
     case 'video.generate':
       return prepareVideo(uid, req, opts);
     case 'image.generate':
@@ -723,7 +756,7 @@ export async function prepareJob(uid: string, req: JobRequest, opts: PrepareOpti
     case 'speech.generate':
       return prepareSpeech(uid, req);
     case 'music.generate':
-      return prepareMusic(uid, req);
+      return prepareMusic(uid, req, opts);
     case 'lyrics.transcribe':
       return prepareLyricsTranscribe(uid, req);
     case 'lyrics.align':

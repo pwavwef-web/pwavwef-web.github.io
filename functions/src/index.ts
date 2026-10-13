@@ -11,10 +11,13 @@ import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
 import { ZodError } from 'zod';
 import { apiRequestSchema, type ApiRequest } from '@az-studio/shared';
-import { ALLOWED_ORIGINS, IS_EMULATOR, MEDIA_BUCKET, OWNER_EMAIL, OWNER_UID, REGION, RUNTIME_SERVICE_ACCOUNT, RUNTIME_SERVICE_ACCOUNT_EMAIL } from './config/runtime';
+import { ALLOWED_ORIGINS, FIRESTORE_DATABASE, IS_EMULATOR, MEDIA_BUCKET, OWNER_EMAIL, OWNER_UID, REGION, RUNTIME_SERVICE_ACCOUNT, RUNTIME_SERVICE_ACCOUNT_EMAIL } from './config/runtime';
+import type { CharacterDoc } from '@az-studio/shared';
+import { handleBibleCoverChange } from './triggers/bible-cover';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
 import * as continuity from './api/continuity';
@@ -22,12 +25,17 @@ import * as production from './api/production';
 import * as studio from './api/studio';
 import * as takes from './api/takes';
 import * as ads from './api/ads';
+import * as lite from './api/lite';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
 import { runMaintenance } from './scheduled/maintenance';
 
 setGlobalOptions({ region: REGION, serviceAccount: RUNTIME_SERVICE_ACCOUNT, maxInstances: 10 });
+
+export const azsOnBibleCharacter = onDocumentWritten({document: 'projects/{projectId}/characters/{characterId}', database: FIRESTORE_DATABASE, retry: true}, async event => {
+  await handleBibleCoverChange(event.params.projectId, event.data?.before.data() as CharacterDoc | undefined, event.data?.after.data() as CharacterDoc | undefined);
+});
 
 async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>): Promise<unknown> {
   switch (req.action) {
@@ -109,6 +117,10 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return ads.adValidateScene(owner, req.payload);
     case 'adCancel':
       return ads.adCancel(owner, req.payload);
+    case 'liteGenerate':
+      return lite.liteGenerate(owner, req.payload);
+    case 'liteCancel':
+      return lite.liteCancel(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;

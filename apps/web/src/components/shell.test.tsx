@@ -23,6 +23,8 @@ function renderAt(path: string) {
           { index: true, element: <p>Home page</p> },
           { path: 'create', element: <p>Create page</p> },
           { path: 'ads', element: <p>Short Ads workspace</p> },
+          { path: 'lite', element: <p>Film Studio Lite workspace</p> },
+          { path: 'lite/:projectId/:stage?', element: <p>Film editor</p> },
           { path: 'ads/:projectId/:step?', element: <p>Advert editor</p> },
           { path: '*', element: <p>Other page</p> },
         ],
@@ -41,9 +43,9 @@ function renderAt(path: string) {
 afterEach(cleanup);
 
 describe('Short Ads tab', () => {
-  it('is the seventh item of the primary navigation, between Create and Assets', () => {
-    expect(NAV).toHaveLength(7);
-    expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Short Ads', 'Assets', 'Jobs', 'Settings']);
+  it('follows Film Lite in the primary navigation, between Create and Assets', () => {
+    expect(NAV).toHaveLength(8);
+    expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Film Lite', 'Short Ads', 'Assets', 'Jobs', 'Settings']);
     expect(NAV.find((n) => n.label === 'Short Ads')?.to).toBe('/ads');
   });
 
@@ -53,9 +55,9 @@ describe('Short Ads tab', () => {
     expect(navs).toHaveLength(2);
     for (const nav of navs) {
       const links = within(nav).getAllByRole('link');
-      expect(links).toHaveLength(7);
-      expect(links[3]!.textContent).toBe('Short Ads');
-      expect(links[3]!.getAttribute('href')).toBe('/ads');
+      expect(links).toHaveLength(8);
+      expect(links[4]!.textContent).toBe('Short Ads');
+      expect(links[4]!.getAttribute('href')).toBe('/ads');
     }
     fireEvent.click(within(navs[0]!).getByRole('link', { name: 'Short Ads' }));
     expect(router.state.location.pathname).toBe('/ads');
@@ -71,5 +73,22 @@ describe('Short Ads tab', () => {
     const nav = screen.getAllByRole('navigation', { name: 'Primary' })[0]!;
     expect(within(nav).getByRole('link', { name: 'Short Ads' }).getAttribute('aria-current')).toBe('page');
     expect(within(nav).getByRole('link', { name: 'Create' }).getAttribute('aria-current')).toBeNull();
+  });
+});
+
+describe('Film Studio Lite tab', () => {
+  it('sits after Create in both navigations and stays highlighted inside a film', () => {
+    const router = renderAt('/');
+    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) {
+      const link = within(nav).getByRole('link', { name: 'Film Lite' });
+      expect(link.getAttribute('href')).toBe('/lite');
+    }
+    fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Film Lite' }));
+    expect(router.state.location.pathname).toBe('/lite');
+    expect(screen.getByText('Film Studio Lite workspace')).toBeTruthy();
+    cleanup();
+    renderAt('/lite/p1/edit');
+    const nav = screen.getAllByRole('navigation', { name: 'Primary' })[0]!;
+    expect(within(nav).getByRole('link', { name: 'Film Lite' }).getAttribute('aria-current')).toBe('page');
   });
 });

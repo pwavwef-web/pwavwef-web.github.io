@@ -127,7 +127,18 @@ async function resolveMedia(r: RenderDocData): Promise<(assetId: string) => stri
   for (const [i, id] of ids.entries()) {
     const a = r.assets[id]!;
     const dest = path.join(dir, `${id}${path.extname(a.storagePath) || ''}`);
-    await bucket.file(a.storagePath).download({ destination: dest });
+    // A dropped connection is retried (bounded); a missing object fails at once.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await bucket.file(a.storagePath).download({ destination: dest });
+        break;
+      } catch (e) {
+        const missing = (e as { code?: number }).code === 404;
+        if (missing || attempt >= 4) throw e;
+        log('media download failed; retrying', { assetId: id, attempt, error: String((e as Error)?.message ?? e).slice(0, 200) });
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+      }
+    }
     local[id] = dest;
     await setState('downloading', `Fetching media ${i + 1}/${ids.length}`, 0.05 + (0.1 * (i + 1)) / ids.length);
   }

@@ -428,7 +428,7 @@ export default function TimelineEditor() {
   return (
     <div className="flex h-dvh flex-col bg-obsidian">
       <header className="flex flex-wrap items-center gap-2 border-b border-line bg-ink px-3 py-2">
-        <Link to={project.data?.type === 'music_video' ? `/projects/${projectId}/music/edit` : project.data?.type === 'film' ? `/projects/${projectId}/film/assembly` : project.data?.type === 'short_ad' ? `/ads/${projectId}/review` : `/projects/${projectId}`} aria-label="Back to project">
+        <Link to={project.data?.type === 'music_video' ? `/projects/${projectId}/music/edit` : project.data?.type === 'film' ? `/projects/${projectId}/film/assembly` : project.data?.type === 'short_ad' ? `/ads/${projectId}/review` : project.data?.type === 'film_lite' ? `/lite/${projectId}/edit` : `/projects/${projectId}`} aria-label="Back to project">
           <IconButton label="Back to project">
             <ArrowLeft className="size-4" />
           </IconButton>

@@ -5,6 +5,7 @@ import { characterBibleSchema, CONTINUITY_COLLECTIONS } from './continuity-schem
 import { COVERAGE_TYPES } from './coverage';
 import { MUSIC_MODES } from './music-studio';
 import { RETRY_POLICY_LIMITS } from './generation-errors';
+import { AMBIENCE_KINDS } from './lite';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -16,7 +17,7 @@ const id = z.string().min(1).max(128).regex(/^[\w-]+$/, 'Invalid id');
 const text = (max: number) => z.string().max(max);
 
 export const jobTargetSchema = z.object({
-  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection']),
+  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film']),
   id,
   sub: id.optional(),
 });
@@ -29,6 +30,8 @@ export const omniMediaRefSchema = z.object({
 
 export const imageJobSchema = z.object({
   type: z.literal('image.generate'),
+  /** Generate a project cover using the character likenesses from its Bible (resolved server-side). */
+  bibleCover: z.boolean().optional(),
   projectId: id.nullable().optional(),
   prompt: z.string().trim().min(1, 'Describe the image.').max(8000),
   purpose: z.enum(['free', 'character', 'turnaround', 'costume', 'location', 'poster', 'thumbnail', 'storyboard', 'product', 'style_match', 'lookbook']).default('free'),
@@ -48,6 +51,10 @@ export const imageJobSchema = z.object({
   target: jobTargetSchema.nullable().optional(),
   /** A Short Ads scene: the result is validated before composition. */
   adScene: z.boolean().optional(),
+  /** What each reference image is (in order), e.g. "Ama — likeness reference"; defaults to the asset titles. */
+  referenceLabels: z.array(text(160)).max(14).optional(),
+  /** Film Studio Lite: identifies the input so the same image is never requested twice. */
+  inputHash: text(40).optional(),
 });
 
 export const videoJobSchema = z.object({
@@ -95,6 +102,9 @@ export const TEXT_TASKS = [
   'music.brief_from_media',
   'ad.storyboard',
   'ad.script',
+  'lite.treatment',
+  'lite.scenes',
+  'lite.review',
 ] as const;
 export type TextTask = (typeof TEXT_TASKS)[number];
 
@@ -103,6 +113,8 @@ export const textJobSchema = z.object({
   projectId: id.nullable().optional(),
   task: z.enum(TEXT_TASKS),
   input: z.record(z.string(), z.unknown()),
+  /** Images the model looks at with the text (e.g. a continuity review of approved stills). */
+  imageAssetIds: z.array(id).max(16).optional(),
   label: text(160).optional(),
   target: jobTargetSchema.nullable().optional(),
 });
@@ -261,7 +273,42 @@ export const musicReplaceSectionJobSchema = z.object({
 
 export const stemsJobSchema = z.object({ type: z.literal('audio.stems'), projectId: id, audioAssetId: id, musicProjectId: id.nullable().optional(), versionId: id.nullable().optional(), label: text(160).optional() });
 
+/**
+ * Film Studio Lite narration: speak a scene (`tts`) and time its words from the real audio, or time an
+ * uploaded recording of one scene (`align_scene`) or of the whole narration (`align_whole`).
+ */
+export const liteNarrationJobSchema = z.object({
+  type: z.literal('lite.narration'),
+  projectId: id,
+  mode: z.enum(['tts', 'align_scene', 'align_whole']),
+  sceneId: id.nullable().optional(),
+  /** The scene's text as written (subtitle spelling). */
+  text: z.string().max(20000).default(''),
+  /** The text the voice speaks (pronunciation respellings applied). */
+  spokenText: z.string().max(20000).default(''),
+  voice: text(40).nullable().optional(),
+  direction: text(600).default(''),
+  audioAssetId: id.nullable().optional(),
+  scenes: z.array(z.object({ sceneId: id, text: z.string().max(20000) })).max(200).default([]),
+  languageCode: languageCode.nullable().optional(),
+  vocabulary: z.array(text(80)).max(100).default([]),
+  inputHash: text(40),
+  label: text(160).optional(),
+});
+
+/** A seamless, deterministic ambience bed synthesised with FFmpeg (no model call). */
+export const ambienceJobSchema = z.object({
+  type: z.literal('audio.ambience'),
+  projectId: id,
+  kind: z.enum(AMBIENCE_KINDS),
+  durationSec: z.number().min(10).max(300).default(90),
+  seed: z.number().int().min(1).max(1_000_000).default(7),
+  label: text(160).optional(),
+});
+
 export const jobRequestSchema = z.discriminatedUnion('type', [
+  liteNarrationJobSchema,
+  ambienceJobSchema,
   imageJobSchema,
   videoJobSchema,
   textJobSchema,
@@ -308,6 +355,8 @@ export type MusicArrangeJobRequest = z.infer<typeof musicArrangeJobSchema>;
 export type MusicMixJobRequest = z.infer<typeof musicMixJobSchema>;
 export type MusicReplaceSectionJobRequest = z.infer<typeof musicReplaceSectionJobSchema>;
 export type StemsJobRequest = z.infer<typeof stemsJobSchema>;
+export type LiteNarrationJobRequest = z.infer<typeof liteNarrationJobSchema>;
+export type AmbienceJobRequest = z.infer<typeof ambienceJobSchema>;
 
 export const qualitySettingsSchema = z.object({
   autoQualityReview: z.boolean(),
@@ -435,6 +484,25 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('adValidateScene'), payload: z.object({ projectId: id, sceneId: id }) }),
   /** Short Ads: stop every queued or running generation of the advert. */
   z.object({ action: z.literal('adCancel'), payload: z.object({ projectId: id }) }),
+  /**
+   * Film Studio Lite: estimate or start the paid work that is still needed (images, narration, score) or the
+   * free ambience beds. Completed results with the same input and work already running are never requested again.
+   */
+  z.object({
+    action: z.literal('liteGenerate'),
+    payload: z.object({
+      projectId: id,
+      kind: z.enum(['images', 'narration', 'music', 'ambience']),
+      /** Shots (images), scenes (narration) or movements (music) to do; omitted = everything still needed. */
+      targetIds: z.array(text(80)).max(200).optional(),
+      /** Request again even when a result for the same input exists (explicit regeneration of the targets). */
+      force: z.boolean().default(false),
+      estimateOnly: z.boolean().default(false),
+      confirmedUsd: z.number().min(0).nullable().optional(),
+    }),
+  }),
+  /** Film Studio Lite: stop queued and running generation for the film (renders keep running). */
+  z.object({ action: z.literal('liteCancel'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({

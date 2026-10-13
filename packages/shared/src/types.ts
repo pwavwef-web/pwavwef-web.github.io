@@ -7,6 +7,8 @@ import type { QualitySettings } from './quality';
 import type { ScoreMode } from './score';
 import { DEFAULT_RETRY_POLICY, type ErrorCategory, type GenerationAttempt, type PromptRevision, type RetryCounters, type RetryPolicy, type UserRemedy } from './generation-errors';
 import type { AdSceneSpec, AdSceneValidation, AdSpec, TranscriptReport } from './ads';
+import type { ClipLook, ClipMotion } from './motion';
+import type { LiteSpec } from './lite';
 
 /**
  * AZ Studio domain model. These shapes are shared by the web app, Cloud Functions and the renderer.
@@ -23,7 +25,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -34,6 +36,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   remix: 'Video Remix',
   music: 'Music Studio',
   short_ad: 'Short Ad',
+  film_lite: 'Film Studio Lite',
 };
 
 export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';
@@ -78,6 +81,10 @@ export interface ProjectDoc {
   /** `videoResolution` is the default Omni resolution for new shots in this project. */
   format: { aspectRatio: FrameAspect; fps: 24 | 25 | 30; videoResolution?: string };
   coverAssetId?: string | null;
+  /** The newest requested cover; late results from older jobs cannot replace it. */
+  coverJobId?: string | null;
+  /** Deduplicates automatic covers for the same Bible references and creative brief. */
+  coverBible?: { signature: string; jobId: string } | null;
   treatment?: Treatment;
   styleBible?: StyleBible;
   /** Autonomous quality control for generated scenes (defaults: DEFAULT_QUALITY_SETTINGS). */
@@ -96,6 +103,8 @@ export interface ProjectDoc {
   continuity?: { advanced: boolean } | null;
   /** Short Ads: the advert's brief, audio, assets, brand and workflow state (draft saved as it is edited). */
   ad?: AdSpec | null;
+  /** Film Studio Lite: the film's story, scenes, voice, sound and edit (draft saved as it is edited). */
+  lite?: LiteSpec | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
@@ -208,6 +217,9 @@ export const JOB_TYPES = [
   'audio.stems',
   'narration.transcribe',
   'ad.validate',
+  'video.lipsync',
+  'lite.narration',
+  'audio.ambience',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -252,7 +264,7 @@ export interface CostEstimate {
 }
 
 export interface JobTarget {
-  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection';
+  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film';
   id: string;
   /** Extra identifier, e.g. the take id created for a shot. */
   sub?: string;
@@ -734,6 +746,12 @@ export interface Clip {
   credits?: { sequenceId: string } | null;
   /** Picture placed in a box (screens, logos) instead of filling the frame. */
   layout?: ClipLayout | null;
+  /** Camera move over a still (start/end framing in source fractions); rendered sub-pixel smooth. */
+  motion?: ClipMotion | null;
+  /** Optional local image treatment (grain, vignette, haze, warmth). */
+  look?: ClipLook | null;
+  /** Marks deliberate stillness or black so final checks do not report it as a fault. */
+  intentional?: 'still' | 'black' | null;
 }
 
 export interface TimelineMarker {

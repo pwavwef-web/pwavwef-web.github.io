@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
-import { ArrowRight, Clapperboard, Film, HardDrive, Image as ImageIcon, Music2, Scissors, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, Clapperboard, Film, GalleryHorizontalEnd, HardDrive, Image as ImageIcon, Music2, Scissors, Sparkles, Star } from 'lucide-react';
 import { formatBytes, formatUsd, type AssetDoc, type JobDoc, type UsageAggregate } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useDoc, useQuery } from '../lib/data';
@@ -22,6 +22,7 @@ const QUICK = [
   { to: '/create/video', label: 'Quick Video', body: 'Text, image or reference to a finished clip', icon: Film },
   { to: '/create?mode=music_video', label: 'Music Video', body: 'Build a video around a finished song', icon: Music2 },
   { to: '/create?mode=film', label: 'Film', body: 'Idea → screenplay → shots → final cut', icon: Clapperboard },
+  { to: '/lite', label: 'Film Studio Lite', body: 'Cinematic stories from images, voice and sound', icon: GalleryHorizontalEnd },
   { to: '/create/image', label: 'Image Studio', body: 'Characters, locations, posters, frames', icon: ImageIcon },
   { to: '/create/remix', label: 'Video Remix', body: 'Edit an existing clip conversationally', icon: Scissors },
 ];
@@ -106,7 +107,7 @@ export default function Home() {
         <h1 className="display mt-3 max-w-3xl text-[44px] leading-[1.02] sm:text-6xl">
           {greeting()}. <span className="text-dim italic">What are we shooting?</span>
         </h1>
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {QUICK.map((q) => (
             <Link key={q.to} to={q.to} className="group glass rounded-2xl p-4 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[var(--shadow-glow)]">
               <q.icon className="size-5 text-accent-2" aria-hidden />

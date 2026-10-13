@@ -40,7 +40,7 @@ import { withTmpDir } from '../lib/assets';
 import { recordInspection } from '../lib/continuity';
 import { bucket, col, FieldValue, gsUri } from '../lib/firebase';
 import { fail } from '../lib/errors';
-import { flipJpeg, regionMean, rgbStats, sampleFrames, temporalMeasurements, toColourStats, type SampledFrame } from '../lib/frames';
+import { flipJpeg, jpegSize, regionMean, rgbStats, sampleFrames, temporalMeasurements, toColourStats, type SampledFrame } from '../lib/frames';
 import { logInteraction } from '../lib/interactions';
 import { probe } from '../lib/media';
 import { progress, transition } from '../lib/jobs';
@@ -342,7 +342,8 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
           const [shotStats, prevStats, prevFaces] = await Promise.all([
             rgbStats(local, { fps: 4, from: 0, to: Math.min(1.5, durationSec) }),
             rgbStats(prevLocal, { isImage: true }),
-            annotateFrames({ frames: [{ t: 0, jpeg: prevJpeg, width: 1280, height: 720 }], features: ['FACE_DETECTION'], usage }).catch(() => [] as AnnotatedFrame[]),
+            // Face boxes are normalised by the frame's real size (9:16 films included), so the skin sample lands on the face.
+            annotateFrames({ frames: [{ t: 0, jpeg: prevJpeg, ...(jpegSize(prevJpeg) ?? { width: 1280, height: 720 }) }], features: ['FACE_DETECTION'], usage }).catch(() => [] as AnnotatedFrame[]),
           ]);
           const firstWithFace = annotated.find((f) => f.t <= 1.6 && f.faces.some((x) => x.confidence >= 0.6)) ?? null;
           const shotSkin = await skinOf(firstWithFace ? frames.find((f) => f.t === firstWithFace.t) ?? null : null, firstWithFace);

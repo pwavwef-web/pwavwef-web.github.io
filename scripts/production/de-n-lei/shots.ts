@@ -1,0 +1,173 @@
+/**
+ * Shot plan for "De N Lei — Come Learn Kasem". One story, two native framings: every shot is generated
+ * separately for 16:9 (YouTube) and 9:16 (TikTok) from the same references and the same action.
+ * Times are seconds on the song's timeline; cuts sit on lyric entrances and vocal breaths (see 08-lyric-sheet.ts).
+ */
+export type Who = 'L' | 'A' | 'M'; // Learner (the artist), Alima (elder), Amina (child)
+export type Where = 'compound' | 'baobab' | 'lane';
+
+export interface ShotSpec {
+  n: number;
+  title: string;
+  section: string;
+  start: number;
+  end: number;
+  who: Who[];
+  where: Where;
+  /** Framing for each format. */
+  h: string;
+  v: string;
+  move: string;
+  lens: string;
+  light: string;
+  mood: string;
+  action: string;
+  perf: string;
+  /** Candidate for lip-sync with the lead vocal (the learner sings to camera). */
+  sing?: boolean;
+}
+
+export const SHOTS: ShotSpec[] = [
+  { n: 1, title: 'First light, first clap', section: 'Intro', start: 0, end: 6.8, who: ['M', 'A'], where: 'compound',
+    h: 'Low wide tracking shot at child height, then settling into a medium shot', v: 'Low tracking shot at child height, tall vertical composition, the painted wall filling the frame behind',
+    move: 'Fast low tracking move that eases to a stop', lens: '24mm lens', light: 'Low golden sunrise raking across the painted walls, dust glowing in the light',
+    mood: 'Joyful, energetic, a bright invitation to start', perf: 'Natural, playful, unselfconscious',
+    action: 'Amina runs across the swept courtyard laughing, clapping a steady rhythm over her head, bare feet kicking up golden dust. Behind her the painted compound wall rushes past. She skids to a stop beside Mama Alima, who is seated on the wooden bench and smiles down at her.' },
+  { n: 2, title: 'Arrival', section: 'Intro', start: 6.8, end: 14.2, who: ['L', 'A', 'M'], where: 'compound',
+    h: 'Wide-to-medium shot, eye level, the learner entering between two painted walls', v: 'Medium full shot, eye level, vertical composition, the learner entering through a gap between painted walls toward camera',
+    move: 'Gentle backwards steadicam move ahead of him', lens: '35mm lens', light: 'Warm golden hour sun from camera right, soft haze',
+    mood: 'Hopeful and a little shy', perf: 'A genuine, slightly nervous smile that grows warmer',
+    action: 'The learner walks into the courtyard holding a small notebook against his chest, glancing at the painted walls with curiosity. Amina points him out to Mama Alima; the elder looks up and her face lights up. The learner greets them with a small bow of the head and a warm smile.' },
+  { n: 3, title: 'Let us learn together', section: 'Intro', start: 14.2, end: 22.4, who: ['L', 'A', 'M'], where: 'compound',
+    h: 'Medium three-shot, eye level, slightly low', v: 'Vertical medium close three-shot stacked in depth: Amina in front, the learner and Mama Alima behind',
+    move: 'Slow gentle push-in', lens: '50mm lens', light: 'Warm side light, soft glow on faces, shallow depth of field',
+    mood: 'Warm, welcoming, curious', perf: 'Natural, attentive, affectionate',
+    action: 'The learner sits beside Mama Alima on the wooden bench while Amina sits on a stool facing them. Mama Alima says a word slowly with expressive lips; the learner leans in, listening hard, and smiles; Amina nods and giggles. A sense of shared beginning.' },
+  { n: 4, title: 'Hands that teach', section: 'Intro', start: 22.4, end: 28.3, who: ['A', 'L'], where: 'compound',
+    h: 'Extreme close-up detail shot of hands against a painted wall', v: 'Vertical extreme close-up of hands against a painted wall, shallow focus',
+    move: 'Slow slide along the wall', lens: '85mm macro-leaning lens', light: 'Warm backlit golden light, dust motes',
+    mood: 'Tender, reverent', perf: 'Slow, careful',
+    action: 'Mama Alima\'s weathered hand slowly traces a black-and-white diamond pattern on the painted wall; beside it a younger hand, the learner\'s, copies the same gesture. Their fingers almost touch. Golden light glows on the earthen surface.' },
+  { n: 5, title: 'Listening to the beat', section: 'Verse 1', start: 28.3, end: 37.9, who: ['L'], where: 'compound',
+    h: 'Medium close-up, eye level, facing camera, painted wall softly out of focus behind him', v: 'Vertical medium close-up, chest-up, facing camera, painted wall and warm bokeh behind him',
+    move: 'Very slow push-in', lens: '85mm lens, shallow depth of field', light: 'Golden hour key light from the left, soft rim light, glowing dust',
+    mood: 'Warm, sincere, gently joyful', perf: 'Quietly attentive and moved: lips closed in a warm smile, nodding slowly in time with the music, bright eyes. He does not speak or sing',
+    action: 'The learner stands in the courtyard listening intently to an elder off-screen, nodding gently in time with a steady mid-tempo beat. He glances off to the side, then turns to the camera and breaks into a warm closed-lip smile. His face stays fully visible and well lit throughout.' },
+  { n: 6, title: 'Words from our grandparents', section: 'Verse 1', start: 37.9, end: 46.5, who: ['A', 'L', 'M'], where: 'compound',
+    h: 'Medium wide shot, slight low angle, under the shade tree', v: 'Vertical medium shot looking up through the shade tree, Mama Alima in the middle, children at her feet',
+    move: 'Slow drift to the right', lens: '35mm lens', light: 'Dappled shade with golden light breaking through the leaves',
+    mood: 'Reverent, storytelling', perf: 'Absorbed, expressive',
+    action: 'Under the big shade tree Mama Alima tells a story with graceful, expressive hands to a half-circle of children seated on mats, Amina among them, their faces tilted up. At the edge the learner kneels with his notebook on his knee, listening closely and nodding.' },
+  { n: 7, title: 'We hold them close', section: 'Verse 1', start: 46.5, end: 56.4, who: ['A', 'M', 'L'], where: 'compound',
+    h: 'Intimate medium two-shot, then reveal of the learner in the foreground', v: 'Vertical intimate close two-shot of Amina and Mama Alima, the learner soft in the background',
+    move: 'Slow push-in', lens: '50mm lens', light: 'Golden rim light, warm and soft',
+    mood: 'Tender, loving, grateful', perf: 'Quiet affection',
+    action: 'Amina leans against Mama Alima\'s shoulder while the elder holds the child\'s small hands and says a word they both repeat softly. Behind them the learner writes the word in his notebook, then looks up with a grateful smile.' },
+  { n: 8, title: 'Clap the beat', section: 'Chorus 1', start: 56.4, end: 64.65, who: ['L', 'M'], where: 'compound',
+    h: 'Medium shot, backwards tracking ahead of him, eye level', v: 'Vertical medium shot, backwards tracking, the learner centred, children bouncing behind him',
+    move: 'Smooth backwards steadicam', lens: '35mm lens', light: 'Bright golden hour, strong rim light, glowing dust',
+    mood: 'Joyful, energetic, uplifting', perf: 'Open joy: he claps the beat and laughs, a light rhythmic bounce in his step. He does not sing or speak',
+    action: 'The learner walks toward the camera across the sunny courtyard clapping a steady beat over his head and laughing with joy, a light bounce in his step. Behind him a line of children, including Amina, follow clapping the same beat and laughing. His face stays clear and well lit.' },
+  { n: 9, title: 'Say it right', section: 'Chorus 1', start: 64.65, end: 71.75, who: ['L', 'M', 'A'], where: 'compound',
+    h: 'Medium two-shot at child height, eye level', v: 'Vertical medium close two-shot at child height, faces close together',
+    move: 'Gentle handheld sway', lens: '50mm lens', light: 'Warm golden light, soft shadows',
+    mood: 'Playful, encouraging', perf: 'Eager, warm, laughing',
+    action: 'The learner crouches to Amina\'s level; they say a word together, face to face, then clap their hands together in rhythm and burst out laughing. In the background Mama Alima nods approvingly and claps along.' },
+  { n: 10, title: 'My words, my language', section: 'Chorus 1', start: 71.75, end: 80.5, who: ['L', 'M', 'A'], where: 'compound',
+    h: 'Wide shot, slightly low, the whole courtyard alive', v: 'Tall wide shot, slightly low, the courtyard and painted walls rising behind the dancers',
+    move: 'Slow rise on a crane', lens: '28mm lens', light: 'Golden hour backlight, dust glowing',
+    mood: 'Celebratory, proud', perf: 'Open, expressive, delighted',
+    action: 'Neighbours of different ages step into the courtyard smiling and clapping. The learner spreads his arms and laughs with joy; Amina twirls in her yellow dress; Mama Alima claps from the bench. Dust glows in the low sun.' },
+  { n: 11, title: 'Down the lane', section: 'Break', start: 80.5, end: 84.8, who: ['L'], where: 'lane',
+    h: 'Wide shot, long lens compression down the lane', v: 'Vertical wide shot down the lane, the tree at the end framing the top',
+    move: 'Slow follow behind him', lens: '85mm lens, compressed perspective', light: 'Late afternoon gold, warm haze',
+    mood: 'Calm, curious, a breath between scenes', perf: 'Relaxed stroll',
+    action: 'The learner strolls down the dusty red lane with his notebook under his arm, past the painted walls, toward a trader\'s table under a patched umbrella in the distance.' },
+  { n: 12, title: 'I hear a word', section: 'Verse 2', start: 84.8, end: 93.0, who: ['L', 'A'], where: 'lane',
+    h: 'Medium shot, eye level, the trader\'s table in the foreground', v: 'Vertical medium shot, the learner in the foreground and the trader\'s table to the side',
+    move: 'Gentle push-in on his reaction', lens: '50mm lens', light: 'Warm late-afternoon light, soft haze',
+    mood: 'Curious, discovering', perf: 'Natural, expressive reaction',
+    action: 'At the trader\'s table a woman says a word with a laugh while weighing groundnuts. The learner stops mid-stride, tilts his head, then turns to Mama Alima, who sits in the shade of the umbrella, and asks her about it with a curious gesture. She answers him kindly with a smile.' },
+  { n: 13, title: 'Say it twice', section: 'Verse 2', start: 93.0, end: 99.0, who: ['L', 'A'], where: 'lane',
+    h: 'Medium close-up two-shot', v: 'Vertical medium close-up, the learner in front, Mama Alima beside him',
+    move: 'Slow push-in', lens: '70mm lens', light: 'Warm soft light, shallow depth of field',
+    mood: 'Focused, proud', perf: 'Concentrated, then relieved',
+    action: 'The learner says the word out loud, pauses, then says it again, counting two with his fingers. Mama Alima nods in approval and pats his arm; the trader behind them smiles.' },
+  { n: 14, title: 'Pass it on', section: 'Verse 2', start: 99.0, end: 105.6, who: ['L', 'M'], where: 'lane',
+    h: 'Medium shot, tracking sideways with them', v: 'Vertical medium shot, tracking, two figures walking toward camera',
+    move: 'Smooth side tracking', lens: '35mm lens', light: 'Golden light, long shadows',
+    mood: 'Light and happy', perf: 'Playful teaching',
+    action: 'Amina runs up and takes the learner\'s hand. He kneels and quietly teaches her the word; she repeats it proudly, and they laugh and skip down the lane together toward the courtyard.' },
+  { n: 15, title: 'The dance begins', section: 'Chorus 2', start: 105.6, end: 113.8, who: ['L', 'M', 'A'], where: 'compound',
+    h: 'Wide-medium shot, the circle of neighbours forming', v: 'Vertical wide-medium shot, dancers filling the frame in layers',
+    move: 'Orbiting move around the dancers', lens: '28mm lens', light: 'Rich golden hour light, strong backlight through dust',
+    mood: 'Energetic, communal', perf: 'Joyful, rhythmic',
+    action: 'Neighbours clap in a circle while the learner leads a simple stepping dance and Amina copies him, giggling. Mama Alima keeps the beat with her hands from the bench.' },
+  { n: 16, title: 'Trading words', section: 'Chorus 2', start: 113.8, end: 120.9, who: ['M', 'L', 'A'], where: 'compound',
+    h: 'Medium close two-shot at child height', v: 'Vertical close two-shot, faces and clapping hands',
+    move: 'Handheld sway', lens: '50mm lens', light: 'Warm sunlight, sparkle of dust',
+    mood: 'Playful, bright', perf: 'Quick, joyful',
+    action: 'Amina and the learner face each other trading words back and forth and clapping a rhythm between their hands, laughing harder each time. Behind them Mama Alima laughs and shakes her head fondly.' },
+  { n: 17, title: 'Lift', section: 'Chorus 2', start: 120.9, end: 129.7, who: ['L', 'M'], where: 'compound',
+    h: 'Wide shot, low angle, the sky glowing behind', v: 'Tall low-angle shot, the learner lifting Amina against a glowing sky',
+    move: 'Slow orbit', lens: '24mm lens', light: 'Sunset glow, deep orange, warm rim light',
+    mood: 'Triumphant, tender', perf: 'Big, unforced laughter',
+    action: 'The learner lifts Amina high and spins her around while villagers clap in a circle around them; her yellow dress flares; the sky behind them glows deep orange.' },
+  { n: 18, title: 'Lanterns at dusk', section: 'Break', start: 129.7, end: 134.1, who: ['M', 'A'], where: 'compound',
+    h: 'Medium wide shot in blue hour', v: 'Vertical medium shot in blue hour, lantern glow in the foreground',
+    move: 'Slow settling push-in', lens: '35mm lens', light: 'Blue hour dusk with warm lantern glow',
+    mood: 'Calm, hushed', perf: 'Sleepy, content',
+    action: 'Dusk falls. A lantern is lit on the bench; the crowd drifts away. Amina yawns and rests her head in Mama Alima\'s lap while the elder strokes her braids.' },
+  { n: 19, title: 'Lantern lesson', section: 'Bridge', start: 134.1, end: 143.2, who: ['L', 'M'], where: 'compound',
+    h: 'Intimate medium two-shot, lantern-lit', v: 'Vertical intimate close two-shot, lantern-lit faces',
+    move: 'Slow push-in', lens: '50mm lens', light: 'Warm lantern light, deep blue shadows, shallow depth of field',
+    mood: 'Intimate, quiet, reflective', perf: 'Soft, attentive',
+    action: 'The learner sits on the bench with Amina beside him, opens his notebook and shows her. She reads along with her finger, repeating a word under her breath; he listens with a proud smile.' },
+  { n: 20, title: 'One voice teaches another', section: 'Bridge', start: 143.2, end: 152.3, who: ['M', 'A', 'L'], where: 'compound',
+    h: 'Medium shot, lantern-lit, three generations in frame', v: 'Vertical medium shot with three generations stacked in depth, lantern-lit',
+    move: 'Slow arc around them', lens: '50mm lens', light: 'Lantern glow with a first hint of moonlight',
+    mood: 'Tender, hopeful', perf: 'Quiet pride',
+    action: 'Amina patiently teaches a word to a smaller child sitting on a mat, repeating it slowly. Mama Alima watches proudly from the bench and the learner beside her smiles with his hand on his heart.' },
+  { n: 21, title: 'New morning', section: 'Bridge', start: 152.3, end: 161.8, who: ['L', 'A', 'M'], where: 'baobab',
+    h: 'Wide establishing shot, golden sunrise through the baobab branches', v: 'Tall establishing shot, the baobab towering over the gathering ground in golden sunrise',
+    move: 'Slow rising crane move', lens: '24mm lens', light: 'Golden sunrise, long shadows, mist in the air',
+    mood: 'Hopeful, swelling', perf: 'Eager',
+    action: 'A new morning: sunrise light streams through the great baobab. Villagers of all ages walk in from every direction toward the open ground. The learner, Mama Alima and Amina arrive together, hand in hand, as the crowd gathers.' },
+  { n: 22, title: 'Everyone sings', section: 'Chorus 3', start: 161.8, end: 170.0, who: ['L', 'M'], where: 'baobab',
+    h: 'Wide-medium shot orbiting the learner at the centre of the dancing crowd', v: 'Vertical medium shot orbiting the learner, the crowd dancing around him',
+    move: 'Orbiting move', lens: '28mm lens', light: 'Brilliant golden light through the baobab, dust glowing',
+    mood: 'Exuberant, communal', perf: 'Uninhibited joy',
+    action: 'The whole community dances under the baobab. The learner is at the centre, singing and dancing with open arms; Amina dances beside him; people of every age clap and step in time.' },
+  { n: 23, title: 'Elder dances', section: 'Chorus 3', start: 170.0, end: 177.1, who: ['A', 'M', 'L'], where: 'baobab',
+    h: 'Medium shot, handheld, close to the dancers', v: 'Vertical medium shot, handheld, close to the dancers',
+    move: 'Energetic handheld', lens: '35mm lens', light: 'Golden backlight, dust and sparks of sun',
+    mood: 'Ecstatic, heartwarming', perf: 'Generous, big smiles',
+    action: 'Mama Alima rises and dances with surprising joy, arms swaying, as the crowd cheers. Amina sits on the learner\'s shoulders, laughing and clapping while children spin around them.' },
+  { n: 24, title: 'The circle from above', section: 'Chorus 3', start: 177.1, end: 183.0, who: ['L', 'A', 'M'], where: 'baobab',
+    h: 'High wide shot looking down on the dancing circle, baobab canopy above', v: 'Tall high shot looking down on the dancing circle with the baobab canopy',
+    move: 'Slow rising and rotating move', lens: '24mm lens', light: 'Golden hour, radiant, lens flare through the leaves',
+    mood: 'Epic and joyful', perf: 'Spirited',
+    action: 'The camera rises above the dancing circle under the baobab, revealing dozens of people in warm colours clapping and stepping in a spiral around the learner, Mama Alima and Amina at the centre.' },
+  { n: 25, title: 'Faces of joy', section: 'Chorus 3', start: 183.0, end: 188.2, who: ['M', 'L', 'A'], where: 'baobab',
+    h: 'Slow-motion close-ups of laughing faces and clapping hands', v: 'Vertical slow-motion close-ups of laughing faces and clapping hands',
+    move: 'Slow-motion drift', lens: '85mm lens', light: 'Golden backlight, glowing dust',
+    mood: 'Pure joy', perf: 'Real laughter',
+    action: 'In slow motion: Amina laughing with her head thrown back, the learner clapping with a huge smile, Mama Alima wiping a happy tear, hands clapping all around them, golden dust floating in the air.' },
+  { n: 26, title: 'Heart on hand', section: 'Chorus 3', start: 188.2, end: 192.3, who: ['L'], where: 'baobab',
+    h: 'Medium close-up, eye level, facing camera, baobab and the crowd softly out of focus behind', v: 'Vertical medium close-up, chest-up, facing camera, golden bokeh behind',
+    move: 'Slow push-in', lens: '85mm lens', light: 'Golden backlight with warm face fill',
+    mood: 'Sincere, glowing', perf: 'Deeply sincere and moved: hand on his chest, eyes glistening, then a big warm smile. He does not speak or sing',
+    action: 'The learner looks straight into the camera with his hand over his heart, moved, then breaks into a big warm smile. His face is clear and well lit.' },
+  { n: 27, title: 'Come and speak with me', section: 'Outro', start: 192.3, end: 202.0, who: ['L', 'A', 'M'], where: 'compound',
+    h: 'Medium shot, three generations on the bench, the learner on the left facing camera', v: 'Vertical medium shot, three generations on the bench, the learner in front facing camera',
+    move: 'Slow push-in', lens: '50mm lens', light: 'Soft golden hour, warm and calm',
+    mood: 'Warm, inviting, peaceful', perf: 'Warm and inviting: a gentle open-handed gesture toward the viewer and a soft smile with lips closed; Alima and Amina lean in smiling. Nobody speaks or sings',
+    action: 'In the calm after the dance, the learner sits on the bench with Mama Alima and Amina. He turns to the camera and warmly invites the viewer in with a gentle open-handed gesture and a soft smile; Alima and Amina smile and lean in toward him.' },
+  { n: 28, title: 'Home glow', section: 'Outro', start: 202.0, end: 211.56, who: ['L', 'A', 'M'], where: 'compound',
+    h: 'Wide shot from behind, the three walking toward the painted doorway, courtyard glowing', v: 'Tall wide shot from behind, the three walking toward the painted doorway, courtyard glowing',
+    move: 'Slow pull-back and rise', lens: '35mm lens', light: 'Last golden light fading toward warm amber',
+    mood: 'Peaceful, content, closing', perf: 'Relaxed',
+    action: 'The learner, Mama Alima and Amina walk together toward the painted doorway, the elder in the middle with her hand on the child\'s shoulder. Behind them the courtyard is still softly alive with villagers dancing in the golden light. The camera slowly pulls back and rises as the light warms and the scene settles.' },
+];
+
+export const genSeconds = (s: ShotSpec) => Math.min(10, Math.max(3, Math.ceil(s.end - s.start - 1e-6)));
