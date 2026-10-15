@@ -55,6 +55,16 @@ import { REGION } from './runtime';
  *  - transcription: `gemini-3.5-transcribe` (GA ID) still 404s for this project; the preview
  *               `gemini-3.5-transcribe-preview` remains the transcription model (word timestamps verified).
  *  - vision:    Cloud Vision API v1 (face, object and text detection) answered from `az-learner`.
+ *
+ * Re-verified 2026-10-15 for the Gemini 4 Argon upgrade (live calls from `az-learner`, `global`):
+ *  - reasoning: `gemini-4-argon` (Stable) answered JSON mode with thinking MEDIUM, a
+ *               `responseJsonSchema` request with thinking LOW, and a structured video review with
+ *               thinking HIGH (104 s). It replaces `gemini-3.8-flash` for creative reasoning, script
+ *               analysis and quality review; still no fallback model. Argon ignores temperature/top_p/
+ *               top_k and has no explicit context caching (AZ Studio sends neither). It counts about 3×
+ *               the video tokens of 3.8 Flash at the same fps (countTokens: 3,306 vs 1,050 for 3 s at 4 fps).
+ *  - Argon outputs text only, so the video (Omni), image (Nano Banana Pro), speech (TTS) and
+ *               word-timed transcription roles keep their dedicated models.
  */
 export const MODEL_REGISTRY = {
   video: {
@@ -76,14 +86,14 @@ export const MODEL_REGISTRY = {
     docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-pro-image',
   },
   reasoning: {
-    id: 'gemini-3.8-flash',
+    id: 'gemini-4-argon',
     /** No fallback: a failure is reported, never answered silently by an older model. */
     fallbackId: null,
-    displayName: 'Gemini 3.8 Flash',
+    displayName: 'Gemini 4 Argon',
     api: 'generateContent',
     location: 'global',
     launchStage: 'ga',
-    docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash',
+    docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/4-argon',
   },
   transcription: {
     id: 'gemini-3.5-transcribe-preview',

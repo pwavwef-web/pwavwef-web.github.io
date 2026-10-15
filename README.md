@@ -6,7 +6,7 @@ Private AI filmmaking portal for Indigen World music videos, promotional films, 
 | --- | --- |
 | Video generation & conversational editing (incl. quality repairs) | `gemini-omni-1.1-flash-preview` (Gemini Omni 1.1 Flash — Vertex AI ID of `gemini-omni-1.1-flash`) |
 | Images & image editing | `gemini-3-pro-image` (Nano Banana Pro) |
-| Screenplay, planning, song analysis, scene inspection, lyrics, cue sheets | `gemini-3.8-flash` (no silent fallback) |
+| Screenplay, planning, song analysis, scene inspection, lyrics, cue sheets | `gemini-4-argon` (Gemini 4 Argon, no silent fallback) |
 | Word-timed transcription (dialogue validation, lyric sync) | `gemini-3.5-transcribe-preview` |
 | Dialogue guide audio (measured before a scene is generated) | `gemini-2.5-pro-tts` |
 | Songs and film score | `lyria-3.5` — Vertex AI is checked first, then the Gemini Developer API with a server-side key; without either, music jobs report the exact limitation |

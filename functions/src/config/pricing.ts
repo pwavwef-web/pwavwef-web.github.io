@@ -3,26 +3,26 @@ import { MODEL_REGISTRY } from './models';
 
 /**
  * Published list prices (USD, standard pay-as-you-go, global endpoint).
- * Source: https://cloud.google.com/vertex-ai/generative-ai/pricing — retrieved 2026-09-21; Gemini 3.8 Flash, Cloud
- * Vision and the stem-separation job added 2026-09-24.
+ * Source: https://cloud.google.com/vertex-ai/generative-ai/pricing — retrieved 2026-09-21; Cloud Vision and the
+ * stem-separation job added 2026-09-24; Gemini 4 Argon (reasoning) added 2026-10-15.
  * Cloud Run jobs: https://cloud.google.com/run/pricing (Tier 1, instance-based) — retrieved 2026-09-21.
  *
  * These are *list* prices used for estimates. Actual charges appear in Cloud Billing and may differ
  * (free tiers, credits, discounts, taxes). `expectedThoughtTokens` values are AZ Studio estimates
  * based on observed usage and are labelled as such in the UI.
  */
-/** Gemini 3.8 Flash list rates: introductory until 2026-12-31, standard from 2027-01-01. */
+/** Gemini 4 Argon list rates: introductory until 2026-11-30, standard from 2026-12-01. */
 function reasoningRates(now = Date.now()) {
-  const intro = now < Date.UTC(2027, 0, 1);
+  const intro = now < Date.UTC(2026, 11, 1);
   return intro
-    ? { inputPerM: 0.75, outputPerM: 3.75, inputPerMLong: 0.75, outputPerMLong: 3.75, longContextThreshold: 1_000_000, audioTokensPerSecond: 32 }
-    : { inputPerM: 1.5, outputPerM: 7.5, inputPerMLong: 1.5, outputPerMLong: 7.5, longContextThreshold: 1_000_000, audioTokensPerSecond: 32 };
+    ? { inputPerM: 2, outputPerM: 10, inputPerMLong: 2, outputPerMLong: 10, longContextThreshold: 1_000_000, audioTokensPerSecond: 32 }
+    : { inputPerM: 4, outputPerM: 20, inputPerMLong: 4, outputPerMLong: 20, longContextThreshold: 1_000_000, audioTokensPerSecond: 32 };
 }
 
 export const PRICING: PricingTable = {
-  version: 'vertex-2026-09-24',
+  version: 'vertex-2026-10-15',
   source: 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  retrievedAt: '2026-09-24',
+  retrievedAt: '2026-10-15',
   currency: 'USD',
   video: {
     modelId: MODEL_REGISTRY.video.id,
@@ -49,8 +49,10 @@ export const PRICING: PricingTable = {
     // Observed 256 thought tokens on a 1K test; estimate.
     expectedThoughtTokens: 400,
   },
-  // "Gemini 3.8 Flash, Gemini 3.7 Flash … introductory pricing of $0.75 / $3.75 per 1M tokens input / output
-  // through December 31, 2026. Starting January 1, 2027, standard pricing of $1.5 / $7.5" (retrieved 2026-09-24).
+  // "Gemini 4 Argon* through November 30, 2026 — Input (text, image, video, audio) Global $2 … Text output (response
+  // and reasoning) Global $10"; "Gemini 4 Argon (Starting December 1, 2026) … Global $4 … $20" (retrieved 2026-10-15).
+  // The introductory rate is "provided through 50% credits back on net spend", so Cloud Billing shows the full rate
+  // with a credit. One tier across the 1M window. Audio tokens/s carried over from 3.8 Flash (not yet measured).
   text: {
     [MODEL_REGISTRY.reasoning.id]: reasoningRates(),
   },
@@ -61,9 +63,9 @@ export const PRICING: PricingTable = {
   transcription: { modelId: MODEL_REGISTRY.transcription.id, inputPerM: 2.0, outputPerM: 12.0, audioTokensPerSecond: 25 },
   // "Lyria 3.5 (Full Song) $0.08 per song" (Gemini API list price — the surface AZ Studio uses for Lyria 3.5).
   music: { modelId: MODEL_REGISTRY.music.id, perSongUsd: 0.08, source: 'https://ai.google.dev/gemini-api/docs/pricing' },
-  // Scene inspection watches video at 4 fps. Observed 2026-09-24 with gemini-3.8-flash: 792 video tokens for
-  // 3 s at 4 fps (≈66 per frame); 32 audio tokens/s. Estimates — actual tokens are recorded per call.
-  inspection: { videoTokensPerFrame: 70, audioTokensPerSecond: 32, framesPerSecond: 4, expectedOutputTokens: 9000 },
+  // Scene inspection watches video at 4 fps. countTokens 2026-10-15 with gemini-4-argon: 3,306 tokens for 3 s at
+  // 4 fps with audio (≈258 per frame; 3.8 Flash counted 1,050). Estimates — actual tokens are recorded per call.
+  inspection: { videoTokensPerFrame: 258, audioTokensPerSecond: 32, framesPerSecond: 4, expectedOutputTokens: 9000 },
   // "Face Detection / Object Localization / Text Detection: first 1000 units/month free, then $1.50 per 1000
   // units" (https://cloud.google.com/vision/pricing, retrieved 2026-09-24).
   vision: { perThousandUnits: 1.5, freeUnitsPerMonth: 1000, source: 'https://cloud.google.com/vision/pricing' },

@@ -179,8 +179,8 @@ describe('model registry', () => {
   it('uses the verified production model IDs', () => {
     expect(MODEL_REGISTRY.video.id).toBe('gemini-omni-1.1-flash-preview');
     expect(MODEL_REGISTRY.image.id).toBe('gemini-3-pro-image');
-    // Newest GA (production) Gemini model callable on Vertex AI for this project (verified 2026-09-24); no silent fallback.
-    expect(MODEL_REGISTRY.reasoning.id).toBe('gemini-3.8-flash');
+    // Gemini 4 Argon (Stable), verified live on Vertex AI for this project 2026-10-15; no silent fallback.
+    expect(MODEL_REGISTRY.reasoning.id).toBe('gemini-4-argon');
     expect(MODEL_REGISTRY.reasoning.fallbackId).toBeNull();
     expect(MODEL_REGISTRY.transcription.id).toBe('gemini-3.5-transcribe-preview');
     expect(MODEL_REGISTRY.speech.id).toBe('gemini-2.5-pro-tts');
