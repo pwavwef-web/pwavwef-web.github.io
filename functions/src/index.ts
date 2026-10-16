@@ -26,6 +26,7 @@ import * as studio from './api/studio';
 import * as takes from './api/takes';
 import * as ads from './api/ads';
 import * as lite from './api/lite';
+import * as mvlite from './api/mvlite';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
@@ -121,6 +122,10 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return lite.liteGenerate(owner, req.payload);
     case 'liteCancel':
       return lite.liteCancel(owner, req.payload);
+    case 'mvliteGenerate':
+      return mvlite.mvliteGenerate(owner, req.payload);
+    case 'mvliteCancel':
+      return mvlite.mvliteCancel(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;

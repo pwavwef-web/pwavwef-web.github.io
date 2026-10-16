@@ -168,7 +168,7 @@ export function planLiteWork(spec: LiteSpec, title: string, projectId: string, j
 }
 
 /** One request at a time per film and kind: a second click or tab cannot start the same paid work twice. */
-async function withLock<T>(projectId: string, kind: string, fn: () => Promise<T>): Promise<T> {
+export async function withLock<T>(projectId: string, kind: string, fn: () => Promise<T>): Promise<T> {
   const ref = col.projects().doc(projectId).collection('liteLocks').doc(kind);
   const got = await db.runTransaction(async (tx) => {
     const cur = await tx.get(ref);

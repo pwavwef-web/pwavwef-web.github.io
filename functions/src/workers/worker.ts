@@ -47,9 +47,9 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       return;
     }
   }
-  // Film Studio Lite never runs video generation or lip sync, whatever created the job.
-  if ((claimed.type === 'video.generate' || claimed.type === 'video.lipsync') && claimed.projectId && (await col.projects().doc(claimed.projectId).get()).get('type') === 'film_lite') {
-    await failJob(claimed, { code: 'not_in_lite', message: 'Film Studio Lite makes motion from still images and does not use video generation or lip sync.', retryable: false });
+  // Film Studio Lite and Music Video Lite never run video generation or lip sync, whatever created the job.
+  if ((claimed.type === 'video.generate' || claimed.type === 'video.lipsync') && claimed.projectId && ['film_lite', 'mv_lite'].includes(String((await col.projects().doc(claimed.projectId).get()).get('type')))) {
+    await failJob(claimed, { code: 'not_in_lite', message: 'Film Studio Lite and Music Video Lite make motion from still images and do not use video generation or lip sync.', retryable: false });
     if (usesSlot(claimed)) await releaseSlot(claimed.ownerUid, claimed.id);
     return;
   }

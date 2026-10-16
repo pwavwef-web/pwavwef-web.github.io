@@ -15,6 +15,8 @@ All model IDs live in one server-side registry: [`functions/src/config/models.ts
 
 **Film Studio Lite** (sidebar → Film Lite, `/lite`) makes narrated films of several minutes from still images with slow, sub-pixel camera movement, voice with word-timed subtitles, a coherent score and ambience — no video generation or lip sync: Story → Scenes → Voice & Sound → Edit → Export. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#film-studio-lite).
 
+**Music Video Lite** (sidebar → MV Lite, `/mvlite`) makes music videos from still images and your song: cuts land on the beat grid, sections follow the song’s structure and energy, and the lyrics — synchronised to the vocals — become captions; no video generation or lip sync: Song & lyrics → Concept → Shots → Edit → Export. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#music-video-lite).
+
 **Short Ads** (sidebar → Short Ads, `/ads`) produces 40–60 s promotional videos in 9:16, 16:9 or 1:1, built either around an approved narration or soundtrack (audio-first) or from a brief (brief-first): Brief → Audio & assets → Storyboard → Generate → Review → Export. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#short-ads).
 
 Every shot can be produced under **quality control**: plan (duration from measured dialogue) → generate → inspect (FFmpeg measurements + word-timed transcript + Gemini review of the actual video) → score → repair (least destructive first, at most 3 automatic attempts within a cost ceiling) → reinspect → approve. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#quality-controlled-production).

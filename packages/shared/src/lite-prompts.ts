@@ -31,7 +31,7 @@ export interface LiteImageRequest {
 }
 
 /** Composition guidance so the still survives slow movement and every planned format. */
-export function compositionForMotion(shot: LiteShot, spec: Pick<LiteSpec, 'setup'>): string {
+export function compositionForMotion(shot: Pick<LiteShot, 'motion'>, spec: { setup: Pick<LiteSpec['setup'], 'aspect' | 'extraAspects'> }): string {
   const m = shot.motion;
   const lines = [`Compose for a slow camera move (${MOTION_PRESET_LABELS[m.preset].toLowerCase()}): place the main subject in ${placement(m.focal.x, m.focal.y)} with generous space around it; keep everything essential away from the outer tenth of the frame.`];
   const formats = [spec.setup.aspect, ...spec.setup.extraAspects];

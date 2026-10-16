@@ -105,6 +105,8 @@ export const TEXT_TASKS = [
   'lite.treatment',
   'lite.scenes',
   'lite.review',
+  'mvlite.concept',
+  'mvlite.shots',
 ] as const;
 export type TextTask = (typeof TEXT_TASKS)[number];
 
@@ -503,6 +505,20 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Film Studio Lite: stop queued and running generation for the film (renders keep running). */
   z.object({ action: z.literal('liteCancel'), payload: z.object({ projectId: id }) }),
+  /** Music Video Lite: plan and price (or start) the images still needed; finished results for the same input are reused. */
+  z.object({
+    action: z.literal('mvliteGenerate'),
+    payload: z.object({
+      projectId: id,
+      kind: z.enum(['images']),
+      targetIds: z.array(text(80)).max(300).optional(),
+      force: z.boolean().default(false),
+      estimateOnly: z.boolean().default(false),
+      confirmedUsd: z.number().min(0).nullable().optional(),
+    }),
+  }),
+  /** Music Video Lite: stop queued and running generation for the video (renders keep running). */
+  z.object({ action: z.literal('mvliteCancel'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({

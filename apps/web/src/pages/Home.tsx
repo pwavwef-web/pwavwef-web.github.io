@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
-import { ArrowRight, Clapperboard, Film, GalleryHorizontalEnd, HardDrive, Image as ImageIcon, Music2, Scissors, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, Clapperboard, Disc3, Film, GalleryHorizontalEnd, HardDrive, Image as ImageIcon, Music2, Scissors, Sparkles, Star } from 'lucide-react';
 import { formatBytes, formatUsd, type AssetDoc, type JobDoc, type UsageAggregate } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useDoc, useQuery } from '../lib/data';
@@ -23,6 +23,7 @@ const QUICK = [
   { to: '/create?mode=music_video', label: 'Music Video', body: 'Build a video around a finished song', icon: Music2 },
   { to: '/create?mode=film', label: 'Film', body: 'Idea → screenplay → shots → final cut', icon: Clapperboard },
   { to: '/lite', label: 'Film Studio Lite', body: 'Cinematic stories from images, voice and sound', icon: GalleryHorizontalEnd },
+  { to: '/mvlite', label: 'Music Video Lite', body: 'Stills cut to your song, with synced lyrics', icon: Disc3 },
   { to: '/create/image', label: 'Image Studio', body: 'Characters, locations, posters, frames', icon: ImageIcon },
   { to: '/create/remix', label: 'Video Remix', body: 'Edit an existing clip conversationally', icon: Scissors },
 ];

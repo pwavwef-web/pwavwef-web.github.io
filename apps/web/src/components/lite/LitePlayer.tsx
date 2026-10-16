@@ -232,6 +232,18 @@ export const LitePlayer = forwardRef<PlayerHandle, Props>(function LitePlayer({ 
           }
           g.restore();
         });
+        // Dip-to-white flash centred on the cut (as the renderer draws it).
+        for (const c of clips) {
+          if (c.transitionIn.type !== 'dip_white') continue;
+          const half = c.transitionIn.duration / 2;
+          const d = Math.abs(t - c.start);
+          if (half <= 0 || d >= half) continue;
+          g.save();
+          g.globalAlpha = 1 - d / half;
+          g.fillStyle = '#fff';
+          g.fillRect(0, 0, W, H);
+          g.restore();
+        }
       }
     },
     [size.w, size.h],
@@ -362,7 +374,16 @@ export const LitePlayer = forwardRef<PlayerHandle, Props>(function LitePlayer({ 
         {showSafeArea && <div className="pointer-events-none absolute inset-[6%] rounded border border-dashed border-white/25" aria-hidden />}
         {captions.map((c) => (
           <div key={c.id} className="pointer-events-none absolute inset-x-[6%] flex justify-center text-center" style={{ bottom: `${(c.position?.offset ?? 0.07) * 100}%` }}>
-            <span style={textCss(c, size.h)}>{c.text}</span>
+            <span style={textCss(c, size.h)}>
+              {c.karaoke?.length
+                ? c.karaoke.map((u, i) => (
+                    <span key={i} style={uiTime - c.start >= u.start ? { color: c.style?.highlight ?? '#F4B84A' } : undefined}>
+                      {i ? ' ' : ''}
+                      {u.text}
+                    </span>
+                  ))
+                : c.text}
+            </span>
           </div>
         ))}
         {!playing && (

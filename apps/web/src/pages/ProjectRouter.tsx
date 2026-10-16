@@ -30,6 +30,8 @@ export default function ProjectRouter() {
       return <Navigate to={`/ads/${p.id}`} replace />;
     case 'film_lite':
       return <Navigate to={`/lite/${p.id}`} replace />;
+    case 'mv_lite':
+      return <Navigate to={`/mvlite/${p.id}`} replace />;
     case 'image':
       return <ImageStudio project={p} />;
     case 'remix':

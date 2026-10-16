@@ -25,6 +25,8 @@ const ShortAds = lazy(() => import('./pages/ads/ShortAds'));
 const AdStudio = lazy(() => import('./pages/ads/AdStudio'));
 const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
 const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
+const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
+const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
 const TimelineEditor = lazy(() => import('./pages/editor/TimelineEditor'));
 const PrintScreenplay = lazy(() => import('./pages/print/PrintScreenplay'));
 const PrintStoryboard = lazy(() => import('./pages/print/PrintStoryboard'));
@@ -97,6 +99,8 @@ const router = createBrowserRouter([
           { path: 'ads/:projectId/:step?', element: <Page><AdStudio /></Page> },
           { path: 'lite', element: <Page><LiteStudio /></Page> },
           { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
+          { path: 'mvlite', element: <Page><MvLiteStudio /></Page> },
+          { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
           { path: 'create', element: <Page><Create /></Page> },
           { path: 'create/video', element: <Page><QuickVideo /></Page> },
           { path: 'create/image', element: <Page><ImageStudio /></Page> },

@@ -729,11 +729,12 @@ async function prepareLyricsAlign(uid: string, req: LyricsAlignJobRequest): Prom
   };
 }
 
-/** Film Studio Lite never sends a request to a video-generation or lip-sync model (conversion to Film Studio is a separate, explicit action). */
+/** Film Studio Lite and Music Video Lite never send a request to a video-generation or lip-sync model (conversion to Film Studio is a separate, explicit action). */
 async function assertNotLite(projectId: string | null | undefined, what: string): Promise<void> {
   if (!projectId) return;
   const type = (await col.projects().doc(projectId).get()).get('type');
   if (type === 'film_lite') throw new HttpsError('failed-precondition', `Film Studio Lite makes motion from still images and does not use ${what}. Convert the film to Film Studio first if you want generated video.`);
+  if (type === 'mv_lite') throw new HttpsError('failed-precondition', `Music Video Lite makes motion from still images and does not use ${what}. Use a Music Video project if you want generated video.`);
 }
 
 export async function prepareJob(uid: string, req: JobRequest, opts: PrepareOptions = {}): Promise<PreparedJob> {

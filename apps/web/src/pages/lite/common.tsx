@@ -135,7 +135,7 @@ export function useLiteWork(projectId: string, flush: () => Promise<void>) {
   return { run, busy, dialog };
 }
 
-function WorkDialog({ estimate, kind, loading, onCancel, onConfirm }: { estimate: LiteGenerateResponse; kind: LiteWorkKind; loading: boolean; onCancel: () => void; onConfirm: () => void }) {
+export function WorkDialog({ estimate, kind, loading, onCancel, onConfirm }: { estimate: LiteGenerateResponse; kind: LiteWorkKind; loading: boolean; onCancel: () => void; onConfirm: () => void }) {
   const e = estimate.estimate;
   const [all, setAll] = useState(false);
   const rows = all ? estimate.perTarget : estimate.perTarget.slice(0, 8);

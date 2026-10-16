@@ -98,6 +98,12 @@ The acceptance suite (`tests/acceptance`) runs the same server code as the API w
 - In the emulators, renders run the same renderer program locally (`services/renderer/dist/main.js`, built by `test:e2e`); paid providers are not reachable there, so `tests/e2e/lite.e2e.test.ts` writes the narration timing a transcription would return as a stand-in.
 - `AZS_ACCEPTANCE=1 npm run test:acceptance -- 12-film-lite` runs Film Studio Lite against the live providers in-process (one image, three narrated scenes, one score movement, ambience; capped at $1.50, about $0.25), renders locally against the live project and runs the final inspection. Rerunning with the same `AZS_ACCEPTANCE_RUN` resumes the film without repeating paid requests. Outputs land in `exports/film-studio-lite-verification/`.
 
+## Music Video Lite
+
+- Deploy functions (the `mvliteGenerate` / `mvliteCancel` API, the `mvlite.concept` / `mvlite.shots` tasks), rules (`mv_lite` projects) and hosting. The renderer needs no change beyond the one Film Studio Lite already requires.
+- `tests/e2e/mvlite.e2e.test.ts` drives the workspace in a real browser against the emulators with a synthetic song (beats detected in the browser), writes the lyric timing a synchronisation would return as a stand-in, and renders a draft locally.
+- `AZS_ACCEPTANCE=1 npm run test:acceptance -- 14-mv-lite` runs it against the live providers in-process on a QA copy of a real song (beat analysis, lyric synchronisation compared with a corrected sheet, concept, shot plan, up to five images, styled lyrics; capped at $1.50), renders locally and runs the final inspection. Outputs land in `exports/music-video-lite-verification/`.
+
 ## Export gate
 
 Final renders (and any render requested with inspection) are inspected automatically when the render finishes (`final.inspect`: FFmpeg measurements, transcription, OCR, the reviewer). A download of such a render is refused by the API (`mediaUrls` with `download`) until its inspection is **ready** or **overridden** with a recorded note; playback for review is always allowed. Automatic fixes change the timeline (or, for styled lyrics, the song's lyric style for that aspect ratio) and mark the inspection `needsRerender` — the next render is inspected again to verify them. `azsMaintenance` starts inspections that were missed (e.g. a deploy during a render).

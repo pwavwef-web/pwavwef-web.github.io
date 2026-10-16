@@ -388,7 +388,8 @@ export function musicRestartFindings(state: Pick<TimelineState, 'clips' | 'track
 export function dialogueMaskingFindings(state: Pick<TimelineState, 'clips' | 'tracks'>, dialogueSpans: { start: number; end: number }[]): FinalFinding[] {
   const out: FinalFinding[] = [];
   const tracks = new Map(state.tracks.map((t) => [t.id, t]));
-  const music = state.clips.filter((c) => c.kind === 'audio' && c.role === 'music' && !tracks.get(c.trackId)?.muted);
+  // A song clip carries its own vocals: the voice heard over it is the song itself (it cannot duck under itself).
+  const music = state.clips.filter((c) => c.kind === 'audio' && c.role === 'music' && !c.songId && !tracks.get(c.trackId)?.muted);
   for (const m of music) {
     if (m.duck) continue;
     const gain = m.volume * (tracks.get(m.trackId)?.volume ?? 1);

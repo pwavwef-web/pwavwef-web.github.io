@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { BookOpen, FileText, ImagePlus, Import, Plus, Sparkles, Trash2, Wand2, X } from 'lucide-react';
+import { BookOpen, FileText, Import, Sparkles, Trash2 } from 'lucide-react';
 import {
   LITE_DIRECTION_PRESETS,
   LITE_DIRECTIONS,
@@ -23,11 +23,10 @@ import {
   type LiteSpec,
 } from '@az-studio/shared';
 import { useAiRun } from '../../lib/ai';
-import { fountainToNarration, readFilmForImport, waitForJobAssets } from '../../lib/lite';
+import { fountainToNarration, readFilmForImport } from '../../lib/lite';
 import { useProjects } from '../../lib/studio';
-import { useJobSubmitter } from '../../components/jobs';
-import { AssetPicker, AssetThumb, useAsset, type Asset } from '../../components/media';
 import { Badge, Button, cx, Field, IconButton, Input, Modal, Notice, Segmented, Select, Textarea } from '../../components/ui';
+import { BibleEditor } from '../../components/lite/BibleEditor';
 import { fmtSec, LabeledSlider, Section, type StageProps } from './common';
 
 interface TreatmentOut {
@@ -47,40 +46,6 @@ interface TreatmentOut {
   imageTreatment?: string;
   pronunciation?: { term?: string; sayAs?: string }[];
   notes?: string;
-}
-
-function RefThumb({ assetId, onRemove }: { assetId: string; onRemove: () => void }) {
-  const a = useAsset(assetId);
-  return (
-    <div className="relative w-20 shrink-0">
-      {a.data ? <AssetThumb asset={a.data as Asset} showMeta={false} aspect="aspect-[3/4]" hoverPlay={false} /> : <div className="aspect-[3/4] animate-pulse rounded-lg bg-panel-2" />}
-      <button type="button" onClick={onRemove} aria-label="Remove reference" className="absolute -top-1.5 -right-1.5 grid size-5 cursor-pointer place-items-center rounded-full bg-black/80 text-white hover:bg-danger">
-        <X className="size-3" />
-      </button>
-    </div>
-  );
-}
-
-function References({ ids, onChange, projectId, onGenerate, generating, label }: { ids: string[]; onChange: (ids: string[]) => void; projectId: string; onGenerate?: () => void; generating?: boolean; label: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div>
-      <div className="flex flex-wrap items-end gap-2">
-        {ids.map((id) => (
-          <RefThumb key={id} assetId={id} onRemove={() => onChange(ids.filter((x) => x !== id))} />
-        ))}
-        <button type="button" onClick={() => setOpen(true)} className="grid aspect-[3/4] w-20 cursor-pointer place-items-center rounded-lg border border-dashed border-line text-faint hover:border-line-strong hover:text-dim" aria-label={`Add ${label}`}>
-          <ImagePlus className="size-5" />
-        </button>
-        {onGenerate && (
-          <Button size="sm" variant="ghost" icon={<Wand2 className="size-3.5" />} loading={generating} onClick={onGenerate}>
-            Generate reference
-          </Button>
-        )}
-      </div>
-      <AssetPicker open={open} onOpenChange={setOpen} kinds={['image']} projectId={projectId} multiple max={4} initial={[]} title={`Choose ${label}`} onPick={(as) => onChange([...new Set([...ids, ...as.map((a) => a.id)])].slice(0, 6))} />
-    </div>
-  );
 }
 
 function ImportFilmDialog({ open, onOpenChange, onImport }: { open: boolean; onOpenChange: (o: boolean) => void; onImport: (id: string) => Promise<void> }) {
@@ -123,9 +88,7 @@ function ImportFilmDialog({ open, onOpenChange, onImport }: { open: boolean; onO
 
 export function StoryStage({ project, spec, update, go }: StageProps) {
   const ai = useAiRun(project.id);
-  const { submit, dialog } = useJobSubmitter();
   const [importOpen, setImportOpen] = useState(false);
-  const [genRef, setGenRef] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const d = LITE_DIRECTION_PRESETS[spec.setup.direction];
   const set = (fn: (s: LiteSpec) => LiteSpec, label = 'story') => update(fn, label);
@@ -204,21 +167,6 @@ export function StoryStage({ project, spec, update, go }: StageProps) {
     const text = await file.text();
     set((s) => ({ ...s, story: { ...s.story, sourceText: text.slice(0, 200_000) } }), 'source');
     toast.success(`Read “${file.name}”`, { description: `${wordCount(text).toLocaleString()} words of source text.` });
-  };
-
-  const generateReference = async (c: LiteCharacter) => {
-    setGenRef(c.id);
-    try {
-      const ids = await submit([{ type: 'image.generate', projectId: project.id, prompt: `Character likeness reference for a film: ${c.name}. ${c.description}. Clothing: ${c.clothing || 'as described'}. Three-quarter view, neutral expression, plain softly lit background, head and shoulders, sharp focus on the face. ${spec.setup.imageStyle === 'illustration' || spec.setup.imageStyle === 'painterly' ? '' : 'Photorealistic, real person, not a cartoon or 3D render.'}`, purpose: 'character', aspectRatio: '3:4', imageSize: '2K', referenceAssetIds: c.refAssetIds.slice(0, 2), grounding: false, applyStyleBible: false, characterIds: [], collections: ['lite:ref', `lite:character:${c.id}`], title: `${c.name} — likeness`, label: `Likeness reference · ${c.name}` }], { label: `Likeness reference · ${c.name}` });
-      if (!ids?.[0]) return;
-      const assets = await waitForJobAssets(ids[0]);
-      set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.map((x) => (x.id === c.id ? { ...x, refAssetIds: [...x.refAssetIds, ...assets].slice(0, 6) } : x)) } }), 'refs');
-      toast.success(`Reference added for ${c.name}`, { description: 'Remove it if the face is not right — only approved references are used.' });
-    } catch (e) {
-      toast.error('The reference was not added', { description: e instanceof Error ? e.message : String(e) });
-    } finally {
-      setGenRef(null);
-    }
   };
 
   return (
@@ -349,66 +297,7 @@ export function StoryStage({ project, spec, update, go }: StageProps) {
       </Section>
 
       <Section title="Visual bible" sub="Used in every image prompt. Approved likeness references keep a character recognisable — text alone cannot guarantee the same face.">
-        <div className="space-y-4">
-          {spec.bible.characters.map((c) => (
-            <div key={c.id} className="rounded-xl border border-line p-3.5">
-              <div className="flex items-start gap-3">
-                <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 md:grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)]">
-                  <Input aria-label="Character name" value={c.name} onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.map((x) => (x.id === c.id ? { ...x, name: e.target.value } : x)) } }), 'char')} />
-                  <Textarea aria-label="Appearance" rows={2} value={c.description} placeholder="Age, face, hair, build…" onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.map((x) => (x.id === c.id ? { ...x, description: e.target.value } : x)) } }), 'char')} />
-                  <Textarea aria-label="Clothing" rows={2} value={c.clothing} placeholder="Clothing (kept the same across scenes)" onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.map((x) => (x.id === c.id ? { ...x, clothing: e.target.value } : x)) } }), 'char')} />
-                </div>
-                <IconButton label="Remove character" size="sm" onClick={() => set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.filter((x) => x.id !== c.id) }, scenes: s.scenes.map((sc) => ({ ...sc, shots: sc.shots.map((sh) => ({ ...sh, characterIds: sh.characterIds.filter((x) => x !== c.id) })) })) }), 'char')}>
-                  <Trash2 className="size-4" />
-                </IconButton>
-              </div>
-              <div className="mt-3">
-                <References label={`references for ${c.name}`} ids={c.refAssetIds} projectId={project.id} generating={genRef === c.id} onGenerate={() => void generateReference(c)} onChange={(ids) => set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.map((x) => (x.id === c.id ? { ...x, refAssetIds: ids } : x)) } }), 'refs')} />
-              </div>
-            </div>
-          ))}
-          {spec.bible.locations.map((l) => (
-            <div key={l.id} className="rounded-xl border border-line p-3.5">
-              <div className="flex items-start gap-3">
-                <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 md:grid-cols-[180px_minmax(0,1fr)]">
-                  <Input aria-label="Location name" value={l.name} onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, locations: s.bible.locations.map((x) => (x.id === l.id ? { ...x, name: e.target.value } : x)) } }), 'loc')} />
-                  <Textarea aria-label="Location description" rows={2} value={l.description} placeholder="Landscape, architecture, materials, time of day" onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, locations: s.bible.locations.map((x) => (x.id === l.id ? { ...x, description: e.target.value } : x)) } }), 'loc')} />
-                </div>
-                <IconButton label="Remove location" size="sm" onClick={() => set((s) => ({ ...s, bible: { ...s.bible, locations: s.bible.locations.filter((x) => x.id !== l.id) } }), 'loc')}>
-                  <Trash2 className="size-4" />
-                </IconButton>
-              </div>
-              <div className="mt-3">
-                <References label={`references for ${l.name}`} ids={l.refAssetIds} projectId={project.id} onChange={(ids) => set((s) => ({ ...s, bible: { ...s.bible, locations: s.bible.locations.map((x) => (x.id === l.id ? { ...x, refAssetIds: ids } : x)) } }), 'refs')} />
-              </div>
-            </div>
-          ))}
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="ghost" icon={<Plus className="size-3.5" />} onClick={() => set((s) => ({ ...s, bible: { ...s.bible, characters: [...s.bible.characters, { id: liteId('ch'), name: 'New character', description: '', clothing: '', refAssetIds: [] }] } }), 'char')}>
-              Character
-            </Button>
-            <Button size="sm" variant="ghost" icon={<Plus className="size-3.5" />} onClick={() => set((s) => ({ ...s, bible: { ...s.bible, locations: [...s.bible.locations, { id: liteId('lo'), name: 'New location', description: '', refAssetIds: [] }] } }), 'loc')}>
-              Location
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <Field label="Palette">
-              <Input value={spec.bible.palette} onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, palette: e.target.value } }), 'palette')} />
-            </Field>
-            <Field label="Lighting">
-              <Input value={spec.bible.lighting} onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, lighting: e.target.value } }), 'lighting')} />
-            </Field>
-            <Field label="Image treatment" className="lg:col-span-2">
-              <Textarea rows={2} value={spec.bible.imageTreatment} onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, imageTreatment: e.target.value } }), 'treatment')} />
-            </Field>
-            <Field label="Avoid">
-              <Input value={spec.bible.avoid} onChange={(e) => set((s) => ({ ...s, bible: { ...s.bible, avoid: e.target.value } }), 'avoid')} />
-            </Field>
-            <Field label="Style references" hint="Match their look, not their content.">
-              <References label="style references" ids={spec.bible.styleRefAssetIds} projectId={project.id} onChange={(ids) => set((s) => ({ ...s, bible: { ...s.bible, styleRefAssetIds: ids.slice(0, 2) } }), 'refs')} />
-            </Field>
-          </div>
-        </div>
+        <BibleEditor projectId={project.id} bible={spec.bible} imageStyle={spec.setup.imageStyle} collection="lite" medium="film" onChange={(fn, label) => set((s) => ({ ...s, bible: fn(s.bible) }), label)} onRemoveCharacter={(id) => set((s) => ({ ...s, bible: { ...s.bible, characters: s.bible.characters.filter((x) => x.id !== id) }, scenes: s.scenes.map((sc) => ({ ...sc, shots: sc.shots.map((sh) => ({ ...sh, characterIds: sh.characterIds.filter((x) => x !== id) })) })) }), 'char')} />
       </Section>
 
       <Section title="Pronunciation" sub="How the voice should say names and words. Subtitles always keep the written spelling. Check by ear — guidance cannot guarantee native pronunciation.">
@@ -430,7 +319,6 @@ export function StoryStage({ project, spec, update, go }: StageProps) {
       </Section>
       <ImportFilmDialog open={importOpen} onOpenChange={setImportOpen} onImport={importFilm} />
       {ai.dialog}
-      {dialog}
     </>
   );
 }

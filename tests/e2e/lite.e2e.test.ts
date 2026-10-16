@@ -132,7 +132,8 @@ describe('Film Studio Lite in a real browser', () => {
       await page.locator('#password').fill(OWNER.password);
       await page.getByRole('button', { name: 'Sign in with email' }).click();
     }
-    await page.getByRole('link', { name: /Film Lite/ }).first().click();
+    // The first visit compiles the app in the dev server; give it time on a busy machine.
+    await page.getByRole('link', { name: /Film Lite/ }).first().click({ timeout: 120_000 });
     await page.getByRole('button', { name: 'New film' }).first().click();
     await page.locator('#lite-title').fill('E2E Lite film');
     await page.getByRole('radio', { name: /Atmospheric documentary/ }).click();

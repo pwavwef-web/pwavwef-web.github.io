@@ -292,10 +292,96 @@ const LITE_TASKS: Record<'lite.treatment' | 'lite.scenes' | 'lite.review', TextT
   },
 };
 
+const MV_DIRECTOR =
+  `${WRITER} You are directing a music video made from still images, camera movement over them and the song itself (Music Video Lite). ` +
+  'The song is the clock: plan per song section, cut on the music, let energy decide the pace (fewer, longer images in quiet sections; more, shorter ones when the song lifts), and give choruses a recognisable image world that returns. ' +
+  'Interpret the lyrics visually — never illustrate them word for word, never put words in the picture. Images contain no readable text, captions, logos or watermarks. Faces of recurring characters must match their descriptions exactly. ' +
+  'Never depict real, identifiable artists or celebrities; a performer is a described character whose likeness comes from the creator’s own reference images.';
+
+const MV_TASKS: Record<'mvlite.concept' | 'mvlite.shots', TextTaskSpec> = {
+  'mvlite.concept': {
+    label: 'Music video concept',
+    system: `${MV_DIRECTOR} Respect the song’s language and culture; do not translate or rewrite its lyrics.`,
+    expectedOutputTokens: 7000,
+    thinking: 'HIGH',
+    validate: (i) => (i.song ? null : 'Choose the song first.'),
+    schema: obj({
+      title: str(),
+      logline: str('One sentence'),
+      concept: str('The visual idea of the video in one paragraph'),
+      arc: str('How the video develops section by section across the song'),
+      imagery: str('Recurring images and motifs'),
+      tone: str('Emotional tone in a few words'),
+      characters: arr(obj({ name: str(), description: str('Age, face, hair, build — specific, for consistent images'), clothing: str() })),
+      locations: arr(obj({ name: str(), description: str('Architecture, landscape, materials, time of day') })),
+      palette: str(),
+      lighting: str(),
+      imageTreatment: str('Visual language for every image'),
+      notes: str('Anything the director should verify or supply (for example likeness photos of the performer)'),
+    }),
+    prompt: (i) =>
+      [
+        `Direction: ${j(i.direction)}`,
+        `Song: ${j(i.song)}`,
+        String(i.lyrics ?? '').trim() ? `Lyrics (as written — do not change them):\n${String(i.lyrics).slice(0, 12000)}` : 'The song is instrumental or its lyrics are not available.',
+        String(i.idea ?? '').trim() ? `The creator's idea: ${String(i.idea)}` : '',
+        i.characters ? `Characters already defined (keep them): ${j(i.characters)}` : '',
+        'Write a concept that fits this song’s structure and mood, then the visual bible (characters, locations, palette, light, image treatment).',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+  },
+  'mvlite.shots': {
+    label: 'Music video shot plan',
+    system: `${MV_DIRECTOR} Plan like a music-video editor: vary scale (wide, medium, close, detail), choose camera movement from the music (push in to build, pull out to release, pans across the groove, still holds for a lyric that must land), and keep the lower fifth of the frame clear when lyrics are captioned.`,
+    expectedOutputTokens: 16000,
+    thinking: 'HIGH',
+    validate: need(['sections']),
+    schema: obj({
+      sections: arr(
+        obj({
+          index: { type: 'integer', minimum: 0, description: 'Index of the song section' },
+          idea: str('What this section shows and why'),
+          mood: str(),
+          transitionIn: { type: 'string', enum: ['cut', 'dissolve', 'flash', 'fade_black'] },
+          lyrics: { type: 'boolean', description: 'Show the lyric captions in this section' },
+          shots: arr(
+            obj({
+              brief: str('What the image shows: subject, action, setting, light — concrete and visual'),
+              composition: str('Where the subject sits and the space around it'),
+              scale: { type: 'string', enum: ['establishing', 'wide', 'medium', 'close', 'detail'] },
+              characters: arr(str('Character name exactly as given')),
+              location: str('Location name exactly as given, or empty'),
+              motion: { type: 'string', enum: LITE_MOTIONS },
+              focusX: num('Horizontal position of the focal subject, 0 (left) – 1 (right)'),
+              focusY: num('Vertical position of the focal subject, 0 (top) – 1 (bottom)'),
+              bars: num('Planned length in bars (0.5–16)'),
+              transitionIn: { type: 'string', enum: ['cut', 'dissolve', 'flash'] },
+              reuseOf: { type: 'integer', minimum: -1, description: 'Index (in the whole video, counting from 0) of an earlier shot whose image this shot reuses with new framing — a chorus callback — or -1' },
+            }),
+          ),
+        }),
+      ),
+      notes: str('Continuity risks or material the director should supply'),
+    }),
+    prompt: (i) =>
+      [
+        `Direction: ${j(i.direction)}`,
+        `Format: ${String(i.aspect ?? '16:9')}. Visual plan: ${i.visualPlan === 'economical' ? 'economical — reuse chorus images as callbacks with new framing wherever the chorus returns' : 'rich — a new image for most shots'}.`,
+        `Song sections, in order, with their length in bars, energy (0–1) and the lyrics sung in them: ${j(i.sections)}`,
+        `Characters: ${j(i.characters ?? [])}`,
+        `Locations: ${j(i.locations ?? [])}`,
+        `Concept: ${j(i.concept ?? null)}`,
+        'Plan every section (use its index). The shots of a section should add up to its bars; aim for the suggested bars per shot, cutting faster where the energy is high. When the same chorus returns, bring back its image world.',
+      ].join('\n'),
+  },
+};
+
 export const TEXT_TASK_SPECS: Record<TextTask, TextTaskSpec> = {
   ...STUDIO_TASKS,
   ...AD_TASKS,
   ...LITE_TASKS,
+  ...MV_TASKS,
   'film.treatment': {
     label: 'Treatment',
     system: WRITER,

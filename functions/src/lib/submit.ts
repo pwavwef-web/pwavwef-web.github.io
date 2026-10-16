@@ -155,8 +155,8 @@ export interface InternalJobInput {
 
 /** Jobs the production loop runs on its own (inspection, repair edits); they are not user-submittable. */
 export async function createInternalJob(uid: string, input: InternalJobInput): Promise<string> {
-  if (input.type === 'video.lipsync' && (await col.projects().doc(input.projectId).get()).get('type') === 'film_lite') {
-    throw new HttpsError('failed-precondition', 'Film Studio Lite does not use lip sync.');
+  if (input.type === 'video.lipsync' && ['film_lite', 'mv_lite'].includes(String((await col.projects().doc(input.projectId).get()).get('type')))) {
+    throw new HttpsError('failed-precondition', 'Film Studio Lite and Music Video Lite do not use lip sync.');
   }
   const settings = await getSettings(uid);
   if (input.estimate.usd > 0) {

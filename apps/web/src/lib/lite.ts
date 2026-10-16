@@ -60,17 +60,18 @@ export async function duplicateLiteProject(uid: string, project: WithId<ProjectD
 export type DraftStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 /**
- * The film's draft with undo/redo: edited locally, saved shortly after every change (and when leaving),
- * adopted from the server when another tab changes it while nothing is pending here.
+ * A project draft (Film Studio Lite, Music Video Lite) with undo/redo: edited locally, saved shortly after
+ * every change (and when leaving), adopted from the server when another tab changes it while nothing is
+ * pending here.
  */
-export function useLiteDraft(project: WithId<ProjectDoc>, delayMs = 700) {
-  const remote = useMemo(() => normalizeLiteSpec(project.lite), [project.lite]);
-  const [spec, setLocal] = useState<LiteSpec>(remote);
+export function useProjectDraft<T extends { updatedAt: number }>(projectId: string, raw: unknown, field: 'lite' | 'mvlite', normalize: (raw: unknown) => T, delayMs = 700) {
+  const remote = useMemo(() => normalize(raw), [raw, normalize]);
+  const [spec, setLocal] = useState<T>(remote);
   const [status, setStatus] = useState<DraftStatus>('saved');
-  const pending = useRef<LiteSpec | null>(null);
+  const pending = useRef<T | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef<string>(JSON.stringify(remote));
-  const history = useRef<{ past: LiteSpec[]; future: LiteSpec[]; lastPush: number; lastLabel: string }>({ past: [], future: [], lastPush: 0, lastLabel: '' });
+  const history = useRef<{ past: T[]; future: T[]; lastPush: number; lastLabel: string }>({ past: [], future: [], lastPush: 0, lastLabel: '' });
   const [, force] = useState(0);
 
   useEffect(() => {
@@ -90,17 +91,17 @@ export function useLiteDraft(project: WithId<ProjectDoc>, delayMs = 700) {
     setStatus('saving');
     try {
       const stamped = { ...next, updatedAt: Date.now() };
-      lastSaved.current = JSON.stringify(normalizeLiteSpec(stamped));
-      await updateProject(project.id, { lite: stamped });
+      lastSaved.current = JSON.stringify(normalize(stamped));
+      await updateProject(projectId, { [field]: stamped });
       setStatus(pending.current ? 'unsaved' : 'saved');
     } catch {
       pending.current = pending.current ?? next;
       setStatus('error');
     }
-  }, [project.id]);
+  }, [projectId, field, normalize]);
 
   const schedule = useCallback(
-    (next: LiteSpec) => {
+    (next: T) => {
       pending.current = next;
       setStatus('unsaved');
       if (timer.current) clearTimeout(timer.current);
@@ -111,7 +112,7 @@ export function useLiteDraft(project: WithId<ProjectDoc>, delayMs = 700) {
 
   /** Applies an edit. `label` groups rapid edits of the same kind (typing) into one undo step. */
   const update = useCallback(
-    (patch: Partial<LiteSpec> | ((s: LiteSpec) => LiteSpec), label = 'edit') => {
+    (patch: Partial<T> | ((s: T) => T), label = 'edit') => {
       setLocal((cur) => {
         const next = typeof patch === 'function' ? patch(cur) : { ...cur, ...patch };
         if (next === cur) return cur;
@@ -169,6 +170,11 @@ export function useLiteDraft(project: WithId<ProjectDoc>, delayMs = 700) {
   }, [flush]);
 
   return { spec, update, status, flush, undo, redo, canUndo: history.current.past.length > 0, canRedo: history.current.future.length > 0 };
+}
+
+/** The film's draft with undo/redo (see useProjectDraft). */
+export function useLiteDraft(project: WithId<ProjectDoc>, delayMs = 700) {
+  return useProjectDraft<LiteSpec>(project.id, project.lite, 'lite', normalizeLiteSpec, delayMs);
 }
 
 /**

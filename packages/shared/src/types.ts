@@ -9,6 +9,7 @@ import { DEFAULT_RETRY_POLICY, type ErrorCategory, type GenerationAttempt, type 
 import type { AdSceneSpec, AdSceneValidation, AdSpec, TranscriptReport } from './ads';
 import type { ClipLook, ClipMotion } from './motion';
 import type { LiteSpec } from './lite';
+import type { MvLiteSpec } from './mvlite';
 
 /**
  * AZ Studio domain model. These shapes are shared by the web app, Cloud Functions and the renderer.
@@ -25,7 +26,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -37,6 +38,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   music: 'Music Studio',
   short_ad: 'Short Ad',
   film_lite: 'Film Studio Lite',
+  mv_lite: 'Music Video Lite',
 };
 
 export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';
@@ -105,6 +107,8 @@ export interface ProjectDoc {
   ad?: AdSpec | null;
   /** Film Studio Lite: the film's story, scenes, voice, sound and edit (draft saved as it is edited). */
   lite?: LiteSpec | null;
+  /** Music Video Lite: the video's song, concept, sections, shots and edit (draft saved as it is edited). */
+  mvlite?: MvLiteSpec | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
