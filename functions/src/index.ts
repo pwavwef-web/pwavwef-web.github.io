@@ -7,7 +7,7 @@
  *  azsMaintenance — reconciles jobs every 10 minutes
  */
 import { setGlobalOptions } from 'firebase-functions/v2';
-import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
+import { onCall, onRequest, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
@@ -27,10 +27,12 @@ import * as takes from './api/takes';
 import * as ads from './api/ads';
 import * as lite from './api/lite';
 import * as mvlite from './api/mvlite';
+import { narrator } from './api/narrator';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
 import { runMaintenance } from './scheduled/maintenance';
+import { handlePublicAudio } from './public/audio';
 
 setGlobalOptions({ region: REGION, serviceAccount: RUNTIME_SERVICE_ACCOUNT, maxInstances: 10 });
 
@@ -126,6 +128,8 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return mvlite.mvliteGenerate(owner, req.payload);
     case 'mvliteCancel':
       return mvlite.mvliteCancel(owner, req.payload);
+    case 'narrator':
+      return narrator(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;
@@ -186,6 +190,19 @@ export const azsOnUpload = onObjectFinalized(
     await handleUpload({ name: event.data.name, size: Number(event.data.size ?? 0) });
   },
 );
+
+/**
+ * Public, unauthenticated audio-edition endpoints (published revisions only), reached through Hosting at
+ * /api/public/**. No Auth, App Check, studio data or generation code is involved.
+ */
+export const azsPublic = onRequest({ invoker: 'public', memory: '512MiB', timeoutSeconds: 120, concurrency: 80, maxInstances: 10 }, async (req, res) => {
+  try {
+    await handlePublicAudio({ method: req.method, path: req.path, headers: req.headers }, Object.assign(res, { pipeFrom: (s: NodeJS.ReadableStream) => void s.pipe(res) }));
+  } catch (e) {
+    logger.error('azsPublic failure', { path: req.path, error: String((e as Error)?.message ?? e) });
+    if (!res.headersSent) res.status(500).set('Cache-Control', 'no-store').json({ error: 'unavailable' });
+  }
+});
 
 export const azsMaintenance = onSchedule({ schedule: 'every 10 minutes', timeoutSeconds: 300, memory: '512MiB' }, async () => {
   await runMaintenance();

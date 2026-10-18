@@ -224,6 +224,10 @@ export const JOB_TYPES = [
   'video.lipsync',
   'lite.narration',
   'audio.ambience',
+  'narrator.voice',
+  'narrator.speak',
+  'narrator.export',
+  'narrator.direct',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -268,7 +272,7 @@ export interface CostEstimate {
 }
 
 export interface JobTarget {
-  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film';
+  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film' | 'narrator_voice' | 'narrator_edition';
   id: string;
   /** Extra identifier, e.g. the take id created for a shot. */
   sub?: string;

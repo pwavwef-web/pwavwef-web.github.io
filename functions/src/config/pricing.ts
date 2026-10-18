@@ -1,4 +1,4 @@
-import type { PricingTable } from '@az-studio/shared';
+import type { NarrationRates, PricingTable } from '@az-studio/shared';
 import { MODEL_REGISTRY } from './models';
 
 /**
@@ -82,3 +82,25 @@ export const PRICING: PricingTable = {
     source: 'https://cloud.google.com/run/pricing',
   },
 };
+
+/**
+ * Gemini 3.8 TTS on the Gemini Developer API (paid tier, Standard), https://ai.google.dev/gemini-api/docs/pricing,
+ * retrieved 2026-10-17: Flash TTS "$0.50 (text) through December 31, 2026 / $1.00 starting January 1, 2027" in and
+ * "$9.00 (audio) … / $18.00 …" out; Flash-Lite TTS "$0.50 / $1.00" in and "$6.00 (audio) … / $12.00 …" out;
+ * "Audio tokens correspond to 25 tokens per second of audio." Voice creation (POST /v1beta/voices) has no listed
+ * price on that page, so its cost is reported as unavailable rather than guessed.
+ */
+export function narrationRates(modelId: string, now = Date.now()): NarrationRates {
+  const y2027 = now >= Date.UTC(2027, 0, 1);
+  const lite = modelId === MODEL_REGISTRY.narration.allowedIds[1];
+  const outputPerM = lite ? (y2027 ? 12 : 6) : y2027 ? 18 : 9;
+  return {
+    modelId,
+    inputPerM: y2027 ? 1 : 0.5,
+    outputPerM,
+    audioTokensPerSecond: 25,
+    source: 'https://ai.google.dev/gemini-api/docs/pricing',
+    retrievedAt: '2026-10-17',
+    validNote: y2027 ? 'rate from 1 January 2027.' : 'introductory rate through 31 December 2026; it doubles on 1 January 2027.',
+  };
+}

@@ -6,6 +6,7 @@ import { COVERAGE_TYPES } from './coverage';
 import { MUSIC_MODES } from './music-studio';
 import { RETRY_POLICY_LIMITS } from './generation-errors';
 import { AMBIENCE_KINDS } from './lite';
+import { narratorRequestSchema } from './narrator-schemas';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -17,7 +18,7 @@ const id = z.string().min(1).max(128).regex(/^[\w-]+$/, 'Invalid id');
 const text = (max: number) => z.string().max(max);
 
 export const jobTargetSchema = z.object({
-  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film']),
+  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film', 'narrator_voice', 'narrator_edition']),
   id,
   sub: id.optional(),
 });
@@ -519,6 +520,7 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Music Video Lite: stop queued and running generation for the video (renders keep running). */
   z.object({ action: z.literal('mvliteCancel'), payload: z.object({ projectId: id }) }),
+  z.object({ action: z.literal('narrator'), payload: narratorRequestSchema }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({

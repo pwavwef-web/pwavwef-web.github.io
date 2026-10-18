@@ -26,6 +26,8 @@ import { runAdValidateJob } from './ad-validate';
 import { runLipSyncJob } from './lipsync';
 import { runLiteNarrationJob } from './lite-narration';
 import { runAmbienceJob } from './ambience';
+import { continueNarratorSpeakJob, runNarratorExportJob, runNarratorSpeakJob, runNarratorVoiceJob } from './narrator';
+import { runNarratorDirectJob } from './narrator-direct';
 import { col } from '../lib/firebase';
 import { assertProviderAvailable, recoverFromFailure, usesSlot } from './recovery';
 
@@ -59,6 +61,18 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       return;
     case 'audio.ambience':
       await runAmbienceJob(claimed);
+      return;
+    case 'narrator.voice':
+      await runNarratorVoiceJob(claimed);
+      return;
+    case 'narrator.speak':
+      await runNarratorSpeakJob(claimed);
+      return;
+    case 'narrator.export':
+      await runNarratorExportJob(claimed);
+      return;
+    case 'narrator.direct':
+      await runNarratorDirectJob(claimed);
       return;
     case 'image.generate':
       await runImageJob(claimed);
@@ -171,6 +185,7 @@ export async function handleTask(payload: WorkerPayload): Promise<void> {
     else if (job.type === 'video.generate') await pollVideoJob(job, payload.seq);
     else if (job.type === 'render.timeline') await watchRenderJob(job, payload.seq);
     else if (job.type === 'audio.stems') await watchStemsJob(job, payload.seq);
+    else if (job.type === 'narrator.speak') await continueNarratorSpeakJob(job, payload.seq);
   } catch (e) {
     // Classified, bounded recovery: retry with backoff, check the same accepted job again, repair a documented
     // configuration once, rewrite a blocked prompt once, or stop with what the director can do next.

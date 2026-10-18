@@ -55,6 +55,10 @@ const TYPE_ICON: Record<JobType, ReactNode> = {
   'video.lipsync': <Languages className="size-4" />,
   'lite.narration': <Mic className="size-4" />,
   'audio.ambience': <Wind className="size-4" />,
+  'narrator.voice': <Mic className="size-4" />,
+  'narrator.speak': <AudioLines className="size-4" />,
+  'narrator.export': <AudioWaveform className="size-4" />,
+  'narrator.direct': <NotebookPen className="size-4" />,
 };
 
 export function statusTone(status: JobDoc['status']) {

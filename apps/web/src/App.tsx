@@ -27,6 +27,11 @@ const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
 const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
 const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
 const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
+const NarratorShell = lazy(() => import('./pages/narrator/NarratorShell'));
+const NarratorEditions = lazy(() => import('./pages/narrator/EditionsHome'));
+const NarratorVoice = lazy(() => import('./pages/narrator/VoicePage'));
+const NarratorSettings = lazy(() => import('./pages/narrator/SettingsPage'));
+const NarratorEditor = lazy(() => import('./pages/narrator/EditionEditor'));
 const TimelineEditor = lazy(() => import('./pages/editor/TimelineEditor'));
 const PrintScreenplay = lazy(() => import('./pages/print/PrintScreenplay'));
 const PrintStoryboard = lazy(() => import('./pages/print/PrintStoryboard'));
@@ -101,6 +106,16 @@ const router = createBrowserRouter([
           { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
           { path: 'mvlite', element: <Page><MvLiteStudio /></Page> },
           { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
+          {
+            path: 'narrator',
+            element: <Page><NarratorShell /></Page>,
+            children: [
+              { index: true, element: <Page><NarratorEditions /></Page> },
+              { path: 'voice', element: <Page><NarratorVoice /></Page> },
+              { path: 'settings', element: <Page><NarratorSettings /></Page> },
+              { path: 'e/:editionId', element: <Page><NarratorEditor /></Page> },
+            ],
+          },
           { path: 'create', element: <Page><Create /></Page> },
           { path: 'create/video', element: <Page><QuickVideo /></Page> },
           { path: 'create/image', element: <Page><ImageStudio /></Page> },

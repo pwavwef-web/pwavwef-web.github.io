@@ -4,6 +4,7 @@ import { col } from '../lib/firebase';
 import { enqueueJob, enqueueProduction, failJob } from '../lib/jobs';
 import { startFinalInspection } from '../workers/after-render';
 import { ensurePolling } from '../workers/video';
+import { narratorMaintenance } from '../workers/narrator';
 
 const MINUTE = 60_000;
 
@@ -79,6 +80,12 @@ export async function runMaintenance(): Promise<{ repolled: number; failed: numb
       await enqueueProduction(d.id, { seq: 7000 + (Math.floor(now / MINUTE) % 1000) });
       resumed++;
     }
+  }
+  // Pwavwe Narrator retention: enrollment recordings past their deletion date.
+  try {
+    await narratorMaintenance(now);
+  } catch (e) {
+    logger.error('narrator maintenance failed', { error: String(e) });
   }
   const rendering = await col.jobs().where('status', 'in', ['rendering', 'downloading']).where('type', '==', 'render.timeline').limit(100).get();
   for (const d of rendering.docs) {

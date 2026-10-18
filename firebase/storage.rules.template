@@ -24,6 +24,16 @@ service firebase.storage {
       allow update, delete: if false;
     }
 
+    // Pwavwe Narrator: large enrollment uploads land here, owner-only and write-once; the API converts the
+    // file to WAV and deletes it at once (stale ones are removed by maintenance). Never readable by clients.
+    match /users/{uid}/narrator-inbox/{fileName} {
+      allow create: if isOwner() && request.auth.uid == uid
+        && request.resource.size > 0
+        && request.resource.size <= 50 * 1024 * 1024
+        && request.resource.contentType.matches('^audio/[-+.a-zA-Z0-9]+$|^application/octet-stream$');
+      allow read, update, delete: if false;
+    }
+
     // Generated media, derivatives and renders are written by the backend only.
     match /users/{uid}/{rest=**} {
       allow read: if isOwner() && request.auth.uid == uid;

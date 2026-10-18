@@ -28,6 +28,7 @@ function renderAt(path: string) {
           { path: 'mvlite', element: <p>Music Video Lite workspace</p> },
           { path: 'mvlite/:projectId/:stage?', element: <p>Music video editor</p> },
           { path: 'ads/:projectId/:step?', element: <p>Advert editor</p> },
+          { path: 'narrator/*', element: <p>Pwavwe Narrator</p> },
           { path: '*', element: <p>Other page</p> },
         ],
       },
@@ -46,8 +47,8 @@ afterEach(cleanup);
 
 describe('Short Ads tab', () => {
   it('follows MV Lite in the primary navigation, between Create and Assets', () => {
-    expect(NAV).toHaveLength(9);
-    expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Film Lite', 'MV Lite', 'Short Ads', 'Assets', 'Jobs', 'Settings']);
+    expect(NAV).toHaveLength(10);
+    expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Film Lite', 'MV Lite', 'Short Ads', 'Narrator', 'Assets', 'Jobs', 'Settings']);
     expect(NAV.find((n) => n.label === 'Short Ads')?.to).toBe('/ads');
   });
 
@@ -57,7 +58,7 @@ describe('Short Ads tab', () => {
     expect(navs).toHaveLength(2);
     for (const nav of navs) {
       const links = within(nav).getAllByRole('link');
-      expect(links).toHaveLength(9);
+      expect(links).toHaveLength(10);
       expect(links[5]!.textContent).toBe('Short Ads');
       expect(links[5]!.getAttribute('href')).toBe('/ads');
     }
@@ -75,6 +76,18 @@ describe('Short Ads tab', () => {
     const nav = screen.getAllByRole('navigation', { name: 'Primary' })[0]!;
     expect(within(nav).getByRole('link', { name: 'Short Ads' }).getAttribute('aria-current')).toBe('page');
     expect(within(nav).getByRole('link', { name: 'Create' }).getAttribute('aria-current')).toBeNull();
+  });
+});
+
+describe('Pwavwe Narrator tab', () => {
+  it('is in both navigations, opens /narrator and stays highlighted inside an edition', () => {
+    const router = renderAt('/');
+    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) expect(within(nav).getByRole('link', { name: 'Narrator' }).getAttribute('href')).toBe('/narrator');
+    fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Narrator' }));
+    expect(router.state.location.pathname).toBe('/narrator');
+    cleanup();
+    renderAt('/narrator/e/abc');
+    expect(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Narrator' }).getAttribute('aria-current')).toBe('page');
   });
 });
 

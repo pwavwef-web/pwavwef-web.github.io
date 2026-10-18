@@ -147,6 +147,26 @@ service cloud.firestore {
     match /interactions/{id} { allow read: if ownerCanRead(); allow write: if false; }
     match /aiRuns/{id} { allow read: if ownerCanRead(); allow write: if false; }
 
+    // Pwavwe Narrator: the owner reads their own voice profiles, recordings, editions, takes and exports.
+    // Every write goes through the API (ownership, validation, idempotency and provider calls happen there).
+    // Provider identifiers (narratorVoices/{id}/private) match no rule and are never readable by a client.
+    match /narratorVoices/{id} {
+      allow read: if ownerCanRead();
+      allow write: if false;
+      match /tests/{testId} { allow read: if ownerCanRead(); allow write: if false; }
+    }
+    match /narratorRecordings/{id} { allow read: if ownerCanRead(); allow write: if false; }
+    // Publications are read by the owner here; the public player reads them only through the azsPublic
+    // function, which serves the published revision's public fields and nothing else.
+    match /narratorPublications/{id} { allow read: if ownerCanRead(); allow write: if false; }
+    match /narratorProfiles/{uid} { allow read: if isOwner() && uid == request.auth.uid; allow write: if false; }
+    match /narratorEditions/{id} {
+      allow read: if ownerCanRead();
+      allow write: if false;
+      match /clips/{clipId} { allow read: if ownerCanRead(); allow write: if false; }
+      match /exports/{exportId} { allow read: if ownerCanRead(); allow write: if false; }
+    }
+
     // Internal state (rate limits, concurrency slots) is never exposed.
     match /runtime/{document=**} { allow read, write: if false; }
 

@@ -64,7 +64,7 @@ export function assertTransition(from: JobStatus, to: JobStatus): void {
 
 /** Jobs that call a paid generative model and therefore count toward the concurrency limit. */
 export function isGenerativeJob(type: JobType): boolean {
-  return !['render.timeline', 'media.composite', 'media.color_match', 'music.arrange', 'music.mix', 'audio.stems', 'lyrics.resync_audio'].includes(type);
+  return !['render.timeline', 'media.composite', 'media.color_match', 'music.arrange', 'music.mix', 'audio.stems', 'lyrics.resync_audio', 'narrator.export'].includes(type);
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -107,6 +107,10 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   'video.lipsync': 'Lip sync',
   'lite.narration': 'Narration',
   'audio.ambience': 'Ambience',
+  'narrator.voice': 'Voice replication',
+  'narrator.speak': 'Narration (Pwavwe Narrator)',
+  'narrator.export': 'Audio edition export',
+  'narrator.direct': 'Auto-direct suggestions',
 };
 
 /** The nine states AZ Studio shows for background work (derived from the durable job status). */
@@ -114,7 +118,7 @@ export type DisplayJobStatus = 'Queued' | 'Preparing' | 'Processing' | 'Inspecti
 
 const INSPECTING_TYPES: readonly JobType[] = ['quality.inspect', 'final.inspect', 'continuity.compare', 'ad.validate'];
 const REPAIR_TYPES_: readonly JobType[] = ['media.composite', 'media.screen_replace', 'media.color_match'];
-const RENDER_TYPES: readonly JobType[] = ['render.timeline', 'music.mix', 'music.arrange'];
+const RENDER_TYPES: readonly JobType[] = ['render.timeline', 'music.mix', 'music.arrange', 'narrator.export'];
 
 export function displayJobStatus(job: { status: JobStatus; type: JobType; productionId?: string | null }): DisplayJobStatus {
   switch (job.status) {

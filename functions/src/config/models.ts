@@ -65,6 +65,16 @@ import { REGION } from './runtime';
  *               the video tokens of 3.8 Flash at the same fps (countTokens: 3,306 vs 1,050 for 3 s at 4 fps).
  *  - Argon outputs text only, so the video (Omni), image (Nano Banana Pro), speech (TTS) and
  *               word-timed transcription roles keep their dedicated models.
+ *
+ * Verified 2026-10-17 for Pwavwe Narrator (Gemini Developer API, key AZ_STUDIO_GEMINI_API_KEY, project az-learner):
+ *  - narration: `gemini-3.8-flash-tts` and `gemini-3.8-flash-lite-tts` answer models.get (input 8,192 / output
+ *               16,384 tokens). Both support voice replication (POST /v1beta/voices, type "replicated", reference +
+ *               consent audio). voices.list?type=replicated answered (no voices yet); a create without audio is
+ *               refused with 400 "Missing source_audio." (nothing created). One Interactions synthesis with a
+ *               prebuilt voice returned 24 kHz mono 16-bit WAV in steps[].content[type=audio] and 96 audio tokens
+ *               for ~3.9 s (25 tokens/s). The SDK in use (2.23.0) predates the Voices API (2.24.0+), so the
+ *               adapter calls the documented REST endpoints. Voice replication is a Gemini Developer API feature;
+ *               it is not assumed to exist on Vertex AI.
  */
 export const MODEL_REGISTRY = {
   video: {
@@ -121,6 +131,20 @@ export const MODEL_REGISTRY = {
     surfaces: ['vertex', 'developer-api'],
     apiKeySecret: 'AZ_STUDIO_GEMINI_API_KEY',
     docs: 'https://ai.google.dev/gemini-api/docs/models/lyria-3.5',
+  },
+  narration: {
+    id: 'gemini-3.8-flash-tts',
+    /** Models the owner may pick in Pwavwe Narrator → Settings (same Interactions schema, both support replication). */
+    allowedIds: ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts'],
+    displayName: 'Gemini 3.8 Flash TTS',
+    displayNames: { 'gemini-3.8-flash-tts': 'Gemini 3.8 Flash TTS', 'gemini-3.8-flash-lite-tts': 'Gemini 3.8 Flash-Lite TTS' },
+    api: 'interactions',
+    location: 'global',
+    launchStage: 'ga',
+    surface: 'developer-api',
+    apiKeySecret: 'AZ_STUDIO_GEMINI_API_KEY',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    docs: 'https://ai.google.dev/gemini-api/docs/voice-replication',
   },
   vision: {
     id: 'cloud-vision-v1',
