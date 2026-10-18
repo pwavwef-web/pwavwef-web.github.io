@@ -2,6 +2,8 @@ import {
   chunkSegments,
   flattenScript,
   passageSynthesisInput,
+  planTakes,
+  readModeOf,
   spokenPassages,
   type DirectedSegment,
   type FlatPassage,
@@ -29,9 +31,14 @@ export interface PlannedItem {
   providerText: string;
   style: string;
   inputHash: string;
-  /** One request per chunk; each chunk is one or more styled text blocks. */
-  chunks: DirectedSegment[][];
+  /**
+   * One request per chunk; each chunk is one or more styled text blocks. Stored as objects because Firestore
+   * rejects arrays nested directly inside arrays.
+   */
+  chunks: { segments: DirectedSegment[] }[];
   pronunciations: { term: string; spokenAs: string }[];
+  /** A one-take request (key and passageId are the take key): the passages it reads and their text weights. */
+  take?: { passageIds: string[]; weights: number[]; plannedSec: number; texts: string[]; /** Passage index of each text block (parallel to chunks[0].segments). */ segmentPassage?: number[] } | null;
 }
 
 export interface NarrationPlan {
@@ -76,7 +83,7 @@ export function planNarration(input: {
     const text = (input.selection ?? '').trim();
     if (text) {
       const s = passageSynthesisInput({ id: 'preview', kind: 'paragraph', text, source: '' }, edition.settings, notebook, voice);
-      items.push({ key: 'preview', passageId: null, text, providerText: s.providerText, style: s.style, inputHash: s.inputHash, chunks: chunkSegments(s.segments), pronunciations: s.applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) });
+      items.push({ key: 'preview', passageId: null, text, providerText: s.providerText, style: s.style, inputHash: s.inputHash, chunks: asChunks(s.segments), pronunciations: s.applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) });
     }
     return { items, reuse, skipped };
   }
@@ -90,10 +97,11 @@ export function planNarration(input: {
       skipped.push({ passageId: f.passage.id, reason: 'this preview already exists' });
       return { items, reuse, skipped };
     }
-    items.push({ key: `pv-${variant}-${f.passage.id}`, passageId: null, previewOf: f.passage.id, variant, text: f.passage.text, providerText: s.providerText, style: s.style, inputHash: s.inputHash, chunks: chunkSegments(s.segments), pronunciations: s.applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) });
+    items.push({ key: `pv-${variant}-${f.passage.id}`, passageId: null, previewOf: f.passage.id, variant, text: f.passage.text, providerText: s.providerText, style: s.style, inputHash: s.inputHash, chunks: asChunks(s.segments), pronunciations: s.applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) });
     return { items, reuse, skipped };
   }
   const byId = new Map(clips.map((c) => [c.id, c]));
+  if (readModeOf(edition.settings) === 'oneTake') return planTakeNarration(input, byId);
   for (const f of targetPassages(edition, input.scope, input)) {
     const p = f.passage;
     if (input.inFlight.has(p.id)) {
@@ -113,7 +121,51 @@ export function planNarration(input: {
         continue;
       }
     }
-    items.push({ key: p.id, passageId: p.id, text: p.text, providerText: s.providerText, style: s.style, inputHash: s.inputHash, chunks: chunkSegments(s.segments), pronunciations: s.applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) });
+    items.push({ key: p.id, passageId: p.id, text: p.text, providerText: s.providerText, style: s.style, inputHash: s.inputHash, chunks: asChunks(s.segments), pronunciations: s.applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) });
+  }
+  return { items, reuse, skipped };
+}
+
+/**
+ * One-take editions: every take holding a targeted passage is (re)read whole — a passage is never patched in on
+ * its own, so the take stays one continuous recording.
+ */
+function planTakeNarration(input: Parameters<typeof planNarration>[0], byId: Map<string, Clip>): NarrationPlan {
+  const { edition, clips } = input;
+  const items: PlannedItem[] = [];
+  const reuse: NarrationPlan['reuse'] = [];
+  const skipped: NarrationPlan['skipped'] = [];
+  const targets = new Set(targetPassages(edition, input.scope as Exclude<Scope, 'preview'>, input).map((f) => f.passage.id));
+  for (const b of planTakes({ script: edition.script, settings: edition.settings, notebook: input.notebook, voice: input.voice, directions: edition.directions ?? [] })) {
+    if (!b.passages.some((p) => targets.has(p.passageId))) continue;
+    if (input.inFlight.has(b.key)) {
+      skipped.push({ passageId: b.key, reason: 'already being generated' });
+      continue;
+    }
+    const selected = byId.get(edition.takes[b.key] ?? '');
+    if (!input.force && selected && selected.status === 'ready' && selected.inputHash === b.inputHash) {
+      skipped.push({ passageId: b.key, reason: 'audio is current' });
+      continue;
+    }
+    if (!input.force) {
+      const same = clips.filter((c) => c.passageId === b.key && c.status === 'ready' && c.inputHash === b.inputHash).sort((a, c) => c.version - a.version)[0];
+      if (same) {
+        reuse.push({ passageId: b.key, clipId: same.id });
+        continue;
+      }
+    }
+    items.push({
+      key: b.key,
+      passageId: b.key,
+      text: b.passages.map((p) => p.text).join('\n\n'),
+      providerText: b.providerText,
+      style: b.style,
+      inputHash: b.inputHash,
+      // The whole take in ONE request: each passage stays its own styled text block.
+      chunks: [{ segments: b.segments }],
+      pronunciations: b.pronunciations,
+      take: { passageIds: b.passages.map((p) => p.passageId), weights: b.passages.map((p) => Math.max(1, p.chars)), plannedSec: b.plannedSec, texts: b.passages.map((p) => p.providerText), segmentPassage: b.segmentPassage.map((id) => b.passages.findIndex((p) => p.passageId === id)) },
+    });
   }
   return { items, reuse, skipped };
 }
@@ -125,6 +177,8 @@ export interface ExportPart {
   sectionId: string | null;
   sectionTitle: string | null;
   kind: FlatPassage['passage']['kind'];
+  /** One-take editions: the take this passage is read in and where it sits inside that take. */
+  take?: { key: string; startSec: number; endSec: number } | null;
 }
 
 /**
@@ -136,6 +190,21 @@ export function planExport(input: { edition: Pick<NarratorEditionDoc, 'script' |
   const parts: ExportPart[] = [];
   const missing: string[] = [];
   const stale: string[] = [];
+  if (readModeOf(input.edition.settings) === 'oneTake') {
+    const flat = new Map(flattenScript(input.edition.script, input.edition.settings.includeClosing).map((f) => [f.passage.id, f]));
+    for (const b of planTakes({ script: input.edition.script, settings: input.edition.settings, notebook: input.notebook, voice: input.voice, directions: input.edition.directions ?? [] })) {
+      const clip = byId.get(input.edition.takes[b.key] ?? '');
+      const ids = b.passages.map((p) => p.passageId);
+      if (!clip || clip.status !== 'ready' || !clip.storagePath) missing.push(...ids);
+      else if (clip.inputHash !== b.inputHash) stale.push(...ids);
+      else
+        for (const p of b.passages) {
+          const span = clip.spans?.find((s) => s.passageId === p.passageId);
+          parts.push({ passageId: p.passageId, clipId: clip.id, inputHash: clip.inputHash, sectionId: p.sectionId, sectionTitle: flat.get(p.passageId)?.sectionTitle ?? null, kind: p.kind, take: { key: b.key, startSec: span?.startSec ?? 0, endSec: span?.endSec ?? 0 } });
+        }
+    }
+    return { parts, missing, stale };
+  }
   for (const f of flattenScript(input.edition.script, input.edition.settings.includeClosing)) {
     const p = f.passage;
     if (p.skip || !p.text.trim()) continue;
@@ -150,3 +219,6 @@ export function planExport(input: { edition: Pick<NarratorEditionDoc, 'script' |
 
 /** Clip key of a passage listening preview (kept apart from takes). */
 export const previewClipKey = (variant: 'directed' | 'undirected', passageId: string) => `preview-${variant}-${passageId}`;
+
+/** Request chunks in the Firestore-safe shape (no array directly inside an array). */
+export const asChunks = (segments: DirectedSegment[]): PlannedItem['chunks'] => chunkSegments(segments).map((c) => ({ segments: c }));

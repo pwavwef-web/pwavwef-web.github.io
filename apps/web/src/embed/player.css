@@ -1,33 +1,72 @@
-@import '@fontsource/instrument-serif/latin-400.css';
+@import '@fontsource/dm-serif-display/latin-400.css';
 
-:root {
-  --pp-bg: #f6f8fc;
-  --pp-card: #ffffff;
-  --pp-ink: #0d1b33;
-  --pp-dim: #4a5a78;
-  --pp-faint: #6b7a96;
-  --pp-line: rgb(29 79 184 / 0.14);
-  --pp-blue: #1d4fb8;
-  --pp-blue-2: #3a76f0;
-  --pp-track: rgb(29 79 184 / 0.14);
-  --pp-wave: rgb(29 79 184 / 0.22);
-  --pp-wave-done: rgb(29 79 184 / 0.75);
-  --pp-focus: #3a76f0;
+/**
+ * The Pwavwe Papers audio player. Two themes: `light` is the Papers theme (warm ivory, near-black text,
+ * muted secondary text, a fine neutral border, blue playback accents) and the default; `dark` is the
+ * coordinated navy. `auto` follows the reader's system setting. The theme comes from `?theme=` and is set
+ * on <html> by player.ts, so nothing here depends on what the surrounding page does.
+ *
+ * Contrast (checked against each theme's own card): secondary text 4.8:1 light / 6.6:1 dark, the accent
+ * 4.8:1 / 7.4:1, white on the play button 5.3:1 / 4.7:1, and the unplayed waveform ≈ 2.9:1 / 3.9:1 — above
+ * the 3:1 asked of a meaningful graphic, and the played part is the full accent.
+ */
+
+:root,
+:root[data-theme='light'] {
+  --pp-bg: #f2eee5;
+  --pp-card: #f7f4ee;
+  --pp-ink: #22211f;
+  --pp-dim: #706c65;
+  --pp-faint: #837e76;
+  --pp-line: #ded8ce;
+  --pp-line-soft: #e6e1d8;
+  --pp-blue: #3268c8;
+  --pp-blue-ink: #2a59ad;
+  --pp-on-blue: #ffffff;
+  --pp-track: #ded8ce;
+  --pp-wave: #978f84;
+  --pp-wave-done: #3268c8;
+  --pp-focus: #2a59ad;
+  --pp-shadow: 0 1px 2px rgb(34 33 31 / 0.05);
   color-scheme: light;
 }
+
+:root[data-theme='dark'] {
+  --pp-bg: #0d1420;
+  --pp-card: #141d2e;
+  --pp-ink: #eceae4;
+  --pp-dim: #9aa3b2;
+  --pp-faint: #8690a1;
+  --pp-line: #2a3447;
+  --pp-line-soft: #222b3b;
+  --pp-blue: #7fa8f5;
+  --pp-blue-ink: #3d6fd6;
+  --pp-on-blue: #ffffff;
+  --pp-track: #2a3447;
+  --pp-wave: #6e7a90;
+  --pp-wave-done: #7fa8f5;
+  --pp-focus: #7fa8f5;
+  --pp-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --pp-bg: #0b1220;
-    --pp-card: #101a2e;
-    --pp-ink: #e9eef7;
-    --pp-dim: #b3c0d8;
-    --pp-faint: #8796b2;
-    --pp-line: rgb(138 182 255 / 0.18);
-    --pp-blue: #8ab6ff;
-    --pp-blue-2: #5b97ff;
-    --pp-track: rgb(138 182 255 / 0.16);
-    --pp-wave: rgb(138 182 255 / 0.25);
-    --pp-wave-done: rgb(138 182 255 / 0.85);
+  :root[data-theme='auto'] {
+    --pp-bg: #0d1420;
+    --pp-card: #141d2e;
+    --pp-ink: #eceae4;
+    --pp-dim: #9aa3b2;
+    --pp-faint: #8690a1;
+    --pp-line: #2a3447;
+    --pp-line-soft: #222b3b;
+    --pp-blue: #7fa8f5;
+    --pp-blue-ink: #3d6fd6;
+    --pp-on-blue: #ffffff;
+    --pp-track: #2a3447;
+    --pp-wave: #6e7a90;
+    --pp-wave-done: #7fa8f5;
+    --pp-focus: #7fa8f5;
+    --pp-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
     color-scheme: dark;
   }
 }
@@ -52,111 +91,134 @@ body.pp-standalone {
   padding: 24px 16px;
 }
 
+/* The card fills the iframe, so a one-line title centres instead of leaving a band of space below. */
 .pp {
   width: 100%;
-  min-height: 186px;
+  min-height: 100dvh;
   border: 1px solid var(--pp-line);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--pp-card);
-  padding: 14px 16px 12px;
+  padding: 11px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: center;
+  gap: 9px;
 }
 body.pp-standalone .pp {
   max-width: 720px;
-  box-shadow: 0 20px 50px -30px rgb(13 27 51 / 0.45);
+  min-height: 0;
+  box-shadow: var(--pp-shadow);
 }
+
+/* ---------------------------------------------------------------- heading */
 
 .pp-head {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 9px;
   min-width: 0;
 }
 .pp-mark {
   flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  margin-top: 1px;
+  width: 21px;
+  height: 21px;
+  border-radius: 5px;
   display: grid;
   place-items: center;
-  background: linear-gradient(160deg, var(--pp-blue-2), var(--pp-blue));
-  color: #fff;
-  font: 400 15px/1 'Instrument Serif', Georgia, serif;
-  letter-spacing: 0.02em;
+  border: 1px solid var(--pp-line);
+  color: var(--pp-faint);
+  font: 400 10px/1 'DM Serif Display', Georgia, serif;
+  letter-spacing: 0.04em;
 }
 .pp-meta {
   min-width: 0;
 }
 .pp-kicker {
   margin: 0;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--pp-blue);
+  color: var(--pp-blue-ink);
 }
 .pp-title {
-  margin: 2px 0 0;
-  font: 400 21px/1.15 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  margin: 1px 0 0;
+  font: 400 20px/1.22 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.002em;
   color: var(--pp-ink);
+  overflow-wrap: break-word;
+  /* Wraps freely; the clamp is only the last resort that keeps a very long title inside the box. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.pp-author {
+.pp-byline {
   margin: 2px 0 0;
-  font-size: 12.5px;
+  font-size: 11.5px;
+  line-height: 1.35;
   color: var(--pp-dim);
 }
 
-.pp-main {
+/* --------------------------------------------------------------- controls */
+
+/* One row while there is room; the transport bar drops to its own row when there is not. */
+.pp-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 .pp-play {
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
   border: 0;
   cursor: pointer;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: linear-gradient(180deg, var(--pp-blue-2), var(--pp-blue));
-  box-shadow: 0 8px 22px -10px rgb(29 79 184 / 0.7);
+  color: var(--pp-on-blue);
+  background: var(--pp-blue-ink);
   transition: transform 120ms ease;
+}
+.pp-play:hover {
+  background: var(--pp-blue);
+  color: #fff;
+}
+:root[data-theme='dark'] .pp-play:hover {
+  color: #0d1420;
 }
 .pp-play:active {
   transform: scale(0.96);
 }
 .pp-play svg {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   fill: currentColor;
 }
 .pp-seekwrap {
   position: relative;
-  flex: 1;
-  min-width: 0;
-  height: 44px;
+  /* A small basis with a big grow: the transport bar keeps its full width and only drops to its own
+     row when the player is genuinely narrow, so the box height stays predictable in a blog column. */
+  flex: 3 1 120px;
+  min-width: 100px;
+  height: 34px;
 }
 .pp-wave {
   position: absolute;
-  inset: 4px 0;
+  inset: 0;
   width: 100%;
-  height: 36px;
+  height: 34px;
   pointer-events: none;
 }
 .pp-seek {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 44px;
+  height: 34px;
   margin: 0;
   background: transparent;
   cursor: pointer;
@@ -164,27 +226,27 @@ body.pp-standalone .pp {
   appearance: none;
 }
 .pp-seek::-webkit-slider-runnable-track {
-  height: 44px;
+  height: 34px;
   background: transparent;
 }
 .pp-seek::-moz-range-track {
-  height: 44px;
+  height: 34px;
   background: transparent;
 }
 .pp-seek::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 4px;
-  height: 40px;
-  margin-top: 2px;
+  width: 3px;
+  height: 32px;
+  margin-top: 1px;
   border-radius: 2px;
-  background: var(--pp-blue);
+  background: var(--pp-blue-ink);
 }
 .pp-seek::-moz-range-thumb {
-  width: 4px;
-  height: 40px;
+  width: 3px;
+  height: 32px;
   border: 0;
   border-radius: 2px;
-  background: var(--pp-blue);
+  background: var(--pp-blue-ink);
 }
 .pp-noWave .pp-seek::-webkit-slider-runnable-track {
   background: linear-gradient(var(--pp-track), var(--pp-track)) center / 100% 4px no-repeat;
@@ -197,38 +259,44 @@ body.pp-standalone .pp {
 .pp-bar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 5px;
+  /* Never wider than its contents, so every spare pixel on the row goes to the waveform. */
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  min-width: max-content;
 }
 .pp-time {
-  font: 500 12px/1 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font: 500 11.5px/1 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
   color: var(--pp-dim);
   margin-right: auto;
   white-space: nowrap;
 }
 .pp-btn {
+  /* 40 px tall: on the one-row layout it costs nothing (the play button sets the row height) and it
+     keeps the transport comfortable to hit on a phone, where it has a row of its own. */
   min-width: 44px;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 10px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
   border: 1px solid var(--pp-line);
   background: transparent;
   color: var(--pp-ink);
-  font: 600 12.5px/1 inherit;
+  font: 600 11.5px/1 inherit;
   font-family: inherit;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
 }
 .pp-btn:hover {
-  border-color: var(--pp-blue);
+  border-color: var(--pp-blue-ink);
+  color: var(--pp-blue-ink);
 }
 .pp-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   fill: currentColor;
 }
 .pp-vol {
@@ -237,32 +305,38 @@ body.pp-standalone .pp {
   gap: 4px;
 }
 .pp-vol input {
-  width: 72px;
-  accent-color: var(--pp-blue);
+  width: 56px;
+  accent-color: var(--pp-blue-ink);
 }
 .pp-hidden {
   display: none !important;
 }
+
+/* ----------------------------------------------------------------- states */
+
 .pp-state {
   margin: auto;
-  padding: 12px;
+  padding: 10px;
   text-align: center;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--pp-dim);
 }
 .pp-state strong {
   display: block;
   color: var(--pp-ink);
-  font: 400 20px/1.2 'Instrument Serif', Georgia, serif;
+  font: 400 19px/1.25 'DM Serif Display', Georgia, serif;
   margin-bottom: 4px;
 }
 .pp-link {
-  color: var(--pp-blue);
+  color: var(--pp-blue-ink);
 }
 .pp-foot {
-  font-size: 11.5px;
+  font-size: 11px;
+  line-height: 1.45;
   color: var(--pp-faint);
   margin: 0;
+  padding-top: 2px;
+  border-top: 1px solid var(--pp-line-soft);
 }
 :focus-visible {
   outline: 2px solid var(--pp-focus);
@@ -281,35 +355,80 @@ body.pp-standalone .pp {
   white-space: nowrap;
 }
 
-/* The embed is 196 px tall: below 600 px the title keeps to one line (the full title is in the iframe title and page). */
+/*
+ * Two layouts, with one deliberate breakpoint at 549 px of player width (the embed markup turns the same
+ * point into a taller box — see EMBED_NARROW_MAX_PX): above it everything sits on one row; below it the
+ * transport takes a row of its own and the waveform spans the player.
+ */
+@media (max-width: 548px) {
+  .pp-bar {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .pp-seekwrap {
+    flex: 1 1 140px;
+  }
+}
+/* One row, but not wide enough to spend 60 px on a volume slider: the mute button stays. */
+@media (min-width: 549px) and (max-width: 699px) {
+  .pp-vol input {
+    display: none;
+  }
+}
+
+/* Narrow screens: the box grows (see EMBED_HEIGHT_NARROW_PX) rather than clipping the controls. */
 @media (max-width: 600px) {
   .pp-title {
-    font-size: 19px;
-    -webkit-line-clamp: 1;
-  }
-  .pp-kicker-more {
-    display: none;
+    font-size: 18.5px;
+    -webkit-line-clamp: 3;
   }
 }
 @media (max-width: 420px) {
   .pp {
-    padding: 12px 12px 10px;
+    padding: 10px 12px;
     gap: 8px;
   }
   .pp-title {
-    font-size: 18px;
-    -webkit-line-clamp: 1;
+    font-size: 17.5px;
   }
-  .pp-vol {
+  .pp-vol input {
     display: none;
   }
   .pp-btn {
     min-width: 40px;
-    padding: 0 8px;
+    padding: 0 7px;
+  }
+  /* Last resort on a very narrow phone: the transport wraps inside itself rather than overflowing. */
+  .pp-bar {
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 }
+/*
+ * A box shorter than the player would like — a post embedded before the heights above were worked out,
+ * or a template that fixes its own iframe height: tighten the layout rather than let the card be cropped.
+ */
+@media (max-height: 208px) and (max-width: 548px) {
+  .pp {
+    padding: 8px 12px;
+    gap: 7px;
+  }
+  .pp-title {
+    -webkit-line-clamp: 2;
+  }
+  .pp-btn {
+    height: 36px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
   }
+}
+
+/* Used for one synchronous measurement in postSize(): the card's natural height, not the iframe's. */
+.pp.pp-auto {
+  min-height: 0;
 }

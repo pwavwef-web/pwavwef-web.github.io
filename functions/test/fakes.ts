@@ -140,7 +140,18 @@ export class FakeDocRef {
   }
 }
 
+/** Real Firestore rejects an array directly inside an array ("invalid nested entity"); so do the fakes. */
+function assertNoNestedArrays(value: unknown, path: string, insideArray = false): void {
+  if (Array.isArray(value)) {
+    if (insideArray) throw Object.assign(new Error(`INVALID_ARGUMENT: ${path} contains an invalid nested entity (an array inside an array).`), { code: 3 });
+    value.forEach((v, i) => assertNoNestedArrays(v, `${path}[${i}]`, true));
+  } else if (isPlain(value)) {
+    for (const [k, v] of Object.entries(value)) assertNoNestedArrays(v, `${path}.${k}`, false);
+  } else if (isSentinel(value) && value.items) value.items.forEach((v, i) => assertNoNestedArrays(v, `${path}[${i}]`, true));
+}
+
 function writeDoc(path: string, data: Data, merge?: boolean) {
+  assertNoNestedArrays(data, path);
   bump(path);
   const cur = store.get(path);
   if (merge && cur) store.set(path, deepMerge(cur, data));
@@ -149,6 +160,7 @@ function writeDoc(path: string, data: Data, merge?: boolean) {
 }
 
 function updateDoc(path: string, data: Data) {
+  assertNoNestedArrays(data, path);
   bump(path);
   const cur = store.get(path);
   if (!cur) throw Object.assign(new Error(`NOT_FOUND: ${path}`), { code: 5 });

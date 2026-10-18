@@ -45,80 +45,44 @@ function renderAt(path: string) {
 
 afterEach(cleanup);
 
-describe('Short Ads tab', () => {
-  it('follows MV Lite in the primary navigation, between Create and Assets', () => {
-    expect(NAV).toHaveLength(10);
-    expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Film Lite', 'MV Lite', 'Short Ads', 'Narrator', 'Assets', 'Jobs', 'Settings']);
-    expect(NAV.find((n) => n.label === 'Short Ads')?.to).toBe('/ads');
-  });
-
-  it('appears in both the desktop sidebar and the mobile bar and opens the workspace', () => {
-    const router = renderAt('/');
+describe('Primary navigation', () => {
+  it('lists only the top-level sections; the studios live on the Create page', () => {
+    expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Assets', 'Jobs', 'Settings']);
+    renderAt('/');
     const navs = screen.getAllByRole('navigation', { name: 'Primary' });
     expect(navs).toHaveLength(2);
     for (const nav of navs) {
-      const links = within(nav).getAllByRole('link');
-      expect(links).toHaveLength(10);
-      expect(links[5]!.textContent).toBe('Short Ads');
-      expect(links[5]!.getAttribute('href')).toBe('/ads');
-    }
-    fireEvent.click(within(navs[0]!).getByRole('link', { name: 'Short Ads' }));
-    expect(router.state.location.pathname).toBe('/ads');
-    expect(screen.getByText('Short Ads workspace')).toBeTruthy();
-    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) {
-      expect(within(nav).getByRole('link', { name: 'Short Ads' }).getAttribute('aria-current')).toBe('page');
+      expect(within(nav).getAllByRole('link')).toHaveLength(6);
+      for (const gone of ['Film Lite', 'MV Lite', 'Short Ads', 'Narrator']) expect(within(nav).queryByRole('link', { name: gone })).toBeNull();
     }
   });
 
-  it('stays highlighted inside an advert', () => {
-    renderAt('/ads/p1/storyboard');
-    expect(screen.getByText('Advert editor')).toBeTruthy();
-    const nav = screen.getAllByRole('navigation', { name: 'Primary' })[0]!;
-    expect(within(nav).getByRole('link', { name: 'Short Ads' }).getAttribute('aria-current')).toBe('page');
-    expect(within(nav).getByRole('link', { name: 'Create' }).getAttribute('aria-current')).toBeNull();
-  });
-});
-
-describe('Pwavwe Narrator tab', () => {
-  it('is in both navigations, opens /narrator and stays highlighted inside an edition', () => {
+  it('opens the Create page', () => {
     const router = renderAt('/');
-    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) expect(within(nav).getByRole('link', { name: 'Narrator' }).getAttribute('href')).toBe('/narrator');
-    fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Narrator' }));
-    expect(router.state.location.pathname).toBe('/narrator');
-    cleanup();
-    renderAt('/narrator/e/abc');
-    expect(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Narrator' }).getAttribute('aria-current')).toBe('page');
+    fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Create' }));
+    expect(router.state.location.pathname).toBe('/create');
+    expect(screen.getByText('Create page')).toBeTruthy();
   });
-});
 
-describe('Film Studio Lite tab', () => {
-  it('sits after Create in both navigations and stays highlighted inside a film', () => {
-    const router = renderAt('/');
-    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) {
-      const link = within(nav).getByRole('link', { name: 'Film Lite' });
-      expect(link.getAttribute('href')).toBe('/lite');
-    }
-    fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Film Lite' }));
-    expect(router.state.location.pathname).toBe('/lite');
-    expect(screen.getByText('Film Studio Lite workspace')).toBeTruthy();
-    cleanup();
-    renderAt('/lite/p1/edit');
-    const nav = screen.getAllByRole('navigation', { name: 'Primary' })[0]!;
-    expect(within(nav).getByRole('link', { name: 'Film Lite' }).getAttribute('aria-current')).toBe('page');
+  it.each([
+    ['/lite', 'Film Studio Lite workspace'],
+    ['/lite/p1/edit', 'Film editor'],
+    ['/mvlite/p1/edit', 'Music video editor'],
+    ['/ads/p1/storyboard', 'Advert editor'],
+    ['/narrator/e/abc', 'Pwavwe Narrator'],
+  ])('keeps Create highlighted inside %s', (path, text) => {
+    renderAt(path);
+    expect(screen.getByText(text)).toBeTruthy();
+    const [desktop, mobile] = screen.getAllByRole('navigation', { name: 'Primary' });
+    expect(within(desktop!).getByRole('link', { name: 'Create' }).className).toContain('from-accent/18');
+    expect(within(desktop!).getByRole('link', { name: 'Home' }).className).not.toContain('from-accent/18');
+    expect(within(mobile!).getByRole('link', { name: 'Create' }).className).toContain('text-accent-2');
+    expect(within(mobile!).getByRole('link', { name: 'Home' }).className).not.toContain('text-accent-2');
   });
-});
 
-describe('Music Video Lite tab', () => {
-  it('follows Film Lite in both navigations and stays highlighted inside a video', () => {
-    const router = renderAt('/');
-    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) expect(within(nav).getByRole('link', { name: 'MV Lite' }).getAttribute('href')).toBe('/mvlite');
-    fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'MV Lite' }));
-    expect(router.state.location.pathname).toBe('/mvlite');
-    expect(screen.getByText('Music Video Lite workspace')).toBeTruthy();
-    cleanup();
-    renderAt('/mvlite/p1/edit');
+  it('does not highlight Create on unrelated pages', () => {
+    renderAt('/assets');
     const nav = screen.getAllByRole('navigation', { name: 'Primary' })[0]!;
-    expect(within(nav).getByRole('link', { name: 'MV Lite' }).getAttribute('aria-current')).toBe('page');
-    expect(within(nav).getByRole('link', { name: 'Film Lite' }).getAttribute('aria-current')).toBeNull();
+    expect(within(nav).getByRole('link', { name: 'Create' }).className).not.toContain('from-accent/18');
   });
 });

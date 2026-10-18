@@ -10,6 +10,7 @@ import type {
   NarratorExportDoc,
   NarratorRecordingDoc,
   NarratorRequest,
+  NarratorRoute,
   NarratorSettings,
   NarratorTestDoc,
   NarratorVoiceDoc,
@@ -40,18 +41,45 @@ export interface ProviderStatus {
   models: { id: string; displayName: string; available: boolean; message: string | null; inputTokenLimit: number | null; outputTokenLimit: number | null }[];
   voicesApi: { available: boolean; message: string | null; replicatedVoices: number | null };
   message: string | null;
+  /** The Google Cloud route, checked with the functions' own credentials. */
+  cloud?: Omit<ProviderStatus, 'checkedAt' | 'cloud'>;
 }
+
+export interface CloudTest {
+  ok: boolean;
+  at: number;
+  modelId: string;
+  durationSec: number | null;
+  latencyMs: number | null;
+  usd: number | null;
+  message: string | null;
+}
+
+export interface Allowance {
+  route: NarratorRoute;
+  modelId: string;
+  used: number;
+  limit: number;
+  remaining: number;
+  resetAt: number;
+}
+
+type ConsentStatements = { statements: { locale: ConsentLocale; language: string; text: string }[]; source: { url: string; checkedOn: string } };
 
 export interface NarratorStatus {
   provider: ProviderStatus;
   model: { id: string; displayName: string; allowed: { id: string; displayName: string }[] };
   rates: NarrationRates;
   voiceCreationCost: string;
-  consent: { statements: { locale: ConsentLocale; language: string; text: string }[]; source: { url: string; checkedOn: string } };
+  consent: ConsentStatements & { cloud?: ConsentStatements };
   enrollment: typeof ENROLLMENT;
   retention: typeof RETENTION;
   settings: NarratorSettings;
   pronunciations: PronunciationEntry[];
+  /** Google request allowances currently used up (narration refused until `until`). */
+  limits?: { modelId: string; route?: NarratorRoute; until: number; message: string }[];
+  /** The Cloud narration test (unlocks the Cloud route) and today's Developer-API request counts. */
+  routes?: { cloudTest: CloudTest | null; allowance: Allowance[] };
 }
 
 export function useNarratorStatus() {
@@ -204,6 +232,12 @@ export interface EstimateResult {
   budgetUsd: number;
   limitProblem: string | null;
   confirmationRequired: boolean;
+  route?: NarratorRoute;
+  allowance?: Allowance | null;
+  /** Set when this request needs more Developer-API requests than remain today. */
+  allowanceNote?: string | null;
+  /** The narrator the edition is pinned to, what this generation uses, and whether it re-narrates the edition. */
+  narrator?: { pinned: string | null; next: string; switching: boolean };
 }
 
 export type { SoundCloudLink, WithId };

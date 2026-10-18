@@ -1,4 +1,17 @@
+import { createHash } from 'node:crypto';
+import type { NarratorRoute } from '@az-studio/shared';
 import { bucket, db } from './firebase';
+
+/** A short one-way fingerprint of a provider voice id (safe in owner-readable job documents). */
+export const voiceFingerprint = (providerVoiceId: string): string => createHash('sha256').update(`narrator-voice:${providerVoiceId}`).digest('hex').slice(0, 16);
+
+/** What makes one chunk's audio: route, model, provider voice and the exact styled text blocks. */
+export function chunkCacheKey(input: { route: NarratorRoute; modelId: string; voiceFingerprint: string; segments: { text: string; style: string }[] }): string {
+  return createHash('sha256')
+    .update(JSON.stringify({ r: input.route, m: input.modelId, v: input.voiceFingerprint, s: input.segments.map((x) => [x.text, x.style]) }))
+    .digest('hex')
+    .slice(0, 40);
+}
 
 /**
  * Pwavwe Narrator documents and private media. Every document carries `ownerUid`; the API checks it on
@@ -28,6 +41,11 @@ export const npath = {
   test: (uid: string, voiceId: string, testId: string) => `users/${uid}/narrator/voices/${voiceId}/tests/${testId}.wav`,
   chunkDir: (uid: string, jobId: string) => `users/${uid}/narrator/chunks/${jobId}/`,
   chunk: (uid: string, jobId: string, key: string, i: number) => `users/${uid}/narrator/chunks/${jobId}/${key}-${i}.wav`,
+  /**
+   * Paid-for chunk audio keyed by exactly what produced it (route, model, provider voice, styled text), shared by
+   * every attempt: a retry or a later job reuses it instead of sending (and paying for) the same request again.
+   */
+  cachedChunk: (uid: string, key: string) => `users/${uid}/narrator/chunk-cache/${key}.wav`,
   editionDir: (uid: string, editionId: string) => `users/${uid}/narrator/editions/${editionId}/`,
   clip: (uid: string, editionId: string, clipId: string) => `users/${uid}/narrator/editions/${editionId}/clips/${clipId}.wav`,
   exportFile: (uid: string, editionId: string, exportId: string, name: string) => `users/${uid}/narrator/editions/${editionId}/exports/${exportId}/${name}`,
@@ -71,7 +89,11 @@ export const media = {
   },
   /** Inbox uploads older than `olderThanMs` (left behind when a browser never finished the request). */
   async staleInbox(olderThanMs: number): Promise<string[]> {
-    const [files] = await (bucket as unknown as { getFiles: (o: { matchGlob: string }) => Promise<[{ name: string; metadata: { timeCreated?: string } }[]]> }).getFiles({ matchGlob: 'users/*/narrator-inbox/*' });
+    return media.staleUnder('users/*/narrator-inbox/*', olderThanMs);
+  },
+  /** Objects matching `glob` created more than `olderThanMs` ago. */
+  async staleUnder(glob: string, olderThanMs: number): Promise<string[]> {
+    const [files] = await (bucket as unknown as { getFiles: (o: { matchGlob: string }) => Promise<[{ name: string; metadata: { timeCreated?: string } }[]]> }).getFiles({ matchGlob: glob });
     return files.filter((f) => Date.now() - Date.parse(f.metadata.timeCreated ?? '') > olderThanMs).map((f) => f.name);
   },
   async removePrefix(prefix: string): Promise<void> {

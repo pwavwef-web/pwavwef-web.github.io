@@ -49,6 +49,8 @@ export interface PassageView {
   startSec: number | null;
   /** Accepted directions the provider cannot render (with the reason). */
   flags: { id: string; reason: string }[];
+  /** One-take mode: the take this passage is read in (its audio is the take, not a clip of its own). */
+  takeLabel?: string | null;
 }
 
 function autoRows(text: string, min = 2): number {
@@ -88,7 +90,12 @@ export function PassageRow({ v, editionId, onText, onSkip, onGenerate, onSelectT
                 </button>
               )}
               {v.state === 'stale' && <span className="text-warning">Audio out of date</span>}
-              {(v.state === 'needs_recovery' || v.state === 'failed') && <span className="text-[#ff9b9b]">{v.state === 'needs_recovery' ? 'Needs recovery' : 'Generation failed'}</span>}
+              {(v.state === 'needs_recovery' || v.state === 'failed') && (
+                <span className="text-[#ff9b9b]">
+                  {v.state === 'needs_recovery' ? 'Needs recovery' : 'Generation failed'}
+                  {v.latestProblem?.error?.message ? ` — ${v.latestProblem.error.message.length > 180 ? `${v.latestProblem.error.message.slice(0, 180)}…` : v.latestProblem.error.message}` : ''}
+                </span>
+              )}
             </div>
           )}
           {chips && <div className="mt-1.5 flex flex-wrap gap-1.5">{chips}</div>}
@@ -100,7 +107,7 @@ export function PassageRow({ v, editionId, onText, onSkip, onGenerate, onSelectT
             </button>
           )}
           {!p.skip && p.text.trim() && (
-            <Button size="sm" variant="ghost" disabled={busy || v.state === 'generating'} onClick={onGenerate} aria-label={v.selected ? 'Regenerate this passage' : 'Generate this passage'} title={v.selected ? 'Regenerate this passage (keeps earlier takes)' : 'Generate this passage'}>
+            <Button size="sm" variant="ghost" disabled={busy || v.state === 'generating'} onClick={onGenerate} aria-label={v.takeLabel ? `Read ${v.takeLabel} again` : v.selected ? 'Regenerate this passage' : 'Generate this passage'} title={v.takeLabel ? `Re-read ${v.takeLabel}, which holds this passage (the whole take, so it stays one recording)` : v.selected ? 'Regenerate this passage (keeps earlier takes)' : 'Generate this passage'}>
               {v.state === 'generating' ? <Loader2 className="size-3.5 animate-spin" /> : v.selected ? <RotateCcw className="size-3.5" /> : <Sparkles className="size-3.5" />}
             </Button>
           )}
@@ -108,9 +115,12 @@ export function PassageRow({ v, editionId, onText, onSkip, onGenerate, onSelectT
       </div>
       {open && (
         <div className="mt-3 space-y-3 border-t border-line pt-3 pl-7">
-          <p className="text-xs text-dim">{PASSAGE_STATE_LABELS[v.state]}</p>
+          <p className="text-xs text-dim">
+            {PASSAGE_STATE_LABELS[v.state]}
+            {v.takeLabel ? ` · read in ${v.takeLabel} (listen to it under Takes)` : ''}
+          </p>
           {panel}
-          {v.selected?.status === 'ready' && <ClipPlayer src={src} peaks={v.selected.peaks} label="selected take" />}
+          {!v.takeLabel && v.selected?.status === 'ready' && <ClipPlayer src={src} peaks={v.selected.peaks} label="selected take" />}
           {v.latestProblem && (
             <Notice tone="danger" icon={<CircleAlert className="size-4" />}>
               <p>{v.latestProblem.error?.message}</p>
@@ -292,7 +302,7 @@ export function GenerateDialog({ open, onOpenChange, estimate, title, onConfirm,
             <div>
               <dt className="text-xs text-faint">To generate</dt>
               <dd className="text-fg">
-                {e.items.length} passage{e.items.length === 1 ? '' : 's'} · {e.estimate.requests} request{e.estimate.requests === 1 ? '' : 's'}
+                {e.items.some((i) => i.key.startsWith('take-')) ? (e.items.length === 1 ? 'The whole edition in one take' : `${e.items.length} takes`) : `${e.items.length} passage${e.items.length === 1 ? '' : 's'}`} · {e.estimate.requests} request{e.estimate.requests === 1 ? '' : 's'}
               </dd>
             </div>
             <div>
@@ -310,6 +320,18 @@ export function GenerateDialog({ open, onOpenChange, estimate, title, onConfirm,
           </dl>
           {e.reuse.length > 0 && <p className="text-dim">{e.reuse.length} passage(s) already have a take made from exactly this text and voice; it will be used again at no cost.</p>}
           {e.skipped.length > 0 && <p className="text-dim">{e.skipped.length} passage(s) skipped ({[...new Set(e.skipped.map((s) => s.reason))].join(', ')}).</p>}
+          {e.narrator && (
+            <p className="text-dim">
+              Narrator: <span className="text-fg">{e.narrator.next}</span>
+              {e.allowance ? ` · ${e.allowance.remaining} of ${e.allowance.limit} requests left today` : ''}
+            </p>
+          )}
+          {e.narrator?.switching && (
+            <Notice tone="warning">
+              This edition was narrated with {e.narrator.pinned}. Generating the full edition re-narrates every passage with the new voice, so the article keeps one narrator.
+            </Notice>
+          )}
+          {e.allowanceNote && !e.limitProblem && <Notice tone="warning">{e.allowanceNote}</Notice>}
           {e.limitProblem && <Notice tone="danger">{e.limitProblem}</Notice>}
           <details className="text-xs text-faint">
             <summary className="cursor-pointer">How this is estimated</summary>
@@ -483,5 +505,59 @@ export function SoundCloudPanel({ editionId, edTitle, title, description, link, 
         )}
       </ol>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// One-take mode: the takes of the edition
+// ---------------------------------------------------------------------------
+
+export interface TakeView {
+  key: string;
+  label: string;
+  detail: string;
+  state: PassageAudioState;
+  clip: WithId<NarratorClipDoc> | null;
+  problem: WithId<NarratorClipDoc> | null;
+  firstPassageId: string;
+}
+
+export function TakesPanel({ editionId, takes, busy, onRead }: { editionId: string; takes: TakeView[]; busy: boolean; onRead: (t: TakeView) => void }) {
+  return (
+    <section aria-label="Takes" className="space-y-3">
+      <h2 className="eyebrow">{takes.length === 1 ? 'One take' : `${takes.length} takes`}</h2>
+      {takes.map((t) => (
+        <TakeRow key={t.key} editionId={editionId} t={t} busy={busy} onRead={() => onRead(t)} />
+      ))}
+      <p className="text-xs text-faint">The article is read in one continuous take{takes.length > 1 ? ', split only at section breaks because it is longer than one request can hold' : ''}. Editing a passage re-reads its whole take, so the voice never restarts mid-article.</p>
+    </section>
+  );
+}
+
+function TakeRow({ editionId, t, busy, onRead }: { editionId: string; t: TakeView; busy: boolean; onRead: () => void }) {
+  const src = useNarratorMedia(t.clip?.status === 'ready' ? { kind: 'clip', id: t.clip.id, editionId } : null);
+  return (
+    <div className="space-y-2 rounded-xl border border-line p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-sm text-fg">
+            <span className={cx('size-2 rounded-full', STATE_TONE[t.state])} /> {t.label}
+          </p>
+          <p className="text-xs text-faint">
+            {t.detail} · {PASSAGE_STATE_LABELS[t.state]}
+          </p>
+        </div>
+        <Button size="sm" variant="ghost" icon={t.state === 'generating' ? <Loader2 className="size-3.5 animate-spin" /> : t.clip ? <RotateCcw className="size-3.5" /> : <Sparkles className="size-3.5" />} disabled={busy || t.state === 'generating'} onClick={onRead}>
+          {t.clip ? 'Read again' : 'Read'}
+        </Button>
+      </div>
+      {t.clip?.status === 'ready' && <ClipPlayer src={src} peaks={t.clip.peaks} label={t.label} />}
+      {t.clip?.textCheck && (
+        <p className={cx('text-xs', t.clip.textCheck.message ? 'text-warning' : 'text-faint')}>
+          {t.clip.textCheck.message ?? (t.clip.textCheck.method === 'transcript' ? `Checked against the text: all ${t.clip.textCheck.passagesHeard} passages heard (${Math.round((t.clip.textCheck.coverage ?? 0) * 100)}% of words).` : '')}
+        </p>
+      )}
+      {t.problem?.error && <p className="text-xs text-[#ff9b9b]">{t.problem.error.message}</p>}
+    </div>
   );
 }

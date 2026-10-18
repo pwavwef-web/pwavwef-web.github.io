@@ -29,6 +29,72 @@ if (standalone) document.body.classList.add('pp-standalone');
 
 const id = (/^\/embed\/audio\/([A-Za-z0-9]{12})\/?$/.exec(location.pathname) ?? [])[1] ?? null;
 
+/**
+ * Narration disclosure. Shown under the player when the page is opened on its own, and always in the
+ * accessibility tree, so the audio is never presented as an ordinary recording. (Kept here rather than
+ * imported: the player deliberately shares no bundle with the studio.)
+ */
+const DISCLOSURE = 'Narrated with a replica of the author’s own voice, created with the author’s recorded consent.';
+
+// ------------------------------------------------------------------ theming
+
+type Theme = 'light' | 'dark' | 'auto';
+const isTheme = (v: unknown): v is Theme => v === 'light' || v === 'dark' || v === 'auto';
+
+/** `?theme=light|dark|auto`; anything else (including nothing) is the Papers light theme. */
+function applyTheme(t: Theme) {
+  document.documentElement.setAttribute('data-theme', t);
+}
+applyTheme(((q) => (isTheme(q) ? q : 'light'))(new URLSearchParams(location.search).get('theme')));
+
+/**
+ * A blog with its own light/dark toggle can tell the player which theme to use, and size the iframe to the
+ * player — neither happens on its own across origins. Only a message from this frame's own parent, from one
+ * of the publication origins (or this origin, for the studio's preview), is read; the payload is checked
+ * field by field and nothing in it is ever treated as markup.
+ */
+function parentOrigin(): string | null {
+  if (standalone) return null;
+  const ref = document.referrer;
+  if (!ref) return null;
+  let host: string;
+  let origin: string;
+  try {
+    const u = new URL(ref);
+    if (u.protocol !== 'https:' && u.origin !== location.origin) return null;
+    host = u.hostname.toLowerCase();
+    origin = u.origin;
+  } catch {
+    return null;
+  }
+  if (origin === location.origin) return origin;
+  return host === 'blogs.pwavwe.com' || host === 'www.blogger.com' || host === 'blogspot.com' || host.endsWith('.blogspot.com') ? origin : null;
+}
+const hostOrigin = parentOrigin();
+
+/** Redraws whatever depends on the colours; set once the player is on screen. */
+let repaint: (() => void) | null = null;
+
+/** The card's natural height (it otherwise fills the iframe, so the box never ends in empty space). */
+function postSize() {
+  if (!hostOrigin) return;
+  root.classList.add('pp-auto');
+  const h = Math.ceil(root.getBoundingClientRect().height);
+  root.classList.remove('pp-auto');
+  if (h > 0) window.parent.postMessage({ type: 'pwavwe-player-size', id, height: h }, hostOrigin);
+}
+if (hostOrigin) {
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (e.source !== window.parent || e.origin !== hostOrigin) return;
+    const d: unknown = e.data;
+    if (!d || typeof d !== 'object') return;
+    const msg = d as { type?: unknown; theme?: unknown };
+    if (msg.type !== 'pwavwe-player-theme' || !isTheme(msg.theme)) return;
+    applyTheme(msg.theme);
+    repaint?.();
+  });
+}
+
 const ICON = {
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.13-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"/></svg>',
   pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z"/></svg>',
@@ -97,9 +163,11 @@ function drawWave(canvas: HTMLCanvasElement, peaks: number[], progress: number) 
   if (!g) return;
   g.scale(dpr, dpr);
   const style = getComputedStyle(document.documentElement);
-  const done = style.getPropertyValue('--pp-wave-done').trim() || '#1d4fb8';
-  const rest = style.getPropertyValue('--pp-wave').trim() || 'rgba(29,79,184,.25)';
-  const bars = Math.max(1, Math.floor(w / 3));
+  const done = style.getPropertyValue('--pp-wave-done').trim() || '#3268c8';
+  const rest = style.getPropertyValue('--pp-wave').trim() || '#978f84';
+  // Four pixels a bar: an airier wave than a dense barcode, and still ~180 bars in a blog column.
+  const pitch = 4;
+  const bars = Math.max(1, Math.floor(w / pitch));
   const max = Math.max(0.05, ...peaks);
   for (let i = 0; i < bars; i++) {
     const a = Math.floor((i / bars) * peaks.length);
@@ -108,7 +176,7 @@ function drawWave(canvas: HTMLCanvasElement, peaks: number[], progress: number) 
     for (let j = a; j < b; j++) v = Math.max(v, peaks[j] ?? 0);
     const bh = Math.max(2, (v / max) * (h - 2));
     g.fillStyle = i / bars < progress ? done : rest;
-    g.fillRect(i * 3, (h - bh) / 2, 2, bh);
+    g.fillRect(i * pitch, (h - bh) / 2, 2, bh);
   }
 }
 
@@ -121,9 +189,7 @@ function render(d: PublicEdition) {
 
   const head = el('div', { class: 'pp-head' });
   const meta = el('div', { class: 'pp-meta' });
-  const kicker = el('p', { class: 'pp-kicker' }, d.publication);
-  kicker.append(el('span', { class: 'pp-kicker-more' }, ' · Listen to this paper'));
-  meta.append(kicker, el('h1', { class: 'pp-title' }, d.title), el('p', { class: 'pp-author' }, `Written and read by ${d.author}`));
+  meta.append(el('p', { class: 'pp-kicker' }, 'Listen to this paper'), el('h1', { class: 'pp-title', title: d.title }, d.title), el('p', { class: 'pp-byline' }, `By ${d.author} · Audio edition`));
   head.append(el('div', { class: 'pp-mark', 'aria-hidden': 'true' }, 'PP'), meta);
 
   const audio = el('audio', { preload: 'none' });
@@ -137,8 +203,8 @@ function render(d: PublicEdition) {
   const canvas = el('canvas', { class: 'pp-wave', 'aria-hidden': 'true' });
   const seek = el('input', { class: 'pp-seek', type: 'range', min: '0', max: String(Math.round(total * 10) / 10), step: '0.1', value: '0', 'aria-label': 'Seek' });
   seekWrap.append(canvas, seek);
-  const main = el('div', { class: 'pp-main' });
-  main.append(play, seekWrap);
+  const controls = el('div', { class: 'pp-controls' });
+  controls.append(play, seekWrap);
 
   const time = el('span', { class: 'pp-time', 'aria-hidden': 'true' }, `0:00 / ${clock(total)}`);
   const back = el('button', { class: 'pp-btn', type: 'button', 'aria-label': 'Back 15 seconds' });
@@ -160,15 +226,18 @@ function render(d: PublicEdition) {
   if (!volumeWorks) volume.classList.add('pp-hidden');
   const bar = el('div', { class: 'pp-bar' });
   bar.append(time, back, fwd, speed, vol);
+  controls.append(bar);
 
   const live = el('span', { class: 'pp-sr', 'aria-live': 'polite' });
-  root.append(head, main, bar, live, audio);
-  if (standalone && d.articleUrl) {
+  root.append(head, controls, live, audio);
+  // The disclosure is read out wherever the player is; opened on its own it is also on the page.
+  if (standalone) {
     const foot = el('p', { class: 'pp-foot' });
-    const a = el('a', { class: 'pp-link', href: d.articleUrl, rel: 'noopener' }, 'Read the paper');
-    foot.append(a, document.createTextNode(` · ${d.publication}`));
+    if (d.articleUrl) foot.append(el('a', { class: 'pp-link', href: d.articleUrl, rel: 'noopener' }, 'Read the paper'), document.createTextNode(` · ${d.publication} · `));
+    else foot.append(document.createTextNode(`${d.publication} · `));
+    foot.append(document.createTextNode(DISCLOSURE));
     root.append(foot);
-  }
+  } else root.append(el('p', { class: 'pp-sr' }, DISCLOSURE));
 
   let dragging = false;
   let pendingSeek: number | null = null;
@@ -285,8 +354,13 @@ function render(d: PublicEdition) {
     navigator.mediaSession.setActionHandler('seekbackward', () => goTo(current() - 15));
     navigator.mediaSession.setActionHandler('seekforward', () => goTo(current() + 15));
   }
+  repaint = update;
   new ResizeObserver(() => drawWave(canvas, d.peaks, total ? current() / total : 0)).observe(canvas);
+  // Measured outside the ResizeObserver: postSize() toggles a class on the card to read its natural height.
+  window.addEventListener('resize', postSize);
+  document.fonts?.ready.then(postSize).catch(() => undefined);
   update();
+  postSize();
 }
 
 async function start() {

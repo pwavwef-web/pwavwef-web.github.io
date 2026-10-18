@@ -2,7 +2,23 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PUBLICATION_ORIGINS, azStudioEmbedHtml, narratorRequestSchema, parseRange, playerUrl, publicView, type NarratorEditionDoc, type NarratorPublicationDoc } from '@az-studio/shared';
+import {
+  EMBED_HEIGHT_NARROW_PX,
+  EMBED_HEIGHT_PX,
+  EMBED_NARROW_MAX_PX,
+  PLAYER_THEMES,
+  PLAYER_THEME_SYNC,
+  PUBLICATION_ORIGINS,
+  PUBLIC_PLAYER_ORIGIN,
+  azStudioEmbedHtml,
+  narratorRequestSchema,
+  parseRange,
+  playerEmbedUrl,
+  playerUrl,
+  publicView,
+  type NarratorEditionDoc,
+  type NarratorPublicationDoc,
+} from '@az-studio/shared';
 import { doc, resetFakes, store } from './fakes';
 
 vi.mock('../src/lib/firebase', async () => import('./fakes'));
@@ -196,10 +212,25 @@ describe('public audio route', () => {
 describe('embed markup and hosting headers', () => {
   it('builds a stable HTTPS iframe with an accessible title and fallback link — no script, no autoplay, no storage URL', () => {
     const html = azStudioEmbedHtml('AbCdEfGhIjKl', 'Does “Low-Resource” <Mean> "Low"?');
-    expect(html).toContain('src="https://az-studio.web.app/embed/audio/AbCdEfGhIjKl"');
+    expect(html).toContain('src="https://az-studio.web.app/embed/audio/AbCdEfGhIjKl?theme=light"');
     expect(html).toContain('title="Listen to Does “Low-Resource” &lt;Mean&gt; &quot;Low&quot;? — audio edition, The Pwavwe Papers"');
-    expect(html).toContain('<a href="https://az-studio.web.app/embed/audio/AbCdEfGhIjKl"');
+    expect(html).toContain('<a class="pwavwe-audio-open" href="https://az-studio.web.app/embed/audio/AbCdEfGhIjKl" target="_blank" rel="noopener">Open audio in a new tab</a>');
     expect(html).not.toMatch(/<script|autoplay|storage\.googleapis|X-Goog/i);
+    // The old large red link is gone, and the post never carries the player's own height twice.
+    expect(html).not.toMatch(/>Listen to this paper<\/a>/);
+    expect(html).toContain(`height="${EMBED_HEIGHT_PX}"`);
+    expect(html).not.toContain(`height:${EMBED_HEIGHT_PX}px`);
+    expect(html).toMatch(new RegExp(`@media \\(max-width:${EMBED_NARROW_MAX_PX}px\\).*--pwavwe-audio-h:${EMBED_HEIGHT_NARROW_PX}px`));
+  });
+
+  it('asks for a theme explicitly, and keeps cross-origin theme sync out of the post markup', () => {
+    expect(playerEmbedUrl('AbCdEfGhIjKl')).toBe('https://az-studio.web.app/embed/audio/AbCdEfGhIjKl?theme=light');
+    expect(playerEmbedUrl('AbCdEfGhIjKl', { theme: 'dark' })).toBe('https://az-studio.web.app/embed/audio/AbCdEfGhIjKl?theme=dark');
+    expect(playerEmbedUrl('AbCdEfGhIjKl', { theme: 'auto', origin: 'https://example.test/' })).toBe('https://example.test/embed/audio/AbCdEfGhIjKl?theme=auto');
+    for (const t of PLAYER_THEMES) expect(azStudioEmbedHtml('AbCdEfGhIjKl', 'A paper', { theme: t })).toContain(`?theme=${t}"`);
+    // The separate theme-sync snippet is the only place a script appears, and it names one exact origin.
+    expect(PLAYER_THEME_SYNC).toContain(`"${PUBLIC_PLAYER_ORIGIN}"`);
+    expect(PLAYER_THEME_SYNC).toContain('e.origin !== ORIGIN');
   });
 
   it('lets only the configured publication origins frame the player, and keeps the studio unframeable', () => {

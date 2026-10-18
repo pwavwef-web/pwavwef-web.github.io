@@ -9,6 +9,9 @@ import {
   DELIVERY_PRESET_IDS,
   NARRATOR,
   REFERENCE_SCRIPT,
+  ROUTE_LABELS,
+  consentStatementFor,
+  routeOfVoice,
   RETENTION,
   countWords,
   estimateSpeechSec,
@@ -325,10 +328,16 @@ export default function VoicePage() {
   const [assessment, setAssessment] = useState<VoiceAssessment>({ naturalness: null, resemblance: null, accent: null, pronunciation: null, pacing: null, notes: '' });
 
   // Latest unused recordings are picked up automatically (e.g. after a reload).
-  const unused = recordings.data.filter((r) => !r.usedByVoiceId).sort((a, b) => (toMillis(b.createdAt) ?? 0) - (toMillis(a.createdAt) ?? 0));
-  const reference = recordings.data.find((r) => r.id === referenceId) ?? (referenceId === null ? (unused.find((r) => r.kind === 'reference') ?? null) : null);
-  const consent = recordings.data.find((r) => r.id === consentId) ?? (consentId === null ? (unused.find((r) => r.kind === 'consent') ?? null) : null);
-  const statement = CONSENT_STATEMENTS.find((c) => c.locale === locale)!;
+  // New voices go to the speech service chosen in Settings; each service verifies its own consent sentence.
+  const route = status?.settings.route ?? 'developer';
+  const newest = [...recordings.data].sort((a, b) => (toMillis(b.createdAt) ?? 0) - (toMillis(a.createdAt) ?? 0));
+  const unused = newest.filter((r) => !r.usedByVoiceId);
+  // A reference already used on the other service is still the same speaker: it can be reused while it is kept.
+  const reusable = newest.find((r) => r.kind === 'reference' && r.status === 'ready' && r.storagePath && live.some((v) => v.referenceRecordingId === r.id && routeOfVoice(v) !== route)) ?? null;
+  const reference = recordings.data.find((r) => r.id === referenceId) ?? (referenceId === null ? (unused.find((r) => r.kind === 'reference') ?? reusable) : null);
+  const consent = recordings.data.find((r) => r.id === consentId) ?? (consentId === null ? (unused.find((r) => r.kind === 'consent' && (r.consentRoute ?? 'developer') === route) ?? null) : null);
+  const statement = { text: consentStatementFor(route, locale) };
+  const otherRouteVoice = live.find((v) => routeOfVoice(v) !== route) ?? null;
   const readyTests = tests.data.filter((t) => t.status === 'ready');
 
   const derived: Step = voice ? (voice.status === 'active' ? (readyTests.length ? 4 : 3) : 2) : !reference || hasBlockingIssue(reference.analysis) ? 0 : !consent || hasBlockingIssue(consent.analysis) ? 1 : 2;
@@ -398,6 +407,11 @@ export default function VoicePage() {
           </button>
         </Notice>
       )}
+      {otherRouteVoice && !live.some((v) => routeOfVoice(v) === route) && (
+        <Notice tone="accent">
+          New voices are created on {ROUTE_LABELS[route]} (Settings → Speech service). Your current voice lives on {ROUTE_LABELS[routeOfVoice(otherRouteVoice)]}; Google keeps a separate voice store for each, so it cannot be used there. To narrate on {ROUTE_LABELS[route]}, enrol again: {reusable ? 'your reference recording is reused, ' : 'record a reference, '}record the consent statement for this service, then create, test and approve the new voice. Editions switched to it are re-narrated in full.
+        </Notice>
+      )}
       <Stepper step={step} reachable={reachable} onStep={setChosen} />
 
       {step === 0 && (
@@ -430,10 +444,10 @@ export default function VoicePage() {
               <p>Google requires the same person to read this statement exactly. It is checked against your reference recording.</p>
               <p>
                 Wording from{' '}
-                <a href={status?.consent.source.url ?? 'https://ai.google.dev/gemini-api/docs/voice-replication'} target="_blank" rel="noreferrer" className="text-accent-2 hover:underline">
-                  Google’s voice replication page
+                <a href={(route === 'vertex' ? status?.consent.cloud?.source.url : status?.consent.source.url) ?? 'https://ai.google.dev/gemini-api/docs/voice-replication'} target="_blank" rel="noreferrer" className="text-accent-2 hover:underline">
+                  Google’s voice replication page ({ROUTE_LABELS[route]})
                 </a>
-                , checked {status?.consent.source.checkedOn ?? '2026-10-17'}. It must not be paraphrased, and it must be your own live voice — never synthesised.
+                , checked {(route === 'vertex' ? status?.consent.cloud?.source.checkedOn : status?.consent.source.checkedOn) ?? '2026-10-17'}. It must not be paraphrased, and it must be your own live voice — never synthesised.
               </p>
             </>
           }
@@ -448,7 +462,7 @@ export default function VoicePage() {
             </Select>
           </Field>
           <blockquote className="display rounded-2xl border border-accent/25 bg-accent/[0.06] px-6 py-5 text-[24px] leading-snug text-fg">“{statement.text}”</blockquote>
-          <Recorder kind="consent" recording={consent} consentLocale={locale} scriptText={statement.text} onChange={(id) => setConsentId(id ?? '')} />
+          <Recorder kind="consent" recording={consent} consentLocale={locale} consentRoute={route} scriptText={statement.text} onChange={(id) => setConsentId(id ?? '')} />
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => setChosen(0)}>
               Back
@@ -466,7 +480,7 @@ export default function VoicePage() {
           aside={
             <>
               <p className="font-medium text-fg">What is sent to Google</p>
-              <p>Your two recordings (as 24 kHz mono WAV) go to the Gemini API Voices service, which checks the consent and stores a voice profile in AZ Studio’s Google project. Google keeps a stored voice for one year from its last use; you can delete it at any time.</p>
+              <p>Your two recordings (as 24 kHz mono WAV) go to the {ROUTE_LABELS[route]} Voices service, which checks the consent and stores a voice profile in AZ Studio’s Google project. Google keeps a stored voice for one year from its last use; you can delete it at any time.</p>
               <p className="font-medium text-fg">What AZ Studio keeps</p>
               <p>The consent recording is deleted as soon as Google accepts it. The reference is kept privately for {RETENTION.referenceAfterCreateDays} days so you can compare it with tests, then deleted. Unused recordings are deleted after {RETENTION.unusedRecordingDays} days.</p>
               <p>{status?.voiceCreationCost}</p>

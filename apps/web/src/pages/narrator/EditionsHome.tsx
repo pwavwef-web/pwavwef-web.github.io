@@ -20,7 +20,7 @@ function VoiceLine() {
     );
   return (
     <Notice tone={active ? 'warning' : 'accent'} icon={<Mic className="size-4" />}>
-      {active ? 'Your voice is ready for an audition. Listen to a test and approve it before narrating editions.' : 'Start by creating your voice: record a short reference and the consent statement.'}{' '}
+      {active ? 'Your voice is ready for an audition. Listen to a test and approve it before narrating editions with it.' : 'To narrate in your own voice, record a short reference and the consent statement.'} Any edition can also be read by one of Google’s voices (choose it in the edition’s Voice menu).{' '}
       <Link to="/narrator/voice" className="font-medium text-accent-2 underline-offset-2 hover:underline">
         Go to My Voice
       </Link>

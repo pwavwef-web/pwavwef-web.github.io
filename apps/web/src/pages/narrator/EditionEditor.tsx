@@ -5,15 +5,26 @@ import { ArrowLeft, AudioLines, CircleAlert, Eraser, Play, Square, Trash2 } from
 import {
   DELIVERY_PRESETS,
   DELIVERY_PRESET_IDS,
+  GOOGLE_VOICES,
   applyCleanup,
+  googleVoiceId,
+  googleVoiceLabel,
+  googleVoiceOf,
+  providerOfRoute,
   flattenScript,
   passageAudioState,
   passageSynthesisInput,
   buildScript,
+  routeOfVoice,
+  planTakes,
+  readModeOf,
+  takeOfPassage,
+  fmtClock,
   type EditionSettings,
   type NarratorEditionDoc,
   type NarratorPassage,
   type NarratorScript,
+  type NarratorVoiceDoc,
   mergeSuggestions,
   passageDirections,
   reanchorDirections,
@@ -24,7 +35,7 @@ import { ApiError, errorMessage } from '../../lib/api';
 import { nar, newRequestId, useClips, useDirectJobs, useEdition, useExports, useNarratorJobs, useNarratorMedia, useVoices, type EstimateResult } from '../../lib/narrator';
 import { Badge, Button, ConfirmDialog, Field, Input, Notice, ProgressBar, Segmented, Select, Skeleton, Tabs, Toggle } from '../../components/ui';
 import { ClipPlayer, EditionPlayer } from '../../components/narrator/audio';
-import { CleanupDialog, ExportPanel, GenerateDialog, PassageRow, SoundCloudPanel, type PassageView } from './editor-parts';
+import { CleanupDialog, ExportPanel, GenerateDialog, PassageRow, SoundCloudPanel, TakesPanel, type PassageView, type TakeView } from './editor-parts';
 import { useNarrator } from './NarratorShell';
 import { AddDirection, DirectionChip, DirectionsToolbar } from './directions';
 import { PublishPanel } from './PublishPanel';
@@ -126,17 +137,39 @@ export default function EditionEditor() {
   }, []);
 
   const edition = live.data;
-  const voice = voices.data.find((v) => v.id === draft?.voiceId) ?? null;
-  const notebook = status?.pronunciations ?? [];
+  const voice = useMemo(() => {
+    const g = googleVoiceOf(draft?.voiceId);
+    // A prebuilt Google voice is always ready, on the route and model chosen in Settings (as the server sees it).
+    if (g) return status ? ({ id: googleVoiceId(g.name), displayName: googleVoiceLabel(g), modelId: status.model.id, provider: providerOfRoute(status.settings.route), status: 'active', approval: { state: 'approved', at: null, assessment: null, preset: null } } as Pick<NarratorVoiceDoc, 'displayName' | 'modelId' | 'provider' | 'status' | 'approval'> & { id: string }) : null;
+    return voices.data.find((v) => v.id === draft?.voiceId) ?? null;
+  }, [draft?.voiceId, voices.data, status]);
+  const notebook = useMemo(() => status?.pronunciations ?? [], [status?.pronunciations]);
   const editionJobs = jobs.data.filter((j) => (j.params as { editionId?: string }).editionId === editionId);
   const inFlight = new Set(editionJobs.filter((j) => j.type === 'narrator.speak').flatMap((j) => ((j.params as { items?: { passageId: string | null }[] }).items ?? []).map((i) => i.passageId).filter(Boolean) as string[]));
   const latestExport = exports.data[0] ?? null;
   const readyExport = exports.data.find((x) => x.status === 'ready') ?? null;
   const exportUrl = useNarratorMedia(readyExport ? { kind: 'export', id: readyExport.id, editionId, file: 'mp3' } : null);
 
+  const oneTake = draft ? readModeOf(draft.settings) === 'oneTake' : false;
+  const blocks = useMemo(() => (draft && voice && oneTake ? planTakes({ script: draft.script, settings: draft.settings, notebook, voice: { id: voice.id, modelId: voice.modelId }, directions: draft.directions }) : []), [draft, voice, oneTake, notebook]);
+  const takeViews: TakeView[] = useMemo(() => {
+    if (!edition) return [];
+    return blocks.map((b) => {
+      const mine = clips.data.filter((c) => c.passageId === b.key);
+      const clip = mine.find((c) => c.id === edition.takes?.[b.key] && c.status === 'ready') ?? null;
+      const forHash = mine.filter((c) => c.inputHash === b.inputHash).sort((a, c) => c.version - a.version)[0] ?? null;
+      const first = draft ? flattenScript(draft.script, true).find((f) => f.passage.id === b.passages[0]!.passageId)?.passage : undefined;
+      const state = first ? passageAudioState(first, b.inputHash, clip, forHash, inFlight.has(b.key)) : 'missing';
+      const sections = new Set(b.passages.map((p) => p.sectionId).filter(Boolean)).size;
+      return { key: b.key, label: blocks.length === 1 ? 'Whole edition' : `Take ${b.index + 1} of ${blocks.length}`, detail: `${b.passages.length} passages${sections ? ` · ${sections} section${sections === 1 ? '' : 's'}` : ''} · about ${fmtClock(Math.round((b.words / 150) * 60))}`, state, clip, problem: forHash && forHash.status !== 'ready' ? forHash : null, firstPassageId: b.passages[0]!.passageId };
+    });
+  }, [blocks, clips.data, edition, draft, inFlight.size]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const views = useMemo(() => {
     const map = new Map<string, PassageView>();
     if (!draft || !edition) return map;
+    const blockOf = takeOfPassage(blocks);
+    const takeState = new Map(takeViews.map((t) => [t.key, t]));
     const byPassage = new Map<string, typeof clips.data>();
     for (const c of clips.data) byPassage.set(c.passageId, [...(byPassage.get(c.passageId) ?? []), c]);
     const exportStart = new Map((readyExport?.parts ?? []).map((p) => [p.passageId, p]));
@@ -146,6 +179,15 @@ export default function EditionEditor() {
       const takes = (byPassage.get(p.id) ?? []).filter((c) => c.status === 'ready').sort((a, b) => b.version - a.version);
       const selected = takes.find((c) => c.id === edition.takes?.[p.id]) ?? null;
       const forHash = (byPassage.get(p.id) ?? []).filter((c) => input && c.inputHash === input.inputHash).sort((a, b) => b.version - a.version)[0] ?? null;
+      const block = oneTake ? blockOf.get(p.id) : undefined;
+      const tv = block ? takeState.get(block.key) : undefined;
+      if (oneTake) {
+        // The passage's audio is its take: current only while the whole take is.
+        const ex = exportStart.get(p.id);
+        const st = block && tv ? tv.state : passageAudioState(p, null, null, null, false);
+        map.set(p.id, { passage: p, state: st, selected: tv?.clip ?? null, takes: [], latestProblem: tv?.problem ?? null, spokenAs: input && (input.applied.length || input.directionsApplied) ? input.segments.map((s) => (s.style && s.style !== input.style ? `[${s.style}] ${s.text}` : s.text)).join(' ') : null, flags: input?.flagged ?? [], startSec: ex && tv?.clip && ex.clipId === tv.clip.id && st === 'current' ? ex.startSec : null, takeLabel: tv ? tv.label.toLowerCase().replace(/^whole edition$/, 'the whole-edition take') : null });
+        continue;
+      }
       const state = passageAudioState(p, input?.inputHash ?? null, selected, forHash, inFlight.has(p.id));
       const ex = exportStart.get(p.id);
       map.set(p.id, {
@@ -160,7 +202,7 @@ export default function EditionEditor() {
       });
     }
     return map;
-  }, [draft, edition, clips.data, voice, notebook, readyExport, inFlight.size]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [draft, edition, clips.data, voice, notebook, readyExport, inFlight.size, blocks, takeViews, oneTake]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Finished Auto-direct jobs are merged once: suggestions only, re-anchored to the current text, never duplicated.
   useEffect(() => {
@@ -312,7 +354,7 @@ export default function EditionEditor() {
         busy={busy || !voice}
         onText={(t) => setPassage(p.id, { text: t })}
         onSkip={(skip) => setPassage(p.id, { skip })}
-        onGenerate={() => void openGenerate({ scope: 'passages', passageIds: [p.id], sectionId: null, force: v.state === 'current' || v.state === 'needs_recovery', title: 'Generate passage' })}
+        onGenerate={() => void openGenerate({ scope: 'passages', passageIds: [p.id], sectionId: null, force: v.state === 'current' || v.state === 'needs_recovery', title: v.takeLabel ? `Read ${v.takeLabel} again` : 'Generate passage' })}
         onSelectTake={(clipId) => void nar('takeSelect', { editionId: edition.id, passageId: p.id, clipId }).catch((e) => toast.error(errorMessage(e)))}
         onDismiss={(clipId) => void nar('clipDismiss', { editionId: edition.id, clipId }).catch((e) => toast.error(errorMessage(e)))}
         onSelectText={setSelection}
@@ -388,22 +430,31 @@ export default function EditionEditor() {
           <Field label="Article URL" className="min-w-56 flex-1">
             <Input type="url" value={draft.sourceUrl ?? ''} onChange={(e) => update({ sourceUrl: e.target.value.trim() || null })} placeholder="https://blogs.pwavwe.com/…" />
           </Field>
-          <Field label="Voice" className="w-56">
+          <Field label="Voice" className="w-64">
             <Select value={draft.voiceId ?? ''} onChange={(e) => update({ voiceId: e.target.value || null })}>
               <option value="">No voice</option>
-              {voices.data
-                .filter((v) => v.status !== 'deleted')
-                .map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.displayName} · {v.approval.state === 'approved' ? 'approved' : v.status === 'active' ? 'not approved' : v.status.replace(/_/g, ' ')}
+              <optgroup label="Your voices">
+                {voices.data
+                  .filter((v) => v.status !== 'deleted')
+                  .map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.displayName} · {v.approval.state === 'approved' ? 'approved' : v.status === 'active' ? 'not approved' : v.status.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Google voices">
+                {GOOGLE_VOICES.map((g) => (
+                  <option key={g.name} value={googleVoiceId(g.name)}>
+                    {g.name} — {g.character} · {g.gender}
                   </option>
                 ))}
+              </optgroup>
             </Select>
           </Field>
         </div>
         {!approved && (
           <Notice tone="warning">
-            {voice ? 'This voice is not approved yet. You can preview a selection, but approve it in My Voice before narrating the edition.' : 'Choose a voice. '}{' '}
+            {voice ? 'This voice is not approved yet. You can preview a selection, but approve it in My Voice before narrating the edition.' : 'Choose a voice — one of Google’s voices, or your own from '}{' '}
             <Link to="/narrator/voice" className="font-medium underline">
               My Voice
             </Link>
@@ -432,6 +483,7 @@ export default function EditionEditor() {
             <>
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-black/20 p-2">
                 <Segmented size="sm" label="Delivery" value={draft.settings.preset} onChange={(v) => setSettings({ preset: v })} options={DELIVERY_PRESET_IDS.map((id) => ({ value: id, label: DELIVERY_PRESETS[id].label }))} />
+                <Segmented size="sm" label="Reading" value={readModeOf(draft.settings)} onChange={(v) => setSettings({ readMode: v })} options={[{ value: 'oneTake', label: 'One take', title: 'The whole article in one continuous reading (split only at section breaks when too long)' }, { value: 'passages', label: 'Passage by passage', title: 'One request per passage, joined at export' }]} />
                 <Button size="sm" variant="ghost" icon={<Eraser className="size-3.5" />} onClick={() => setCleanupOpen(true)}>
                   Review cleanup
                 </Button>
@@ -471,7 +523,7 @@ export default function EditionEditor() {
                     <Input type="number" min={0.15} max={4} step={0.05} value={draft.settings.pauses.afterOpeningSec} onChange={(e) => setSettings({ pauses: { ...draft.settings.pauses, afterOpeningSec: Math.min(4, Math.max(0.15, Number(e.target.value) || 0.15)) } })} />
                   </Field>
                 </div>
-                <p className="mt-2 text-xs text-faint">Changing the delivery changes every passage’s inputs, so existing audio becomes out of date. Pauses only affect the export.</p>
+                <p className="mt-2 text-xs text-faint">Changing the delivery changes every passage’s inputs, so existing audio becomes out of date. Pauses only affect the export{oneTake ? ' — read as one take, the voice paces itself inside a take and these pauses apply only between takes' : ''}.</p>
               </details>
 
               <article className="space-y-6">
@@ -485,9 +537,11 @@ export default function EditionEditor() {
                   <section key={s.id} aria-label={s.title ?? `Section ${i + 1}`} className="space-y-1">
                     <div className="flex items-center justify-between gap-2 px-4">
                       <p className="eyebrow">{s.title ? `Section ${i + 1}` : 'Introduction'}</p>
-                      <Button size="sm" variant="ghost" disabled={!approved || busy} onClick={() => void openGenerate({ scope: 'section', passageIds: [], sectionId: s.id, force: false, title: `Generate “${s.title ?? 'Introduction'}”` })}>
-                        Generate section
-                      </Button>
+                      {!oneTake && (
+                        <Button size="sm" variant="ghost" disabled={!approved || busy} onClick={() => void openGenerate({ scope: 'section', passageIds: [], sectionId: s.id, force: false, title: `Generate “${s.title ?? 'Introduction'}”` })}>
+                          Generate section
+                        </Button>
+                      )}
                     </div>
                     {s.passages.map((p) => row(p, p.kind === 'heading'))}
                   </section>
@@ -531,11 +585,18 @@ export default function EditionEditor() {
                 <ProgressBar value={j.progress} label={j.label} />
               </div>
             ))}
+            {(status.limits ?? []).filter((l) => voice && l.modelId === voice.modelId && (l.route ?? 'developer') === routeOfVoice(voice) && l.until > Date.now()).map((l) => (
+              <Notice key={l.modelId} tone="warning" icon={<CircleAlert className="size-4" />}>
+                {l.message}
+              </Notice>
+            ))}
             <Button variant="primary" size="lg" className="w-full" icon={<AudioLines className="size-4" />} disabled={!approved || busy || Boolean(speakingJob) || allCurrent} onClick={() => void openGenerate({ scope: 'edition', passageIds: [], sectionId: null, force: false, title: 'Generate the edition' })}>
-              {allCurrent ? 'All passages are current' : counts.current ? `Generate the remaining ${spoken.length - counts.current}` : 'Generate full edition'}
+              {oneTake ? (allCurrent ? 'The reading is current' : takeViews.length > 1 ? `Read the edition (${takeViews.filter((t) => t.state !== 'current').length} of ${takeViews.length} takes)` : 'Read the whole edition in one take') : allCurrent ? 'All passages are current' : counts.current ? `Generate the remaining ${spoken.length - counts.current}` : 'Generate full edition'}
             </Button>
-            <p className="text-xs text-faint">Only passages without current audio are generated. You confirm the estimate first; nothing paid starts on its own.</p>
+            <p className="text-xs text-faint">{oneTake ? 'Only takes without current audio are read. ' : 'Only passages without current audio are generated. '}You confirm the estimate first; nothing paid starts on its own.</p>
           </section>
+
+          {oneTake && takeViews.length > 0 && <TakesPanel editionId={edition.id} takes={takeViews} busy={busy || !approved || Boolean(speakingJob)} onRead={(t) => void openGenerate({ scope: 'passages', passageIds: [t.firstPassageId], sectionId: null, force: Boolean(t.clip), title: t.clip ? `Read ${t.label.toLowerCase()} again` : `Read ${t.label.toLowerCase()}` })} />}
 
           <ExportPanel editionId={edition.id} latest={latestExport} outdated={exportOutdated} canExport={allCurrent && !exportJob && saveState !== 'conflict'} blockers={exportBlockers} onExport={() => void exportNow()} exporting={Boolean(exportJob)} />
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Copy } from 'lucide-react';
-import { PUBLIC_PLAYER_ORIGIN, azStudioEmbedHtml, fmtClock, playerUrl, type NarratorEditionDoc, type NarratorExportDoc } from '@az-studio/shared';
+import { EMBED_HEIGHT_PX, PLAYER_THEMES, PLAYER_THEME_SYNC, PUBLIC_PLAYER_ORIGIN, azStudioEmbedHtml, fmtClock, playerEmbedUrl, playerUrl, type NarratorEditionDoc, type NarratorExportDoc, type PlayerTheme } from '@az-studio/shared';
 import { errorMessage } from '../../lib/api';
 import { nar, type WithId } from '../../lib/narrator';
 import { Badge, Button, ConfirmDialog, Field, Input, Notice } from '../../components/ui';
@@ -26,12 +26,14 @@ export function PublishPanel({ editionId, title, publication, exports }: { editi
   const [reviewed, setReviewed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [theme, setTheme] = useState<PlayerTheme>('light');
+  const [sync, setSync] = useState(false);
   const selected = ready.find((x) => x.id === choice) ?? ready[0] ?? null;
   const live = publication?.status === 'published';
   const publicId = publication?.publicId ?? null;
   const link = publicId ? playerUrl(publicId) : '';
-  const embed = publicId ? azStudioEmbedHtml(publicId, title) : '';
-  const localPreview = publicId ? `${window.location.origin}/embed/audio/${publicId}` : '';
+  const embed = publicId ? azStudioEmbedHtml(publicId, title, { theme }) : '';
+  const localPreview = publicId ? playerEmbedUrl(publicId, { origin: window.location.origin, theme }) : '';
   const newer = live && ready[0] && ready[0].id !== publication?.exportId ? ready[0] : null;
 
   const run = async (op: 'publish' | 'unpublish') => {
@@ -103,8 +105,18 @@ export function PublishPanel({ editionId, title, publication, exports }: { editi
               </Button>
             </div>
           </Field>
+          <Field label="Player theme" htmlFor="pub-theme">
+            <select id="pub-theme" className="field w-auto py-1.5 text-sm" value={theme} onChange={(e) => setTheme(e.target.value as PlayerTheme)}>
+              {PLAYER_THEMES.map((t) => (
+                <option key={t} value={t}>
+                  {t === 'light' ? 'Light — The Pwavwe Papers (default)' : t === 'dark' ? 'Dark — navy' : 'Auto — follow the reader’s system setting'}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <p className="text-xs text-faint">An iframe does not inherit the blog’s own light/dark button, so the embed asks for one theme. “Auto” follows the reader’s device, not the blog.</p>
           <Field label="Blogger embed — paste in the post’s HTML view, under the title" htmlFor="pub-embed">
-            <textarea id="pub-embed" readOnly value={embed} rows={6} className="field font-mono text-[11.5px]" onFocus={(e) => e.currentTarget.select()} />
+            <textarea id="pub-embed" readOnly value={embed} rows={8} className="field font-mono text-[11.5px]" onFocus={(e) => e.currentTarget.select()} />
           </Field>
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" variant="secondary" icon={<Copy className="size-3.5" />} onClick={() => void copy(embed, 'Blogger embed')}>
@@ -113,13 +125,27 @@ export function PublishPanel({ editionId, title, publication, exports }: { editi
             <Button size="sm" variant="ghost" onClick={() => setPreview(!preview)} aria-expanded={preview}>
               {preview ? 'Hide preview' : 'Preview embed'}
             </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSync(!sync)} aria-expanded={sync}>
+              {sync ? 'Hide theme sync' : 'Blogger theme sync (optional)'}
+            </Button>
           </div>
           {preview && (
             <div className="space-y-1.5">
-              <iframe src={localPreview} title={`Preview of the public player for ${title}`} className="block h-[196px] w-full rounded-2xl border-0" loading="lazy" />
+              <iframe src={localPreview} title={`Preview of the public player for ${title}`} className="block w-full rounded-xl border-0" style={{ height: EMBED_HEIGHT_PX }} loading="lazy" />
               <p className="text-xs text-faint">
                 Preview inside AZ Studio{localPreview.startsWith(PUBLIC_PLAYER_ORIGIN) ? '' : ' (served by this local server — the copied code points to the live studio domain)'}. It is not proof that Blogger embedding works: check the published post after pasting.
               </p>
+            </div>
+          )}
+          {sync && (
+            <div className="space-y-1.5">
+              <p className="text-xs text-dim">
+                Optional and separate from the post: paste this once in the Blogger <strong>theme</strong> (Theme → Edit HTML, before <code>&lt;/body&gt;</code>). It keeps embedded players on the blog’s own light/dark setting and sizes each iframe to its player. Posts work without it.
+              </p>
+              <textarea readOnly value={PLAYER_THEME_SYNC} rows={8} className="field font-mono text-[11.5px]" onFocus={(e) => e.currentTarget.select()} />
+              <Button size="sm" variant="secondary" icon={<Copy className="size-3.5" />} onClick={() => void copy(PLAYER_THEME_SYNC, 'Theme sync snippet')}>
+                Copy theme sync snippet
+              </Button>
             </div>
           )}
         </div>

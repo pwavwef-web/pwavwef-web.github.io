@@ -117,26 +117,108 @@ export function publicPeaks(peaks: number[] | null | undefined, max = 400): numb
 
 export const playerUrl = (publicId: string, origin: string = PUBLIC_PLAYER_ORIGIN) => `${origin.replace(/\/$/, '')}/embed/audio/${publicId}`;
 
+/**
+ * How the player colours itself. `light` is the Pwavwe Papers theme (warm ivory, near-black text, blue
+ * playback accents) and the player's own default; `dark` is the coordinated navy; `auto` follows the
+ * reader's system setting. An iframe does not inherit the blog's own light/dark toggle, so the embed says
+ * which one it wants — see `PLAYER_THEME_SYNC` for the optional Blogger-side synchronisation.
+ */
+export type PlayerTheme = 'light' | 'dark' | 'auto';
+export const PLAYER_THEMES = ['light', 'dark', 'auto'] as const satisfies readonly PlayerTheme[];
+/** The theme the player uses when the URL says nothing (and the one the Papers embed asks for). */
+export const DEFAULT_PLAYER_THEME: PlayerTheme = 'light';
+
+/** The player URL an embed points at: the stable listening link plus the theme it should use. */
+export function playerEmbedUrl(publicId: string, opts: { origin?: string; theme?: PlayerTheme } = {}): string {
+  const theme = opts.theme ?? DEFAULT_PLAYER_THEME;
+  return `${playerUrl(publicId, opts.origin ?? PUBLIC_PLAYER_ORIGIN)}?theme=${theme}`;
+}
+
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Height of the embedded player (its layout is designed to fit this from 280 px wide upwards). */
-export const EMBED_HEIGHT_PX = 196;
+/**
+ * Height of the embedded player's box, per width of the page around it.
+ *
+ * The player keeps its transport on one row while it is at least ~550 px wide and drops it to a second row
+ * below that; the title may also take another line as the column narrows. The heights below are the tallest
+ * the player measures in each band (with a title long enough to wrap), so nothing is ever clipped.
+ *
+ * A `<style>` media query can only see the *page's* width, not the iframe's, and on The Pwavwe Papers the
+ * post column runs about 28 px narrower than the viewport — hence the breakpoints. They are a close fit, not
+ * a law: a template whose column is much narrower than its viewport should either raise them or use
+ * `PLAYER_THEME_SYNC`, which sizes each iframe to its player exactly.
+ */
+export const EMBED_HEIGHT_PX = 156;
+export const EMBED_HEIGHT_NARROW_PX = 224;
+export const EMBED_HEIGHT_TINY_PX = 264;
+export const EMBED_NARROW_MAX_PX = 576;
+export const EMBED_TINY_MAX_PX = 312;
 
 /**
  * Blogger-ready markup: a responsive HTTPS iframe of the stable player URL (never a storage URL), an
- * accessible title, no autoplay permission, and a plain fallback link. No script is needed in the post.
+ * accessible title, no autoplay permission, and a small muted fallback link. No script is needed in the post.
+ *
+ * The height lives in a scoped `<style>` block (a media query gives narrow screens a taller box) with the
+ * iframe's `height` attribute as the fallback if a template strips the block — so nothing here depends on
+ * JavaScript, and the iframe is never left with a band of empty space below the player.
  */
-export function azStudioEmbedHtml(publicId: string, title: string, origin: string = PUBLIC_PLAYER_ORIGIN): string {
-  const url = esc(playerUrl(publicId, origin));
+export function azStudioEmbedHtml(publicId: string, title: string, opts: { origin?: string; theme?: PlayerTheme } = {}): string {
+  const url = esc(playerEmbedUrl(publicId, opts));
+  const open = esc(playerUrl(publicId, opts.origin ?? PUBLIC_PLAYER_ORIGIN));
   const t = esc(`Listen to ${title.trim()} — audio edition, The Pwavwe Papers`);
+  const css = [
+    `.pwavwe-audio-embed{--pwavwe-audio-h:${EMBED_HEIGHT_PX}px}`,
+    `@media (max-width:${EMBED_NARROW_MAX_PX}px){.pwavwe-audio-embed{--pwavwe-audio-h:${EMBED_HEIGHT_NARROW_PX}px}}`,
+    `@media (max-width:${EMBED_TINY_MAX_PX}px){.pwavwe-audio-embed{--pwavwe-audio-h:${EMBED_HEIGHT_TINY_PX}px}}`,
+    `.pwavwe-audio-embed iframe{display:block;width:100%;height:var(--pwavwe-audio-h);border:0;border-radius:12px;overflow:hidden}`,
+    `.pwavwe-audio-embed p{margin:.45em 0 0}`,
+    // Specific enough to beat a theme's own `.post-content a` colour: the fallback link stays muted, and
+    // takes the surrounding text's colour in whichever theme the blog is showing.
+    `.pwavwe-audio-embed a.pwavwe-audio-open{font-size:.78em;color:inherit;opacity:.62;text-decoration:underline;text-underline-offset:.2em}`,
+    `.pwavwe-audio-embed a.pwavwe-audio-open:hover,.pwavwe-audio-embed a.pwavwe-audio-open:focus{opacity:1}`,
+  ].join('');
   return [
     `<!-- The Pwavwe Papers audio edition (AZ Studio player). Keep it near the top of the post. -->`,
-    `<div class="pwavwe-audio-embed" style="margin:1.5em 0;max-width:760px;">`,
-    `<iframe src="${url}" title="${t}" width="100%" height="${EMBED_HEIGHT_PX}" style="display:block;width:100%;height:${EMBED_HEIGHT_PX}px;border:0;border-radius:16px;overflow:hidden;" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin">Listen to this paper: ${url}</iframe>`,
-    `<p style="margin:.5em 0 0;font-size:.85em;"><a href="${url}" target="_blank" rel="noopener">Listen to this paper</a></p>`,
+    `<div class="pwavwe-audio-embed" style="margin:1.75em 0;max-width:760px;">`,
+    `<style>${css}</style>`,
+    `<iframe src="${url}" title="${t}" width="100%" height="${EMBED_HEIGHT_PX}" style="display:block;width:100%;border:0;border-radius:12px;overflow:hidden;" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin">Listen to this paper: ${open}</iframe>`,
+    `<p><a class="pwavwe-audio-open" href="${open}" target="_blank" rel="noopener">Open audio in a new tab</a></p>`,
     `</div>`,
   ].join('\n');
 }
+
+/**
+ * Optional, separate from the post markup: the smallest Blogger-theme snippet that keeps the player in step
+ * with the blog's own light/dark toggle, and sizes the iframe to the player exactly. It is given to the author
+ * to paste into the theme (not into a post) — the embed above works without it.
+ *
+ * The player answers `pwavwe-player-size` messages and accepts `pwavwe-player-theme` only from
+ * `PUBLICATION_ORIGINS`; this side checks `event.origin` against the player origin before resizing.
+ */
+export const PLAYER_THEME_SYNC = `<script>
+/* The Pwavwe Papers audio player: keep embedded players on the blog's theme, and size them to their content. */
+(function () {
+  var ORIGIN = ${JSON.stringify(PUBLIC_PLAYER_ORIGIN)};
+  var frames = function () { return document.querySelectorAll('.pwavwe-audio-embed iframe'); };
+  function send() {
+    var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    frames().forEach(function (f) {
+      if (f.contentWindow) f.contentWindow.postMessage({ type: 'pwavwe-player-theme', theme: theme }, ORIGIN);
+    });
+  }
+  window.addEventListener('message', function (e) {
+    if (e.origin !== ORIGIN || !e.data || e.data.type !== 'pwavwe-player-size') return;
+    var h = Number(e.data.height);
+    if (!(h > 0) || h > 600) return;
+    frames().forEach(function (f) {
+      if (f.contentWindow === e.source) f.style.height = Math.round(h) + 'px';
+    });
+    send();
+  });
+  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.addEventListener('load', send);
+})();
+</script>`;
 
 /** Parses a single Range header (`bytes=a-b`, `bytes=a-`, `bytes=-n`) against a size. */
 export function parseRange(header: string | undefined | null, size: number): { start: number; end: number } | 'unsatisfiable' | null {

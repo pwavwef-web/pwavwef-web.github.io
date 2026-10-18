@@ -145,6 +145,35 @@ export const MODEL_REGISTRY = {
     apiKeySecret: 'AZ_STUDIO_GEMINI_API_KEY',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     docs: 'https://ai.google.dev/gemini-api/docs/voice-replication',
+    /**
+     * The Google Cloud route (Gemini Enterprise Agent Platform / Vertex AI), verified live 2026-10-18 for
+     * az-learner with ADC: both models answer publishers.models.get (Preview, `global` only); voices.list
+     * answered; generateContent with two text parts carrying `speechMetadata.style` and a prebuilt voice
+     * returned audio/wav (RIFF, 24 kHz) with 288 audio tokens. A Developer-API `voice_…` id is NOT_FOUND here,
+     * so voices must be enrolled again (Cloud consent sentence). The Interactions API does not serve these
+     * models on Vertex; generateContent does. Auth: the functions' service account (roles/aiplatform.user).
+     */
+    vertex: {
+      host: 'https://aiplatform.googleapis.com',
+      location: 'global',
+      voicesVersion: 'v1beta1',
+      generateVersion: 'v1',
+      docs: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/text-to-speech/voice-replication',
+      /** Prebuilt voice for the Cloud narration test (no enrollment needed). */
+      testVoice: 'Kore',
+    },
+    /**
+     * The shared request gate per route and model (all jobs, all workers). `developer`: the observed Tier 1
+     * allowance is 100 requests per day per model (429 "limit: 100 requests per day on Tier 1", 2026-10-18),
+     * reset at 00:00 UTC (from Google's own "retry in" times); one request at a time. `vertex`: no fixed per-model limit is configured for
+     * gemini-3.8-flash-tts (Cloud Quotas: no entry under GlobalGenerateContentRequestsPerMinutePerProjectPerBaseModel;
+     * daily default unlimited), so the shared pay-as-you-go pool applies — a small concurrency bound keeps bursts
+     * polite. Override with AZS_NARRATOR_DEV_RPD / AZS_NARRATOR_VERTEX_CONCURRENCY.
+     */
+    gate: {
+      developer: { maxConcurrent: 1, minIntervalMs: 1500, dailyRequests: 100 },
+      vertex: { maxConcurrent: 3, minIntervalMs: 250, dailyRequests: null },
+    },
   },
   vision: {
     id: 'cloud-vision-v1',

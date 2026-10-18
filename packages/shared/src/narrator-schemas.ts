@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CONSENT_LOCALES, DELIVERY_PRESET_IDS, ENROLLMENT, MAX_STYLE_CHARS, PAUSE_LIMITS } from './narrator';
+import { CONSENT_LOCALES, DELIVERY_PRESET_IDS, ENROLLMENT, MAX_STYLE_CHARS, NARRATOR_ROUTES, NOISE_REDUCTION_LEVELS, PAUSE_LIMITS } from './narrator';
 
 /** Request schemas for Pwavwe Narrator (`azsApi` action `narrator`, one `op` per operation). */
 
@@ -49,6 +49,7 @@ export const editionSettingsSchema = z.object({
   customStyle: z.string().max(MAX_STYLE_CHARS),
   includeClosing: z.boolean(),
   pauses: pausesSchema,
+  readMode: z.enum(['passages', 'oneTake']).optional(),
 });
 
 export const directionSchema = z.object({
@@ -99,6 +100,7 @@ export const pronunciationSchema = z.object({
 export const narratorSettingsSchema = z
   .object({
     modelId: z.string().max(80).nullable(),
+    route: z.enum(NARRATOR_ROUTES),
     generationBudgetUsd: z.number().min(0.05).max(50),
     channels: z.union([z.literal(1), z.literal(2)]),
     loudness: z.enum(['podcast', 'streaming']),
@@ -107,6 +109,7 @@ export const narratorSettingsSchema = z
     closingText: z.string().trim().min(1).max(600),
     includeClosing: z.boolean(),
     pauses: pausesSchema,
+    noiseReduction: z.enum(NOISE_REDUCTION_LEVELS),
   })
   .partial();
 
@@ -141,6 +144,8 @@ export const narratorRequestSchema = z.discriminatedUnion('op', [
     inboxPath: z.string().max(300).regex(/^users\/[\w-]+\/narrator-inbox\/[\w.-]+$/).optional(),
     scriptText: z.string().max(2000).optional(),
     consentLocale: z.enum(CONSENT_LOCALES).optional(),
+    /** Which route's consent sentence a consent clip reads. */
+    consentRoute: z.enum(NARRATOR_ROUTES).optional(),
     termId: id.optional(),
   }),
   z.object({ op: z.literal('recordingDelete'), recordingId: id }),
@@ -151,7 +156,9 @@ export const narratorRequestSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('voiceDelete'), voiceId: id, confirmName: z.string().max(200) }),
   z.object({ op: z.literal('voiceReconcile') }),
   /** Deletes a replicated voice found at Google that no active profile here uses (e.g. after an interrupted creation). */
-  z.object({ op: z.literal('providerVoiceDelete'), providerVoiceId: z.string().regex(/^voice_[\w-]{1,120}$/), confirm: z.literal(true) }),
+  z.object({ op: z.literal('providerVoiceDelete'), providerVoiceId: z.string().regex(/^voice_[\w-]{1,120}$/), route: z.enum(NARRATOR_ROUTES).default('developer'), confirm: z.literal(true) }),
+  /** A short Google Cloud narration test with a prebuilt voice (unlocks the Cloud route). */
+  z.object({ op: z.literal('cloudCheck'), requestId }),
   z.object({ op: z.literal('profileSave'), pronunciations: z.array(pronunciationSchema).max(300).optional(), settings: narratorSettingsSchema.optional() }),
   z.object({ op: z.literal('editionCreate'), title: z.string().trim().max(NARRATOR_LIMITS.titleChars).default(''), body: z.string().max(NARRATOR_LIMITS.bodyChars).default(''), origin: z.enum(['paste', 'url', 'package']).default('paste'), sourceUrl: httpsUrl.nullable().default(null), publishedDate: isoDate.nullable().default(null), existingOpening: z.string().max(2000).nullable().default(null), notes: z.array(z.string().max(400)).max(20).default([]) }),
   z.object({ op: z.literal('editionSave'), editionId: id, baseRev: z.number().int().min(0), patch: editionPatchSchema }),

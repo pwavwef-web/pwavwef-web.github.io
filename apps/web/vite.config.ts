@@ -19,7 +19,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const project = env.VITE_FIREBASE_PROJECT_ID || 'demo-az-studio';
   // With the emulators, /api/public goes to the functions emulator (Hosting rewrites it in production).
-  const proxy = env.VITE_USE_EMULATORS === 'true' ? { '/api/public': { target: 'http://127.0.0.1:5001', rewrite: (p: string) => `/${project}/us-central1/azsPublic${p}` } } : undefined;
+  // VITE_PUBLIC_API_ORIGIN instead points it at a deployed site, so the player page can be worked on against
+  // real published editions without a local export. Dev/preview only — it never reaches a build.
+  const proxy = env.VITE_USE_EMULATORS === 'true' ? { '/api/public': { target: 'http://127.0.0.1:5001', rewrite: (p: string) => `/${project}/us-central1/azsPublic${p}` } } : env.VITE_PUBLIC_API_ORIGIN ? { '/api/public': { target: env.VITE_PUBLIC_API_ORIGIN, changeOrigin: true } } : undefined;
   return {
     plugins: [react(), tailwindcss(), embedRoute()],
     server: { port: 5173, strictPort: true, proxy },

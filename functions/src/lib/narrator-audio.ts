@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileTypeFromBuffer } from 'file-type';
-import type { LoudnessMeasurement } from '@az-studio/shared';
+import type { LoudnessMeasurement, NoiseReduction } from '@az-studio/shared';
 import { FFMPEG } from './media';
 
 const execFileAsync = promisify(execFile);
@@ -44,6 +44,53 @@ export async function decodeToFloat(input: string, rate = 24_000, timeoutMs = 30
 /** Converts a recording to the provider's recommended format: 24 kHz, mono, 16-bit PCM WAV, no metadata. */
 export async function toEnrollmentWav(input: string, output: string): Promise<void> {
   await execFileAsync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', input, '-vn', '-map_metadata', '-1', '-ac', '1', '-ar', '24000', '-c:a', 'pcm_s16le', '-f', 'wav', output], { timeout: 120_000, maxBuffer: 8 * 1024 * 1024 });
+}
+
+/**
+ * FFmpeg chains for `NoiseReduction` (see its note in shared/narrator.ts for the measurements). The high-pass takes
+ * the low rumble a replicated voice carries; afftdn tracks the remaining noise floor adaptively (`tn=1`), so it
+ * follows the room tone of each take instead of a fixed profile. Strong adds a soft downward gate (−14 dB at most,
+ * slow release) that quiets the gaps between phrases without chopping word endings.
+ */
+export const NOISE_FILTERS: Record<Exclude<NoiseReduction, 'off'>, string> = {
+  standard: 'highpass=f=80:poles=2,afftdn=nr=20:nf=-58:tn=1',
+  strong: 'highpass=f=90:poles=2,afftdn=nr=28:nf=-56:tn=1,agate=threshold=0.004:ratio=2:range=0.2:attack=5:release=200',
+};
+
+/** Seconds of mirrored lead-in the denoiser hears before the audio itself. */
+const NOISE_PRIME_SEC = 2;
+
+/** Background-noise reduction of mono Float32 audio (same length and rate out). `off` returns the input. */
+export async function reduceNoise(samples: Float32Array, rate: number, level: NoiseReduction, timeoutMs = 300_000): Promise<Float32Array> {
+  if (level === 'off' || !samples.length) return samples;
+  // The adaptive denoiser needs a moment to learn the room tone; a mirrored lead-in (cut off afterwards) lets it
+  // start clean on the first word of short passages too.
+  const pre = Math.min(samples.length, Math.round(rate * NOISE_PRIME_SEC));
+  const input = new Float32Array(pre + samples.length);
+  for (let i = 0; i < pre; i++) input[i] = samples[pre - 1 - i]!;
+  input.set(samples, pre);
+  const chunks: Buffer[] = [];
+  let err = '';
+  await new Promise<void>((resolve, reject) => {
+    const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-f', 'f32le', '-ar', String(rate), '-ac', '1', '-i', 'pipe:0', '-af', NOISE_FILTERS[level], '-f', 'f32le', '-ar', String(rate), '-ac', '1', 'pipe:1']);
+    const timer = setTimeout(() => p.kill('SIGKILL'), timeoutMs);
+    p.stdout.on('data', (d: Buffer) => chunks.push(d));
+    p.stderr.on('data', (d: Buffer) => (err += d.toString()));
+    p.on('error', reject);
+    p.stdin.on('error', () => undefined);
+    p.on('close', (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve();
+      else reject(new Error(`Noise reduction failed (${err.trim().split('\n').pop()?.slice(0, 200) || `ffmpeg exit ${code}`}).`));
+    });
+    p.stdin.end(Buffer.from(input.buffer, input.byteOffset, input.byteLength));
+  });
+  const buf = Buffer.concat(chunks);
+  const out = new Float32Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + (buf.byteLength - (buf.byteLength % 4))));
+  // Same length and timing as the input (FFmpeg's filters keep the length; guard against an off-by-a-frame end).
+  const fixed = new Float32Array(samples.length);
+  fixed.set(out.subarray(pre, pre + samples.length));
+  return fixed;
 }
 
 /** Writes mono Float32 samples to a raw file FFmpeg can read (`-f f32le -ar … -ac 1`). */
@@ -115,7 +162,7 @@ export async function renderMasters(input: { rawPath: string; rate: number; dir:
     processing: [
       'Each clip decoded to 24 kHz mono float; silence beyond 60 ms before and 150 ms after speech trimmed; 8 ms fades at every join.',
       'Clips joined sample-accurately with the configured pauses (no encoded bytes concatenated).',
-      normType === 'linear' ? `Loudness: two-pass EBU R128 (FFmpeg loudnorm, linear mode — one gain for the whole edition) to ${target.integratedLufs} LUFS, true-peak ceiling ${target.truePeakDbtp} dBTP. No compression, de-breathing or noise reduction.` : `Loudness: two-pass EBU R128 (FFmpeg loudnorm) to ${target.integratedLufs} LUFS, true-peak ceiling ${target.truePeakDbtp} dBTP. One fixed gain could not reach the target within the peak ceiling, so loudnorm used its dynamic mode (${normType}). No de-breathing or noise reduction.`,
+      normType === 'linear' ? `Loudness: two-pass EBU R128 (FFmpeg loudnorm, linear mode — one gain for the whole edition) to ${target.integratedLufs} LUFS, true-peak ceiling ${target.truePeakDbtp} dBTP. No compression or de-breathing.` : `Loudness: two-pass EBU R128 (FFmpeg loudnorm) to ${target.integratedLufs} LUFS, true-peak ceiling ${target.truePeakDbtp} dBTP. One fixed gain could not reach the target within the peak ceiling, so loudnorm used its dynamic mode (${normType}). No de-breathing.`,
       `WAV master: ${rate / 1000} kHz, 16-bit PCM (triangular dither), ${channels === 2 ? 'stereo (dual mono)' : 'mono'}. MP3: 44.1 kHz, 192 kbps CBR, ID3v2.3 tags.`,
     ],
   };

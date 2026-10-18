@@ -4,8 +4,20 @@ import path from 'node:path';
 import { HttpsError } from 'firebase-functions/v2/https';
 import {
   ACTIVE_STATUSES,
+  CLOUD_CONSENT_SOURCE,
+  CLOUD_CONSENT_STATEMENTS,
   CONSENT_SOURCE,
   CONSENT_STATEMENTS,
+  NARRATOR_ROUTES,
+  ROUTE_LABELS,
+  consentStatementFor,
+  decodePcm16Wav,
+  googleVoiceLabel,
+  googleVoiceOf,
+  providerOfRoute,
+  routeOfVoice,
+  type NarrationPin,
+  type NarratorRoute,
   DEFAULT_EDITION_SETTINGS,
   DEFAULT_WORDS_PER_MINUTE,
   ENROLLMENT,
@@ -39,6 +51,7 @@ import {
   type NarratorSettings,
   type NarratorTestDoc,
   type NarratorVoiceDoc,
+  type NoiseReduction,
   type PronunciationEntry,
 } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
@@ -48,12 +61,13 @@ import { cancelJobDoc, enqueueJob } from '../lib/jobs';
 import { decodeToFloat, sniffAudio, toEnrollmentWav } from '../lib/narrator-audio';
 import { ImportError, importArticle } from '../lib/narrator-import';
 import { planExport, planNarration, type NarrationPlan } from '../lib/narrator-plan';
-import { checkCapabilities, deleteVoice, getVoice, listReplicatedVoices, NarratorProviderError, providerConfigured, type ProviderStatus } from '../lib/narrator-provider';
-import { media, ncol, npath } from '../lib/narrator-store';
+import { checkCapabilities, deleteVoice, getVoice, listReplicatedVoices, NarratorProviderError, providerConfigured, synthesize, type ProviderStatus, type ProviderVoice } from '../lib/narrator-provider';
+import { media, ncol, npath, voiceFingerprint } from '../lib/narrator-store';
 import type { Owner } from '../lib/owner';
+import { activeLimit, clearLimit, dailyAllowance, limitMessage, resetDailyCount, type Allowance } from '../lib/narrator-limits';
 import { publish, unpublish, withdraw } from './narrator-publish';
 import { signedReadUrl } from '../lib/storage';
-import { assertRateLimit, assertWithinLimits, getSettings, spendSnapshot } from '../lib/usage';
+import { assertRateLimit, assertWithinLimits, getSettings, recordUsage, spendSnapshot } from '../lib/usage';
 
 type Req<O extends NarratorRequest['op']> = Extract<NarratorRequest, { op: O }>;
 type WithId<T> = T & { id: string };
@@ -73,6 +87,41 @@ async function owned<T>(ref: FirebaseFirestore.DocumentReference, uid: string, w
 }
 
 const loadVoice = (uid: string, voiceId: string) => owned<NarratorVoiceDoc>(ncol.voices().doc(voiceId) as never, uid, 'Voice');
+
+/**
+ * The voice an edition is narrated with: a replicated voice profile, or one of Google's prebuilt voices
+ * (`google-<Name>`). A prebuilt voice needs no enrollment or approval and is spoken on the route and model chosen
+ * in Settings, so it is described here as an always-active, approved profile on that route.
+ */
+async function loadNarrator(uid: string, voiceId: string): Promise<WithId<NarratorVoiceDoc>> {
+  const g = googleVoiceOf(voiceId);
+  if (!g) return loadVoice(uid, voiceId);
+  const { settings } = await loadProfile(uid);
+  const modelId = narrationModel(settings);
+  return {
+    id: voiceId,
+    ownerUid: uid,
+    displayName: googleVoiceLabel(g),
+    provider: providerOfRoute(settings.route),
+    modelId,
+    compatibleModels: [...MODEL_REGISTRY.narration.allowedIds],
+    storage: 'stateful',
+    status: 'active',
+    consent: { state: 'verified', locale: 'en-US', submittedAt: null, verifiedAt: null, message: null },
+    approval: { state: 'approved', at: null, assessment: null, preset: null },
+    referenceRecordingId: null,
+    consentRecordingId: null,
+    createdAtProvider: null,
+    lastUsedAt: null,
+    expiresAt: null,
+    error: null,
+    jobId: null,
+    requestId: voiceId,
+  };
+}
+
+/** Noise reduction for a job's audio: the owner's setting for replicated voices; prebuilt voices are clean. */
+const noiseFor = (voiceId: string, settings: NarratorSettings): NoiseReduction => (googleVoiceOf(voiceId) ? 'off' : settings.noiseReduction);
 const loadEdition = async (uid: string, editionId: string) => {
   const e = await owned<NarratorEditionDoc>(ncol.editions().doc(editionId) as never, uid, 'Edition');
   if (e.deleted) throw new HttpsError('not-found', 'Edition not found.');
@@ -136,18 +185,97 @@ async function status(owner: Owner, p: Req<'status'>) {
   }
   const profile = await loadProfile(owner.uid);
   const modelId = narrationModel(profile.settings);
+  const ids = MODEL_REGISTRY.narration.allowedIds as readonly string[];
+  // “Check now” clears a recorded allowance block (e.g. after raising the API tier); otherwise report it.
+  if (p.refresh) {
+    for (const route of NARRATOR_ROUTES) for (const id of ids) await clearLimit(id, route);
+    for (const id of ids) await resetDailyCount('developer', id);
+  }
+  const limits = (await Promise.all(NARRATOR_ROUTES.flatMap((route) => ids.map((id) => activeLimit(id, route))))).filter((l) => l !== null).map((l) => ({ modelId: l!.modelId, route: l!.route ?? 'developer', until: l!.until, message: limitMessage(l!) }));
+  // While Google's own block is recorded, the allowance is used up whatever this app counted itself.
+  const allowance = (await Promise.all(ids.map((id) => dailyAllowance('developer', id))))
+    .filter((a): a is Allowance => a !== null)
+    .map((a) => (limits.some((l) => l.route === 'developer' && l.modelId === a.modelId) ? { ...a, used: Math.max(a.used, a.limit), remaining: 0 } : a));
   const names = MODEL_REGISTRY.narration.displayNames as Record<string, string>;
   return {
     provider,
-    model: { id: modelId, displayName: names[modelId] ?? modelId, allowed: (MODEL_REGISTRY.narration.allowedIds as readonly string[]).map((id) => ({ id, displayName: names[id] ?? id })) },
+    model: { id: modelId, displayName: names[modelId] ?? modelId, allowed: ids.map((id) => ({ id, displayName: names[id] ?? id })) },
     rates: narrationRates(modelId),
-    voiceCreationCost: 'Google’s pricing page (checked 17 October 2026) lists no price for creating a replicated voice, so AZ Studio cannot estimate it.',
-    consent: { statements: CONSENT_STATEMENTS, source: CONSENT_SOURCE },
+    voiceCreationCost: 'Google’s pricing pages (checked 17–18 October 2026) list no price for creating a replicated voice, so AZ Studio cannot estimate it.',
+    consent: { statements: CONSENT_STATEMENTS, source: CONSENT_SOURCE, cloud: { statements: CLOUD_CONSENT_STATEMENTS, source: CLOUD_CONSENT_SOURCE } },
     enrollment: ENROLLMENT,
     retention: RETENTION,
     settings: profile.settings,
     pronunciations: profile.pronunciations,
+    limits,
+    routes: { cloudTest: publicCloudTest(await cloudTestRecord()), allowance },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Google Cloud route: a short narration test unlocks it
+// ---------------------------------------------------------------------------
+
+interface CloudTestRecord {
+  ok: boolean;
+  at: number;
+  modelId: string;
+  requestId: string;
+  durationSec: number | null;
+  latencyMs: number | null;
+  usd: number | null;
+  message: string | null;
+  storagePath: string | null;
+}
+
+const cloudTestRef = () => ncol.runtime('cloud-test');
+async function cloudTestRecord(): Promise<CloudTestRecord | null> {
+  const s = await cloudTestRef().get();
+  return s.exists ? (s.data() as CloudTestRecord) : null;
+}
+const publicCloudTest = (r: CloudTestRecord | null) => (r ? { ok: r.ok, at: r.at, modelId: r.modelId, durationSec: r.durationSec, latencyMs: r.latencyMs, usd: r.usd, message: r.message } : null);
+
+/** The Cloud route stays locked (Developer API remains the default) until a Cloud narration test succeeded. */
+async function cloudRouteReady(): Promise<boolean> {
+  return Boolean((await cloudTestRecord())?.ok);
+}
+
+/**
+ * Speaks two short styled sentences with a prebuilt voice on Vertex AI, using the functions' own service
+ * account — proving project access, IAM, billing, location, the model and per-block delivery styles.
+ */
+async function cloudCheck(owner: Owner, p: Req<'cloudCheck'>) {
+  await assertRateLimit(owner.uid, 1, 5);
+  const prev = await cloudTestRecord();
+  if (prev?.requestId === p.requestId) return { ...publicCloudTest(prev), url: prev.storagePath ? (await signedReadUrl(prev.storagePath, { ttlSeconds: NARRATOR_URL_TTL_SEC })).url : null };
+  const profile = await loadProfile(owner.uid);
+  const modelId = narrationModel(profile.settings);
+  const segments = [
+    { text: 'This is a short test of Pwavwe Narrator on Google Cloud.', style: 'natural and conversational' },
+    { text: 'If you can hear this sentence, the Cloud route works.', style: 'warm and unhurried' },
+  ];
+  const rates = narrationRates(modelId);
+  assertWithinLimits(await getSettings(owner.uid), await spendSnapshot(owner.uid), 0.01);
+  const t0 = Date.now();
+  let rec: CloudTestRecord;
+  try {
+    const r = await synthesize({ route: 'vertex', modelId, voiceId: MODEL_REGISTRY.narration.vertex.testVoice, segments });
+    const latencyMs = Date.now() - t0;
+    const usd = Math.round(((r.inputTokens / 1e6) * rates.inputPerM + (r.outputTokens / 1e6) * rates.outputPerM) * 1e6) / 1e6;
+    await recordUsage({ uid: owner.uid, projectId: null, jobId: `narc-${p.requestId}`, modelId, kind: 'speech', inputTokens: r.inputTokens, outputTokens: r.outputTokens, thoughtTokens: 0, costUsdOverride: usd });
+    const storagePath = `${npath.root(owner.uid)}cloud-test/${p.requestId}.wav`;
+    await media.save(storagePath, r.wav, 'audio/wav');
+    const d = decodePcm16Wav(r.wav);
+    const durationSec = d ? Math.round((d.samples.length / d.sampleRate) * 100) / 100 : null;
+    const ok = Boolean(durationSec && durationSec > 1);
+    rec = { ok, at: Date.now(), modelId, requestId: p.requestId, durationSec, latencyMs, usd, message: ok ? null : 'Google answered with too little audio to count as a narration.', storagePath };
+  } catch (e) {
+    rec = { ok: false, at: Date.now(), modelId, requestId: p.requestId, durationSec: null, latencyMs: Date.now() - t0, usd: null, message: e instanceof NarratorProviderError ? `${e.kind === 'auth' ? 'Permission: ' : ''}${e.message}` : String((e as Error)?.message ?? e).slice(0, 300), storagePath: null };
+  }
+  if (prev?.storagePath) await media.remove(prev.storagePath).catch(() => undefined);
+  await cloudTestRef().set(rec);
+  await ncol.runtime('status').delete();
+  return { ...publicCloudTest(rec), url: rec.storagePath ? (await signedReadUrl(rec.storagePath, { ttlSeconds: NARRATOR_URL_TTL_SEC })).url : null };
 }
 
 // ---------------------------------------------------------------------------
@@ -196,6 +324,7 @@ async function recordingUpload(owner: Owner, p: Req<'recordingUpload'>) {
       termId: p.termId ?? null,
       scriptText: p.scriptText ?? null,
       consentLocale: p.kind === 'consent' ? (p.consentLocale ?? 'en-US') : null,
+      consentRoute: p.kind === 'consent' ? (p.consentRoute ?? 'developer') : null,
       usedByVoiceId: null,
       status: 'ready',
       deleteAfter: Date.now() + (p.kind === 'pronunciation' ? 365 : RETENTION.unusedRecordingDays) * DAY,
@@ -219,13 +348,18 @@ export async function deleteRecording(uid: string, recordingId: string): Promise
 // ---------------------------------------------------------------------------
 
 async function voiceCreate(owner: Owner, p: Req<'voiceCreate'>) {
-  if (!(await providerConfigured())) throw new HttpsError('failed-precondition', 'Voice replication is not configured on the server yet (see Settings → Provider).');
+  const profile = await loadProfile(owner.uid);
+  // New voices go to the route chosen in Settings; each route keeps its own voice store and consent sentence.
+  const route: NarratorRoute = profile.settings.route;
+  if (route === 'vertex' && !(await cloudRouteReady())) throw new HttpsError('failed-precondition', 'Run the Google Cloud narration test in Settings → Speech service before creating a Cloud voice.');
+  if (!(await providerConfigured(route))) throw new HttpsError('failed-precondition', 'Voice replication is not configured on the server yet (see Settings → Provider).');
   const [ref, con] = await Promise.all([owned<NarratorRecordingDoc>(ncol.recordings().doc(p.referenceId) as never, owner.uid, 'Reference recording'), owned<NarratorRecordingDoc>(ncol.recordings().doc(p.consentId) as never, owner.uid, 'Consent recording')]);
   if (ref.kind !== 'reference' || con.kind !== 'consent') throw new HttpsError('invalid-argument', 'Use one reference recording and one consent recording.');
   if (ref.status !== 'ready' || con.status !== 'ready' || !ref.storagePath || !con.storagePath) throw new HttpsError('failed-precondition', 'A recording was deleted. Record it again.');
+  if ((con.consentRoute ?? 'developer') !== route) throw new HttpsError('failed-precondition', `This consent recording reads the ${ROUTE_LABELS[con.consentRoute ?? 'developer']} sentence, but ${ROUTE_LABELS[route]} verifies its own wording. Record the consent statement again, word for word: “${consentStatementFor(route, p.consentLocale)}”`);
+  if (con.usedByVoiceId) throw new HttpsError('failed-precondition', 'This consent recording was already used for a voice. Record the consent statement again.');
   if (hasBlockingIssue(ref.analysis)) throw new HttpsError('failed-precondition', `The reference recording cannot be used: ${ref.analysis.issues.filter((i) => i.severity === 'error').map((i) => i.message).join(' ')}`);
   if (hasBlockingIssue(con.analysis)) throw new HttpsError('failed-precondition', `The consent recording cannot be used: ${con.analysis.issues.filter((i) => i.severity === 'error').map((i) => i.message).join(' ')}`);
-  const profile = await loadProfile(owner.uid);
   const modelId = narrationModel(profile.settings);
   const voiceRef = ncol.voices().doc(`v-${p.requestId}`);
   const jobId = `narv-${p.requestId}`;
@@ -240,7 +374,7 @@ async function voiceCreate(owner: Owner, p: Req<'voiceCreate'>) {
     const voice: NarratorVoiceDoc = {
       ownerUid: owner.uid,
       displayName: NARRATOR.voiceDisplayName,
-      provider: 'google_gemini_api',
+      provider: providerOfRoute(route),
       modelId,
       compatibleModels: [modelId],
       storage: 'stateful',
@@ -258,7 +392,7 @@ async function voiceCreate(owner: Owner, p: Req<'voiceCreate'>) {
     };
     tx.set(voiceRef, { ...voice, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     tx.set(ncol.runtime(`voice-create-${owner.uid}`), { voiceId: voiceRef.id, until: Date.now() + 10 * 60_000 });
-    await createJob(owner.uid, { id: jobId, type: 'narrator.voice', label: `Voice replication · ${NARRATOR.voiceDisplayName}`, modelId, params: { voiceId: voiceRef.id, referenceId: ref.id, consentId: con.id, modelId }, estimate: costEstimate(0, ['Google lists no price for creating a replicated voice; the cost is unavailable.'], 'Voice creation (price not published)'), target: { kind: 'narrator_voice', id: voiceRef.id } }, tx);
+    await createJob(owner.uid, { id: jobId, type: 'narrator.voice', label: `Voice replication · ${NARRATOR.voiceDisplayName}${route === 'vertex' ? ' (Google Cloud)' : ''}`, modelId, params: { voiceId: voiceRef.id, referenceId: ref.id, consentId: con.id, modelId, route }, estimate: costEstimate(0, ['Google lists no price for creating a replicated voice; the cost is unavailable.'], 'Voice creation (price not published)'), target: { kind: 'narrator_voice', id: voiceRef.id } }, tx);
     return { voiceId: voiceRef.id, jobId, duplicate: false };
   });
   if (!result.duplicate) await enqueueJob(jobId, 'start');
@@ -268,6 +402,9 @@ async function voiceCreate(owner: Owner, p: Req<'voiceCreate'>) {
 async function voiceTest(owner: Owner, p: Req<'voiceTest'>) {
   const voice = await loadVoice(owner.uid, p.voiceId);
   if (voice.status !== 'active') throw new HttpsError('failed-precondition', voice.status === 'creating' ? 'The voice is still being created.' : 'This voice is not available. Renew it from My Voice.');
+  const limit = await activeLimit(voice.modelId, routeOfVoice(voice));
+  if (limit) throw new HttpsError('resource-exhausted', limitMessage(limit));
+  const pin = await jobPin(voice);
   const profile = await loadProfile(owner.uid);
   const testRef = ncol.tests(voice.id).doc(`t-${p.requestId}`);
   const jobId = `nart-${p.requestId}`;
@@ -281,7 +418,7 @@ async function voiceTest(owner: Owner, p: Req<'voiceTest'>) {
     if ((await tx.get(testRef)).exists) return false;
     const test: NarratorTestDoc = { ownerUid: owner.uid, voiceId: voice.id, text: p.text, preset: p.preset, style, status: 'generating', storagePath: null, durationSec: null, peaks: null, jobId, error: null, pronunciations: applied.map((a) => ({ term: a.term, spokenAs: a.spokenAs })) };
     tx.set(testRef, { ...test, createdAt: FieldValue.serverTimestamp() });
-    await createJob(owner.uid, { id: jobId, type: 'narrator.speak', label: 'Voice test · Pwavwe Narrator', modelId: voice.modelId, params: { kind: 'audition', voiceId: voice.id, testId: testRef.id, editionId: null, modelId: voice.modelId, budgetUsd: profile.settings.generationBudgetUsd, items: [{ key: 'audition', passageId: null, text: p.text, providerText, style, inputHash: '', chunks: [[{ text: providerText, style }]], pronunciations: applied }] }, estimate: costEstimate(est.usd, est.notes, 'Speech'), target: { kind: 'narrator_voice', id: voice.id, sub: testRef.id } }, tx);
+    await createJob(owner.uid, { id: jobId, type: 'narrator.speak', label: 'Voice test · Pwavwe Narrator', modelId: voice.modelId, params: { kind: 'audition', voiceId: voice.id, testId: testRef.id, editionId: null, modelId: voice.modelId, ...pin, noiseReduction: noiseFor(voice.id, profile.settings), budgetUsd: profile.settings.generationBudgetUsd, items: [{ key: 'audition', passageId: null, text: p.text, providerText, style, inputHash: '', chunks: [{ segments: [{ text: providerText, style }] }], pronunciations: applied }] }, estimate: costEstimate(est.usd, est.notes, 'Speech'), target: { kind: 'narrator_voice', id: voice.id, sub: testRef.id } }, tx);
     return true;
   });
   if (created) await enqueueJob(jobId, 'start');
@@ -295,7 +432,10 @@ async function voiceAssess(owner: Owner, p: Req<'voiceAssess'>) {
     const tests = await ncol.tests(voice.id).where('status', '==', 'ready').limit(1).get();
     if (tests.empty) throw new HttpsError('failed-precondition', 'Generate and listen to a test before approving the voice.');
   }
-  await ncol.voices().doc(voice.id).set({ approval: { state: p.decision, at: p.decision === 'pending' ? null : Date.now(), assessment: p.assessment, preset: p.preset }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  // The request names an action (approve / reject / pending); the profile stores the resulting state.
+  const STATE: Record<typeof p.decision, NarratorVoiceDoc['approval']['state']> = { approve: 'approved', reject: 'rejected', pending: 'pending' };
+  const approval: NarratorVoiceDoc['approval'] = { state: STATE[p.decision], at: p.decision === 'pending' ? null : Date.now(), assessment: p.assessment, preset: p.preset };
+  await ncol.voices().doc(voice.id).set({ approval, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   return { ok: true };
 }
 
@@ -304,11 +444,18 @@ async function providerIdOf(voiceId: string): Promise<string | null> {
   return snap.exists ? (snap.get('providerVoiceId') as string) : null;
 }
 
+/** What a speech job is pinned to: the voice's route and a fingerprint of its provider voice (never the id). */
+async function jobPin(voice: WithId<NarratorVoiceDoc>): Promise<{ route: NarratorRoute; voiceFingerprint: string | null }> {
+  const g = googleVoiceOf(voice.id);
+  const pid = g ? g.name : await providerIdOf(voice.id);
+  return { route: routeOfVoice(voice), voiceFingerprint: pid ? voiceFingerprint(pid) : null };
+}
+
 async function voiceRefresh(owner: Owner, p: Req<'voiceRefresh'>) {
   const voice = await loadVoice(owner.uid, p.voiceId);
   const pid = await providerIdOf(voice.id);
   if (!pid) return { status: voice.status, exists: false };
-  const found = await getVoice(pid);
+  const found = await getVoice(pid, routeOfVoice(voice));
   const next = found ? 'active' : voice.expiresAt && voice.expiresAt < Date.now() ? 'expired' : 'missing_at_provider';
   if (voice.status !== 'deleted' && voice.status !== 'creating') await ncol.voices().doc(voice.id).set({ status: next, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   return { status: next, exists: Boolean(found) };
@@ -322,7 +469,7 @@ async function voiceDelete(owner: Owner, p: Req<'voiceDelete'>) {
   let atProvider: 'deleted' | 'already_gone' | 'none' = 'none';
   if (pid) {
     try {
-      atProvider = await deleteVoice(pid);
+      atProvider = await deleteVoice(pid, routeOfVoice(voice));
     } catch (e) {
       throw new HttpsError('unavailable', `Google did not confirm the deletion (${e instanceof NarratorProviderError ? e.message : String(e)}). Nothing was removed here; try again.`);
     }
@@ -349,7 +496,17 @@ async function voiceDelete(owner: Owner, p: Req<'voiceDelete'>) {
 }
 
 async function voiceReconcile(owner: Owner) {
-  const remote = await listReplicatedVoices();
+  // Both voice stores (each route keeps its own); a route that cannot be listed is reported, not fatal.
+  const remote: (ProviderVoice & { route: NarratorRoute })[] = [];
+  const problems: { route: NarratorRoute; message: string }[] = [];
+  for (const route of NARRATOR_ROUTES) {
+    if (route === 'vertex' && !(await cloudRouteReady())) continue;
+    try {
+      for (const v of await listReplicatedVoices(route)) remote.push({ ...v, route });
+    } catch (e) {
+      problems.push({ route, message: e instanceof NarratorProviderError ? e.message : String(e).slice(0, 300) });
+    }
+  }
   const local = (await ncol.voices().where('ownerUid', '==', owner.uid).get()).docs.map((d) => ({ ...(d.data() as NarratorVoiceDoc), id: d.id }));
   const linked = new Map<string, string>();
   for (const v of local) {
@@ -360,14 +517,14 @@ async function voiceReconcile(owner: Owner) {
   // An interrupted creation: link the one matching voice Google created after the request was sent.
   const recovered: string[] = [];
   for (const v of local.filter((x) => x.status === 'needs_recovery' && x.consent.submittedAt)) {
-    const candidates = unlinked.filter((r) => r.displayName === v.displayName && (!r.createTime || Date.parse(r.createTime) >= v.consent.submittedAt! - 120_000));
+    const candidates = unlinked.filter((r) => r.route === routeOfVoice(v) && r.displayName === v.displayName && (!r.createTime || Date.parse(r.createTime) >= v.consent.submittedAt! - 120_000));
     if (candidates.length === 1) {
       await linkVoice(v.id, candidates[0]!.id, Date.parse(candidates[0]!.createTime ?? '') || Date.now());
       recovered.push(v.id);
       unlinked.splice(unlinked.indexOf(candidates[0]!), 1);
     }
   }
-  return { remote: remote.length, linked: [...linked.values()], recovered, unlinked: unlinked.map((u) => ({ providerVoiceId: u.id, displayName: u.displayName, createTime: u.createTime })) };
+  return { remote: remote.length, linked: [...linked.values()], recovered, unlinked: unlinked.map((u) => ({ providerVoiceId: u.id, route: u.route, displayName: u.displayName, createTime: u.createTime })), problems };
 }
 
 export async function linkVoice(voiceId: string, providerVoiceId: string, createdAt: number): Promise<void> {
@@ -378,7 +535,7 @@ export async function linkVoice(voiceId: string, providerVoiceId: string, create
 async function providerVoiceDelete(owner: Owner, p: Req<'providerVoiceDelete'>) {
   const local = (await ncol.voices().where('ownerUid', '==', owner.uid).get()).docs;
   for (const d of local) if ((await providerIdOf(d.id)) === p.providerVoiceId && d.get('status') !== 'deleted') throw new HttpsError('failed-precondition', 'This voice belongs to a profile here. Delete it from My Voice instead.');
-  return { atProvider: await deleteVoice(p.providerVoiceId) };
+  return { atProvider: await deleteVoice(p.providerVoiceId, p.route) };
 }
 
 // ---------------------------------------------------------------------------
@@ -389,6 +546,7 @@ async function profileSave(owner: Owner, p: Req<'profileSave'>) {
   const cur = await loadProfile(owner.uid);
   const settings = p.settings ? normalizeNarratorSettings({ ...cur.settings, ...p.settings }) : cur.settings;
   if (p.settings?.modelId && !(MODEL_REGISTRY.narration.allowedIds as readonly string[]).includes(p.settings.modelId)) throw new HttpsError('invalid-argument', 'That model is not available for narration.');
+  if (p.settings?.route === 'vertex' && cur.settings.route !== 'vertex' && !(await cloudRouteReady())) throw new HttpsError('failed-precondition', 'Run the Google Cloud narration test first (Settings → Speech service). The Developer API stays in use until it succeeds.');
   const pronunciations: PronunciationEntry[] = p.pronunciations ?? cur.pronunciations;
   if (new Set(pronunciations.map((x) => x.term.toLowerCase())).size !== pronunciations.length) throw new HttpsError('invalid-argument', 'Each term can appear only once in the notebook.');
   await ncol.profiles().doc(owner.uid).set({ ownerUid: owner.uid, pronunciations, settings, updatedAt: FieldValue.serverTimestamp() });
@@ -420,7 +578,8 @@ async function editionCreate(owner: Owner, p: Req<'editionCreate'>) {
     voiceId: await defaultVoiceId(owner.uid),
     article: { body: p.body, origin: p.origin, importedAt: p.origin === 'url' ? Date.now() : null, notes: [...p.notes, ...built.notes].slice(0, 20) },
     script: built.script,
-    settings: { ...DEFAULT_EDITION_SETTINGS, preset: profile.settings.defaultPreset, includeClosing: profile.settings.includeClosing, pauses: profile.settings.pauses },
+    // New editions are read as one continuous take (older editions keep passage-by-passage takes until switched).
+    settings: { ...DEFAULT_EDITION_SETTINGS, preset: profile.settings.defaultPreset, includeClosing: profile.settings.includeClosing, pauses: profile.settings.pauses, readMode: 'oneTake' },
     takes: {},
     soundcloud: { title: defaultSoundCloudTitle(title), description: defaultSoundCloudDescription({ title, author: NARRATOR.defaultAuthor, publishedDate: p.publishedDate, sourceUrl: p.sourceUrl }), link: null },
     rev: 1,
@@ -433,7 +592,7 @@ async function editionCreate(owner: Owner, p: Req<'editionCreate'>) {
 
 async function editionSave(owner: Owner, p: Req<'editionSave'>) {
   const ref = ncol.editions().doc(p.editionId);
-  if (p.patch.voiceId) await loadVoice(owner.uid, p.patch.voiceId);
+  if (p.patch.voiceId) await loadNarrator(owner.uid, p.patch.voiceId);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists || snap.get('ownerUid') !== owner.uid || snap.get('deleted')) throw new HttpsError('not-found', 'Edition not found.');
@@ -497,38 +656,109 @@ interface Prepared {
   plan: NarrationPlan;
   estimate: Awaited<ReturnType<typeof estimateFor>>;
   budgetUsd: number;
+  noiseReduction: NoiseReduction;
   limitProblem: string | null;
+  /** Today's Developer-API allowance for this model, and a note when this request needs more than remains. */
+  allowance: Allowance | null;
+  allowanceNote: string | null;
+  /** The narrator the edition's audio is pinned to, and what this generation will use. */
+  pin: NarrationPin | null;
+  next: NarrationPin;
+}
+
+/** Scopes whose audio becomes part of the edition (previews and selections never do). */
+const PINNING_SCOPES = new Set(['passages', 'section', 'edition']);
+const samePin = (a: Pick<NarrationPin, 'voiceId' | 'modelId'>, b: Pick<NarrationPin, 'voiceId' | 'modelId'>) => a.voiceId === b.voiceId && a.modelId === b.modelId;
+
+/** The edition's pin; editions narrated before pins existed take it from their selected takes. */
+async function editionPin(edition: WithId<NarratorEditionDoc>, clips: WithId<NarratorClipDoc>[]): Promise<NarrationPin | null> {
+  if (edition.narration) return edition.narration;
+  const selected = new Set(Object.values(edition.takes ?? {}));
+  const take = clips.find((c) => selected.has(c.id) && c.status === 'ready');
+  if (!take) return null;
+  const v = await ncol.voices().doc(take.voiceId).get();
+  return { voiceId: take.voiceId, provider: (v.get('provider') as NarrationPin['provider'] | undefined) ?? 'google_gemini_api', modelId: take.modelId, pinnedAt: toMillis(take.createdAt) ?? Date.now() };
+}
+
+async function pinLabel(pin: NarrationPin): Promise<string> {
+  const names = MODEL_REGISTRY.narration.displayNames as Record<string, string>;
+  const g = googleVoiceOf(pin.voiceId);
+  const v = g ? null : await ncol.voices().doc(pin.voiceId).get();
+  const created = v ? toMillis(v.get('createdAt')) : null;
+  return `“${g ? googleVoiceLabel(g) : String(v!.get('displayName') ?? 'a deleted voice')}”${created ? ` (created ${new Date(created).toISOString().slice(0, 10)})` : ''} on ${ROUTE_LABELS[pin.provider === 'vertex_ai' ? 'vertex' : 'developer']}, ${names[pin.modelId] ?? pin.modelId}`;
 }
 
 async function prepareGeneration(owner: Owner, p: Req<'estimate'> | Req<'generate'>): Promise<Prepared> {
   const edition = await loadEdition(owner.uid, p.editionId);
-  if (!edition.voiceId) throw new HttpsError('failed-precondition', 'Choose a voice for this edition first (create one in My Voice).');
-  const voice = await loadVoice(owner.uid, edition.voiceId);
+  if (!edition.voiceId) throw new HttpsError('failed-precondition', 'Choose a voice for this edition first (create one in My Voice, or pick a Google voice).');
+  const voice = await loadNarrator(owner.uid, edition.voiceId);
   if (voice.status !== 'active') throw new HttpsError('failed-precondition', 'The selected voice is not available (it may have expired or been deleted). Renew it in My Voice.');
   if (p.scope !== 'selection' && p.scope !== 'preview' && voice.approval.state !== 'approved') throw new HttpsError('failed-precondition', 'Approve your voice in My Voice before narrating editions. (Previews work before approval.)');
   if (p.scope === 'preview' && p.passageIds.length !== 1) throw new HttpsError('invalid-argument', 'Preview one passage at a time.');
+  const route = routeOfVoice(voice);
+  const clips = await clipsOf(edition.id);
+  // One narrator per edition: a voice/route/model change re-narrates the whole edition, never a part of it.
+  const pin = await editionPin(edition, clips);
+  const next: NarrationPin = { voiceId: voice.id, provider: voice.provider ?? 'google_gemini_api', modelId: voice.modelId, pinnedAt: Date.now() };
+  if (pin && !samePin(pin, next) && (p.scope === 'passages' || p.scope === 'section')) {
+    throw new HttpsError('failed-precondition', `This edition is narrated with ${await pinLabel(pin)}. It is now set to ${await pinLabel(next)}. Generating only part of it would mix two narrators in one article, so nothing was sent. Generate the full edition to re-narrate it with the new voice, or switch the edition back to the earlier voice.`, { pin, next });
+  }
   const profile = await loadProfile(owner.uid);
   const inFlight = new Set<string>();
   for (const j of await activeNarratorJobs(owner.uid)) {
     const params = j.params as { editionId?: string; items?: { passageId: string | null }[] };
     if (params.editionId === edition.id) for (const it of params.items ?? []) if (it.passageId) inFlight.add(it.passageId);
   }
-  const plan = planNarration({ edition, clips: await clipsOf(edition.id), notebook: profile.pronunciations, voice: { id: voice.id, modelId: voice.modelId }, scope: p.scope, variant: p.variant, passageIds: p.passageIds, sectionId: p.sectionId ?? null, selection: p.selection, force: p.force, inFlight });
-  const estimate = await estimateFor(owner.uid, voice, plan.items.map((i) => i.providerText));
+  const plan = planNarration({ edition, clips, notebook: profile.pronunciations, voice: { id: voice.id, modelId: voice.modelId }, scope: p.scope, variant: p.variant, passageIds: p.passageIds, sectionId: p.sectionId ?? null, selection: p.selection, force: p.force, inFlight });
+  const estimate = { ...(await estimateFor(owner.uid, voice, plan.items.map((i) => i.providerText))) };
   const settings = await getSettings(owner.uid);
+  const requests = plan.items.reduce((n, i) => n + i.chunks.length, 0);
+  const takes = plan.items.filter((i) => i.take);
+  if (takes.length) {
+    // A take is ONE request (not split into chunks), then transcribed once with word timings to place chapters
+    // and confirm every passage was read.
+    const t = PRICING.transcription;
+    const sec = estimate.speechSec * (takes.reduce((n, i) => n + i.providerText.length, 0) / Math.max(1, plan.items.reduce((n, i) => n + i.providerText.length, 0)));
+    const words = takes.reduce((n, i) => n + i.providerText.split(/\s+/).length, 0);
+    const checkUsd = Math.round((((sec * t.audioTokensPerSecond) / 1e6) * t.inputPerM + ((words * 1.2) / 1e6) * t.outputPerM) * 1e5) / 1e5;
+    estimate.requests = requests;
+    estimate.usd = Math.round((estimate.usd + checkUsd) * 1e5) / 1e5;
+    estimate.notes = [...estimate.notes, `Read as one take: ${takes.length === 1 ? 'the whole edition is one request' : `${takes.length} requests, split at section breaks`}. Each take is then transcribed with word timings (${t.modelId}, about $${checkUsd.toFixed(3)} in total) to place chapters and check that every passage was read.`];
+  }
+  const allowance = await dailyAllowance(route, voice.modelId);
+  let allowanceNote: string | null = null;
   let limitProblem: string | null = null;
-  if (estimate.usd > profile.settings.generationBudgetUsd) limitProblem = `Estimated $${estimate.usd.toFixed(3)} is above your generation budget of $${profile.settings.generationBudgetUsd.toFixed(2)}. Raise it in Narrator → Settings or generate a section at a time.`;
+  const limit = await activeLimit(voice.modelId, route);
+  if (limit) limitProblem = limitMessage(limit);
+  else if (allowance && allowance.remaining === 0 && requests > 0) limitProblem = `Today’s allowance of ${allowance.limit} requests for ${voice.modelId} on the Gemini Developer API is used (resets ${new Date(allowance.resetAt).toUTCString()}). Nothing was sent.`;
+  else if (estimate.usd > profile.settings.generationBudgetUsd) limitProblem = `Estimated $${estimate.usd.toFixed(3)} is above your generation budget of $${profile.settings.generationBudgetUsd.toFixed(2)}. Raise it in Narrator → Settings or generate a section at a time.`;
+  if (!limitProblem && allowance && requests > allowance.remaining) {
+    allowanceNote = `This needs ${requests} requests, but only ${allowance.remaining} of today’s ${allowance.limit} remain on the Gemini Developer API. The first ${allowance.remaining} passages will be kept; the rest can be generated after the allowance resets (${new Date(allowance.resetAt).toUTCString()}) without paying again for finished work.`;
+  }
   try {
     assertWithinLimits(settings, await spendSnapshot(owner.uid), estimate.usd);
   } catch (e) {
     limitProblem = (e as Error).message;
   }
-  return { edition, voice, plan, estimate, budgetUsd: profile.settings.generationBudgetUsd, limitProblem };
+  return { edition, voice, plan, estimate, budgetUsd: profile.settings.generationBudgetUsd, noiseReduction: noiseFor(voice.id, profile.settings), limitProblem, allowance, allowanceNote, pin, next };
 }
 
 async function estimate(owner: Owner, p: Req<'estimate'>) {
   const g = await prepareGeneration(owner, p);
-  return { items: g.plan.items.map((i) => ({ key: i.key, passageId: i.passageId, chars: i.providerText.length, requests: i.chunks.length })), reuse: g.plan.reuse, skipped: g.plan.skipped, estimate: g.estimate, budgetUsd: g.budgetUsd, limitProblem: g.limitProblem, confirmationRequired: p.scope === 'edition' || g.estimate.usd >= 0.05 };
+  const switching = Boolean(g.pin && !samePin(g.pin, g.next) && PINNING_SCOPES.has(p.scope));
+  return {
+    items: g.plan.items.map((i) => ({ key: i.key, passageId: i.passageId, chars: i.providerText.length, requests: i.chunks.length })),
+    reuse: g.plan.reuse,
+    skipped: g.plan.skipped,
+    estimate: g.estimate,
+    budgetUsd: g.budgetUsd,
+    limitProblem: g.limitProblem,
+    confirmationRequired: p.scope === 'edition' || g.estimate.usd >= 0.05,
+    route: routeOfVoice(g.voice),
+    allowance: g.allowance,
+    allowanceNote: g.allowanceNote,
+    narrator: { pinned: g.pin ? await pinLabel(g.pin) : null, next: await pinLabel(g.next), switching },
+  };
 }
 
 async function generate(owner: Owner, p: Req<'generate'>) {
@@ -545,14 +775,17 @@ async function generate(owner: Owner, p: Req<'generate'>) {
   if (needsConfirm && (p.confirmedUsd === null || p.confirmedUsd + 1e-9 < g.estimate.usd)) throw new HttpsError('failed-precondition', `Confirm the estimated cost ($${g.estimate.usd.toFixed(3)}) to start.`, { estimate: g.estimate });
   // Ready takes with identical inputs become current without a new request.
   for (const r of g.plan.reuse) await ncol.editions().doc(g.edition.id).update({ [`takes.${r.passageId}`]: r.clipId });
+  // Pin (or, for a full edition, re-pin) the narrator before any take is made with it.
+  if (PINNING_SCOPES.has(p.scope) && (!g.pin || !samePin(g.pin, g.next) || !g.edition.narration)) await ncol.editions().doc(g.edition.id).update({ narration: g.pin && samePin(g.pin, g.next) ? g.pin : g.next });
   if (!g.plan.items.length) return { jobId: null, duplicate: false, reused: g.plan.reuse.map((r) => r.passageId), skipped: g.plan.skipped };
   const label = p.scope === 'selection' ? 'Selection preview' : p.scope === 'preview' ? `Passage preview (${p.variant === 'undirected' ? 'without' : 'with'} directions)` : p.scope === 'edition' ? 'Full edition' : p.scope === 'section' ? 'Section' : g.plan.items.length === 1 ? 'Passage' : `${g.plan.items.length} passages`;
+  const pin = await jobPin(g.voice);
   await db.runTransaction(async (tx) => {
     if ((await tx.get(col.jobs().doc(jobId))).exists) return;
-    await createJob(owner.uid, { id: jobId, type: 'narrator.speak', label: `${label} · ${g.edition.title}`.slice(0, 160), modelId: g.voice.modelId, params: { kind: p.scope, editionId: g.edition.id, voiceId: g.voice.id, testId: null, modelId: g.voice.modelId, budgetUsd: g.budgetUsd, items: g.plan.items }, estimate: costEstimate(g.estimate.usd, g.estimate.notes, `Speech · ${g.estimate.requests} request(s)`), target: { kind: 'narrator_edition', id: g.edition.id } }, tx);
+    await createJob(owner.uid, { id: jobId, type: 'narrator.speak', label: `${label} · ${g.edition.title}`.slice(0, 160), modelId: g.voice.modelId, params: { kind: p.scope, editionId: g.edition.id, voiceId: g.voice.id, testId: null, modelId: g.voice.modelId, ...pin, noiseReduction: g.noiseReduction, budgetUsd: g.budgetUsd, items: g.plan.items }, estimate: costEstimate(g.estimate.usd, g.estimate.notes, `Speech · ${g.estimate.requests} request(s)`), target: { kind: 'narrator_edition', id: g.edition.id } }, tx);
   });
   await enqueueJob(jobId, 'start');
-  return { jobId, duplicate: false, reused: g.plan.reuse.map((r) => r.passageId), skipped: g.plan.skipped, estimate: g.estimate };
+  return { jobId, duplicate: false, reused: g.plan.reuse.map((r) => r.passageId), skipped: g.plan.skipped, estimate: g.estimate, allowanceNote: g.allowanceNote };
 }
 
 async function jobCancel(owner: Owner, p: Req<'jobCancel'>) {
@@ -587,7 +820,7 @@ async function clipDismiss(owner: Owner, p: Req<'clipDismiss'>) {
 async function exportStart(owner: Owner, p: Req<'exportStart'>) {
   const edition = await loadEdition(owner.uid, p.editionId);
   if (!edition.voiceId) throw new HttpsError('failed-precondition', 'This edition has no voice.');
-  const voice = await loadVoice(owner.uid, edition.voiceId);
+  const voice = await loadNarrator(owner.uid, edition.voiceId);
   const jobId = `nare-${p.requestId}`;
   if ((await col.jobs().doc(jobId).get()).exists) return { jobId, duplicate: true };
   const running = (await activeNarratorJobs(owner.uid)).find((j) => j.type === 'narrator.export' && (j.params as { editionId?: string }).editionId === edition.id);
@@ -605,7 +838,7 @@ async function exportStart(owner: Owner, p: Req<'exportStart'>) {
     if ((await tx.get(col.jobs().doc(jobId))).exists) return;
     const doc: NarratorExportDoc = { ownerUid: owner.uid, editionId: edition.id, version, status: 'rendering', jobId, parts: [], sections: [], durationSec: null, channels: profile.settings.channels, target, before: null, after: null, files: { wav: null, mp3: null, transcript: null, chapters: null }, fileNames, peaks: null, processing: [], error: null };
     tx.set(exportRef, { ...doc, createdAt: FieldValue.serverTimestamp() });
-    await createJob(owner.uid, { id: jobId, type: 'narrator.export', label: `Export v${version} · ${edition.title}`.slice(0, 160), modelId: null, params: { editionId: edition.id, exportId: exportRef.id, parts: plan.parts, pauses: edition.settings.pauses, channels: profile.settings.channels, target }, estimate: costEstimate(0, ['Assembled and normalised inside AZ Studio’s worker; no model is called.'], 'Assembly (no model cost)'), target: { kind: 'narrator_edition', id: edition.id, sub: exportRef.id } }, tx);
+    await createJob(owner.uid, { id: jobId, type: 'narrator.export', label: `Export v${version} · ${edition.title}`.slice(0, 160), modelId: null, params: { editionId: edition.id, exportId: exportRef.id, parts: plan.parts, pauses: edition.settings.pauses, channels: profile.settings.channels, target, noiseReduction: noiseFor(voice.id, profile.settings) }, estimate: costEstimate(0, ['Assembled and normalised inside AZ Studio’s worker; no model is called.'], 'Assembly (no model cost)'), target: { kind: 'narrator_edition', id: edition.id, sub: exportRef.id } }, tx);
   });
   await enqueueJob(jobId, 'start');
   return { jobId, exportId: exportRef.id, duplicate: false };
@@ -702,6 +935,8 @@ export async function narrator(owner: Owner, p: NarratorRequest): Promise<unknow
       return voiceDelete(owner, p);
     case 'voiceReconcile':
       return voiceReconcile(owner);
+    case 'cloudCheck':
+      return cloudCheck(owner, p);
     case 'providerVoiceDelete':
       return providerVoiceDelete(owner, p);
     case 'profileSave':

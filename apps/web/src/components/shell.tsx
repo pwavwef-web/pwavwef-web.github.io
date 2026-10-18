@@ -1,6 +1,6 @@
 import { collection, query, where } from 'firebase/firestore';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { AudioLines, Clapperboard, Disc3, Film, FolderOpen, House, Layers, ListChecks, LogOut, Megaphone, Settings2, Sparkles } from 'lucide-react';
+import { Clapperboard, FolderOpen, House, Layers, ListChecks, LogOut, Settings2, Sparkles } from 'lucide-react';
 import { ACTIVE_STATUSES, formatUsd, type JobDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery } from '../lib/data';
@@ -10,15 +10,16 @@ import { cx, Tip } from './ui';
 export const NAV = [
   { to: '/', label: 'Home', icon: House, end: true },
   { to: '/projects', label: 'Projects', icon: FolderOpen },
-  { to: '/create', label: 'Create', icon: Sparkles },
-  { to: '/lite', label: 'Film Lite', icon: Film },
-  { to: '/mvlite', label: 'MV Lite', icon: Disc3 },
-  { to: '/ads', label: 'Short Ads', icon: Megaphone },
-  { to: '/narrator', label: 'Narrator', icon: AudioLines },
+  { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/ads', '/narrator'] },
   { to: '/assets', label: 'Assets', icon: Layers },
   { to: '/jobs', label: 'Jobs', icon: ListChecks },
   { to: '/settings', label: 'Settings', icon: Settings2 },
-];
+] as { to: string; label: string; icon: typeof House; end?: boolean; within?: string[] }[];
+
+/** Studios opened from the Create page keep Create highlighted while you work in them. */
+function inSection(pathname: string, n: (typeof NAV)[number]) {
+  return (n.within ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 export function Logo({ className }: { className?: string }) {
   return (
@@ -78,7 +79,7 @@ export function AppShell() {
               className={({ isActive }) =>
                 cx(
                   'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
-                  isActive ? 'bg-gradient-to-r from-accent/18 to-transparent text-fg shadow-[inset_2px_0_0_var(--color-accent)]' : 'text-dim hover:bg-white/[0.04] hover:text-fg',
+                  isActive || inSection(location.pathname, n) ? 'bg-gradient-to-r from-accent/18 to-transparent text-fg shadow-[inset_2px_0_0_var(--color-accent)]' : 'text-dim hover:bg-white/[0.04] hover:text-fg',
                 )
               }
             >
@@ -123,9 +124,9 @@ export function AppShell() {
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Primary" className="glass fixed inset-x-0 bottom-0 z-30 grid grid-cols-10 border-x-0 border-b-0 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+      <nav aria-label="Primary" className="glass fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-x-0 border-b-0 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
         {NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex min-w-0 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium whitespace-nowrap', isActive ? 'text-accent-2' : 'text-faint')}>
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex min-w-0 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium whitespace-nowrap', isActive || inSection(location.pathname, n) ? 'text-accent-2' : 'text-faint')}>
             <n.icon className="size-5" aria-hidden />
             <span className="max-w-full truncate">{n.label}</span>
           </NavLink>

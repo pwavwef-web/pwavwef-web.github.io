@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleAlert, CircleCheck, Mic, Square, Trash2, TriangleAlert, Upload } from 'lucide-react';
-import { ENROLLMENT, type ConsentLocale, type NarratorRecordingDoc, type RecordingKind } from '@az-studio/shared';
+import { ENROLLMENT, type ConsentLocale, type NarratorRecordingDoc, type NarratorRoute, type RecordingKind } from '@az-studio/shared';
 import { errorMessage } from '../../lib/api';
 import { ref, uploadBytes } from 'firebase/storage';
 import { fileToBase64, nar, newRequestId, useNarratorMedia, type UploadResult, type WithId } from '../../lib/narrator';
@@ -78,7 +78,7 @@ export function RecordingSummary({ rec }: { rec: WithId<NarratorRecordingDoc> })
  * 24 kHz mono 16-bit WAV (never just renamed) and measures length, level, clipping, noise and pauses.
  * The microphone is released when recording stops or the component unmounts (leaving the screen).
  */
-export function Recorder({ kind, recording, onChange, consentLocale, termId, scriptText, compact }: { kind: RecordingKind; recording: WithId<NarratorRecordingDoc> | null; onChange: (recordingId: string | null) => void; consentLocale?: ConsentLocale; termId?: string; scriptText?: string; compact?: boolean }) {
+export function Recorder({ kind, recording, onChange, consentLocale, consentRoute, termId, scriptText, compact }: { kind: RecordingKind; recording: WithId<NarratorRecordingDoc> | null; onChange: (recordingId: string | null) => void; consentLocale?: ConsentLocale; consentRoute?: NarratorRoute; termId?: string; scriptText?: string; compact?: boolean }) {
   const limits = ENROLLMENT[kind];
   const uid = useUid();
   const [phase, setPhase] = useState<Phase>('idle');
@@ -128,7 +128,7 @@ export function Recorder({ kind, recording, onChange, consentLocale, termId, scr
     try {
       if (blob.size > ENROLLMENT.maxUploadBytes) throw new Error(`The file is ${(blob.size / 1048576).toFixed(1)} MB; the limit is ${ENROLLMENT.maxUploadBytes / 1048576} MB.`);
       const transport = blob.size <= ENROLLMENT.maxInlineBytes ? { dataBase64: await fileToBase64(blob) } : { inboxPath: await toInbox(blob, uid) };
-      const res = await nar<UploadResult>('recordingUpload', { kind, source, mimeType: blob.type || 'application/octet-stream', ...transport, ...(scriptText ? { scriptText: scriptText.slice(0, 2000) } : {}), ...(consentLocale ? { consentLocale } : {}), ...(termId ? { termId } : {}) });
+      const res = await nar<UploadResult>('recordingUpload', { kind, source, mimeType: blob.type || 'application/octet-stream', ...transport, ...(scriptText ? { scriptText: scriptText.slice(0, 2000) } : {}), ...(consentLocale ? { consentLocale } : {}), ...(consentRoute ? { consentRoute } : {}), ...(termId ? { termId } : {}) });
       if (recording) void nar('recordingDelete', { recordingId: recording.id }).catch(() => undefined);
       onChange(res.recordingId);
     } catch (e) {

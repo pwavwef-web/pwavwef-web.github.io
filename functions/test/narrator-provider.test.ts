@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { encodePcm16Wav } from '@az-studio/shared';
-import { createVoice, deleteVoice, NarratorProviderError, sanitize, setFetchForTests, setProviderKeyForTests, synthesize } from '../src/lib/narrator-provider';
+import { createVoice, deleteVoice, getVoice, listReplicatedVoices, NarratorProviderError, parseRetryAfter, sanitize, setFetchForTests, setProviderKeyForTests, setVertexTokenForTests, synthesize } from '../src/lib/narrator-provider';
 import { checkImportUrl, importArticle, isPrivateAddress, setImportFetcherForTests } from '../src/lib/narrator-import';
 
 /** The REST adapter against a fake fetch (MOCKED — request/response shapes from Google's documentation and the 2026-10-17 probes). */
@@ -56,6 +56,16 @@ describe('provider adapter', () => {
     expect(body).toEqual({ store: true, voice: { model: 'gemini-3.8-flash-tts', type: 'replicated', display_name: 'Francis — Pwavwe Papers', replicated: { source_audio: { mime_type: 'audio/wav', data: Buffer.from('REF').toString('base64') }, consent_audio: { mime_type: 'audio/wav', data: Buffer.from('CON').toString('base64') } } } });
   });
 
+  it('treats a used-up daily allowance as a quota (never retried), with Google\'s retry time', async () => {
+    setProviderKeyForTests('k');
+    fakeFetch(() => new Response(JSON.stringify({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: "Rate limit exceeded for model gemini-3.8-flash-tts (limit: 100 requests per day on Tier 1). Please retry in 21h2m35s or upgrade your tier at https://ai.dev/rate-limit." } }), { status: 429 }));
+    const e = (await synthesize({ modelId: 'm', voiceId: 'voice_a', segments: [{ text: 't', style: '' }] }).catch((x) => x)) as NarratorProviderError;
+    expect(e).toMatchObject({ kind: 'quota', httpStatus: 429, retryAfterSec: 21 * 3600 + 2 * 60 + 35 });
+    expect(e.retryable).toBe(false);
+    expect(parseRetryAfter('Please retry in 45s.')).toBe(45);
+    expect(parseRetryAfter('try later')).toBeNull();
+  });
+
   it('classifies failures: refusals are definite, dropped connections are ambiguous, 429 is retryable', async () => {
     setProviderKeyForTests('k');
     fakeFetch(() => new Response(JSON.stringify({ error: { code: 400, status: 'INVALID_ARGUMENT', message: 'Consent audio could not be verified against the source speaker.' } }), { status: 400 }));
@@ -75,6 +85,68 @@ describe('provider adapter', () => {
 
   it('never echoes keys or stateless voice keys in messages', () => {
     expect(sanitize('bad key AIzaSyA1234567890abcdefghijk and voicekey_secret123 at https://x?key=abc&y=1')).toBe('bad key [key] and voicekey_[redacted] at https://x?key=[redacted]&y=1');
+  });
+});
+
+describe('Google Cloud route (MOCKED — shapes from the Agent Platform docs and the 2026-10-18 live probe)', () => {
+  afterEach(() => setVertexTokenForTests(undefined));
+  const V = 'https://aiplatform.googleapis.com';
+
+  it('speaks through generateContent with the service-account token, a style per text part and a stored voice', async () => {
+    setVertexTokenForTests(async () => 'ya29.test-token');
+    const calls = fakeFetch(() => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/wav', data: wavB64 } }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 32, candidatesTokenCount: 317 } }), { status: 200 }));
+    const r = await synthesize({ route: 'vertex', modelId: 'gemini-3.8-flash-tts', voiceId: 'voice_cloud1', segments: [{ text: 'One.', style: 'warm' }, { text: 'Two.', style: '' }] });
+    expect(calls[0]!.url).toBe(`${V}/v1/projects/az-learner/locations/global/publishers/google/models/gemini-3.8-flash-tts:generateContent`);
+    expect((calls[0]!.init.headers as Record<string, string>).authorization).toBe('Bearer ya29.test-token');
+    expect((calls[0]!.init.headers as Record<string, string>)['x-goog-api-key']).toBeUndefined();
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({
+      contents: [{ role: 'user', parts: [{ text: 'One.', speechMetadata: { style: 'warm' } }, { text: 'Two.' }] }],
+      generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { voice: 'voice_cloud1' } } },
+    });
+    expect(r).toMatchObject({ sampleRate: 24000, inputTokens: 32, outputTokens: 317 });
+  });
+
+  it('uses a prebuilt voice name for the Cloud test and wraps raw PCM into WAV', async () => {
+    setVertexTokenForTests(async () => 't');
+    const pcm = Buffer.alloc(4800);
+    const calls = fakeFetch(() => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: pcm.toString('base64') } }] } }] }), { status: 200 }));
+    const r = await synthesize({ route: 'vertex', modelId: 'gemini-3.8-flash-tts', voiceId: 'Kore', segments: [{ text: 'Hi', style: '' }] });
+    expect(JSON.parse(String(calls[0]!.init.body)).generationConfig.speechConfig).toEqual({ voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } });
+    expect(r.wav.subarray(0, 4).toString('latin1')).toBe('RIFF');
+    expect(r.sampleRate).toBe(24000);
+  });
+
+  it('creates a Cloud voice without a model (store: true) and lists only replicated voices', async () => {
+    setVertexTokenForTests(async () => 't');
+    const calls = fakeFetch((c) => (c.init.method === 'POST' ? new Response(JSON.stringify({ id: 'voice_c1', type: 'VOICE_TYPE_REPLICATED' }), { status: 200 }) : new Response(JSON.stringify({ voices: [{ id: 'voice_c1', type: 'VOICE_TYPE_REPLICATED', display_name: 'F' }] }), { status: 200 })));
+    expect(await createVoice({ route: 'vertex', modelId: 'gemini-3.8-flash-tts', displayName: 'F', referenceWav: Buffer.from('R'), consentWav: Buffer.from('C') })).toEqual({ voiceId: 'voice_c1' });
+    expect(calls[0]!.url).toBe(`${V}/v1beta1/projects/az-learner/locations/global/voices`);
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ store: true, voice: { type: 'VOICE_TYPE_REPLICATED', displayName: 'F', replicated: { sourceAudio: { mimeType: 'audio/wav', data: Buffer.from('R').toString('base64') }, consentAudio: { mimeType: 'audio/wav', data: Buffer.from('C').toString('base64') } } } });
+    const voices = await listReplicatedVoices('vertex');
+    expect(calls[1]!.url).toBe(`${V}/v1beta1/projects/az-learner/locations/global/voices?type=replicated&pageSize=200`);
+    expect(voices).toEqual([{ id: 'voice_c1', displayName: 'F', type: 'replicated', createTime: null }]);
+  });
+
+  it('a busy shared pool (429 RESOURCE_EXHAUSTED) is retryable with Google’s RetryInfo; IAM refusals name the service account', async () => {
+    setVertexTokenForTests(async () => 't');
+    fakeFetch(() => new Response(JSON.stringify({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Resource exhausted. Please try again later.', details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '21s' }] } }), { status: 429 }));
+    const e = (await synthesize({ route: 'vertex', modelId: 'm', voiceId: 'voice_a', segments: [{ text: 't', style: '' }] }).catch((x) => x)) as NarratorProviderError;
+    expect(e).toMatchObject({ kind: 'rate_limited', retryAfterSec: 21 });
+    expect(e.retryable).toBe(true);
+    fakeFetch(() => new Response(JSON.stringify({ error: { code: 403, status: 'PERMISSION_DENIED', message: "Permission 'aiplatform.endpoints.predict' denied" } }), { status: 403 }));
+    const a = (await synthesize({ route: 'vertex', modelId: 'm', voiceId: 'voice_a', segments: [{ text: 't', style: '' }] }).catch((x) => x)) as NarratorProviderError;
+    expect(a.kind).toBe('auth');
+    expect(a.message).toMatch(/service account/);
+  });
+
+  it('a Developer API voice id is not found on the Cloud route (no transfer between stores)', async () => {
+    setVertexTokenForTests(async () => 't');
+    fakeFetch(() => new Response(JSON.stringify({ error: { code: 404, status: 'NOT_FOUND', message: 'Voice `voice_dev` not found.' } }), { status: 404 }));
+    expect(await getVoice('voice_dev', 'vertex')).toBeNull();
+  });
+
+  it('never echoes access tokens', () => {
+    expect(sanitize('Authorization: Bearer ya29.a0AfH6SM-abc_def and ya29.xyz')).toBe('Authorization: Bearer [token] and [token]');
   });
 });
 
