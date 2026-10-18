@@ -231,6 +231,12 @@ describe('embed markup and hosting headers', () => {
     // The separate theme-sync snippet is the only place a script appears, and it names one exact origin.
     expect(PLAYER_THEME_SYNC).toContain(`"${PUBLIC_PLAYER_ORIGIN}"`);
     expect(PLAYER_THEME_SYNC).toContain('e.origin !== ORIGIN');
+    // It is pasted into a Blogger theme, which is parsed as XML, and that theme marks dark mode with a
+    // class on <html> — a `data-theme` listener would never fire there (checked live on blogs.pwavwe.com).
+    expect(PLAYER_THEME_SYNC).toContain('//<![CDATA[');
+    expect(PLAYER_THEME_SYNC).toContain('//]]>');
+    expect(PLAYER_THEME_SYNC).toContain(`classList.contains('dark')`);
+    expect(PLAYER_THEME_SYNC).toContain(`attributeFilter: ['class', 'data-theme']`);
   });
 
   it('lets only the configured publication origins frame the player, and keeps the studio unframeable', () => {

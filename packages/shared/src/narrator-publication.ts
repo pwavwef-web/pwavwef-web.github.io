@@ -192,32 +192,40 @@ export function azStudioEmbedHtml(publicId: string, title: string, opts: { origi
  * with the blog's own light/dark toggle, and sizes the iframe to the player exactly. It is given to the author
  * to paste into the theme (not into a post) — the embed above works without it.
  *
+ * Written for The Pwavwe Papers theme as it stands (checked live 2026-10-18): dark mode is the class `dark`
+ * on `<html>` (kept in `localStorage.pwavwe-theme`), not a `data-theme` attribute, and Blogger parses the
+ * theme as XML, so the script body is inside `//<![CDATA[ … //]]>` like the theme's own scripts.
+ *
  * The player answers `pwavwe-player-size` messages and accepts `pwavwe-player-theme` only from
  * `PUBLICATION_ORIGINS`; this side checks `event.origin` against the player origin before resizing.
  */
 export const PLAYER_THEME_SYNC = `<script>
+//<![CDATA[
 /* The Pwavwe Papers audio player: keep embedded players on the blog's theme, and size them to their content. */
 (function () {
   var ORIGIN = ${JSON.stringify(PUBLIC_PLAYER_ORIGIN)};
-  var frames = function () { return document.querySelectorAll('.pwavwe-audio-embed iframe'); };
+  var root = document.documentElement;
+  function frames() { return document.querySelectorAll('.pwavwe-audio-embed iframe'); }
   function send() {
-    var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-    frames().forEach(function (f) {
-      if (f.contentWindow) f.contentWindow.postMessage({ type: 'pwavwe-player-theme', theme: theme }, ORIGIN);
+    // blogs.pwavwe.com marks dark mode with a class on <html>; data-theme is read too, for other templates.
+    var dark = root.classList.contains('dark') || root.getAttribute('data-theme') === 'dark';
+    Array.prototype.forEach.call(frames(), function (f) {
+      if (f.contentWindow) f.contentWindow.postMessage({ type: 'pwavwe-player-theme', theme: dark ? 'dark' : 'light' }, ORIGIN);
     });
   }
   window.addEventListener('message', function (e) {
     if (e.origin !== ORIGIN || !e.data || e.data.type !== 'pwavwe-player-size') return;
     var h = Number(e.data.height);
     if (!(h > 0) || h > 600) return;
-    frames().forEach(function (f) {
+    Array.prototype.forEach.call(frames(), function (f) {
       if (f.contentWindow === e.source) f.style.height = Math.round(h) + 'px';
     });
     send();
   });
-  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new MutationObserver(send).observe(root, { attributes: true, attributeFilter: ['class', 'data-theme'] });
   window.addEventListener('load', send);
 })();
+//]]>
 </script>`;
 
 /** Parses a single Range header (`bytes=a-b`, `bytes=a-`, `bytes=-n`) against a size. */

@@ -55,29 +55,39 @@ it makes every embedded player follow the blog’s own light/dark button and siz
 exactly, so no width is left with a band of empty space. Both sides check the other’s origin before acting on
 a message, and the player accepts theme messages only from the publication origins.
 
+It is written for this theme as it stands (checked live on 2026-10-18): the dark mode it watches is the class
+`dark` on `<html>` (the toggle also writes `localStorage.pwavwe-theme`), not a `data-theme` attribute, and the
+body is wrapped in `//<![CDATA[ … //]]>` because Blogger parses the theme as XML — a bare script risks an
+“Error parsing XML” on save. It matches `.pwavwe-audio-embed iframe`, which is the wrapper pasted into the post
+body; the theme’s own hidden `#paperAudio` panel is the older SoundCloud route and is left alone.
+
 ```html
 <script>
+//<![CDATA[
 /* The Pwavwe Papers audio player: keep embedded players on the blog's theme, and size them to their content. */
 (function () {
   var ORIGIN = "https://az-studio.web.app";
-  var frames = function () { return document.querySelectorAll('.pwavwe-audio-embed iframe'); };
+  var root = document.documentElement;
+  function frames() { return document.querySelectorAll('.pwavwe-audio-embed iframe'); }
   function send() {
-    var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-    frames().forEach(function (f) {
-      if (f.contentWindow) f.contentWindow.postMessage({ type: 'pwavwe-player-theme', theme: theme }, ORIGIN);
+    // blogs.pwavwe.com marks dark mode with a class on <html>; data-theme is read too, for other templates.
+    var dark = root.classList.contains('dark') || root.getAttribute('data-theme') === 'dark';
+    Array.prototype.forEach.call(frames(), function (f) {
+      if (f.contentWindow) f.contentWindow.postMessage({ type: 'pwavwe-player-theme', theme: dark ? 'dark' : 'light' }, ORIGIN);
     });
   }
   window.addEventListener('message', function (e) {
     if (e.origin !== ORIGIN || !e.data || e.data.type !== 'pwavwe-player-size') return;
     var h = Number(e.data.height);
     if (!(h > 0) || h > 600) return;
-    frames().forEach(function (f) {
+    Array.prototype.forEach.call(frames(), function (f) {
       if (f.contentWindow === e.source) f.style.height = Math.round(h) + 'px';
     });
     send();
   });
-  new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new MutationObserver(send).observe(root, { attributes: true, attributeFilter: ['class', 'data-theme'] });
   window.addEventListener('load', send);
 })();
+//]]>
 </script>
 ```
