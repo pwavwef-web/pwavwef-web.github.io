@@ -618,6 +618,18 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Approve or withdraw a shot's take (approval updates canonical continuity; the rules deny direct writes). */
   z.object({ action: z.literal('takeAction'), payload: z.object({ projectId: id, shotId: id, takeId: id, action: z.enum(['approve', 'withdraw']), note: text(500).optional() }) }),
+  /**
+   * The public website's early-access list (the rules deny every client read): list (view and CSV export),
+   * delete one registration, or pause / resume new registrations.
+   */
+  z.object({
+    action: z.literal('earlyAccess'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('list') }),
+      z.object({ op: z.literal('delete'), id: z.string().regex(/^[a-f0-9]{64}$/, 'Invalid registration id') }),
+      z.object({ op: z.literal('pause'), paused: z.boolean() }),
+    ]),
+  }),
 ]);
 export type ApiRequest = z.infer<typeof apiRequestSchema>;
 export type ApiAction = ApiRequest['action'];

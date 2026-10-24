@@ -54,6 +54,23 @@ function Backdrop({ children }: { children: ReactNode }) {
   );
 }
 
+/** Plain links back to the public website (static pages outside the studio app). */
+function PublicSiteLinks() {
+  return (
+    <p className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-faint">
+      <a href="/" className="hover:text-fg hover:underline">
+        ← AZ Studio website
+      </a>
+      <a href="/early-access" className="hover:text-fg hover:underline">
+        Early access
+      </a>
+      <a href="/privacy" className="hover:text-fg hover:underline">
+        Privacy
+      </a>
+    </p>
+  );
+}
+
 function MfaStep({ resolver, onDone }: { resolver: MultiFactorResolver; onDone: () => void }) {
   const hint = resolver.hints[0]!;
   const isPhone = hint.factorId === PhoneMultiFactorGenerator.FACTOR_ID;
@@ -200,6 +217,7 @@ export function SignIn() {
           <LockKeyhole className="size-3.5" aria-hidden /> Protected by Firebase Authentication, App Check and owner-only access rules.
         </p>
       </div>
+      <PublicSiteLinks />
     </Backdrop>
   );
 }
@@ -217,10 +235,14 @@ function Denied() {
         <p className="mt-1 text-xs text-faint">
           Signed in as <span data-private>{user?.email}</span>
         </p>
+        <p className="mt-4 text-sm text-dim">
+          AZ Studio isn’t open to other accounts yet. To hear when invitations start, <a href="/early-access" className="text-accent-2 hover:underline">join the early-access list</a>.
+        </p>
         <Button className="mt-6" onClick={() => void signOut()} icon={<LogOut className="size-4" />}>
           Sign out
         </Button>
       </div>
+      <PublicSiteLinks />
     </Backdrop>
   );
 }

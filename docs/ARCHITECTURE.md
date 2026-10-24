@@ -6,7 +6,7 @@ The Firebase project also hosts other apps (Hosting sites `az-learner`/“Last H
 
 | Resource | Name |
 | --- | --- |
-| Hosting site | `az-studio` → https://az-studio.web.app |
+| Hosting site | `az-studio` → https://az-studio.web.app (public website at `/`, private studio at `/studio` and its existing routes — see [PUBLIC_SITE.md](PUBLIC_SITE.md)) |
 | Web app | `AZ Studio` (`1:12958795950:web:06bec3bbdd07bc1c40453f`) |
 | Firestore database | `az-studio` (us-central1, delete protection on) |
 | Storage bucket | `az-studio-media-az-learner` (us-central1, uniform access, public access prevention) |

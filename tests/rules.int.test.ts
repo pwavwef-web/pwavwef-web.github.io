@@ -192,6 +192,23 @@ describe('Firestore rules — creative documents and server records', () => {
     await assertSucceeds(getDoc(doc(db, 'users/owner-test-uid')));
   });
 
+  it('keeps the public early-access list and its rate limits out of every client’s reach, the owner’s included', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'earlyAccess/abc'), { email: 'ama@example.com', consent: { updates: true } });
+      await setDoc(doc(ctx.firestore(), 'earlyAccessRate/h1'), { hourCount: 1 });
+    });
+    for (const who of [owner(), intruder(), anon()]) {
+      const db = who.firestore();
+      await assertFails(getDoc(doc(db, 'earlyAccess/abc')));
+      await assertFails(getDocs(collection(db, 'earlyAccess')));
+      await assertFails(setDoc(doc(db, 'earlyAccess/new'), { email: 'x@example.com' }));
+      await assertFails(updateDoc(doc(db, 'earlyAccess/abc'), { name: 'changed' }));
+      await assertFails(deleteDoc(doc(db, 'earlyAccess/abc')));
+      await assertFails(getDoc(doc(db, 'earlyAccessRate/h1')));
+      await assertFails(getDoc(doc(db, 'runtime/earlyAccessKey')));
+    }
+  });
+
   it('reads missing records as not-found for the owner only, and never exposes foreign records', async () => {
     const db = owner().firestore();
     await assertSucceeds(getDoc(doc(db, 'usageDaily/owner-test-uid_2026-09-21')));

@@ -61,3 +61,4 @@ export * from './narrator-schemas';
 export * from './narrator-publication';
 export * from './narrator-direction';
 export * from './narrator-takes';
+export * from './early-access';

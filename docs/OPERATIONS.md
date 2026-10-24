@@ -30,6 +30,10 @@ gcloud tasks queues add-iam-policy-binding azsJobWorker --location=us-central1 -
 
 SPA routes are served `no-cache` and hashed `/assets/**` are immutable, so every deploy reaches new page loads immediately. A tab left open on an older build reloads itself once when it requests a chunk that no longer exists (`apps/web/src/lib/build-refresh.ts`).
 
+## Public website
+
+The public pages, the early-access list (Settings → Early access to view, export, delete or pause) and the rollback steps are in [`PUBLIC_SITE.md`](PUBLIC_SITE.md). The studio dashboard is at `/studio`.
+
 ## Owner identity
 
 The owner is configured in Secret Manager — never in source:

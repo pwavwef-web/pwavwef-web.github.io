@@ -8,7 +8,7 @@ import { useSession } from '../lib/session';
 import { cx, Tip } from './ui';
 
 export const NAV = [
-  { to: '/', label: 'Home', icon: House, end: true },
+  { to: '/studio', label: 'Home', icon: House, end: true },
   { to: '/projects', label: 'Projects', icon: FolderOpen },
   { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/ads', '/narrator'] },
   { to: '/assets', label: 'Assets', icon: Layers },
@@ -67,7 +67,7 @@ export function AppShell() {
     <div className="flex min-h-dvh">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-ink/70 px-4 py-5 backdrop-blur-xl lg:flex">
-        <NavLink to="/" className="px-2" aria-label="AZ Studio home">
+        <NavLink to="/studio" className="px-2" aria-label="AZ Studio home">
           <Logo />
         </NavLink>
         <nav aria-label="Primary" className="mt-8 flex flex-col gap-1">
@@ -113,7 +113,7 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="glass sticky top-0 z-30 flex items-center justify-between border-x-0 border-t-0 px-4 py-3 lg:hidden">
-          <NavLink to="/" aria-label="AZ Studio home">
+          <NavLink to="/studio" aria-label="AZ Studio home">
             <Logo />
           </NavLink>
           <ActiveJobsPill collapsed />

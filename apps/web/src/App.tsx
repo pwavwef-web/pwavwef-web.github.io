@@ -73,7 +73,7 @@ function NotFound() {
       <div>
         <p className="eyebrow">404</p>
         <p className="display mt-2 text-4xl">This reel is missing</p>
-        <a href="/" className="mt-4 inline-block text-sm text-accent-2 hover:underline">
+        <a href="/studio" className="mt-4 inline-block text-sm text-accent-2 hover:underline">
           Back to Home
         </a>
       </div>
@@ -94,7 +94,9 @@ const router = createBrowserRouter([
         element: <AppShell />,
         errorElement: <RouteError />,
         children: [
-          { index: true, element: <Page><Home /></Page> },
+          // The public website owns `/`; the studio dashboard lives at /studio (every other studio URL is unchanged).
+          { index: true, element: <Navigate to="/studio" replace /> },
+          { path: 'studio', element: <Page><Home /></Page> },
           { path: 'projects', element: <Page><Projects /></Page> },
           { path: 'projects/:projectId', element: <Page><ProjectRouter /></Page> },
           { path: 'projects/:projectId/film/:tab?', element: <Page><FilmStudio /></Page> },
@@ -123,7 +125,7 @@ const router = createBrowserRouter([
           { path: 'assets', element: <Page><Assets /></Page> },
           { path: 'jobs', element: <Page><Jobs /></Page> },
           { path: 'settings', element: <Page><Settings /></Page> },
-          { path: 'home', element: <Navigate to="/" replace /> },
+          { path: 'home', element: <Navigate to="/studio" replace /> },
           { path: '*', element: <NotFound /> },
         ],
       },
