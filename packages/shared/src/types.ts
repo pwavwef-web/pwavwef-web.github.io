@@ -10,6 +10,7 @@ import type { AdSceneSpec, AdSceneValidation, AdSpec, TranscriptReport } from '.
 import type { ClipLook, ClipMotion } from './motion';
 import type { LiteSpec } from './lite';
 import type { MvLiteSpec } from './mvlite';
+import type { LinkAdDoc } from './linkad';
 
 /**
  * AZ Studio domain model. These shapes are shared by the web app, Cloud Functions and the renderer.
@@ -26,7 +27,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite', 'link_ad'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -39,6 +40,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   short_ad: 'Short Ad',
   film_lite: 'Film Studio Lite',
   mv_lite: 'Music Video Lite',
+  link_ad: 'Link to Ad',
 };
 
 export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';
@@ -109,6 +111,8 @@ export interface ProjectDoc {
   lite?: LiteSpec | null;
   /** Music Video Lite: the video's song, concept, sections, shots and edit (draft saved as it is edited). */
   mvlite?: MvLiteSpec | null;
+  /** Link to Ad: the ad's sources, brief, directions, script, voice and exports. Written by the API only. */
+  linkad?: LinkAdDoc | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
@@ -228,6 +232,7 @@ export const JOB_TYPES = [
   'narrator.speak',
   'narrator.export',
   'narrator.direct',
+  'linkad.run',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -272,7 +277,7 @@ export interface CostEstimate {
 }
 
 export interface JobTarget {
-  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film' | 'narrator_voice' | 'narrator_edition';
+  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film' | 'narrator_voice' | 'narrator_edition' | 'linkad';
   id: string;
   /** Extra identifier, e.g. the take id created for a shot. */
   sub?: string;

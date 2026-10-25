@@ -27,6 +27,8 @@ const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
 const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
 const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
 const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
+const LinkAdStudio = lazy(() => import('./pages/linkad/LinkAdStudio'));
+const LinkAdWorkspace = lazy(() => import('./pages/linkad/LinkAdWorkspace'));
 const NarratorShell = lazy(() => import('./pages/narrator/NarratorShell'));
 const NarratorEditions = lazy(() => import('./pages/narrator/EditionsHome'));
 const NarratorVoice = lazy(() => import('./pages/narrator/VoicePage'));
@@ -73,7 +75,7 @@ function NotFound() {
       <div>
         <p className="eyebrow">404</p>
         <p className="display mt-2 text-4xl">This reel is missing</p>
-        <a href="/" className="mt-4 inline-block text-sm text-accent-2 hover:underline">
+        <a href="/studio" className="mt-4 inline-block text-sm text-accent-2 hover:underline">
           Back to Home
         </a>
       </div>
@@ -94,7 +96,9 @@ const router = createBrowserRouter([
         element: <AppShell />,
         errorElement: <RouteError />,
         children: [
-          { index: true, element: <Page><Home /></Page> },
+          // The public website owns `/`; the studio dashboard lives at /studio (every other studio URL is unchanged).
+          { index: true, element: <Navigate to="/studio" replace /> },
+          { path: 'studio', element: <Page><Home /></Page> },
           { path: 'projects', element: <Page><Projects /></Page> },
           { path: 'projects/:projectId', element: <Page><ProjectRouter /></Page> },
           { path: 'projects/:projectId/film/:tab?', element: <Page><FilmStudio /></Page> },
@@ -106,6 +110,8 @@ const router = createBrowserRouter([
           { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
           { path: 'mvlite', element: <Page><MvLiteStudio /></Page> },
           { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
+          { path: 'linkad', element: <Page><LinkAdStudio /></Page> },
+          { path: 'linkad/:projectId/:step?', element: <Page><LinkAdWorkspace /></Page> },
           {
             path: 'narrator',
             element: <Page><NarratorShell /></Page>,
@@ -123,7 +129,7 @@ const router = createBrowserRouter([
           { path: 'assets', element: <Page><Assets /></Page> },
           { path: 'jobs', element: <Page><Jobs /></Page> },
           { path: 'settings', element: <Page><Settings /></Page> },
-          { path: 'home', element: <Navigate to="/" replace /> },
+          { path: 'home', element: <Navigate to="/studio" replace /> },
           { path: '*', element: <NotFound /> },
         ],
       },

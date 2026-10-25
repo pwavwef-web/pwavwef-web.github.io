@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { AudioLines, Clapperboard, Disc3, Film, GalleryHorizontalEnd, Image as ImageIcon, Megaphone, Music2, Scissors } from 'lucide-react';
+import { AudioLines, Clapperboard, Disc3, Film, GalleryHorizontalEnd, Image as ImageIcon, Link2, Megaphone, Music2, Scissors } from 'lucide-react';
 import { formatUsd, PROJECT_TYPE_LABELS, relativeTime, toMillis, type FrameAspect, type ProjectDoc, type ProjectType } from '@az-studio/shared';
 import type { WithId } from '../lib/data';
 import { useMediaUrls } from '../lib/media';
@@ -23,6 +23,7 @@ export const PROJECT_ICON: Record<ProjectType, ReactNode> = {
   short_ad: <Megaphone className="size-4" />,
   film_lite: <GalleryHorizontalEnd className="size-4" />,
   mv_lite: <Disc3 className="size-4" />,
+  link_ad: <Link2 className="size-4" />,
 };
 
 const GRADIENT: Record<ProjectType, string> = {
@@ -35,6 +36,7 @@ const GRADIENT: Record<ProjectType, string> = {
   short_ad: 'from-[#0f2f4a] via-[#0b1830] to-[#05070b]',
   film_lite: 'from-[#2b2416] via-[#121520] to-[#05070b]',
   mv_lite: 'from-[#3a1630] via-[#16122a] to-[#05070b]',
+  link_ad: 'from-[#0f3a3a] via-[#10202a] to-[#05070b]',
 };
 
 export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): string {
@@ -51,6 +53,8 @@ export function projectPath(p: Pick<ProjectDoc, 'type'> & { id: string }): strin
       return `/lite/${p.id}`;
     case 'mv_lite':
       return `/mvlite/${p.id}`;
+    case 'link_ad':
+      return `/linkad/${p.id}`;
     default:
       return `/projects/${p.id}`;
   }
@@ -99,7 +103,7 @@ export function NewProjectDialog({ open, onOpenChange, defaultType = 'film' }: {
   const [fps, setFps] = useState<24 | 25 | 30>(24);
   const [quality, setQuality] = useState<string | null>(null);
   const shotQuality = quality ?? boot?.settings.defaultVideoResolution ?? boot?.capabilities.video.defaultResolution ?? '720p';
-  const makesVideo = type !== 'image' && type !== 'film_lite' && type !== 'mv_lite';
+  const makesVideo = type !== 'image' && type !== 'film_lite' && type !== 'mv_lite' && type !== 'link_ad';
   const [busy, setBusy] = useState(false);
   const create = async () => {
     if (!title.trim()) return;

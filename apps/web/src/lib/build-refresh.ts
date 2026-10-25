@@ -1,6 +1,6 @@
 /**
  * After a deploy, a tab opened on the previous build can request lazy chunks that Hosting no longer
- * serves (the SPA fallback answers with index.html). Reload once to pick up the new build; a short
+ * serves (a missing chunk is a 404, or HTML from an older fallback). Reload once to pick up the new build; a short
  * guard prevents reload loops when a chunk is genuinely broken.
  */
 const RELOAD_KEY = 'azs:build-reload-at';

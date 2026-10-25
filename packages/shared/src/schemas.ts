@@ -7,6 +7,7 @@ import { MUSIC_MODES } from './music-studio';
 import { RETRY_POLICY_LIMITS } from './generation-errors';
 import { AMBIENCE_KINDS } from './lite';
 import { narratorRequestSchema } from './narrator-schemas';
+import { linkAdRequestSchema } from './linkad-schemas';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -18,7 +19,7 @@ const id = z.string().min(1).max(128).regex(/^[\w-]+$/, 'Invalid id');
 const text = (max: number) => z.string().max(max);
 
 export const jobTargetSchema = z.object({
-  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film', 'narrator_voice', 'narrator_edition']),
+  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film', 'narrator_voice', 'narrator_edition', 'linkad']),
   id,
   sub: id.optional(),
 });
@@ -139,6 +140,8 @@ export const renderJobSchema = z.object({
   quality: z.enum(['draft', 'final']),
   /** Run the final-film inspection on the finished render. */
   inspect: z.boolean().default(false),
+  /** A final render that is checked by its own feature (Link to Ad probes the file): no final-film inspection, no export gate. */
+  skipInspection: z.boolean().optional(),
   /** Render even though lyric captions are out of sync with the vocals (the issues are recorded). */
   acceptLyricSync: z.boolean().default(false),
   /** `preserve`: the approved soundtrack is passed through unchanged (no loudness normalisation or limiting). */
@@ -521,6 +524,8 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   /** Music Video Lite: stop queued and running generation for the video (renders keep running). */
   z.object({ action: z.literal('mvliteCancel'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('narrator'), payload: narratorRequestSchema }),
+  /** Link to Ad (owner-only, behind the feature flag): website -> sourced brief -> directions -> voice -> MP4. */
+  z.object({ action: z.literal('linkAd'), payload: linkAdRequestSchema }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({
@@ -618,6 +623,18 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Approve or withdraw a shot's take (approval updates canonical continuity; the rules deny direct writes). */
   z.object({ action: z.literal('takeAction'), payload: z.object({ projectId: id, shotId: id, takeId: id, action: z.enum(['approve', 'withdraw']), note: text(500).optional() }) }),
+  /**
+   * The public website's early-access list (the rules deny every client read): list (view and CSV export),
+   * delete one registration, or pause / resume new registrations.
+   */
+  z.object({
+    action: z.literal('earlyAccess'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('list') }),
+      z.object({ op: z.literal('delete'), id: z.string().regex(/^[a-f0-9]{64}$/, 'Invalid registration id') }),
+      z.object({ op: z.literal('pause'), paused: z.boolean() }),
+    ]),
+  }),
 ]);
 export type ApiRequest = z.infer<typeof apiRequestSchema>;
 export type ApiAction = ApiRequest['action'];

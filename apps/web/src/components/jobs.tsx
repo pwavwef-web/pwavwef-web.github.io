@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert, Wind } from 'lucide-react';
+import { Link2, AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert, Wind } from 'lucide-react';
 import {
   formatDuration,
   formatUsd,
@@ -57,6 +57,7 @@ const TYPE_ICON: Record<JobType, ReactNode> = {
   'audio.ambience': <Wind className="size-4" />,
   'narrator.voice': <Mic className="size-4" />,
   'narrator.speak': <AudioLines className="size-4" />,
+  'linkad.run': <Link2 className="size-4" />,
   'narrator.export': <AudioWaveform className="size-4" />,
   'narrator.direct': <NotebookPen className="size-4" />,
 };

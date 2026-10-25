@@ -5,6 +5,7 @@
  *  azsJobWorker   — Cloud Tasks queue that runs durable generation / render jobs
  *  azsOnUpload    — validates uploads in the private media bucket
  *  azsMaintenance — reconciles jobs every 10 minutes
+ *  azsPublic      — unauthenticated: published audio editions and the website's early-access form
  */
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, onRequest, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
@@ -27,12 +28,16 @@ import * as takes from './api/takes';
 import * as ads from './api/ads';
 import * as lite from './api/lite';
 import * as mvlite from './api/mvlite';
+import { linkAd } from './api/linkad';
 import { narrator } from './api/narrator';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
 import { runMaintenance } from './scheduled/maintenance';
 import { handlePublicAudio } from './public/audio';
+import { handleEarlyAccess } from './public/early-access';
+import { earlyAccess } from './api/early-access';
+import { pruneEarlyAccessRate } from './lib/early-access';
 
 setGlobalOptions({ region: REGION, serviceAccount: RUNTIME_SERVICE_ACCOUNT, maxInstances: 10 });
 
@@ -130,6 +135,10 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return mvlite.mvliteCancel(owner, req.payload);
     case 'narrator':
       return narrator(owner, req.payload);
+    case 'earlyAccess':
+      return earlyAccess(owner, req.payload);
+    case 'linkAd':
+      return linkAd(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;
@@ -192,11 +201,16 @@ export const azsOnUpload = onObjectFinalized(
 );
 
 /**
- * Public, unauthenticated audio-edition endpoints (published revisions only), reached through Hosting at
- * /api/public/**. No Auth, App Check, studio data or generation code is involved.
+ * Public, unauthenticated endpoints reached through Hosting at /api/public/**: audio editions (published
+ * revisions only) and the website's early-access form (stores an interest registration, nothing else).
+ * No Auth, App Check, studio data or generation code is involved.
  */
 export const azsPublic = onRequest({ invoker: 'public', memory: '512MiB', timeoutSeconds: 120, concurrency: 80, maxInstances: 10 }, async (req, res) => {
   try {
+    if (req.path === '/api/public/early-access') {
+      await handleEarlyAccess({ method: req.method, headers: req.headers, body: req.body, rawBody: req.rawBody, ip: req.ip }, res);
+      return;
+    }
     await handlePublicAudio({ method: req.method, path: req.path, headers: req.headers }, Object.assign(res, { pipeFrom: (s: NodeJS.ReadableStream) => void s.pipe(res) }));
   } catch (e) {
     logger.error('azsPublic failure', { path: req.path, error: String((e as Error)?.message ?? e) });
@@ -206,4 +220,6 @@ export const azsPublic = onRequest({ invoker: 'public', memory: '512MiB', timeou
 
 export const azsMaintenance = onSchedule({ schedule: 'every 10 minutes', timeoutSeconds: 300, memory: '512MiB' }, async () => {
   await runMaintenance();
+  // Hashed visitor addresses kept for the early-access rate limits expire after 48 hours.
+  await pruneEarlyAccessRate();
 });

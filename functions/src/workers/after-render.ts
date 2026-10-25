@@ -33,5 +33,8 @@ export async function startFinalInspection(renderId: string, ownerUid: string, p
 export async function afterRenderCompleted(job: JobDoc): Promise<void> {
   const renderId = (job.external?.renderId as string | undefined) ?? (job.params as { renderId?: string }).renderId;
   if (!renderId || !job.projectId) return;
+  // A Link to Ad export: measure the finished file and move the ad on (best effort; the editor also refreshes).
+  const { syncExports } = await import('../api/linkad');
+  if ((await col.projects().doc(job.projectId).get()).get('type') === 'link_ad') await syncExports(job.ownerUid, job.projectId).catch((e) => logger.warn('link ad export sync failed', { error: String(e) }));
   await startFinalInspection(renderId, job.ownerUid, job.projectId);
 }

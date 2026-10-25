@@ -201,7 +201,35 @@ export const LitePlayer = forwardRef<PlayerHandle, Props>(function LitePlayer({ 
               const nh = img.naturalHeight;
               const look = c.look;
               if (look && (look.haze > 0 || Math.abs(look.warmth) > 0)) g.filter = `contrast(${1 - 0.14 * look.haze}) brightness(${1 + 0.06 * look.haze}) saturate(${1 - 0.18 * look.haze}) sepia(${Math.max(0, look.warmth) * 0.18}) hue-rotate(${Math.min(0, look.warmth) * 12}deg)`;
-              if (c.motion) {
+              if (c.layout) {
+                // A picture shown whole in a box (rounded, with a soft shadow), as the renderer places it.
+                const L = c.layout;
+                const bx = L.box.x * W;
+                const by = L.box.y * H;
+                const bw = L.box.w * W;
+                const bh = L.box.h * H;
+                const grow = 1 + L.push * Math.min(1, Math.max(0, (t - c.start) / Math.max(0.01, c.duration)));
+                const s = Math.min(bw / nw, bh / nh) * grow;
+                const fw = nw * s;
+                const fh = nh * s;
+                const ox = bx + (bw - fw) / 2;
+                const oy = by + (bh - fh) / 2;
+                const rad = Math.min(fw, fh) / 2 * Math.min(1, L.radius * 2);
+                if (L.shadow) {
+                  g.shadowColor = 'rgba(0,0,0,0.55)';
+                  g.shadowBlur = Math.max(fw, fh) * 0.04;
+                  g.shadowOffsetY = Math.max(fw, fh) * 0.012;
+                }
+                g.beginPath();
+                g.roundRect(ox, oy, fw, fh, rad);
+                g.fillStyle = '#000';
+                g.fill();
+                g.shadowColor = 'transparent';
+                g.save();
+                g.clip();
+                g.drawImage(img, ox, oy, fw, fh);
+                g.restore();
+              } else if (c.motion) {
                 const r = motionRectAt(c.motion, clipMotionProgress(c, t));
                 g.drawImage(img, r.x * nw, r.y * nh, r.w * nw, r.h * nh, 0, 0, W, H);
               } else {
@@ -373,7 +401,7 @@ export const LitePlayer = forwardRef<PlayerHandle, Props>(function LitePlayer({ 
         <canvas ref={canvas} className="absolute inset-0 size-full" aria-label="Film preview" role="img" onClick={toggle} />
         {showSafeArea && <div className="pointer-events-none absolute inset-[6%] rounded border border-dashed border-white/25" aria-hidden />}
         {captions.map((c) => (
-          <div key={c.id} className="pointer-events-none absolute inset-x-[6%] flex justify-center text-center" style={{ bottom: `${(c.position?.offset ?? 0.07) * 100}%` }}>
+          <div key={c.id} className="pointer-events-none absolute inset-x-[6%] flex justify-center text-center" style={c.position?.anchor === 'top' ? { top: `${(c.position?.offset ?? 0.07) * 100}%` } : { bottom: `${(c.position?.offset ?? 0.07) * 100}%` }}>
             <span style={textCss(c, size.h)}>
               {c.karaoke?.length
                 ? c.karaoke.map((u, i) => (

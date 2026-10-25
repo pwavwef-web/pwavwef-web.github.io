@@ -20,7 +20,7 @@ function renderAt(path: string) {
         path: '/',
         element: <AppShell />,
         children: [
-          { index: true, element: <p>Home page</p> },
+          { path: 'studio', element: <p>Home page</p> },
           { path: 'create', element: <p>Create page</p> },
           { path: 'ads', element: <p>Short Ads workspace</p> },
           { path: 'lite', element: <p>Film Studio Lite workspace</p> },
@@ -48,7 +48,7 @@ afterEach(cleanup);
 describe('Primary navigation', () => {
   it('lists only the top-level sections; the studios live on the Create page', () => {
     expect(NAV.map((n) => n.label)).toEqual(['Home', 'Projects', 'Create', 'Assets', 'Jobs', 'Settings']);
-    renderAt('/');
+    renderAt('/studio');
     const navs = screen.getAllByRole('navigation', { name: 'Primary' });
     expect(navs).toHaveLength(2);
     for (const nav of navs) {
@@ -57,8 +57,14 @@ describe('Primary navigation', () => {
     }
   });
 
+  it('sends Home to the studio dashboard at /studio (the public website owns /)', () => {
+    renderAt('/studio');
+    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) expect(within(nav).getByRole('link', { name: 'Home' }).getAttribute('href')).toBe('/studio');
+    for (const logo of screen.getAllByRole('link', { name: 'AZ Studio home' })) expect(logo.getAttribute('href')).toBe('/studio');
+  });
+
   it('opens the Create page', () => {
-    const router = renderAt('/');
+    const router = renderAt('/studio');
     fireEvent.click(within(screen.getAllByRole('navigation', { name: 'Primary' })[0]!).getByRole('link', { name: 'Create' }));
     expect(router.state.location.pathname).toBe('/create');
     expect(screen.getByText('Create page')).toBeTruthy();

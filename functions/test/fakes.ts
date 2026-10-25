@@ -196,6 +196,7 @@ export class FakeQuery {
         if (f.op === '==') return JSON.stringify(v) === JSON.stringify(f.value);
         if (f.op === 'in') return (f.value as unknown[]).some((x) => JSON.stringify(x) === JSON.stringify(v));
         if (f.op === '>') return (v as number) > (f.value as number);
+        if (f.op === '<') return (v as number) < (f.value as number);
         return true;
       });
     }
