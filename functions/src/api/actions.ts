@@ -107,7 +107,8 @@ export async function exportBlock(storagePath: string): Promise<string | null> {
   if (!renderId) return null;
   const r = await col.renders().doc(renderId).get();
   if (!r.exists) return null;
-  const inspected = r.get('inspect') === true || r.get('quality') === 'final';
+  // Older render documents did not store `inspect` for finals; one that explicitly says false was never meant to be inspected.
+  const inspected = r.get('inspect') === true || (r.get('quality') === 'final' && r.get('inspect') !== false);
   if (!inspected) return null;
   const fi = r.get('finalInspection') as { status?: string; readiness?: string | null; errors?: number } | null | undefined;
   if (fi?.status === 'completed' && (fi.readiness === 'ready' || fi.readiness === 'overridden')) return null;

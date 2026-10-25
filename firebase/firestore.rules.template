@@ -45,7 +45,7 @@ service cloud.firestore {
         && request.resource.data.type == resource.data.type
         && validTitle(request.resource.data.title)
         && request.resource.data.status in ['active', 'archived']
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage', 'linkad']);
       // Deletion goes through the API (keeps media, removes subcollections).
       allow delete: if false;
 

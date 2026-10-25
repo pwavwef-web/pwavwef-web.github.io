@@ -49,6 +49,22 @@ describe('Firestore rules — projects', () => {
     await assertFails(setDoc(doc(db, 'projects/p3'), { ...project(), title: '' }));
   });
 
+  it('keeps a Link to Ad project server-written: no client creates one or edits its sources, facts or exports', async () => {
+    const db = owner().firestore();
+    // Only the API (Admin SDK) creates link_ad projects; the browser cannot, even as the owner.
+    await assertFails(setDoc(doc(db, 'projects/ad1'), { ...project(), type: 'link_ad', linkad: { v: 1 } }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'projects/ad1'), { ...project(), type: 'link_ad', linkad: { v: 1, revision: 3 } });
+    });
+    await assertSucceeds(getDoc(doc(db, 'projects/ad1')));
+    await assertSucceeds(updateDoc(doc(db, 'projects/ad1'), { title: 'Renamed' }));
+    await assertFails(updateDoc(doc(db, 'projects/ad1'), { linkad: { v: 1, revision: 99 } }));
+    await assertFails(updateDoc(doc(db, 'projects/ad1'), { 'linkad.stage': 'ready' }));
+    // Nobody else can read it.
+    await assertFails(getDoc(doc(intruder().firestore(), 'projects/ad1')));
+    await assertFails(getDoc(doc(anon().firestore(), 'projects/ad1')));
+  });
+
   it('denies every other signed-in user, unverified tokens and anonymous access', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'projects/p1'), project());

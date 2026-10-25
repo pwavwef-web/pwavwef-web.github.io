@@ -334,8 +334,14 @@ export function easeExpr(ease: MotionEase, frameOffset: number, totalFrames: num
  * closest framing keeps full output resolution; a perspective map then samples the moving rectangle with
  * sub-pixel (1/256 px) precision every frame — no integer rounding, so slow moves never judder. Still
  * framings use a plain crop. The rectangle path is the one the preview draws (motionRectAt).
+ *
+ * One frame more than `frames` is emitted: frames rebuilt by `loop`/`setpts` carry no duration, so a stream that
+ * simply runs out ends on its last frame's timestamp, and the overlay (eof_action=pass) then drops that frame —
+ * the black base showed through on the last frame of a segment. With the spare frame, the caller's
+ * `trim=duration=span` ends the stream at the span's end, as it does for video clips.
  */
 export function motionFilters(m: ClipMotion, src: { w: number; h: number }, W: number, H: number, fps: number, frameOffset: number, totalFrames: number, frames: number, input: string, out: string): string[] {
+  const emitted = frames + 1;
   const px = (r: ClipMotion['from']) => ({ x: r.x * src.w, y: r.y * src.h, w: r.w * src.w, h: r.h * src.h });
   const a = px(m.from);
   const b = px(m.to);
@@ -344,7 +350,7 @@ export function motionFilters(m: ClipMotion, src: { w: number; h: number }, W: n
     const ch = Math.max(2, Math.floor(a.h));
     const x = Math.max(0, Math.min(src.w - cw, Math.round(a.x)));
     const y = Math.max(0, Math.min(src.h - ch, Math.round(a.y)));
-    return [`${input}crop=${cw}:${ch}:${x}:${y},scale=${W}:${H}:flags=lanczos,setsar=1,format=yuva420p,loop=loop=-1:size=1:start=0,trim=end_frame=${frames},setpts=N/${fps}/TB[${out}]`];
+    return [`${input}crop=${cw}:${ch}:${x}:${y},scale=${W}:${H}:flags=lanczos,setsar=1,format=yuva420p,loop=loop=-1:size=1:start=0,trim=end_frame=${emitted},setpts=N/${fps}/TB[${out}]`];
   }
   // Union of the move, padded a pixel and kept inside the image.
   const ux = Math.max(0, Math.floor(Math.min(a.x, b.x)) - 1);
@@ -367,7 +373,7 @@ export function motionFilters(m: ClipMotion, src: { w: number; h: number }, W: n
   const T = `${cy}-${hh}`;
   const B = `${cy}+${hh}`;
   return [
-    `${input}crop=${uw}:${uh}:${ux}:${uy},scale=${UW}:${UH}:flags=lanczos,setsar=1,format=yuva420p,loop=loop=-1:size=1:start=0,trim=end_frame=${frames},setpts=N/${fps}/TB,` +
+    `${input}crop=${uw}:${uh}:${ux}:${uy},scale=${UW}:${UH}:flags=lanczos,setsar=1,format=yuva420p,loop=loop=-1:size=1:start=0,trim=end_frame=${emitted},setpts=N/${fps}/TB,` +
       `perspective=x0='${L}':y0='${T}':x1='${R}':y1='${T}':x2='${L}':y2='${B}':x3='${R}':y3='${B}':interpolation=linear:eval=frame,scale=${W}:${H}:flags=bicubic,setsar=1[${out}]`,
   ];
 }

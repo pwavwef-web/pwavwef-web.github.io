@@ -13,7 +13,7 @@ The Firebase project also hosts other apps (Hosting sites `az-learner`/“Last H
 | Functions codebase | `az-studio` (`azsApi`, `azsJobWorker`, `azsOnUpload`, `azsMaintenance`) |
 | Cloud Run jobs | `az-studio-renderer` (FFmpeg + libass, real font metrics), `az-studio-stems` (Demucs) |
 | Service accounts | `az-studio-api@` (functions), `az-studio-renderer@` (render job) |
-| Secrets | `AZ_STUDIO_OWNER_UID`, `AZ_STUDIO_OWNER_EMAIL`, `AZ_STUDIO_GEMINI_API_KEY` (Lyria 3.5 on the Gemini Developer API; optional) |
+| Secrets | `AZ_STUDIO_OWNER_UID`, `AZ_STUDIO_OWNER_EMAIL`, `AZ_STUDIO_GEMINI_API_KEY` (Lyria 3.5 on the Gemini Developer API; optional), `AZ_STUDIO_FIRECRAWL_API_KEY` (Link to Ad, script-built pages; optional) |
 | API key | `AZ Studio Web (restricted)` — referrer-restricted to AZ Studio domains |
 | App Check | reCAPTCHA Enterprise key `AZ Studio App Check` |
 
@@ -86,6 +86,10 @@ Music videos made from still images, camera movement over them and the song itse
 - **Prompts.** `compileMvImageRequest`: the shot brief, the section's mood, the lyric sung over the shot (as feeling — the words are never drawn), a composition note for the move and the extra formats, room for the captions, and labelled likeness/location/style references.
 - **One composition.** `assembleMvTimeline` builds an ordinary timeline per format: the stills with their camera moves and transitions (cut, dissolve, flash = dip to white, through black), the song once on a `songId` audio clip, lyric captions placed from the sheet with `applyLyricCaptions` (karaoke units included; clean sections drop theirs) and the beat grid. The preview (`LitePlayer`, now drawing flashes and karaoke highlights) and the renderer read the same document; renders keep the song's mastered level (`audioMaster: 'preserve'`).
 - **Checks.** `mvExportChecks` (deterministic: missing song or images, gaps, exposed edges, lyrics untimed, timed to another recording, unapproved, uncertain or needing language verification, overlapping captions, off-grid cuts, a song cut without a fade) and `mvEditorialReview` (heuristic: repeated movement, monotonous cutting, long holds, image reuse, characters without references); the optional `lite.review` looks at the approved images. Final renders go through the usual final-film inspection.
+
+## Link to Ad
+
+A website link becomes an editable 15–30 s vertical advert (project type `link_ad`, `/linkad`, owner-only behind a feature flag): safe page reading → sourced facts → proposed brief → three cheap directions → per-scene voice with word-timed captions → one timeline → a real 1080 × 1920 MP4 whose file is probed before the ad is called ready. It reuses the job queue (`linkad.run`), the speech/transcription/reasoning models, `render.timeline`, `LitePlayer` and the spend ledger; its document (`project.linkad`) is written by the API only. Everything — fetch protections, claim rules, stages, idempotency, cost caps, entitlement boundary, limits — is in [LINK_TO_AD.md](LINK_TO_AD.md).
 
 ## Pwavwe Narrator
 

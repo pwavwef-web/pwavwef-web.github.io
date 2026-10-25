@@ -27,6 +27,8 @@ const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
 const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
 const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
 const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
+const LinkAdStudio = lazy(() => import('./pages/linkad/LinkAdStudio'));
+const LinkAdWorkspace = lazy(() => import('./pages/linkad/LinkAdWorkspace'));
 const NarratorShell = lazy(() => import('./pages/narrator/NarratorShell'));
 const NarratorEditions = lazy(() => import('./pages/narrator/EditionsHome'));
 const NarratorVoice = lazy(() => import('./pages/narrator/VoicePage'));
@@ -108,6 +110,8 @@ const router = createBrowserRouter([
           { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
           { path: 'mvlite', element: <Page><MvLiteStudio /></Page> },
           { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
+          { path: 'linkad', element: <Page><LinkAdStudio /></Page> },
+          { path: 'linkad/:projectId/:step?', element: <Page><LinkAdWorkspace /></Page> },
           {
             path: 'narrator',
             element: <Page><NarratorShell /></Page>,

@@ -3,7 +3,7 @@
  * firebase.json mirrors STUDIO_ROUTE_REGEX and PUBLIC_PAGE_REGEX — a unit test (site/site.test.ts) keeps them equal.
  */
 
-/** Canonical origin (Firebase Hosting site `az-studio`; no custom domain is configured). */
+/** Canonical origin (Firebase Hosting site `az-studio`). The custom domain azlearner.me also serves this site (attached 2026-10-24); canonical links stay on the web.app origin until that is decided. */
 export const SITE_ORIGIN = 'https://az-studio.web.app';
 export const SITE_NAME = 'AZ Studio';
 
@@ -94,7 +94,7 @@ export const NOT_FOUND = { file: '404.html', title: 'Page not found — AZ Studi
  * Top-level URL prefixes of the private studio app (served by studio.html; sign-in and owner check required).
  * `/assets` alone is the studio's media library; `/assets/…` are build files.
  */
-export const STUDIO_PREFIXES = ['studio', 'projects', 'ads', 'lite', 'mvlite', 'narrator', 'create', 'jobs', 'settings', 'print', 'home'] as const;
+export const STUDIO_PREFIXES = ['studio', 'projects', 'ads', 'lite', 'mvlite', 'linkad', 'narrator', 'create', 'jobs', 'settings', 'print', 'home'] as const;
 export const STUDIO_ROUTE_REGEX = `^/(${STUDIO_PREFIXES.join('|')})(/.*)?$`;
 export const PUBLIC_PAGE_REGEX = `^/(${PUBLIC_PAGES.filter((p) => p.path !== '/').map((p) => p.path.slice(1)).join('|')})?(\\.html)?$`;
 

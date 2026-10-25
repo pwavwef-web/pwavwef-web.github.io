@@ -510,7 +510,7 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
   // Lyric styles, credits, fonts, face tracks and face-safe reframe paths for this export shape.
   const inputs = await renderInputs(uid, req.projectId, tl, req.preset, assets);
   estimate.notes.push(...inputs.notes);
-  if (req.quality === 'final' || req.inspect) estimate.notes.push('The finished film is inspected before export (sound, picture, text, structure).');
+  if (!req.skipInspection && (req.quality === 'final' || req.inspect)) estimate.notes.push('The finished film is inspected before export (sound, picture, text, structure).');
   const assetMap = Object.fromEntries(
     [...assets.values()].map((a) => [a.id, { storagePath: a.storagePath, kind: a.kind, mimeType: a.mimeType, width: a.width ?? null, height: a.height ?? null, durationSec: a.durationSec ?? null, hasAudio: a.hasAudio ?? null, title: a.title, provenance: a.generation?.provenance ?? null, modelId: a.generation?.modelId ?? null }]),
   );
@@ -539,8 +539,8 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         snapshot: { tracks: tl.tracks, clips: inputs.clips, aspectRatio: tl.aspectRatio, fps: tl.fps },
         text: inputs.text,
         lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
-        // Final renders are always inspected before export; drafts only when asked.
-        inspect: req.inspect || req.quality === 'final',
+        // Final renders are inspected before export (drafts only when asked) unless the feature that made them checks the file itself.
+        inspect: req.skipInspection ? false : req.inspect || req.quality === 'final',
         // `preserve`: an approved soundtrack is passed through without loudness normalisation or limiting.
         audioMaster: req.audioMaster,
         finalInspection: null,

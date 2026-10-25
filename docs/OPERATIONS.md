@@ -108,6 +108,16 @@ The acceptance suite (`tests/acceptance`) runs the same server code as the API w
 - `tests/e2e/mvlite.e2e.test.ts` drives the workspace in a real browser against the emulators with a synthetic song (beats detected in the browser), writes the lyric timing a synchronisation would return as a stand-in, and renders a draft locally.
 - `AZS_ACCEPTANCE=1 npm run test:acceptance -- 14-mv-lite` runs it against the live providers in-process on a QA copy of a real song (beat analysis, lyric synchronisation compared with a corrected sheet, concept, shot plan, up to five images, styled lyrics; capped at $1.50), renders locally and runs the final inspection. Outputs land in `exports/music-video-lite-verification/`.
 
+## Link to Ad
+
+Owner-only; see [`LINK_TO_AD.md`](LINK_TO_AD.md). Operating notes:
+
+* **Switch off / on.** Firestore `runtime/features` → `{ linkAd: { enabled: false } }` hides it from every call at once (existing ads stay stored); or deploy with env `AZS_FEATURE_LINK_AD=off`. Quotas live in the same field (`linkAd.quotas`).
+* **Firecrawl (optional).** `printf '%s' "$KEY" | gcloud secrets create AZ_STUDIO_FIRECRAWL_API_KEY --data-file=- --project az-learner` and grant `roles/secretmanager.secretAccessor` on it to `az-studio-api@az-learner.iam.gserviceaccount.com`. It is used only for pages the built-in reader finds empty. Without it those pages are reported as unreadable.
+* **Spend.** Each ad has its own cap (default $1, hard maximum from the entitlement); the voice (`gemini-2.5-pro-tts`) and word timing (`gemini-3.5-transcribe-preview`) are the only paid steps besides two text calls; render compute is billed by Cloud Run. The renderer image is unchanged by this feature.
+* **Live check without writes.** `AZS_ACCEPTANCE=1 node --dns-result-order=ipv6first scripts/production/run.mjs scripts/production/link-ad/live-check.ts https://example.com/` reads a real page and asks the real planner for a brief and directions (two text calls; nothing is written, no audio/image/video).
+* **Custom domain.** `azlearner.me` is attached to the Hosting site `az-studio` (certificate active, DNS matched). For the *studio* to sign in and call the API from it, five allow-lists include it (all done 2026-10-25): Firebase Auth authorized domains, the callable CORS list (`ALLOWED_ORIGINS`, in code), the web API key's referrers (`AZ Studio Web (restricted)`), the App Check reCAPTCHA key's allowed domains, and the media bucket's CORS origins. Canonical links on the public pages still use `az-studio.web.app` (`SITE_ORIGIN`); switching them is a separate decision. `www.azlearner.me` is not attached.
+
 ## Pwavwe Narrator
 
 - Deploy functions (the `narrator` API action and the `narrator.voice` / `narrator.speak` / `narrator.export` jobs), rules (owner-read narrator collections) and hosting. No renderer or index change is needed (lists are sorted in the browser).

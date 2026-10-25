@@ -28,6 +28,7 @@ import * as takes from './api/takes';
 import * as ads from './api/ads';
 import * as lite from './api/lite';
 import * as mvlite from './api/mvlite';
+import { linkAd } from './api/linkad';
 import { narrator } from './api/narrator';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
@@ -136,6 +137,8 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return narrator(owner, req.payload);
     case 'earlyAccess':
       return earlyAccess(owner, req.payload);
+    case 'linkAd':
+      return linkAd(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;
