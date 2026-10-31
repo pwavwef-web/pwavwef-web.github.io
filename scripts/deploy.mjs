@@ -5,6 +5,7 @@
 //   firestore       → database az-studio only (rules + indexes)
 //   storage         → bucket az-studio-media-az-learner only
 //   functions:az-studio → codebase az-studio only
+// (On Windows the commands run through the shell, which does not quote arguments: keep them free of spaces.)
 // Usage: node scripts/deploy.mjs [--skip-checks] [--only=renderer,stems,rules,functions,hosting]
 //
 // Release train: only a clean commit tagged studio-v… (scripts/release.mjs) is deployed, and the tag and commit are
@@ -132,5 +133,5 @@ if (only.includes('hosting')) {
   run('npm', ['run', 'build', '-w', 'apps/web'], buildEnv);
   targets.push('hosting:studio');
 }
-if (targets.length) withRetries('Firebase deploy', () => run('firebase', ['deploy', '--only', targets.join(','), '--project', project, '--non-interactive', '--message', `AZ Studio ${release.version} (${release.short})`]));
+if (targets.length) withRetries('Firebase deploy', () => run('firebase', ['deploy', '--only', targets.join(','), '--project', project, '--non-interactive', '--message', `studio-v${release.version}-${release.short}`]));
 console.log(`\nAZ Studio ${release.version} deployed.`);
