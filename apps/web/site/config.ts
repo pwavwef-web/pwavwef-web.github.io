@@ -100,7 +100,7 @@ export const PUBLIC_PAGE_REGEX = `^/(${PUBLIC_PAGES.filter((p) => p.path !== '/'
 
 export const isStudioPath = (pathname: string) => pathname === '/assets' || new RegExp(STUDIO_ROUTE_REGEX).test(pathname);
 
-/** Reserved for a future public product (docs/PUBLIC_PRODUCT_PREP.md); it is the 404 page until then. */
+/** The public product (docs/PUBLIC_PRODUCT_PREP.md): the beta's member app (app.html), refused by the server until the beta is switched on. */
 export const RESERVED_PUBLIC_APP_PREFIX = '/app';
 
 /** The studio's private entry point, linked from the footer. */

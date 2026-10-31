@@ -3,6 +3,7 @@ import {
   ACTIVE_STATUSES,
   AMBIENCE_KINDS,
   LITE_SCORE_ID,
+  boothVocabulary,
   buildLiteScore,
   compileLiteImageRequest,
   compileNarrationRequest,
@@ -29,6 +30,7 @@ import type { Owner } from '../lib/owner';
 import { confirmationPolicy, createJobs, prepareAll } from '../lib/submit';
 import { assertRateLimit, assertWithinLimits, getSettings, projectBudget, spendSnapshot } from '../lib/usage';
 import { cancelJob } from './actions';
+import { boothRecordings } from './lite-booth';
 
 type Payload<A extends ApiRequest['action']> = Extract<ApiRequest, { action: A }>['payload'];
 type Job = JobDoc & { id: string };
@@ -69,7 +71,7 @@ interface Planned {
 }
 
 /** What still needs doing for a kind of work; completed results with the same input are reused. */
-export function planLiteWork(spec: LiteSpec, title: string, projectId: string, jobs: Job[], kind: Payload<'liteGenerate'>['kind'], opts: { targetIds?: string[]; force?: boolean; score?: ScoreDoc | null }): { planned: Planned[]; skipped: { key: string; reason: string }[]; score: Omit<ScoreDoc, 'id'> | null } {
+export function planLiteWork(spec: LiteSpec, title: string, projectId: string, jobs: Job[], kind: Payload<'liteGenerate'>['kind'], opts: { targetIds?: string[]; force?: boolean; score?: ScoreDoc | null; booth?: Record<string, { assetId: string; language: string }> }): { planned: Planned[]; skipped: { key: string; reason: string }[]; score: Omit<ScoreDoc, 'id'> | null } {
   const only = opts.targetIds?.length ? new Set(opts.targetIds) : null;
   const planned: Planned[] = [];
   const skipped: { key: string; reason: string }[] = [];
@@ -107,19 +109,24 @@ export function planLiteWork(spec: LiteSpec, title: string, projectId: string, j
         label: `Image · ${label}`,
         target: { kind: 'lite_shot', id: shot.id },
         inputHash: req.hash,
-      }));
-    }
         // Wardrobe and likeness lock: the still is compared with the approved references after it is made.
         ...(req.likeness ? { likenessCheck: req.likeness } : {}),
+      }));
+    }
   } else if (kind === 'narration') {
     const vocabulary = liteVocabulary(spec);
+    // A scene recorded in the booth is timed in its language (Kasem) with the shared protected words as vocabulary.
+    const alignFor = (scene: LiteSpec['scenes'][number]) => {
+      const b = opts.booth?.[scene.id];
+      return b && b.assetId === scene.voiceUploadAssetId ? { languageCode: b.language, vocabulary: boothVocabulary(vocabulary) } : { languageCode: spec.setup.language, vocabulary };
+    };
     if (spec.voice.mode === 'generate') {
       for (const scene of spec.scenes) {
         if (!scene.narration.trim() || (only && !only.has(scene.id))) continue;
         if (scene.voiceUploadAssetId) {
           // A recording uploaded for just this scene replaces the studio voice there: it is timed, not spoken.
           const hash = stableHash({ a: scene.voiceUploadAssetId, t: scene.narration });
-          consider(`lite_scene:${scene.id}`, hash, `Narration timing · ${scene.title || 'scene'}`, () => ({ type: 'lite.narration', projectId, mode: 'align_scene', sceneId: scene.id, text: scene.narration, spokenText: '', direction: '', audioAssetId: scene.voiceUploadAssetId, scenes: [], languageCode: spec.setup.language, vocabulary, inputHash: hash, label: `Narration timing · ${scene.title || 'scene'}` }));
+          consider(`lite_scene:${scene.id}`, hash, `Narration timing · ${scene.title || 'scene'}`, () => ({ type: 'lite.narration', projectId, mode: 'align_scene', sceneId: scene.id, text: scene.narration, spokenText: '', direction: '', audioAssetId: scene.voiceUploadAssetId, scenes: [], ...alignFor(scene), inputHash: hash, label: `Narration timing · ${scene.title || 'scene'}` }));
           continue;
         }
         const r = compileNarrationRequest(spec, scene);
@@ -134,7 +141,7 @@ export function planLiteWork(spec: LiteSpec, title: string, projectId: string, j
       for (const scene of spec.scenes) {
         if (!scene.voiceUploadAssetId || (only && !only.has(scene.id))) continue;
         const hash = stableHash({ a: scene.voiceUploadAssetId, t: scene.narration });
-        consider(`lite_scene:${scene.id}`, hash, `Narration timing · ${scene.title || 'scene'}`, () => ({ type: 'lite.narration', projectId, mode: 'align_scene', sceneId: scene.id, text: scene.narration, spokenText: '', direction: '', audioAssetId: scene.voiceUploadAssetId, scenes: [], languageCode: spec.setup.language, vocabulary, inputHash: hash, label: `Narration timing · ${scene.title || 'scene'}` }));
+        consider(`lite_scene:${scene.id}`, hash, `Narration timing · ${scene.title || 'scene'}`, () => ({ type: 'lite.narration', projectId, mode: 'align_scene', sceneId: scene.id, text: scene.narration, spokenText: '', direction: '', audioAssetId: scene.voiceUploadAssetId, scenes: [], ...alignFor(scene), inputHash: hash, label: `Narration timing · ${scene.title || 'scene'}` }));
       }
     }
   } else if (kind === 'music') {
@@ -190,10 +197,11 @@ export async function liteGenerate(owner: Owner, p: Payload<'liteGenerate'>) {
   const { title, spec } = await loadLite(owner.uid, p.projectId);
   const scoreRef = col.scores(p.projectId).doc(LITE_SCORE_ID);
   const existingScore = p.kind === 'music' ? (((await scoreRef.get()).data() as ScoreDoc | undefined) ?? null) : null;
+  const booth = p.kind === 'narration' ? await boothRecordings(p.projectId) : {};
 
   if (p.estimateOnly) {
     const { jobs } = await loadLite(owner.uid, p.projectId);
-    const plan = planLiteWork(spec, title, p.projectId, jobs, p.kind, { targetIds: p.targetIds, force: p.force, score: existingScore });
+    const plan = planLiteWork(spec, title, p.projectId, jobs, p.kind, { targetIds: p.targetIds, force: p.force, score: existingScore, booth });
     if (!plan.planned.length) return { jobIds: [], skipped: plan.skipped, estimate: null, perTarget: [], message: plan.skipped.length ? 'Nothing new to request: everything is done, reused or in progress.' : 'Nothing to request yet.' };
     // The estimate runs before the planned score is saved, so price against the plan, not the stored copy.
     const prepared = await prepareAll(owner.uid, plan.planned.map((x) => x.request), plan.score ? { scores: { [LITE_SCORE_ID]: { id: LITE_SCORE_ID, ...plan.score } } } : {});
@@ -225,7 +233,7 @@ export async function liteGenerate(owner: Owner, p: Payload<'liteGenerate'>) {
   return withLock(p.projectId, p.kind, async () => {
     // Re-read inside the lock so work started a moment ago by another request is seen.
     const { jobs } = await loadLite(owner.uid, p.projectId);
-    const plan = planLiteWork(spec, title, p.projectId, jobs, p.kind, { targetIds: p.targetIds, force: p.force, score: existingScore });
+    const plan = planLiteWork(spec, title, p.projectId, jobs, p.kind, { targetIds: p.targetIds, force: p.force, score: existingScore, booth });
     if (plan.score) await scoreRef.set({ ...plan.score, updatedAt: FieldValue.serverTimestamp(), ...(existingScore ? {} : { createdAt: FieldValue.serverTimestamp() }) }, { merge: false });
     if (!plan.planned.length) return { jobIds: [], skipped: plan.skipped, estimate: null, perTarget: [], message: 'Nothing new to request: everything is done, reused or in progress.' };
     const res = await createJobs(owner.uid, plan.planned.map((x) => x.request), { confirmedUsd: p.confirmedUsd ?? null, batchLabel: `${title} · ${p.kind}` });

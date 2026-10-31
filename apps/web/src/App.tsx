@@ -25,6 +25,8 @@ const ShortAds = lazy(() => import('./pages/ads/ShortAds'));
 const AdStudio = lazy(() => import('./pages/ads/AdStudio'));
 const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
 const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
+const RecordingBooth = lazy(() => import('./pages/lite/RecordingBooth'));
+const Beta = lazy(() => import('./pages/Beta'));
 const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
 const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
 const LinkAdStudio = lazy(() => import('./pages/linkad/LinkAdStudio'));
@@ -34,6 +36,7 @@ const NarratorEditions = lazy(() => import('./pages/narrator/EditionsHome'));
 const NarratorVoice = lazy(() => import('./pages/narrator/VoicePage'));
 const NarratorSettings = lazy(() => import('./pages/narrator/SettingsPage'));
 const NarratorEditor = lazy(() => import('./pages/narrator/EditionEditor'));
+const NarratorPublications = lazy(() => import('./pages/narrator/PublicationHealth'));
 const TimelineEditor = lazy(() => import('./pages/editor/TimelineEditor'));
 const PrintScreenplay = lazy(() => import('./pages/print/PrintScreenplay'));
 const PrintStoryboard = lazy(() => import('./pages/print/PrintStoryboard'));
@@ -99,6 +102,7 @@ const router = createBrowserRouter([
           // The public website owns `/`; the studio dashboard lives at /studio (every other studio URL is unchanged).
           { index: true, element: <Navigate to="/studio" replace /> },
           { path: 'studio', element: <Page><Home /></Page> },
+          { path: 'studio/beta', element: <Page><Beta /></Page> },
           { path: 'projects', element: <Page><Projects /></Page> },
           { path: 'projects/:projectId', element: <Page><ProjectRouter /></Page> },
           { path: 'projects/:projectId/film/:tab?', element: <Page><FilmStudio /></Page> },
@@ -107,6 +111,7 @@ const router = createBrowserRouter([
           { path: 'ads', element: <Page><ShortAds /></Page> },
           { path: 'ads/:projectId/:step?', element: <Page><AdStudio /></Page> },
           { path: 'lite', element: <Page><LiteStudio /></Page> },
+          { path: 'lite/booth/:projectId?/:sceneId?', element: <Page><RecordingBooth /></Page> },
           { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
           { path: 'mvlite', element: <Page><MvLiteStudio /></Page> },
           { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
@@ -117,6 +122,7 @@ const router = createBrowserRouter([
             element: <Page><NarratorShell /></Page>,
             children: [
               { index: true, element: <Page><NarratorEditions /></Page> },
+              { path: 'publications', element: <Page><NarratorPublications /></Page> },
               { path: 'voice', element: <Page><NarratorVoice /></Page> },
               { path: 'settings', element: <Page><NarratorSettings /></Page> },
               { path: 'e/:editionId', element: <Page><NarratorEditor /></Page> },

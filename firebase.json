@@ -62,6 +62,14 @@
           "destination": "/embed.html"
         },
         {
+          "source": "/app",
+          "destination": "/app.html"
+        },
+        {
+          "source": "/app/**",
+          "destination": "/app.html"
+        },
+        {
           "regex": "^/(studio|projects|ads|lite|mvlite|linkad|narrator|create|jobs|settings|print|home)(/.*)?$",
           "destination": "/studio.html"
         },

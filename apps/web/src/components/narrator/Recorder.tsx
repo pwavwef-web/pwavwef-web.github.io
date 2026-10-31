@@ -11,7 +11,7 @@ import { ClipPlayer } from './audio';
 
 const MIME_CHOICES = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm'];
 
-function pickMime(): string | undefined {
+export function pickMime(): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;
   return MIME_CHOICES.find((m) => MediaRecorder.isTypeSupported(m));
 }
@@ -25,8 +25,8 @@ async function toInbox(blob: Blob, uid: string): Promise<string> {
   return path;
 }
 
-/** Live input meter from the real microphone signal (peak, dBFS). */
-function Meter({ level, clipped }: { level: number; clipped: boolean }) {
+/** Live input meter from the real microphone signal (peak, dBFS). Also used by the Film Studio Lite recording booth. */
+export function Meter({ level, clipped }: { level: number; clipped: boolean }) {
   const db = level > 0 ? 20 * Math.log10(level) : -90;
   const pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
   return (

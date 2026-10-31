@@ -176,6 +176,13 @@ service cloud.firestore {
     match /earlyAccess/{document=**} { allow read, write: if false; }
     match /earlyAccessRate/{document=**} { allow read, write: if false; }
 
+    // Public beta (members): editions, credit ledgers, invitations and feedback are reached only through the
+    // member callable (azsMember) and the owner-only API, each of which checks who is calling. No client — not a
+    // member, not the owner — reads or writes them directly, whether the beta is switched on or off.
+    match /members/{document=**} { allow read, write: if false; }
+    match /invites/{document=**} { allow read, write: if false; }
+    match /betaFeedback/{document=**} { allow read, write: if false; }
+
     // Deny everything else.
     match /{document=**} { allow read, write: if false; }
   }

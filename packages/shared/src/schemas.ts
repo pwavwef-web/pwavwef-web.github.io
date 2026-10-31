@@ -8,6 +8,8 @@ import { RETRY_POLICY_LIMITS } from './generation-errors';
 import { AMBIENCE_KINDS } from './lite';
 import { narratorRequestSchema } from './narrator-schemas';
 import { linkAdRequestSchema } from './linkad-schemas';
+import { liteBoothRequestSchema } from './lite-booth';
+import { betaAdminRequestSchema } from './beta';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -515,6 +517,10 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Film Studio Lite: stop queued and running generation for the film (renders keep running). */
   z.object({ action: z.literal('liteCancel'), payload: z.object({ projectId: id }) }),
+  /** Film Studio Lite recording booth (Kasem narration recorded by a person): lines, takes, picks, joining. */
+  z.object({ action: z.literal('liteBooth'), payload: liteBoothRequestSchema }),
+  /** Public beta administration (owner only): invitations from the early-access list, members, credits, feedback. */
+  z.object({ action: z.literal('beta'), payload: betaAdminRequestSchema }),
   /** Music Video Lite: plan and price (or start) the images still needed; finished results for the same input are reused. */
   z.object({
     action: z.literal('mvliteGenerate'),

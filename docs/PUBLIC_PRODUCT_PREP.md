@@ -4,6 +4,18 @@ Status 2026-10-24: **nothing in this document is built or exposed.** Phase 1 shi
 site and the early-access list ([`PUBLIC_SITE.md`](PUBLIC_SITE.md)). This is the groundwork and the decisions to make
 before anyone other than the owner can generate anything.
 
+**Update 2026-10-31: the first beta is built and switched off.** What exists (see ARCHITECTURE.md → Public beta and
+OPERATIONS.md → Public beta): a separate member role and callable (`azsMember` / `assertMember`; `assertOwner` and the
+owner-only rules unchanged), invite-only membership (`invites/{sha256(code)}`, single use, expiry, bound to the invited
+verified email, created by the owner from chosen early-access entries — no email is sent), the first tool (audio editions
+with prebuilt voices only; no voice replication), per-member daily characters and minutes, a credit ledger debited by the
+real recorded cost, a per-job cost ceiling, a global daily circuit breaker, one job at a time per member, a feedback form,
+waves (5 → 20 → 100) as invitation labels, the member app at `/app` and the owner's Beta page (`/studio/beta`). Member
+data is `members/{uid}/…` (deny-by-default rules, emulator-tested); `AZS_BETA_*` / `VITE_MEMBER_*` move it to a separate
+Firebase project. Still open and not done here: creating that project, choosing invitees, switching the flag on, an email
+provider, MFA, per-model kill switches beyond the beta flag, retention/deletion of members' data, abuse reporting, and every
+§10 decision. Credits have no price; 1 credit = $0.001 of recorded provider cost.
+
 ## Where the code stands
 
 AZ Studio is single-owner by design, and that is what protects it today:

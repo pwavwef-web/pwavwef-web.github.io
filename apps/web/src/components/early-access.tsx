@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { Download, RefreshCw, Trash2, Users } from 'lucide-react';
 import { EARLY_ACCESS_INTERESTS, earlyAccessCsv, type EarlyAccessRecord } from '@az-studio/shared';
@@ -86,6 +87,9 @@ export function EarlyAccessCard() {
             <Users className="size-3.5" /> Early access (public website)
           </p>
           <p className="mt-1 text-sm text-dim">Interest registrations from the website’s form. Visible only to you; no emails are sent automatically.</p>
+          <Link to="/studio/beta" className="mt-1 inline-block text-xs text-accent-2 hover:underline">
+            Beta invitations, members and feedback →
+          </Link>
         </div>
         {data && <Badge tone={data.paused ? 'warning' : 'success'}>{data.paused ? 'Paused' : 'Open'}</Badge>}
       </div>

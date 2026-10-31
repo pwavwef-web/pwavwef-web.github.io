@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         // The public player and the public website (static pages from site/) are their own small pages: they
         // share no code with the private studio, which is studio.html.
-        input: { main: 'studio.html', embed: 'embed.html', ...siteInputs() },
+        input: { main: 'studio.html', embed: 'embed.html', app: 'app.html', ...siteInputs() },
         output: {
           // Long-lived vendor chunks cache across app deploys.
           manualChunks(id: string) {

@@ -9,7 +9,7 @@ export function siteInputs(): Record<string, string> {
   return Object.fromEntries([...PUBLIC_PAGES.map((p) => p.file), NOT_FOUND.file].map((f) => [`site-${f.replace(/\.html$/, '')}`, f]));
 }
 
-type Route = { kind: 'page'; file: string; status: number } | { kind: 'studio' } | { kind: 'pass' };
+type Route = { kind: 'page'; file: string; status: number } | { kind: 'studio' } | { kind: 'member' } | { kind: 'pass' };
 
 /**
  * How Firebase Hosting answers a path (firebase.json): public pages by clean URL, the studio's prefixes to
@@ -20,6 +20,8 @@ export function routeFor(pathname: string): Route {
   const page = PUBLIC_PAGES.find((p) => p.path === pathname || `/${p.file}` === pathname);
   if (page) return { kind: 'page', file: page.file, status: 200 };
   if (pathname === '/studio.html' || isStudioPath(pathname)) return { kind: 'studio' };
+  // The public beta's member app (Hosting rewrites /app and /app/** to app.html).
+  if (pathname === '/app' || pathname.startsWith('/app/') || pathname === '/app.html') return { kind: 'member' };
   if (/\.[a-z0-9]+$/i.test(pathname)) return { kind: 'pass' };
   return { kind: 'page', file: NOT_FOUND.file, status: 404 };
 }
@@ -64,7 +66,7 @@ export function publicSite(): Plugin {
         const url = new URL(req.url ?? '/', 'http://localhost');
         const route = routeFor(url.pathname);
         if (route.kind === 'pass') return next();
-        const source = route.kind === 'studio' ? readFileSync(path.join(root, 'studio.html'), 'utf8') : renderSitePages()[route.file]!;
+        const source = route.kind === 'studio' ? readFileSync(path.join(root, 'studio.html'), 'utf8') : route.kind === 'member' ? readFileSync(path.join(root, 'app.html'), 'utf8') : renderSitePages()[route.file]!;
         server
           .transformIndexHtml(req.url ?? '/', source)
           .then((out) => {
@@ -82,7 +84,7 @@ export function publicSite(): Plugin {
         const url = new URL(req.url ?? '/', 'http://localhost');
         const route = routeFor(url.pathname);
         if (route.kind === 'pass') return next();
-        const file = route.kind === 'studio' ? 'studio.html' : route.file;
+        const file = route.kind === 'studio' ? 'studio.html' : route.kind === 'member' ? 'app.html' : route.file;
         if (!existsSync(path.join(outDir, file))) return next();
         res.statusCode = route.kind === 'page' ? route.status : 200;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');

@@ -6,6 +6,8 @@
  *  azsOnUpload    — validates uploads in the private media bucket
  *  azsMaintenance — reconciles jobs every 10 minutes
  *  azsCanary      — probes every model role once a day and records what changed
+ *  azsMember      — the public beta's member callable (off unless runtime/features.beta.enabled; never the owner API)
+ *  azsMemberWorker — Cloud Tasks queue that voices members' audio editions (prebuilt voices only)
  *  azsPublic      — unauthenticated: published audio editions and the website's early-access form
  */
 import { setGlobalOptions } from 'firebase-functions/v2';
@@ -31,6 +33,12 @@ import * as ads from './api/ads';
 import * as lite from './api/lite';
 import * as mvlite from './api/mvlite';
 import { linkAd } from './api/linkad';
+import { liteBooth } from './api/lite-booth';
+import { beta } from './api/beta';
+import { member } from './api/member';
+import { runMemberSpeak, type MemberTask } from './workers/member-speak';
+import { isOwner } from './lib/owner';
+import { memberRequestSchema } from '@az-studio/shared';
 import { narrator } from './api/narrator';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
@@ -145,6 +153,10 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return narrator(owner, req.payload);
     case 'earlyAccess':
       return earlyAccess(owner, req.payload);
+    case 'liteBooth':
+      return liteBooth(owner, req.payload);
+    case 'beta':
+      return beta(owner, req.payload);
     case 'linkAd':
       return linkAd(owner, req.payload);
     default: {
@@ -237,3 +249,43 @@ export const azsCanary = onSchedule({ schedule: 'every day 06:30', timeZone: 'Af
   const state = await runCanary(ownerConfig().uid);
   if (state.changes.some((c) => c.worse)) logger.warn('model canary changes', { changes: state.changes });
 });
+
+/**
+ * The public beta's member API. A separate callable with its own gate (`assertMember`, lib/member.ts): it never runs
+ * `assertOwner`'s code path and owner actions are not reachable from it. With `runtime/features.beta.enabled` unset (the
+ * default) or `AZS_FEATURE_BETA=off`, every call is refused before anything is read.
+ */
+export const azsMember = onCall(
+  { secrets: [OWNER_UID, OWNER_EMAIL], enforceAppCheck: !IS_EMULATOR, cors: ALLOWED_ORIGINS, memory: '512MiB', timeoutSeconds: 120, concurrency: 40, maxInstances: 5 },
+  async (request: CallableRequest<unknown>) => {
+    let parsed;
+    try {
+      parsed = memberRequestSchema.parse(request.data);
+    } catch (e) {
+      const msg = e instanceof ZodError ? e.issues.map((i) => `${i.path.join('.') || 'request'}: ${i.message}`).join('; ') : 'Invalid request.';
+      throw new HttpsError('invalid-argument', msg);
+    }
+    try {
+      const owner = Boolean(request.auth && isOwner(request.auth, ownerConfig()));
+      return await member(request.auth, parsed, owner);
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      logger.error('azsMember failure', { op: parsed.op, error: String((e as Error)?.stack ?? e) });
+      throw new HttpsError('internal', 'Something went wrong. It has been logged.');
+    }
+  },
+);
+
+export const azsMemberWorker = onTaskDispatched<MemberTask>(
+  {
+    invoker: RUNTIME_SERVICE_ACCOUNT_EMAIL,
+    retryConfig: { maxAttempts: 3, minBackoffSeconds: 30, maxBackoffSeconds: 600 },
+    rateLimits: { maxConcurrentDispatches: 4, maxDispatchesPerSecond: 2 },
+    memory: '1GiB',
+    timeoutSeconds: 1800,
+    concurrency: 4,
+  },
+  async (req) => {
+    await runMemberSpeak(req.data);
+  },
+);
