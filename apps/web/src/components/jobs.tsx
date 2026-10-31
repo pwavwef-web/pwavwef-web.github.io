@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { Link2, AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert, Wind } from 'lucide-react';
+import { Link2, Package, AudioLines, AudioWaveform, Ban, Blend, CircleAlert, Clapperboard, Coins, Film, GitCompareArrows, Image as ImageIcon, Languages, LayoutGrid, ListChecks, Mic, Music2, NotebookPen, Palette, RotateCcw, ScanEye, ScanText, Scissors, ShieldCheck, SlidersHorizontal, TriangleAlert, Wind } from 'lucide-react';
 import {
   formatDuration,
   formatUsd,
@@ -58,6 +58,7 @@ const TYPE_ICON: Record<JobType, ReactNode> = {
   'narrator.voice': <Mic className="size-4" />,
   'narrator.speak': <AudioLines className="size-4" />,
   'linkad.run': <Link2 className="size-4" />,
+  'pack.assemble': <Package className="size-4" />,
   'narrator.export': <AudioWaveform className="size-4" />,
   'narrator.direct': <NotebookPen className="size-4" />,
 };
@@ -226,6 +227,11 @@ function CostDialog({ estimate, count, loading, onCancel, onConfirm }: { estimat
       {(estimate.budgets ?? []).map((b) => (
         <p key={b.projectId} className={cx('mt-1 text-xs', b.remainingUsd < 0 ? 'text-danger' : b.remainingUsd < b.limitUsd * 0.15 ? 'text-warning' : 'text-dim')}>
           Project budget “{b.title}”: {formatUsd(b.limitUsd)} · spent ≈ {formatUsd(b.spentUsd)} · in progress ≈ {formatUsd(b.pendingUsd)} · remaining after this ≈ {formatUsd(Math.max(0, b.remainingUsd))}
+        </p>
+      ))}
+      {(estimate.balances ?? []).map((b) => (
+        <p key={b.provider} className={cx('mt-1 text-xs', b.remainingUsd !== null && b.remainingUsd < 0 ? 'text-danger' : 'text-dim')}>
+          {b.provider} balance: {b.balanceUsd === null ? 'unknown (no live read)' : `${formatUsd(b.balanceUsd)} · this ≈ ${formatUsd(b.thisUsd)} · remaining after this ≈ ${formatUsd(Math.max(0, b.remainingUsd ?? 0))}`}
         </p>
       ))}
       {estimate.confirmation.reasons.length > 0 && (

@@ -67,6 +67,15 @@ export async function falRun<T>(model: string, input: Record<string, unknown>, o
   throw new FalError(`fal.ai request ${sub.request_id} did not finish in time`, null, true);
 }
 
+/** The account's remaining prepaid credit in USD (null without a key). Read-only. */
+export async function falBalance(): Promise<number | null> {
+  const key = await falKey();
+  if (!key) return null;
+  const body = (await falFetch(key, 'https://api.fal.ai/v1/account/billing?expand=credits')) as { credits?: { current_balance?: unknown } };
+  const usd = Number(body.credits?.current_balance);
+  return Number.isFinite(usd) ? usd : null;
+}
+
 /** Uploads a file to fal's storage and returns a URL its models can read (no signed URLs of ours leave the project). */
 export async function falUpload(data: Buffer, contentType: string, fileName: string): Promise<string> {
   const key = await falKey();

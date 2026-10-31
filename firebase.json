@@ -62,6 +62,10 @@
           "destination": "/embed.html"
         },
         {
+          "source": "/review/**",
+          "destination": "/review.html"
+        },
+        {
           "source": "/app",
           "destination": "/app.html"
         },
@@ -180,6 +184,31 @@
           ]
         },
         {
+          "source": "/review/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "no-referrer"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self' https://storage.googleapis.com; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'"
+            },
+            {
+              "key": "Permissions-Policy",
+              "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+            },
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow"
+            }
+          ]
+        },
+        {
           "source": "/api/public/audio/*",
           "headers": [
             {
@@ -211,6 +240,23 @@
             {
               "key": "Cache-Control",
               "value": "no-store"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'none'; frame-ancestors 'none'"
+            }
+          ]
+        },
+        {
+          "source": "/api/public/review/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-store"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "no-referrer"
             },
             {
               "key": "Content-Security-Policy",

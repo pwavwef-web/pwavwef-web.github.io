@@ -61,11 +61,14 @@ export interface BootstrapData {
   canary?: { day: string | null; changes: CanaryChange[] } | null;
   /** This month's spend per model role (Settings → Model budgets). */
   roleSpendUsd?: Record<BudgetRole, number> | null;
+  lowBalances?: { provider: string; balanceUsd: number; lowUsd: number; checkedAt: number | null }[];
 }
 
 export interface EstimateResponse {
   /** Budgets of the projects this batch touches, with what remains after it. */
   budgets?: { projectId: string; title: string; limitUsd: number; spentUsd: number; pendingUsd: number; thisUsd: number; remainingUsd: number }[];
+  /** Prepaid provider balances this batch draws on (fal lip sync), with what remains after it. */
+  balances?: { provider: string; balanceUsd: number | null; thisUsd: number; remainingUsd: number | null; checkedAt: number | null }[];
   /** What the batch runs. */
   summary?: { videoGenerations: number; imageGenerations: number; musicRequests: number; renders: number; inspections: number; referenceImages: number; compute: number };
   estimate: CostEstimate;

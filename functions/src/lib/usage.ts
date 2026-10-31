@@ -2,6 +2,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import { ACTIVE_STATUSES, DEFAULT_SETTINGS, costFromUsage, dayKey, monthKey, type StudioSettings, type UsageAggregate, type UsageRecord } from '@az-studio/shared';
 import { col, db, FieldValue } from './firebase';
 import { PRICING } from '../config/pricing';
+import { providerOf } from './provider-ledger';
 
 export async function getSettings(uid: string): Promise<StudioSettings> {
   const snap = await col.users().doc(uid).get();
@@ -95,6 +96,7 @@ export async function recordUsage(u: UsageInput): Promise<number> {
     jobId: u.jobId,
     modelId: u.modelId,
     kind: u.kind,
+    provider: providerOf(u.modelId),
     tokens: { input: u.inputTokens, output: u.outputTokens, thoughts: u.thoughtTokens, byModality: u.outputByModality ?? {} },
     costUsd,
     pricingVersion: PRICING.version,

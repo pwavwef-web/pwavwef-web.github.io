@@ -60,13 +60,13 @@ export const imageJobSchema = z.object({
   referenceLabels: z.array(text(160)).max(14).optional(),
   /** Film Studio Lite: identifies the input so the same image is never requested twice. */
   inputHash: text(40).optional(),
-});
-
   /** Film Studio Lite / Music Video Lite: compare the new still with these characters' approved references (face and outfit). */
   likenessCheck: z
     .array(z.object({ characterId: id, name: text(120), assetIds: z.array(id).min(1).max(2), outfit: text(1200), outfitFromText: z.boolean() }))
     .max(4)
     .optional(),
+});
+
 export const videoJobSchema = z.object({
   type: z.literal('video.generate'),
   projectId: id.nullable().optional(),
@@ -155,6 +155,8 @@ export const renderJobSchema = z.object({
   /** `preserve`: the approved soundtrack is passed through unchanged (no loudness normalisation or limiting). */
   audioMaster: z.enum(['normalize', 'preserve']).default('normalize'),
   label: text(160).optional(),
+  /** The deliverables pack this render belongs to. */
+  packId: id.optional(),
 });
 
 const languageCode = z.string().trim().min(2).max(24).regex(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/, 'Use a language code such as en, tw or xsm');
@@ -576,6 +578,30 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('modelStatus'), payload: z.object({ refresh: z.boolean().default(false) }).default({ refresh: false }) }),
   z.object({ action: z.literal('canary'), payload: z.object({ op: z.enum(['status', 'run', 'acknowledge']).default('status') }).default({ op: 'status' }) }),
+  z.object({
+    action: z.literal('providerLedger'),
+    payload: z
+      .object({ op: z.enum(['status', 'refresh', 'set']).default('status'), provider: z.enum(['google', 'fal']).optional(), balanceUsd: z.number().min(0).max(100000).nullable().optional(), lowUsd: z.number().min(0).max(100000).optional() })
+      .default({ op: 'status' }),
+  }),
+  z.object({
+    action: z.literal('reviewLinks'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('create'), renderId: id, title: text(160).optional(), versionLabel: text(60).optional(), expiresInDays: z.number().int().min(1).max(30).optional() }),
+      z.object({ op: z.literal('list'), projectId: id.optional() }),
+      z.object({ op: z.literal('revoke'), token: z.string().regex(/^[A-Za-z0-9_-]{32}$/) }),
+      z.object({ op: z.literal('resolve'), token: z.string().regex(/^[A-Za-z0-9_-]{32}$/), commentId: id, resolved: z.boolean() }),
+    ]),
+  }),
+  z.object({
+    action: z.literal('deliverables'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('create'), projectId: id, timelineId: id, presets: z.array(z.enum(['vertical_9x16', 'portrait_4x5', 'square_1x1', 'youtube_16x9'])).min(1).max(4), posterAtSec: z.number().min(0).optional(), title: text(160).optional(), audioMaster: z.enum(['normalize', 'preserve']).default('normalize') }),
+      z.object({ op: z.literal('list'), projectId: id.optional() }),
+      z.object({ op: z.literal('advance'), packId: id }),
+      z.object({ op: z.literal('download'), packId: id }),
+    ]),
+  }),
   z.object({ action: z.literal('spendByTask'), payload: z.object({ month: z.string().regex(/^[0-9]{4}-[0-9]{2}$/).optional() }).default({}) }),
   z.object({
     action: z.literal('continuitySave'),

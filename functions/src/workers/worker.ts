@@ -29,6 +29,7 @@ import { runAmbienceJob } from './ambience';
 import { continueNarratorSpeakJob, runNarratorExportJob, runNarratorSpeakJob, runNarratorVoiceJob } from './narrator';
 import { runNarratorDirectJob } from './narrator-direct';
 import { runLinkAdJob } from './linkad';
+import { runPackAssembleJob } from './pack';
 import { col } from '../lib/firebase';
 import { jobRoleBudgetProblem } from '../lib/role-budget';
 import { assertProviderAvailable, recoverFromFailure, usesSlot } from './recovery';
@@ -84,6 +85,9 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       return;
     case 'linkad.run':
       await runLinkAdJob(claimed);
+      return;
+    case 'pack.assemble':
+      await runPackAssembleJob(claimed);
       return;
     case 'image.generate':
       await runImageJob(claimed);

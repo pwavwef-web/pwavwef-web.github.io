@@ -4,6 +4,7 @@ import { col, db } from '../lib/firebase';
 import type { Owner } from '../lib/owner';
 import { monthRoleSpend, roleModels } from '../lib/role-budget';
 import { acknowledgeCanary, readCanary, runCanary } from '../scheduled/canary';
+import { providerLedger as ledger, refreshFalBalance, setBalance } from '../lib/provider-ledger';
 
 type Payload<A extends ApiRequest['action']> = Extract<ApiRequest, { action: A }>['payload'];
 
@@ -12,6 +13,13 @@ export async function canary(owner: Owner, p: Payload<'canary'>) {
   if (p.op === 'run') return runCanary(owner.uid);
   if (p.op === 'acknowledge') return acknowledgeCanary();
   return readCanary();
+}
+
+/** Settings → Providers: spend and balance per provider; `refresh` reads fal's live balance, `set` records one by hand. */
+export async function providerLedger(owner: Owner, p: Payload<'providerLedger'>) {
+  if (p.op === 'refresh') await refreshFalBalance();
+  if (p.op === 'set' && p.provider) await setBalance(p.provider, { ...(p.balanceUsd !== undefined ? { balanceUsd: p.balanceUsd } : {}), ...(p.lowUsd !== undefined ? { lowUsd: p.lowUsd } : {}) });
+  return { providers: await ledger(owner.uid) };
 }
 
 /**

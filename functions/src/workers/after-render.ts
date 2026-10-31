@@ -37,4 +37,7 @@ export async function afterRenderCompleted(job: JobDoc): Promise<void> {
   const { syncExports } = await import('../api/linkad');
   if (isLinkAdProjectType((await col.projects().doc(job.projectId).get()).get('type'))) await syncExports(job.ownerUid, job.projectId).catch((e) => logger.warn('link ad export sync failed', { error: String(e) }));
   await startFinalInspection(renderId, job.ownerUid, job.projectId);
+  // A render of a deliverables pack: the pack may now be complete (or waits for the export checks).
+  const { advancePackForRender } = await import('../api/deliverables');
+  await advancePackForRender(renderId);
 }

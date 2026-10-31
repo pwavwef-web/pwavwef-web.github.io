@@ -9,6 +9,7 @@ import { Presenter } from './components/presenter';
 import { isStaleChunkError, reloadForNewBuild } from './lib/build-refresh';
 
 const Home = lazy(() => import('./pages/Home'));
+const Reviews = lazy(() => import('./pages/Reviews'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectRouter = lazy(() => import('./pages/ProjectRouter'));
 const Create = lazy(() => import('./pages/Create'));
@@ -140,6 +141,7 @@ const router = createBrowserRouter([
           { path: 'create/remix', element: <Page><Remix /></Page> },
           { path: 'assets', element: <Page><Assets /></Page> },
           { path: 'jobs', element: <Page><Jobs /></Page> },
+          { path: 'studio/reviews', element: <Page><Reviews /></Page> },
           { path: 'settings', element: <Page><Settings /></Page> },
           { path: 'home', element: <Navigate to="/studio" replace /> },
           { path: '*', element: <NotFound /> },

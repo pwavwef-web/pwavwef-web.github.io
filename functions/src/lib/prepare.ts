@@ -556,6 +556,7 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         inspect: req.skipInspection ? false : req.inspect || req.quality === 'final',
         // `preserve`: an approved soundtrack is passed through without loudness normalisation or limiting.
         audioMaster: req.audioMaster,
+        packId: req.packId ?? null,
         finalInspection: null,
         assets: assetMap,
         computeRates: { vcpu: PRICING.render.vcpu, memoryGiB: PRICING.render.memoryGiB, perVcpuSecond: PRICING.render.perVcpuSecond, perGiBSecond: PRICING.render.perGiBSecond },

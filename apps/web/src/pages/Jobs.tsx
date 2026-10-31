@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
+import { Link } from 'react-router';
 import { ListChecks } from 'lucide-react';
 import { ACTIVE_STATUSES, formatUsd, type JobDoc } from '@az-studio/shared';
 import { api, errorMessage } from '../lib/api';
@@ -104,7 +105,16 @@ export default function Jobs() {
 
   return (
     <div className="space-y-10">
-      <SectionHeader eyebrow="Pipeline" title={<span className="text-5xl">Jobs</span>} sub="Durable generation and render jobs. They keep running if you close the tab or the app redeploys." />
+      <SectionHeader
+        eyebrow="Pipeline"
+        title={<span className="text-5xl">Jobs</span>}
+        sub="Durable generation and render jobs. They keep running if you close the tab or the app redeploys."
+        action={
+          <Link to="/studio/reviews" className="text-sm text-accent-2 hover:underline">
+            Client reviews →
+          </Link>
+        }
+      />
       <section className="space-y-4">
         <Segmented
           label="Filter jobs"

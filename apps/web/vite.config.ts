@@ -3,10 +3,11 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { publicSite, siteInputs } from './site/plugin';
 
-/** Dev/preview servers route /embed/audio/{id} to the public player page, like the Hosting rewrite. */
+/** Dev/preview servers route /embed/audio/{id} and /review/{token} to their public pages, like the Hosting rewrites. */
 function embedRoute(): Plugin {
   const rewrite = (req: { url?: string }, _res: unknown, next: () => void) => {
     if (req.url && /^\/embed\/audio\/[^/?#]+\/?(\?.*)?$/.test(req.url)) req.url = '/embed.html';
+    else if (req.url && /^\/review\/[^/?#]+\/?(\?.*)?$/.test(req.url)) req.url = '/review.html';
     next();
   };
   return {
@@ -33,9 +34,9 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       chunkSizeWarningLimit: 1200,
       rollupOptions: {
-        // The public player and the public website (static pages from site/) are their own small pages: they
+        // The public player, the client review page and the public website (static pages from site/) are their own small pages: they
         // share no code with the private studio, which is studio.html.
-        input: { main: 'studio.html', embed: 'embed.html', app: 'app.html', ...siteInputs() },
+        input: { main: 'studio.html', embed: 'embed.html', review: 'review.html', app: 'app.html', ...siteInputs() },
         output: {
           // Long-lived vendor chunks cache across app deploys.
           manualChunks(id: string) {

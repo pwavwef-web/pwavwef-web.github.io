@@ -212,3 +212,72 @@ export function SpendByTaskCard() {
     </Card>
   );
 }
+
+interface ProviderRow {
+  provider: 'google' | 'fal';
+  monthSpendUsd: number;
+  balanceUsd: number | null;
+  checkedAt: number | null;
+  source: 'api' | 'manual' | null;
+  lowUsd: number;
+  low: boolean;
+}
+
+/** Settings → Providers: one ledger for every provider (Google priced from tokens, fal from its prepaid balance). */
+export function ProvidersCard() {
+  const [rows, setRows] = useState<ProviderRow[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [low, setLow] = useState<Record<string, string>>({});
+  const call = async (payload: { op: 'status' | 'refresh' | 'set'; provider?: 'google' | 'fal'; lowUsd?: number }) => {
+    setBusy(true);
+    try {
+      setRows((await api<{ providers: ProviderRow[] }, 'providerLedger'>('providerLedger', payload)).providers);
+    } catch (e) {
+      toast.error('Could not read the provider ledger', { description: errorMessage(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  useEffect(() => {
+    void call({ op: 'status' });
+  }, []);
+  return (
+    <Card className="space-y-4 p-6">
+      <div>
+        <p className="eyebrow">Providers</p>
+        <p className="mt-1 text-sm text-dim">Every provider in one ledger. fal.ai is prepaid: its balance is read before and after each lip-sync job, and a job it would not cover is refused.</p>
+      </div>
+      {!rows ? (
+        <Skeleton className="h-20" />
+      ) : (
+        <ul className="space-y-3">
+          {rows.map((r) => (
+            <li key={r.provider} className="rounded-xl border border-line p-3 text-sm" data-private>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-fg">{r.provider === 'google' ? 'Google Cloud (Vertex AI, Gemini API, Vision)' : 'fal.ai (lip sync)'}</span>
+                {r.low && <Badge tone="warning">Low balance</Badge>}
+              </div>
+              <p className="mt-1 text-xs text-dim">
+                This month ≈ {formatUsd(r.monthSpendUsd)}
+                {r.balanceUsd !== null ? ` · balance ${formatUsd(r.balanceUsd)}${r.checkedAt ? ` (${r.source === 'manual' ? 'entered' : 'read'} ${new Date(r.checkedAt).toLocaleString()})` : ''}` : r.provider === 'google' ? ' · billed monthly (Cloud Billing)' : ' · balance not read yet'}
+              </p>
+              {r.provider === 'fal' && (
+                <div className="mt-2 flex flex-wrap items-end gap-2">
+                  <Field label="Warn below (USD)">
+                    <Input type="number" min={0} step={1} className="w-28" value={low[r.provider] ?? String(r.lowUsd)} onChange={(e) => setLow({ ...low, [r.provider]: e.target.value })} />
+                  </Field>
+                  <Button size="sm" variant="ghost" loading={busy} onClick={() => void call({ op: 'set', provider: r.provider, lowUsd: Math.max(0, Number(low[r.provider] ?? r.lowUsd)) })}>
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" loading={busy} onClick={() => void call({ op: 'refresh' })}>
+                    Read balance now
+                  </Button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}

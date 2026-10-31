@@ -54,6 +54,7 @@ export const JOB_ROLES: Record<JobType, readonly BudgetRole[]> = {
   'narrator.export': [],
   'narrator.direct': ['reasoning'],
   'linkad.run': ['reasoning', 'speech', 'transcription'],
+  'pack.assemble': [],
 };
 
 /** This month's spend per role from the monthly aggregate's per-model totals. */

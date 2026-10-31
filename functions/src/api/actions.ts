@@ -17,11 +17,15 @@ import {
   type JobDoc,
   type JobRequest,
   type PromptRevision,
+  JOB_ROLES,
+  roleBudgetProblem,
+  type JobType,
 } from '@az-studio/shared';
 import { studioCapabilities } from '../config/models';
 import { PRICING } from '../config/pricing';
 import { RELEASE } from '../config/release';
 import { monthRoleSpend } from '../lib/role-budget';
+import { balanceProblem, readBalances, refreshFalBalance } from '../lib/provider-ledger';
 import { readCanary } from '../scheduled/canary';
 import { createAsset, withTmpDir } from '../lib/assets';
 import { activeSlots } from '../lib/concurrency';
@@ -58,7 +62,7 @@ async function ownedJob(uid: string, jobId: string): Promise<JobDoc> {
 
 export async function bootstrap(owner: Owner) {
   const userRef = col.users().doc(owner.uid);
-  const [user, settings, spend, slots, canaryState, roleSpent] = await Promise.all([userRef.get(), getSettings(owner.uid), spendSnapshot(owner.uid), activeSlots(owner.uid), readCanary().catch(() => null), monthRoleSpend(owner.uid).catch(() => null)]);
+  const [user, settings, spend, slots, canaryState, roleSpent, balances] = await Promise.all([userRef.get(), getSettings(owner.uid), spendSnapshot(owner.uid), activeSlots(owner.uid), readCanary().catch(() => null), monthRoleSpend(owner.uid).catch(() => null), readBalances().catch(() => null)]);
   if (!user.exists) await userRef.set({ email: owner.email, settings: DEFAULT_SETTINGS, createdAt: FieldValue.serverTimestamp() }, { merge: true });
   return {
     owner,
@@ -75,6 +79,8 @@ export async function bootstrap(owner: Owner) {
     /** Unacknowledged model canary changes (Settings → Model health). */
     canary: canaryState ? { day: canaryState.latest?.day ?? null, changes: canaryState.acknowledgedAt ? [] : canaryState.changes } : null,
     roleSpendUsd: roleSpent,
+    /** Prepaid providers whose last known balance is below their warning level. */
+    lowBalances: balances ? Object.entries(balances).filter(([, b]) => b.balanceUsd !== null && b.balanceUsd < b.lowUsd).map(([provider, b]) => ({ provider, balanceUsd: b.balanceUsd!, lowUsd: b.lowUsd, checkedAt: b.checkedAt })) : [],
   };
 }
 
@@ -173,6 +179,19 @@ export async function estimate(owner: Owner, p: Payload<'estimate'>) {
   for (const [i, j] of p.jobs.entries()) if (j.projectId) byProject.set(j.projectId, (byProject.get(j.projectId) ?? 0) + prepared[i]!.estimate.usd);
   const budgets = (await Promise.all([...byProject.keys()].map((id) => projectBudget(owner.uid, id)))).filter((b): b is NonNullable<typeof b> => Boolean(b)).map((b) => ({ ...b, thisUsd: byProject.get(b.projectId) ?? 0, remainingUsd: b.limitUsd - b.spentUsd - b.pendingUsd - (byProject.get(b.projectId) ?? 0) }));
   const over = budgets.find((b) => b.remainingUsd < -1e-9);
+  // Model-role budgets (the worker enforces them too) and prepaid provider balances (fal lip sync).
+  if (!limitProblem && Object.values(settings.roleBudgetsUsd ?? {}).some((v) => Number(v) > 0)) {
+    const spentByRole = await monthRoleSpend(owner.uid);
+    limitProblem = prepared.map((x) => roleBudgetProblem(settings.roleBudgetsUsd, spentByRole, JOB_ROLES[x.type as JobType] ?? [])).find(Boolean)?.message ?? null;
+  }
+  const falUsd = prepared.filter((x) => x.type === 'video.lipsync').reduce((s, x) => s + x.estimate.usd, 0);
+  const balances: { provider: string; balanceUsd: number | null; thisUsd: number; remainingUsd: number | null; checkedAt: number | null }[] = [];
+  if (falUsd > 0) {
+    const live = await refreshFalBalance();
+    const fal = { ...(await readBalances()).fal, ...(live !== null ? { balanceUsd: live } : {}) };
+    balances.push({ provider: 'fal', balanceUsd: fal.balanceUsd, thisUsd: falUsd, remainingUsd: fal.balanceUsd === null ? null : fal.balanceUsd - falUsd, checkedAt: fal.checkedAt });
+    limitProblem ??= balanceProblem('fal', fal, falUsd);
+  }
   if (over && !limitProblem) limitProblem = `This would exceed the project budget of $${over.limitUsd.toFixed(2)} for “${over.title}” (spent ≈ $${over.spentUsd.toFixed(2)} + in progress ≈ $${over.pendingUsd.toFixed(2)} + this ≈ $${over.thisUsd.toFixed(2)}). Raise the budget in the project settings, reuse approved takes, or cancel queued work.`;
   // What the batch will actually run.
   const count = (t: string) => prepared.filter((x) => x.type === t).length;
@@ -188,6 +207,7 @@ export async function estimate(owner: Owner, p: Payload<'estimate'>) {
   };
   return {
     budgets,
+    balances,
     summary,
     estimate: total,
     perJob: prepared.map((x) => ({ type: x.type, label: x.label, modelId: x.modelId, estimate: x.estimate })),

@@ -237,6 +237,7 @@ export const JOB_TYPES = [
   'narrator.export',
   'narrator.direct',
   'linkad.run',
+  'pack.assemble',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -821,6 +822,8 @@ export interface RenderDoc {
   finalInspection?: { id: string; status: 'queued' | 'running' | 'completed' | 'failed'; readiness: 'ready' | 'blocked' | 'overridden' | null; score: number | null; errors: number; warnings: number; error?: string } | null;
   /** Final renders are inspected automatically before export. */
   inspect?: boolean;
+  /** The deliverables pack this render belongs to (deliverables.ts). */
+  packId?: string | null;
   /** `preserve`: the approved soundtrack was passed through unchanged. */
   audioMaster?: 'normalize' | 'preserve';
   /** Text layout measured by the renderer with the real fonts (lyric issues, credit timings). */

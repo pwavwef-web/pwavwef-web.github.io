@@ -142,7 +142,7 @@ export async function createJobs(uid: string, requests: JobRequest[], opts: Crea
 }
 
 export interface InternalJobInput {
-  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect' | 'music.analyze' | 'ad.validate' | 'video.lipsync'>;
+  type: Extract<JobType, 'quality.inspect' | 'media.composite' | 'media.color_match' | 'media.screen_replace' | 'continuity.compare' | 'final.inspect' | 'music.analyze' | 'ad.validate' | 'video.lipsync' | 'pack.assemble'>;
   projectId: string;
   modelId: string | null;
   label: string;

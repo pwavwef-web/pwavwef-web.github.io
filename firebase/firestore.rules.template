@@ -169,6 +169,10 @@ service cloud.firestore {
 
     // Internal state (rate limits, concurrency slots) is never exposed.
     match /runtime/{document=**} { allow read, write: if false; }
+    // Client review links (capability URLs): written by the owner-only API and the public review endpoint only.
+    match /reviewLinks/{document=**} { allow read, write: if false; }
+    // Deliverables packs: written by the backend, read through the owner-only API.
+    match /packs/{id} { allow read, write: if false; }
     // Brand kits (one per client): the owner reads them; every write goes through the owner-only API (files checked,
     // edited prices and contacts re-confirmed, revision conflicts refused).
     match /brandKits/{id} { allow read: if ownerCanRead(); allow write: if false; }

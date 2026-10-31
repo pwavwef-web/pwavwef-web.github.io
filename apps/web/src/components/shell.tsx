@@ -13,7 +13,7 @@ export const NAV = [
   { to: '/projects', label: 'Projects', icon: FolderOpen },
   { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/linkad', '/poster', '/studio/brands', '/ads', '/narrator'] },
   { to: '/assets', label: 'Assets', icon: Layers },
-  { to: '/jobs', label: 'Jobs', icon: ListChecks },
+  { to: '/jobs', label: 'Jobs', icon: ListChecks, within: ['/studio/reviews'] },
   { to: '/settings', label: 'Settings', icon: Settings2 },
 ] as { to: string; label: string; icon: typeof House; end?: boolean; within?: string[] }[];
 
@@ -65,7 +65,8 @@ function StudioAlerts() {
   const boot = useSession((s) => s.boot);
   const worse = (boot?.canary?.changes ?? []).filter((c) => c.worse);
   const stale = releaseMismatch(boot?.release);
-  if (!worse.length && !stale) return null;
+  const low = boot?.lowBalances ?? [];
+  if (!worse.length && !stale && !low.length) return null;
   return (
     <div className="mb-5 space-y-2">
       {worse.length > 0 && (
@@ -76,6 +77,11 @@ function StudioAlerts() {
           </NavLink>
         </Notice>
       )}
+      {low.map((b) => (
+        <Notice key={b.provider} tone="warning">
+          The {b.provider} balance is {formatUsd(b.balanceUsd)}, below its warning level of {formatUsd(b.lowUsd)}. Top it up before the next job that needs it.
+        </Notice>
+      ))}
       {stale && (
         <Notice tone="warning">
           A newer release of AZ Studio is live.{' '}

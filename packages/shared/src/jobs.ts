@@ -112,6 +112,7 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   'narrator.export': 'Audio edition export',
   'narrator.direct': 'Auto-direct suggestions',
   'linkad.run': 'Link to Ad',
+  'pack.assemble': 'Deliverables pack',
 };
 
 /** The nine states AZ Studio shows for background work (derived from the durable job status). */

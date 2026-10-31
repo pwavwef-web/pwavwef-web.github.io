@@ -8,7 +8,7 @@
  *  azsCanary      — probes every model role once a day and records what changed
  *  azsMember      — the public beta's member callable (off unless runtime/features.beta.enabled; never the owner API)
  *  azsMemberWorker — Cloud Tasks queue that voices members' audio editions (prebuilt voices only)
- *  azsPublic      — unauthenticated: published audio editions and the website's early-access form
+ *  azsPublic      — unauthenticated: published audio editions, client review links and the website's early-access form
  */
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, onRequest, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
@@ -25,6 +25,9 @@ import { handleBibleCoverChange } from './triggers/bible-cover';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
 import * as ops from './api/ops';
+import { reviewLinks } from './api/review-links';
+import { advanceOpenPacks, deliverables } from './api/deliverables';
+import { handlePublicReview } from './public/review';
 import * as continuity from './api/continuity';
 import * as production from './api/production';
 import * as studio from './api/studio';
@@ -98,6 +101,12 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return ops.canary(owner, req.payload);
     case 'spendByTask':
       return ops.spendByTask(owner, req.payload);
+    case 'providerLedger':
+      return ops.providerLedger(owner, req.payload);
+    case 'reviewLinks':
+      return reviewLinks(owner, req.payload);
+    case 'deliverables':
+      return deliverables(owner, req.payload);
     case 'continuitySave':
       return continuity.continuitySave(owner, req.payload);
     case 'continuityDelete':
@@ -230,6 +239,10 @@ export const azsOnUpload = onObjectFinalized(
  */
 export const azsPublic = onRequest({ invoker: 'public', memory: '512MiB', timeoutSeconds: 120, concurrency: 80, maxInstances: 10 }, async (req, res) => {
   try {
+    if (req.path.startsWith('/api/public/review/')) {
+      await handlePublicReview({ method: req.method, path: req.path, headers: req.headers, body: req.body }, res);
+      return;
+    }
     if (req.path === '/api/public/early-access') {
       await handleEarlyAccess({ method: req.method, headers: req.headers, body: req.body, rawBody: req.rawBody, ip: req.ip }, res);
       return;
@@ -245,6 +258,8 @@ export const azsMaintenance = onSchedule({ schedule: 'every 10 minutes', timeout
   await runMaintenance();
   // Hashed visitor addresses kept for the early-access rate limits expire after 48 hours.
   await pruneEarlyAccessRate();
+  // Deliverables packs waiting for their renders' export checks.
+  await advanceOpenPacks();
 });
 
 /** Daily model canary (scheduled/canary.ts): changes show as a studio banner until acknowledged in Settings. */
