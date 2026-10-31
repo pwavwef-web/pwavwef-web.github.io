@@ -109,6 +109,8 @@ export function planLiteWork(spec: LiteSpec, title: string, projectId: string, j
         inputHash: req.hash,
       }));
     }
+        // Wardrobe and likeness lock: the still is compared with the approved references after it is made.
+        ...(req.likeness ? { likenessCheck: req.likeness } : {}),
   } else if (kind === 'narration') {
     const vocabulary = liteVocabulary(spec);
     if (spec.voice.mode === 'generate') {

@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { writeFile } from 'node:fs/promises';
 import { FFMPEG } from '../lib/media';
-import type { JobDoc } from '@az-studio/shared';
+import type { JobDoc, SpeechGuardRecord } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { speakLine, voiceFor } from '../lib/audio-models';
 import { createAsset, withTmpDir } from '../lib/assets';
@@ -31,6 +31,8 @@ export interface SpokenLineResult {
   seconds: number | null;
   speechStart: number | null;
   speechEnd: number | null;
+  /** The speech guard's changes to the text and direction, the take's length check and any re-take. */
+  guard?: SpeechGuardRecord;
 }
 
 /**
@@ -79,7 +81,7 @@ export async function runSpeechJob(job: JobDoc): Promise<void> {
         localFile: local,
         dir,
         collections: ['dialogue'],
-        generation: { jobId: job.id, modelId: MODEL_REGISTRY.speech.id, prompt: line.text, params: { voice, direction: line.direction, purpose: 'dialogue_guide' } },
+        generation: { jobId: job.id, modelId: MODEL_REGISTRY.speech.id, prompt: spoken.guard.text, params: { voice, direction: spoken.guard.direction, purpose: 'dialogue_guide', guardChanges: spoken.guard.changes, guardFlags: spoken.guard.flags, takes: spoken.guard.takes } },
       });
       results.push({
         index: line.index,
@@ -91,6 +93,7 @@ export async function runSpeechJob(job: JobDoc): Promise<void> {
         seconds: spoken.speech?.durationSec ?? null,
         speechStart: spoken.speech?.start ?? null,
         speechEnd: spoken.speech?.end ?? null,
+        guard: spoken.guard,
       });
       await progress(job.id, `Spoken ${i + 1} of ${p.lines.length} lines`, 0.1 + (0.85 * (i + 1)) / p.lines.length);
     }
@@ -104,7 +107,7 @@ export async function runSpeechJob(job: JobDoc): Promise<void> {
       await createAsset({ uid: job.ownerUid, assetId: voiceoverAssetId, projectId: job.projectId, kind: 'audio', source: 'generated', title: 'Guide voice-over', fileName: 'voiceover.wav', mimeType: 'audio/wav', storagePath, localFile: out, dir, collections: ['ad:soundtrack'], generation: { jobId: job.id, modelId: MODEL_REGISTRY.speech.id, prompt: p.lines.map((l) => l.text).join('\n'), params: { purpose: 'guide_voiceover', voices: [...new Set(results.map((r) => r.voice))] } } });
     }
   });
-  await logInteraction({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: MODEL_REGISTRY.speech.id, api: 'generateContent', request: { lines: p.lines.length, voices: [...new Set(results.map((r) => r.voice))] }, response: { measured: results.map((r) => ({ index: r.index, seconds: r.seconds })) }, latencyMs: Date.now() - started });
+  await logInteraction({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: MODEL_REGISTRY.speech.id, api: 'generateContent', request: { lines: p.lines.length, voices: [...new Set(results.map((r) => r.voice))] }, response: { measured: results.map((r) => ({ index: r.index, seconds: r.seconds, verdict: r.guard?.verdict ?? null, takes: r.guard?.takes ?? 1 })) }, latencyMs: Date.now() - started });
   const total = results.reduce((s, r) => s + (r.seconds ?? 0), 0);
   await transition(job.id, 'completed', { stage: `Measured ${results.length} line${results.length === 1 ? '' : 's'} · ${total.toFixed(1)} s of speech${voiceoverAssetId ? ' · joined into one voice-over' : ''}`, result: { assetIds: [...(voiceoverAssetId ? [voiceoverAssetId] : []), ...results.map((r) => r.assetId)], data: { lines: results, ...(voiceoverAssetId ? { voiceoverAssetId } : {}) } } });
 }

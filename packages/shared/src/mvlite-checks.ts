@@ -31,7 +31,7 @@ function stageOf(kind: string): MvStage {
   return 'edit';
 }
 
-export function mvExportChecks(input: { spec: MvLiteSpec; timing: MvTiming; assembly: MvAssembly; song: MvSong | null }): MvFinding[] {
+export function mvExportChecks(input: { spec: MvLiteSpec; timing: MvTiming; assembly: MvAssembly; song: MvSong | null; likenessFailures?: Record<string, string> }): MvFinding[] {
   const { spec, timing, assembly, song } = input;
   const out: MvFinding[] = [];
   let n = 0;
@@ -39,6 +39,14 @@ export function mvExportChecks(input: { spec: MvLiteSpec; timing: MvTiming; asse
 
   for (const i of assembly.issues) add({ severity: i.severity, basis: 'deterministic', kind: i.kind, message: i.message, stage: stageOf(i.kind), sectionId: i.sectionId, shotId: i.shotId, at: i.at });
   if (song && !spec.sections.length) add({ severity: 'error', basis: 'deterministic', kind: 'empty', message: 'The video has no sections yet — plan the shots.', stage: 'shots', sectionId: null, shotId: null, at: null });
+  // Wardrobe and likeness lock: a still that failed the check was chosen by hand — say so before export.
+  for (const section of spec.sections) {
+    for (const shot of section.shots) {
+      const img = mvShotImageId(spec, shot);
+      const note = img ? input.likenessFailures?.[img] : undefined;
+      if (note !== undefined) add({ severity: 'warning', basis: 'model', kind: 'image_likeness', message: `${section.name || section.label}, shot ${section.shots.indexOf(shot) + 1}: the image does not match the approved character reference${note ? ` (${note})` : ''}. Regenerate it or approve it deliberately.`, stage: 'shots', sectionId: section.id, shotId: shot.id, at: null });
+    }
+  }
 
   // Lyric sheet quality (the captions are only as good as the synchronisation).
   const sheet = song?.sheet ?? null;

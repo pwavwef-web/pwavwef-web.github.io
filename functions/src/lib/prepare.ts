@@ -3,6 +3,8 @@ import {
   EXPORT_PRESETS,
   compileImagePrompt,
   estimateImage,
+  estimateLikenessCheck,
+  likenessPrompt,
   estimateMusic,
   estimateSpeech,
   estimateSpeechSeconds,
@@ -27,6 +29,7 @@ import {
   type CharacterDoc,
   type CostEstimate,
   type ImageJobRequest,
+  type LikenessSubject,
   type JobRequest,
   type JobTarget,
   type JobType,
@@ -369,7 +372,16 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
     if (a.sizeBytes > cap.maxImageBytes) bad(`“${a.title}” is larger than ${Math.round(cap.maxImageBytes / 1048576)} MB.`);
   }
   const prompt = compileImagePrompt(req.purpose, req.prompt, req.applyStyleBible ? project?.styleBible ?? null : null);
-  const estimate = estimateImage({ imageSize: req.imageSize, referenceImages: refIds.length, promptChars: prompt.length, outputs: 1 }, PRICING);
+  let estimate = estimateImage({ imageSize: req.imageSize, referenceImages: refIds.length, promptChars: prompt.length, outputs: 1 }, PRICING);
+  // Wardrobe and likeness lock: the new still is compared with the characters' approved references (priced here).
+  let likeness: { subjects: LikenessSubject[]; references: { assetId: string; storagePath: string; mimeType: string }[] } | null = null;
+  if (req.likenessCheck?.length) {
+    const subjects = req.likenessCheck.map((s) => ({ ...s, assetIds: s.assetIds.slice(0, 2) }));
+    const refAssets = await loadAssets(uid, [...new Set(subjects.flatMap((s) => s.assetIds))]);
+    for (const a of refAssets.values()) if (a.kind !== 'image') bad(`“${a.title}” is not an image.`);
+    likeness = { subjects, references: [...refAssets.values()].map((a) => ({ assetId: a.id, storagePath: a.storagePath, mimeType: normMime(a.mimeType) })) };
+    estimate = sumEstimates([estimate, estimateLikenessCheck({ modelId: MODEL_REGISTRY.reasoning.id, images: 1 + likeness.references.length, promptChars: likenessPrompt(subjects).length }, PRICING)], PRICING);
+  }
   let take: PreparedJob['take'];
   if (target?.kind === 'shot' && !target.sub) {
     if (!req.projectId) bad('Shot images need a project.');
@@ -410,6 +422,7 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
       ...(bibleCoverSignature ? { bibleCoverSignature } : {}),
       ...(req.adScene ? { adScene: true } : {}),
       ...(req.inputHash ? { inputHash: req.inputHash } : {}),
+      ...(likeness ? { likeness } : {}),
     },
     estimate,
     target,

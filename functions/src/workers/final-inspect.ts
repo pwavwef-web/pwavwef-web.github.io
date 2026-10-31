@@ -4,7 +4,9 @@ import { readFile } from 'node:fs/promises';
 import type { Part } from '@google/genai';
 import {
   blackFindings,
+  checkFacts,
   creditsFindings,
+  factFindings,
   dialogueMaskingFindings,
   EXPORT_PRESETS,
   exportReadiness,
@@ -19,8 +21,12 @@ import {
   missingMediaFindings,
   musicRestartFindings,
   ocrCropFinding,
+  needsLogoCheck,
   privateInfoFindings,
+  projectApprovedFacts,
+  protectedTermList,
   round1,
+  settleFinalModelFindings,
   silenceFindings,
   structureFindings,
   FINAL_CHECKS,
@@ -29,6 +35,8 @@ import {
   type FinalFinding,
   type FinalInspectionDoc,
   type JobDoc,
+  type LinkAdDoc,
+  type OcrFrame,
   type RenderDoc,
   type ShotDoc,
   type TimelineState,
@@ -60,6 +68,20 @@ type RenderWithSnapshot = RenderDoc & {
 };
 
 const clipEnd = (c: Clip) => c.start + c.duration;
+
+interface ProjectTerms {
+  language?: string;
+  ad?: { audio?: { protectedTerms?: string[] } } | null;
+  lite?: { pronunciation?: { term?: string }[]; bible?: { characters?: { name?: string }[]; locations?: { name?: string }[] } } | null;
+  mvlite?: { bible?: { characters?: { name?: string }[]; locations?: { name?: string }[] } } | null;
+}
+
+/** The project's own protected words (advert terms, Lite pronunciations, character and place names); the shared list is added by `transcribe`. */
+export function projectTerms(p: ProjectTerms | null | undefined): string[] {
+  if (!p) return [];
+  const names = (b: { characters?: { name?: string }[]; locations?: { name?: string }[] } | undefined) => [...(b?.characters ?? []), ...(b?.locations ?? [])].map((x) => x.name ?? '');
+  return protectedTermList([...(p.ad?.audio?.protectedTerms ?? []), ...(p.lite?.pronunciation ?? []).map((x) => x.term ?? ''), ...names(p.lite?.bible), ...names(p.mvlite?.bible)], { shared: false }).slice(0, 100);
+}
 
 /** Moments where the decoded stereo signal reaches near full scale (s, dBFS). */
 async function peakMoments(input: string, thresholdDb = -0.5): Promise<{ t: number; db: number }[]> {
@@ -131,11 +153,12 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
       const words: { text: string; start: number; end: number }[] = [];
       if (info.hasAudio) {
         await progress(job.id, 'Transcribing the dialogue', 0.3);
-        const project = (await col.projects().doc(job.projectId!).get()).data() as { language?: string } | undefined;
+        const project = (await col.projects().doc(job.projectId!).get()).data() as ProjectTerms | undefined;
+        const vocabulary = projectTerms(project);
         for (const [index, segment] of timedAudioSegments(D).entries()) {
           const flac = path.join(dir, `speech-${index}.flac`);
           await extractSpeechAudio(local, flac, segment);
-          const tr = await transcribe({ data: await readFile(flac), mimeType: 'audio/flac', languageCode: project?.language ?? null, vocabulary: [] });
+          const tr = await transcribe({ data: await readFile(flac), mimeType: 'audio/flac', languageCode: project?.language ?? null, vocabulary });
           await recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: tr.modelId, kind: 'transcription', inputTokens: tr.usage.input, outputTokens: tr.usage.output, thoughtTokens: tr.usage.thoughts });
           words.push(...tr.words.map((w) => ({ text: w.text, start: w.start + segment.startSec, end: w.end + segment.startSec })));
         }
@@ -152,8 +175,9 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
         const one = await sampleFrames(local, { durationSec: D, fps: 1, width: 1280, srcWidth: info.width, srcHeight: info.height, from: t, to: Math.min(D, t + 0.5), max: 1 });
         if (one[0]) extra.push({ ...one[0], t });
       }
-      const annotated = await annotateFrames({ frames: [...frames, ...extra], features: ['TEXT_DETECTION'], usage });
-      return { D, info, black, temporal, loud, silences, peaks, spikes: loudSpikes(momentary), words, ocr: annotated.map((a) => ({ t: a.t, text: a.fullText })) };
+      const sampled = [...frames, ...extra];
+      const annotated = await annotateFrames({ frames: sampled, features: ['TEXT_DETECTION'], usage });
+      return { D, info, black, temporal, loud, silences, peaks, spikes: loudSpikes(momentary), words, sampled, ocr: annotated.map((a) => ({ t: a.t, text: a.fullText })), ocrWords: annotated.map<OcrFrame>((a) => ({ t: a.t, words: a.text.map((x) => ({ text: x.text, box: x.box })) })) };
     });
 
     const findings: FinalFinding[] = [];
@@ -184,8 +208,12 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
       const f = frame ? ocrCropFinding(c.text.replace(/\s+/g, ' ').slice(0, 120), frame.text, at, c.id) : null;
       if (f) findings.push(f);
     }
-    const allowed = (await col.projects().doc(job.projectId!).get()).get('allowedOnScreenText') as string[] | undefined;
-    findings.push(...privateInfoFindings(m.ocr, allowed ?? []));
+    const projectDoc = (await col.projects().doc(job.projectId!).get()).data() as (ProjectTerms & { allowedOnScreenText?: string[]; ad?: { facts?: unknown } | null; linkad?: LinkAdDoc | null }) | undefined;
+    const facts = projectApprovedFacts(projectDoc ?? null);
+    // Approved phone numbers and links are meant to be on screen: they are not private information.
+    findings.push(...privateInfoFindings(m.ocr, [...(projectDoc?.allowedOnScreenText ?? []), ...facts.filter((f) => f.kind === 'phone' || f.kind === 'url').map((f) => f.value)]));
+    // Fact check: prices, phone numbers, dates and links on screen and in the speech against the approved facts.
+    findings.push(...factFindings(checkFacts({ facts, ocr: m.ocr, words: m.words })));
 
     // Model review of the cuts and the ending.
     await progress(job.id, 'Reviewing the cuts and the ending', 0.65);
@@ -221,6 +249,29 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
       findings.push(finding(x.check as FinalCheck, x.severity === 'error' ? 'error' : x.severity === 'info' ? 'info' : 'warning', x.message.slice(0, 400), 'model', { startSec: at, endSec: typeof x.endSec === 'number' && x.endSec >= 0 ? x.endSec : null, clipIds }));
     }
     if (review.endingComplete === false && !findings.some((f) => f.check === 'incomplete_final_action')) findings.push(finding('incomplete_final_action', 'warning', 'The film does not end on a complete moment.', 'model', { startSec: Math.max(0, m.D - 3) }));
+
+    // The reviewer's logo, private-information and cropped-text findings count only when OCR on the frames confirms them.
+    let ocrFrames = m.ocrWords;
+    let logoChecked = false;
+    const logoFindings = findings.filter(needsLogoCheck);
+    if (logoFindings.length) {
+      // Logo detection only on the frames around the reported times (reused, already sampled).
+      const near = m.sampled.filter((f) => logoFindings.some((x) => x.startSec === null || Math.abs(f.t - x.startSec) <= 2.5)).slice(0, 16);
+      try {
+        const logos = await annotateFrames({ frames: near, features: ['LOGO_DETECTION'], usage });
+        ocrFrames = ocrFrames.map((o) => ({ ...o, logos: logos.find((l) => l.t === o.t)?.logos.map((l) => ({ name: l.name, score: l.score })) ?? [] }));
+        logoChecked = near.length > 0;
+      } catch {
+        logoChecked = false;
+      }
+    }
+    const ownText = (from: number, to: number) => [
+      ...state.clips.filter((c) => (c.kind === 'caption' || c.kind === 'title' || c.lyric) && c.text.trim() && c.start < to && clipEnd(c) > from).map((c) => c.text),
+      ...(projectDoc?.allowedOnScreenText ?? []),
+      ...facts.map((f) => f.value),
+    ];
+    const settled = settleFinalModelFindings(findings, ocrFrames, { ownText, logoChecked });
+    findings.splice(0, findings.length, ...settled);
 
     const score = finalScore(findings);
     const readiness = exportReadiness(findings, null);

@@ -1,6 +1,7 @@
 import { LYRIC_ASPECTS, LYRIC_PRESET_STYLES, type LyricAspect, type LyricStyle, type LyricStyleDoc, type LyricsTrackDoc } from './lyric-style';
 import { clipEnd, clipsAt, trimEnd, trimStart, updateClip, type TimelineState } from './timeline';
 import type { Clip } from './types';
+import { ocrConfirms, summarizeTextEvidence, unconfirmedNote, type OcrFindingKind } from './ocr-evidence';
 
 /**
  * Final-film inspection: the assembled, rendered timeline is measured end to end before export.
@@ -36,6 +37,7 @@ export const FINAL_CHECKS = [
   'watermark',
   'private_information',
   'incomplete_final_action',
+  'fact_mismatch',
 ] as const;
 export type FinalCheck = (typeof FINAL_CHECKS)[number];
 
@@ -65,6 +67,7 @@ export const FINAL_CHECK_LABELS: Record<FinalCheck, string> = {
   watermark: 'Unexpected watermark / logo',
   private_information: 'Private information',
   incomplete_final_action: 'Incomplete final action',
+  fact_mismatch: 'Fact check (prices, numbers, dates, links)',
 };
 
 export type FindingSeverity = 'error' | 'warning' | 'info';
@@ -551,6 +554,46 @@ export function privateInfoFindings(frames: { t: number; text: string }[], allow
     }
   }
   return dedupeByMessage(out);
+}
+
+/** One OCR-read frame of the export: words with their boxes, and logos when logo detection ran on it. */
+export interface OcrFrame {
+  t: number;
+  words: { text: string; box: { h: number } | null }[];
+  logos?: { name: string; score: number }[];
+}
+
+const SETTLED: Partial<Record<FinalCheck, OcrFindingKind>> = { watermark: 'logo', private_information: 'text', lyric_cropped: 'text' };
+
+/** Model findings the OCR rule settles (and that need logo detection to be settled). */
+export const needsLogoCheck = (f: Pick<FinalFinding, 'check' | 'source'>) => f.source === 'model' && f.check === 'watermark';
+
+/**
+ * The shared OCR rule on the final-film review: the reviewer's watermark/logo, private-information and cropped-text
+ * findings count only when the frames around the reported time confirm them — a logo recognised, or readable text
+ * that is not the film's own captions, titles or approved text (a cropped caption must also have been measured
+ * cropped by OCR). An unconfirmed finding becomes information with a note and no longer blocks export.
+ */
+export function settleFinalModelFindings(findings: FinalFinding[], ocr: OcrFrame[], opts: { ownText: (from: number, to: number) => string[]; logoChecked: boolean; window?: number }): FinalFinding[] {
+  if (!ocr.length) return findings;
+  const w = opts.window ?? 2;
+  return findings.map((f) => {
+    const kind = SETTLED[f.check];
+    if (f.source !== 'model' || !kind || f.severity === 'info') return f;
+    if (f.check === 'lyric_cropped') {
+      const at = f.startSec;
+      const measured = findings.some((x) => x.check === 'lyric_cropped' && x.source !== 'model' && (at === null || x.startSec === null || Math.abs(x.startSec - at) <= w));
+      return measured ? f : { ...f, severity: 'info', message: `${f.message} (not confirmed: OCR read the captions in full)`.slice(0, 400) };
+    }
+    const from = f.startSec === null ? -Infinity : f.startSec - w;
+    const to = f.startSec === null ? Infinity : (f.endSec ?? f.startSec) + w;
+    const near = ocr.filter((o) => o.t >= from && o.t <= to);
+    const frames = near.length ? near : ocr;
+    const ignore = opts.ownText(Number.isFinite(from) ? from : 0, Number.isFinite(to) ? to : Number.MAX_SAFE_INTEGER);
+    const evidence = summarizeTextEvidence(frames.map((o) => ({ text: o.words, logos: o.logos ?? [] })), { logoChecked: opts.logoChecked, ignore });
+    const v = ocrConfirms(kind, evidence);
+    return v.confirmed === false ? { ...f, severity: 'info', message: unconfirmedNote(f.message, v, 400) } : f;
+  });
 }
 
 function dedupeByMessage(xs: FinalFinding[]): FinalFinding[] {

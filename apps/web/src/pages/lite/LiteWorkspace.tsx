@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { CircleAlert, Copy, LoaderCircle, Redo2, Square, Undo2 } from 'lucide-react';
 import { LITE_DIRECTION_PRESETS, LITE_STAGE_LABELS, LITE_STAGES, allShots, formatUsd, mapShot, shotImageId, type LiteAspect, type LiteStage, type ProjectDoc } from '@az-studio/shared';
 import type { WithId } from '../../lib/data';
-import { duplicateLiteProject, jobIndex, liteCancel, useComposition, useLiteDraft, useLiteJobs, useLiteScore } from '../../lib/lite';
+import { adoptableCandidate, duplicateLiteProject, jobIndex, liteCancel, useComposition, useLiteDraft, useLiteJobs, useLiteScore } from '../../lib/lite';
 import { useUid } from '../../lib/session';
 import { useProject } from '../../lib/studio';
 import { ProjectHeader } from '../../components/project-header';
@@ -47,10 +47,11 @@ function Workspace({ project }: { project: WithId<ProjectDoc> }) {
     if (aspect !== spec.setup.aspect && !spec.setup.extraAspects.includes(aspect)) setAspect(spec.setup.aspect);
   }, [aspect, spec.setup.aspect, spec.setup.extraAspects]);
 
-  // A finished image becomes the shot's approved image when it has none (later results never replace a choice).
+  // A finished image becomes the shot's approved image when it has none (later results never replace a choice);
+  // a still that failed the likeness and wardrobe check is kept as a candidate, never adopted.
   const index = useMemo(() => jobIndex(jobs.data), [jobs.data]);
   useEffect(() => {
-    const adopt = allShots(spec).filter(({ shot }) => !shot.image.approvedAssetId && !shot.image.reuseOfShotId).map(({ shot }) => ({ shot, c: index.imageCandidates(shot.id)[0] })).filter((x) => x.c);
+    const adopt = allShots(spec).filter(({ shot }) => !shot.image.approvedAssetId && !shot.image.reuseOfShotId).map(({ shot }) => ({ shot, c: adoptableCandidate(index.imageCandidates(shot.id)) })).filter((x) => x.c);
     if (!adopt.length) return;
     update((s) => adopt.reduce((acc, { shot, c }) => mapShot(acc, shot.id, (x) => (x.image.approvedAssetId ? x : { ...x, image: { ...x.image, approvedAssetId: c!.assetId } })), s), 'auto-approve');
   }, [index, spec, update]);

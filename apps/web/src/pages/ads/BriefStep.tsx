@@ -1,8 +1,9 @@
 import { toast } from 'sonner';
-import { ArrowRight, AudioLines, FileText, Wand2 } from 'lucide-react';
-import { AD_DURATION, type AdBrief } from '@az-studio/shared';
+import { ArrowRight, AudioLines, FileText, Plus, Trash2, Wand2 } from 'lucide-react';
+import { AD_DURATION, FACT_FIGURE_KINDS, FACT_FIGURE_LABELS, approvedFigure, factId, type AdBrief, type AdSpec, type ApprovedFact, type FactFigureKind } from '@az-studio/shared';
 import { useAiRun } from '../../lib/ai';
-import { Button, Card, Field, Input, Notice, Segmented, Slider, Textarea } from '../../components/ui';
+import { Button, Card, Field, IconButton, Input, Notice, Segmented, Select, Slider, Textarea } from '../../components/ui';
+import { BrandWarnings } from '../../components/quality-guards';
 import type { StepProps } from './AdStudio';
 
 const FIELDS: { key: keyof AdBrief; label: string; hint?: string; rows?: number; placeholder?: string }[] = [
@@ -72,7 +73,9 @@ export function BriefStep({ project, ad, update, go }: StepProps) {
         <Field label="Visual direction" hint="Carried into every generated scene; text and logos are always composed in the edit, never generated.">
           <Textarea rows={3} value={ad.brief.visualDirection} onChange={(e) => set('visualDirection', e.target.value)} placeholder="Warm, contemporary, grounded and human. Natural light, everyday northern Ghana settings…" />
         </Field>
+        <BrandWarnings text={ad.brief.visualDirection} />
       </Card>
+      <FactsCard ad={ad} update={update} />
       {ad.mode === 'brief_first' && (
         <Card className="space-y-3 p-5">
           <p className="eyebrow">Voice-over script</p>
@@ -89,5 +92,56 @@ export function BriefStep({ project, ad, update, go }: StepProps) {
       </div>
       {ai.dialog}
     </div>
+  );
+}
+
+/**
+ * Approved facts: the prices, phone numbers, dates and links the advert may show or say. The final inspection
+ * reads the export's text and speech and blocks export when a figure matches none of them (or one is said wrong).
+ */
+function FactsCard({ ad, update }: { ad: AdSpec; update: StepProps['update'] }) {
+  const facts = ad.facts ?? [];
+  const setFacts = (fn: (f: ApprovedFact[]) => ApprovedFact[]) => update((a) => ({ ...a, facts: fn(a.facts ?? []) }));
+  const patch = (id: string, p: Partial<ApprovedFact>) => setFacts((fs) => fs.map((f) => (f.id === id ? { ...f, ...p } : f)));
+  return (
+    <Card className="space-y-3 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="eyebrow">Approved facts</p>
+          <p className="mt-1 text-sm text-dim">Prices, phone numbers, dates and links exactly as they are. The finished advert is checked against them — what it shows on screen and what the voice says — before it can be exported.</p>
+        </div>
+        <Button size="sm" variant="subtle" icon={<Plus className="size-3.5" />} disabled={facts.length >= 40} onClick={() => setFacts((fs) => [...fs, { id: factId(), kind: 'price', value: '', label: '' }])}>
+          Add a fact
+        </Button>
+      </div>
+      {facts.length === 0 ? (
+        <Notice>No approved facts yet. Add the price, phone number or web address the advert mentions, so a take that says it wrong is caught.</Notice>
+      ) : (
+        <ul className="space-y-2">
+          {facts.map((f) => {
+            const unreadable = f.value.trim() !== '' && !approvedFigure(f);
+            return (
+              <li key={f.id} className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <Select aria-label="Kind of fact" value={f.kind} onChange={(e) => patch(f.id, { kind: e.target.value as FactFigureKind })}>
+                  {FACT_FIGURE_KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {FACT_FIGURE_LABELS[k]}
+                    </option>
+                  ))}
+                </Select>
+                <div>
+                  <Input aria-label="Value" value={f.value} placeholder={f.kind === 'price' ? 'GH₵450' : f.kind === 'phone' ? '024 123 4567' : f.kind === 'date' ? '12 November' : f.kind === 'url' ? 'example.com or @handle' : '1200'} onChange={(e) => patch(f.id, { value: e.target.value })} />
+                  {unreadable && <p className="mt-1 text-[11px] text-warning">AZ Studio cannot read this as a {FACT_FIGURE_LABELS[f.kind].toLowerCase()}; check the spelling.</p>}
+                </div>
+                <Input aria-label="What it is" value={f.label} placeholder="What it is (e.g. price of one jar)" onChange={(e) => patch(f.id, { label: e.target.value })} />
+                <IconButton label="Remove this fact" onClick={() => setFacts((fs) => fs.filter((x) => x.id !== f.id))}>
+                  <Trash2 className="size-4" />
+                </IconButton>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
   );
 }

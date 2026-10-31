@@ -1,6 +1,6 @@
 import type { GenerateContentResponse, Part } from '@google/genai';
 import { Modality } from '@google/genai';
-import { parseOffset, type DetectedWord } from '@az-studio/shared';
+import { applySpeechRespellings, checkTakeLength, guardSpeech, parseOffset, transcriptionVocabulary, type DetectedWord, type SpeechGuardRecord } from '@az-studio/shared';
 import { MODEL_REGISTRY, SPEECH_VOICES, TRANSCRIPTION_CAPABILITIES, TRANSCRIPTION_LANGUAGE_HINTS } from '../config/models';
 import { fail, GenerationFailure, providerFailure } from './errors';
 import { classifyBlockedResponse } from './provider-errors';
@@ -72,7 +72,8 @@ export function parseTranscription(res: GenerateContentResponse): Omit<Transcrip
 export async function transcribe(input: TranscribeInput): Promise<TranscriptResult> {
   const part: Part = input.data ? { inlineData: { data: input.data.toString('base64'), mimeType: input.mimeType } } : { fileData: { fileUri: input.fileUri!, mimeType: input.mimeType } };
   const languageCodes = transcriptionLanguageHint(input.languageCode);
-  const vocabulary = [...new Set((input.vocabulary ?? []).map((v) => v.trim()).filter((v) => v.length > 1))].slice(0, 500);
+  // The shared protected words (names, brands, places) bias every transcription, with the caller's terms after them.
+  const vocabulary = transcriptionVocabulary([...new Set((input.vocabulary ?? []).map((v) => v.trim()).filter((v) => v.length > 1))], 500);
   const started = Date.now();
   const ctx = { modelId: MODEL_REGISTRY.transcription.id, what: 'transcript', surface: 'vertex' as const };
   let res: GenerateContentResponse;
@@ -117,16 +118,33 @@ export interface SpokenLine {
   fileSeconds: number;
   /** Speech only (leading/trailing silence removed). */
   speech: { start: number; end: number; durationSec: number } | null;
+  /** Tokens of every take requested (a re-take is billed too). */
+  usage: { input: number; output: number };
+  /** What the guard changed in the text and direction, the length check of the take kept, and whether it was re-taken. */
+  guard: SpeechGuardRecord;
+}
+
+export interface SpeakOptions {
+  /** One automatic re-take (without the direction) when the measured length is implausible. Default true. */
+  retake?: boolean;
+  /** Apply the shared speech respellings (letter-by-letter acronyms). Default true. */
+  respell?: boolean;
+}
+
+interface Take {
+  wav: Buffer;
+  fileSeconds: number;
+  speech: SpokenLine['speech'];
   usage: { input: number; output: number };
 }
 
-export async function speakLine(text: string, voice: string, direction: string): Promise<SpokenLine> {
+async function speakOnce(prompt: string, voice: string): Promise<Take> {
   const ctx = { modelId: MODEL_REGISTRY.speech.id, what: 'dialogue audio', surface: 'vertex' as const };
   let res: GenerateContentResponse;
   try {
     res = await genai().models.generateContent({
       model: MODEL_REGISTRY.speech.id,
-      contents: [{ role: 'user', parts: [{ text: direction ? `${direction}: ${text}` : text }] }],
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
     });
   } catch (e) {
@@ -146,4 +164,48 @@ export async function speakLine(text: string, voice: string, direction: string):
   const samples = pcm16ToFloat(pcm);
   const u = res.usageMetadata;
   return { wav: pcm16ToWav(pcm, rate), fileSeconds: +(samples.length / rate).toFixed(3), speech: speechBounds(samples, rate), usage: { input: u?.promptTokenCount ?? 0, output: u?.candidatesTokenCount ?? 0 } };
+}
+
+/**
+ * Speaks one line with the guide voice. Every take goes through the speech guard: the text loses punctuation the
+ * model reads as instructions (words unchanged), the direction is reduced to delivery, and the measured speech is
+ * checked against the words. An implausible take (the voice read its direction, improvised or dropped half the
+ * line) gets one automatic re-take without the direction; the more plausible of the two is kept.
+ */
+export async function speakLine(text: string, voice: string, direction: string, opts: SpeakOptions = {}): Promise<SpokenLine> {
+  const plan = guardSpeech(opts.respell === false ? text : applySpeechRespellings(text), direction);
+  const changes = opts.respell === false || applySpeechRespellings(text) === text ? plan.changes : ['applied speech respellings', ...plan.changes];
+  const first = await speakOnce(plan.prompt, voice);
+  let kept = first;
+  let check = checkTakeLength(plan.text, first.speech?.durationSec ?? null);
+  let takes = 1;
+  const usage = { ...first.usage };
+  if (check.verdict !== 'ok' && opts.retake !== false) {
+    const second = await speakOnce(plan.text, voice);
+    takes = 2;
+    usage.input += second.usage.input;
+    usage.output += second.usage.output;
+    const again = checkTakeLength(plan.text, second.speech?.durationSec ?? null);
+    const off = (c: typeof check) => (c.measuredSec === null ? Infinity : Math.abs(c.measuredSec - c.expectedSec));
+    if (again.verdict === 'ok' || off(again) < off(check)) {
+      kept = second;
+      check = again;
+    }
+  }
+  return {
+    ...kept,
+    usage,
+    guard: {
+      text: plan.text,
+      direction: kept === first ? plan.direction : '',
+      changes,
+      flags: [...plan.flags, ...(check.verdict === 'ok' ? [] : [`implausible_length: ${check.note}${takes === 2 ? ' (after one automatic re-take)' : ''}`])],
+      expectedSec: check.expectedSec,
+      measuredSec: check.measuredSec,
+      wordsPerSec: check.wordsPerSec,
+      verdict: check.verdict,
+      takes,
+      retaken: takes === 2,
+    },
+  };
 }

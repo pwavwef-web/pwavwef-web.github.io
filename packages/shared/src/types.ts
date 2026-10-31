@@ -8,6 +8,7 @@ import type { ScoreMode } from './score';
 import { DEFAULT_RETRY_POLICY, type ErrorCategory, type GenerationAttempt, type PromptRevision, type RetryCounters, type RetryPolicy, type UserRemedy } from './generation-errors';
 import type { AdSceneSpec, AdSceneValidation, AdSpec, TranscriptReport } from './ads';
 import type { ClipLook, ClipMotion } from './motion';
+import type { LikenessVerdict } from './likeness';
 import type { LiteSpec } from './lite';
 import type { MvLiteSpec } from './mvlite';
 import type { LinkAdDoc } from './linkad';
@@ -150,6 +151,8 @@ export interface AssetGeneration {
 
 export interface AssetDoc {
   id: string;
+  /** Film Studio Lite / Music Video Lite stills: the likeness and wardrobe check against the approved references. */
+  likeness?: LikenessVerdict | null;
   ownerUid: string;
   projectId: string | null;
   kind: AssetKind;

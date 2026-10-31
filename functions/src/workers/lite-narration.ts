@@ -36,6 +36,8 @@ interface SpokenAudio {
   fileSeconds: number;
   speechStart: number | null;
   speechEnd: number | null;
+  /** Speech-guard notes on the take (implausible length after a re-take, meta text). */
+  guardFlags?: string[];
 }
 
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -79,9 +81,9 @@ export async function runLiteNarrationJob(job: JobDoc): Promise<void> {
         const local = path.join(dir, 'narration.wav');
         await writeFile(local, spoken.wav);
         await bucket.upload(local, { destination: storagePath, resumable: false, metadata: { contentType: 'audio/wav', cacheControl: 'private, max-age=31536000' } });
-        await createAsset({ uid: job.ownerUid, assetId, projectId: job.projectId, kind: 'audio', source: 'generated', title: `Narration — “${flat(p.text).slice(0, 60)}${p.text.length > 60 ? '…' : ''}”`, fileName: 'narration.wav', mimeType: 'audio/wav', storagePath, localFile: local, dir, collections: ['lite:narration'], generation: { jobId: job.id, modelId: MODEL_REGISTRY.speech.id, prompt: p.spokenText || p.text, params: { voice: p.voice, direction: p.direction, purpose: 'lite_narration', sceneId: p.sceneId } } });
+        await createAsset({ uid: job.ownerUid, assetId, projectId: job.projectId, kind: 'audio', source: 'generated', title: `Narration — “${flat(p.text).slice(0, 60)}${p.text.length > 60 ? '…' : ''}”`, fileName: 'narration.wav', mimeType: 'audio/wav', storagePath, localFile: local, dir, collections: ['lite:narration'], generation: { jobId: job.id, modelId: MODEL_REGISTRY.speech.id, prompt: p.spokenText || p.text, params: { voice: p.voice, direction: spoken.guard.direction, purpose: 'lite_narration', sceneId: p.sceneId, guardChanges: spoken.guard.changes, takes: spoken.guard.takes } } });
       });
-      audio = { assetId, storagePath, fileSeconds: spoken.fileSeconds, speechStart: spoken.speech?.start ?? null, speechEnd: spoken.speech?.end ?? null };
+      audio = { assetId, storagePath, fileSeconds: spoken.fileSeconds, speechStart: spoken.speech?.start ?? null, speechEnd: spoken.speech?.end ?? null, guardFlags: spoken.guard.flags };
       await col.jobs().doc(job.id).set({ external: { ...(job.external ?? {}), liteAudio: audio } }, { merge: true });
     }
     await progress(job.id, 'Timing every word from the spoken audio', 0.6);
@@ -102,6 +104,7 @@ export async function runLiteNarrationJob(job: JobDoc): Promise<void> {
       alignment = 'estimated';
       flags = [`alignment_unavailable: ${e instanceof JobFailure ? e.jobError.message : String((e as Error)?.message ?? e).slice(0, 200)}`];
     }
+    flags = [...(audio.guardFlags ?? []), ...flags];
     const speechStart = audio.speechStart ?? words[0]?.start ?? 0;
     const speechEnd = audio.speechEnd ?? words[words.length - 1]?.end ?? audio.fileSeconds;
     takes.push({ sceneId: p.sceneId!, hash: p.inputHash, assetId: audio.assetId, inPoint: 0, outPoint: r3(audio.fileSeconds), speechStart: r3(Math.min(speechStart, words[0]?.start ?? speechStart)), speechEnd: r3(Math.max(speechEnd, words[words.length - 1]?.end ?? speechEnd)), words, alignment, coverage, flags, source: 'generated', voice: p.voice ?? null });

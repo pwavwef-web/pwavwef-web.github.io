@@ -103,6 +103,8 @@ export function planMvWork(spec: MvLiteSpec, song: MvSong | null, title: string,
         label: `Image · ${label}`,
         target: { kind: 'lite_shot', id: shot.id },
         inputHash: req.hash,
+        // Wardrobe and likeness lock: the still is compared with the approved references after it is made.
+        ...(req.likeness ? { likenessCheck: req.likeness } : {}),
       },
     });
   }

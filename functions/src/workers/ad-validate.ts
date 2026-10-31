@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { logger } from 'firebase-functions';
-import { evaluateAdScene, isGeneratedScene, normalizeAdSpec, reconcileTextIssues, summarizeTextEvidence, type AdSceneKind, type AdSceneValidation, type AdSceneValidationSummary, type AdSpec, type AdTextEvidence, type JobDoc } from '@az-studio/shared';
+import { activeAreaFromCropdetect, evaluateAdScene, isGeneratedScene, normalizeAdSpec, reconcileTextIssues, summarizeTextEvidence, type AdSceneKind, type AdSceneValidation, type AdSceneValidationSummary, type AdSpec, type AdTextEvidence, type JobDoc } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { lockScene, sceneJobRequest, unlockScene, type Scene } from '../lib/ads';
 import { fail } from '../lib/errors';
@@ -36,7 +36,7 @@ export interface AdValidateParams {
   review: boolean;
 }
 
-const ISSUE_TYPES = ['text_in_frame', 'logo', 'watermark', 'distorted_hands', 'face_morph', 'inconsistent_character', 'artefact', 'off_brief', 'stock_look', 'real_person', 'continuity', 'other'] as const;
+const ISSUE_TYPES = ['text_in_frame', 'logo', 'watermark', 'not_full_frame', 'distorted_hands', 'face_morph', 'inconsistent_character', 'artefact', 'off_brief', 'stock_look', 'real_person', 'continuity', 'other'] as const;
 
 export const AD_REVIEW_SCHEMA = {
   type: 'object',
@@ -63,6 +63,7 @@ const REVIEW_SYSTEM =
   'You review generated footage for a short video advert before it is edited. Report only what you can actually see in the picture. ' +
   'Text, captions and logos are added later in the edit, so any readable text, letters, logo or watermark inside the picture is an issue. ' +
   'Readable words or brand names (on vehicles, clothing, packaging, signs or screens) and any recognisable logo, emblem or watermark are at least major — another brand must never appear in the advert; only blurred, unreadable marks are minor. ' +
+  'The picture must fill the whole frame: letterbox or pillarbox bars, a border, or a smaller picture inset inside the frame (picture-in-picture, a framed screen filling the shot, a blurred copy behind a smaller copy) is a not_full_frame issue, at least major. ' +
   'Be strict about hands (extra or merged fingers), faces that morph, people who change appearance during the shot, and staging that looks like generic corporate stock footage. Return only JSON.';
 
 export function normalizeAdReview(raw: unknown): NonNullable<AdSceneValidation['review']> {
@@ -84,6 +85,18 @@ export function normalizeAdReview(raw: unknown): NonNullable<AdSceneValidation['
   };
 }
 
+/** Share of the frame the picture fills, from FFmpeg cropdetect on two frames a second (or the still). */
+async function activeArea(input: string, isVideo: boolean, width: number | null, height: number | null): Promise<{ w: number; h: number } | null> {
+  if (!width || !height) return null;
+  try {
+    const vf = isVideo ? 'fps=2,cropdetect=limit=24:round=2:reset=1' : 'cropdetect=limit=24:round=2:reset=1';
+    const { stderr } = await execFileAsync(FFMPEG, ['-hide_banner', '-nostdin', '-i', input, '-vf', vf, '-frames:v', isVideo ? '40' : '1', '-f', 'null', '-'], { timeout: 120_000, maxBuffer: 8 * 1024 * 1024 });
+    return activeAreaFromCropdetect(stderr, width, height);
+  } catch (e) {
+    return activeAreaFromCropdetect(String((e as { stderr?: string }).stderr ?? ''), width, height);
+  }
+}
+
 /** Decodes the whole file and counts decoder errors (a playable file decodes cleanly). */
 async function decodeErrors(input: string): Promise<number> {
   try {
@@ -103,6 +116,7 @@ export function repairNotesFor(v: AdSceneValidation, visual: string): string[] {
     if (c.id === 'artefacts') notes.push('Keep hands relaxed and natural with five fingers, or out of frame; faces stay the same person throughout.');
     if (c.id === 'brief') notes.push(`Show exactly this: ${visual}`);
     if (c.id === 'duration') notes.push('Hold the action for the whole shot.');
+    if (c.id === 'full_frame') notes.push('Fill the whole frame edge to edge: no borders, letterbox bars, inset pictures or picture-in-picture.');
   }
   return [...new Set(notes)];
 }
@@ -123,6 +137,7 @@ export async function runAdValidateJob(job: JobDoc): Promise<void> {
   const isVideo = p.mediaKind === 'video';
   const errors = probeOk && isVideo ? await decodeErrors(input) : 0;
   const black = probeOk && isVideo ? await blackSegments(input).catch(() => []) : [];
+  const area = probeOk && isGeneratedScene(p.sceneKind) ? await activeArea(input, isVideo, info?.width ?? null, info?.height ?? null) : null;
   const measurements: AdSceneValidation['measurements'] = {
     durationSec: info?.durationSec ?? null,
     width: info?.width ?? null,
@@ -130,6 +145,7 @@ export async function runAdValidateJob(job: JobDoc): Promise<void> {
     fps: info?.fps ?? null,
     decodeErrors: errors,
     blackSec: Math.round(black.reduce((s, b) => s + (b.end - b.start), 0) * 100) / 100,
+    activeArea: area,
   };
 
   let review: AdSceneValidation['review'] = null;

@@ -31,6 +31,8 @@ export interface SpokenScene {
   speech: { start: number; end: number } | null;
   usd: number;
   modelId: string;
+  /** Speech-guard notes on the take (implausible length after a re-take, meta text). */
+  guardFlags?: string[];
   /** Present only for fixture audio, whose word times are known by construction. */
   words?: LiteWord[];
   fixture: boolean;
@@ -44,7 +46,7 @@ export const liveSpeaker: Speaker = {
   async speak(text, voice, direction, ctx) {
     const s = await speakLine(text, voice, direction);
     const usd = await recordUsage({ uid: ctx.uid, projectId: ctx.projectId, jobId: ctx.jobId, modelId: MODEL_REGISTRY.speech.id, kind: 'speech', inputTokens: s.usage.input, outputTokens: s.usage.output, thoughtTokens: 0, countJob: false });
-    return { wav: s.wav, fileSeconds: s.fileSeconds, speech: s.speech ? { start: s.speech.start, end: s.speech.end } : null, usd, modelId: MODEL_REGISTRY.speech.id, fixture: false };
+    return { wav: s.wav, fileSeconds: s.fileSeconds, speech: s.speech ? { start: s.speech.start, end: s.speech.end } : null, usd, modelId: MODEL_REGISTRY.speech.id, fixture: false, guardFlags: s.guard.flags };
   },
 };
 
@@ -81,19 +83,22 @@ export interface Aligned {
   usd: number;
 }
 
-/** Times the script's words against the real audio (transcription with word timestamps, then reconciliation with the script). */
-export async function alignScene(opts: { storagePath: string; text: string; fileSeconds: number; ctx: VoiceCtx; voiced: SpokenScene; languageCode?: string }): Promise<Aligned> {
+/**
+ * Times the script's words against the real audio (transcription with word timestamps, then reconciliation with the
+ * script). The shared protected words are always included; `terms` adds the ad's own names.
+ */
+export async function alignScene(opts: { storagePath: string; text: string; fileSeconds: number; ctx: VoiceCtx; voiced: SpokenScene; languageCode?: string; terms?: string[] }): Promise<Aligned> {
   if (opts.voiced.words) {
     const w = opts.voiced.words;
     return { words: w, alignment: 'aligned', coverage: 1, flags: ['fixture_audio: test tones, not a recording of the words'], speechStart: w[0]?.start ?? null, speechEnd: w[w.length - 1]?.end ?? null, usd: 0 };
   }
   const languageCode = opts.languageCode ?? 'en';
   try {
-    const t = await transcribe({ fileUri: gsUri(opts.storagePath), mimeType: 'audio/wav', languageCode, vocabulary: [] });
+    const t = await transcribe({ fileUri: gsUri(opts.storagePath), mimeType: 'audio/wav', languageCode, vocabulary: opts.terms ?? [] });
     const usd = await recordUsage({ uid: opts.ctx.uid, projectId: opts.ctx.projectId, jobId: opts.ctx.jobId, modelId: t.modelId, kind: 'transcription', inputTokens: t.usage.input, outputTokens: t.usage.output, thoughtTokens: t.usage.thoughts, countJob: false });
-    const { sheet, report } = reconcileTranscript(t.words.map((w) => ({ text: w.text, start: w.start, end: w.end })), opts.text, { durationSec: opts.fileSeconds, protectedTerms: [], languageCode, audioAssetId: null, maxPhraseWords: 14, maxPhraseChars: 90 });
+    const { sheet, report } = reconcileTranscript(t.words.map((w) => ({ text: w.text, start: w.start, end: w.end })), opts.text, { durationSec: opts.fileSeconds, protectedTerms: opts.terms ?? [], languageCode, audioAssetId: null, maxPhraseWords: 14, maxPhraseChars: 90 });
     const words = sheetWords(sheet);
-    const flags = takeFlags(report, { generated: true, speechSec: (opts.voiced.speech ? opts.voiced.speech.end - opts.voiced.speech.start : opts.fileSeconds), text: opts.text, languageCode });
+    const flags = [...(opts.voiced.guardFlags ?? []), ...takeFlags(report, { generated: true, speechSec: (opts.voiced.speech ? opts.voiced.speech.end - opts.voiced.speech.start : opts.fileSeconds), text: opts.text, languageCode })];
     if (!words.length) return { words: [], alignment: 'estimated', coverage: null, flags: [...flags, 'alignment_empty: no words could be timed from the audio'], speechStart: opts.voiced.speech?.start ?? null, speechEnd: opts.voiced.speech?.end ?? null, usd };
     return { words, alignment: 'aligned', coverage: Math.round(report.coverage * 1000) / 1000, flags, speechStart: words[0]!.start, speechEnd: words[words.length - 1]!.end, usd };
   } catch (e) {

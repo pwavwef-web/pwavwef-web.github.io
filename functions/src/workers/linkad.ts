@@ -42,6 +42,15 @@ export interface LinkAdDeps {
   respectRobots: boolean;
 }
 
+/** Business, product and place names among the facts: protected words when the voice is timed (with the shared list). */
+export function nameTerms(doc: Pick<LinkAdDoc, 'source' | 'userFacts'>): string[] {
+  return allFacts(doc)
+    .filter((f) => f.kind === 'business_name' || f.kind === 'product_name' || f.kind === 'location')
+    .map((f) => (f.value ?? f.text).trim())
+    .filter((t) => t.length > 1 && t.length <= 40 && t.split(/\s+/).length <= 4)
+    .slice(0, 20);
+}
+
 const liveDeps: LinkAdDeps = { planner: modelPlanner, speaker: liveSpeaker, transport: undefined, firecrawlKey: async () => (IS_EMULATOR ? process.env[FIRECRAWL_SECRET]?.trim() || null : readOptionalSecret(FIRECRAWL_SECRET)), respectRobots: true };
 const fixtureDeps: LinkAdDeps = { planner: fixturePlanner, speaker: fixtureSpeaker, transport: fixtureTransport, firecrawlKey: async () => null, respectRobots: true };
 
@@ -338,7 +347,7 @@ async function voice(job: JobDoc, uid: string, projectId: string, deps: LinkAdDe
       await bucket.upload(local, { destination: storagePath, resumable: false, metadata: { contentType: 'audio/wav', cacheControl: 'private, max-age=31536000' } });
       await createAsset({ uid, assetId, projectId, kind: 'audio', source: 'generated', title: `Voice — “${flat(scene.narration).slice(0, 50)}${scene.narration.length > 50 ? '…' : ''}”`, fileName: 'narration.wav', mimeType: 'audio/wav', storagePath, localFile: local, dir, collections: ['linkad:voice'], generation: { jobId: job.id, modelId: spoken.modelId, prompt: flat(scene.narration), params: { voice: doc.brief.voice, direction: doc.brief.voiceDirection, purpose: 'linkad_voice', sceneId: scene.id, fixture: spoken.fixture } } });
     });
-    const aligned = await alignScene({ storagePath, text: flat(scene.narration), fileSeconds: spoken.fileSeconds, ctx, voiced: spoken });
+    const aligned = await alignScene({ storagePath, text: flat(scene.narration), fileSeconds: spoken.fileSeconds, ctx, voiced: spoken, terms: nameTerms(doc) });
     const speechStart = aligned.speechStart ?? spoken.speech?.start ?? 0;
     const speechEnd = aligned.speechEnd ?? spoken.speech?.end ?? spoken.fileSeconds;
     spent += spoken.usd + aligned.usd;

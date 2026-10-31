@@ -1,5 +1,6 @@
 import type { Time } from './types';
 import type { Direction } from './narrator-direction';
+import { PROTECTED_TERMS } from './protected-terms';
 
 /**
  * Pwavwe Narrator — audio editions of The Pwavwe Papers read in Francis Pwavwe's own replicated voice.
@@ -309,8 +310,11 @@ export interface PronunciationEntry {
   recordingId: string | null;
 }
 
-/** Names that need care. Nothing is guessed: spoken forms start empty until Francis fills them in. */
-export const SEED_PRONUNCIATIONS: PronunciationEntry[] = ['Francis Pwavwe', 'The Pwavwe Papers', 'Indigen World', 'Kasem', 'University of Cape Coast'].map((term, i) => ({
+/**
+ * Names that need care, from the shared list of protected words (`PROTECTED_TERMS`, marked `narratorSeed`).
+ * Nothing is guessed: spoken forms start empty until Francis fills them in.
+ */
+export const SEED_PRONUNCIATIONS: PronunciationEntry[] = PROTECTED_TERMS.filter((p) => p.narratorSeed).map(({ term }, i) => ({
   id: `seed-${i + 1}`,
   term,
   spokenAs: '',

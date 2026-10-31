@@ -13,6 +13,7 @@ vi.mock('firebase-functions', async (orig) => ({ ...(await orig<typeof import('f
 vi.mock('../src/lib/interactions', () => ({ logInteraction: async () => undefined }));
 vi.mock('../src/lib/music-model', () => ({ musicSurface: async () => 'developer-api', generateMusic: vi.fn() }));
 const speakLine = vi.fn();
+const GUARD = { text: '', direction: '', changes: [], flags: [], expectedSec: 3, measuredSec: 3, wordsPerSec: 2.5, verdict: 'ok', takes: 1, retaken: false };
 const transcribe = vi.fn();
 vi.mock('../src/lib/audio-models', async (orig) => ({ ...(await orig<typeof import('../src/lib/audio-models')>()), speakLine: (...a: unknown[]) => speakLine(...a), transcribe: (...a: unknown[]) => transcribe(...a) }));
 vi.mock('../src/lib/assets', async (orig) => ({ ...(await orig<typeof import('../src/lib/assets')>()), createAsset: async (input: { assetId: string }) => input.assetId }));
@@ -63,6 +64,15 @@ describe('liteGenerate', () => {
     expect((j.params as { references: { title: string }[] }).references[0]!.title).toBe('Ama — likeness reference');
     expect((j.params as { prompt: string }).prompt).toContain('Match reference image 1 exactly');
     expect((j.params as { prompt: string }).prompt).toMatch(/Not a cartoon/);
+  });
+
+  it('checks each still of a character with references against them, and prices the check in the estimate', async () => {
+    const est = (await liteGenerate(owner, { projectId: 'p', kind: 'images', force: false, estimateOnly: true })) as { estimate: { usd: number; breakdown: { label: string }[] } };
+    expect(est.estimate.breakdown.filter((b) => /Likeness and wardrobe check/.test(b.label))).toHaveLength(2);
+    await liteGenerate(owner, { projectId: 'p', kind: 'images', force: false, estimateOnly: false, confirmedUsd: est.estimate.usd });
+    const withAma = jobs().find((x) => x.target?.id === 'h2')!;
+    expect((withAma.params as { likeness?: { subjects: { name: string; assetIds: string[]; outfit: string }[]; references: { storagePath: string }[] } }).likeness).toMatchObject({ subjects: [{ name: 'Ama', assetIds: ['ref-ama'], outfit: 'Indigo wrapper' }], references: [{ storagePath: 'users/u/ref-ama.png' }] });
+    expect((jobs().find((x) => x.target?.id === 'h3')!.params as { likeness?: unknown }).likeness).toBeUndefined();
   });
 
   it('never requests the same image twice: running and completed work with the same input are reused', async () => {
@@ -145,7 +155,7 @@ describe('narration worker', () => {
   }
 
   it('speaks once and times every word from the real audio', async () => {
-    speakLine.mockResolvedValue({ wav: Buffer.alloc(100), fileSeconds: 4.2, speech: { start: 0.3, end: 3.9, durationSec: 3.6 }, usage: { input: 10, output: 100 } });
+    speakLine.mockResolvedValue({ wav: Buffer.alloc(100), fileSeconds: 4.2, speech: { start: 0.3, end: 3.9, durationSec: 3.6 }, usage: { input: 10, output: 100 }, guard: GUARD });
     transcribe.mockResolvedValue({ text: '', words: words('Long ago, the village gathered by the fire.'), languageCode: 'en', modelId: 'm', usage: { input: 1, output: 1, thoughts: 0 }, latencyMs: 1 });
     const job = await narrationJob();
     await runLiteNarrationJob(job);
@@ -159,7 +169,7 @@ describe('narration worker', () => {
   });
 
   it('keeps the speech when timing fails and never pays for the speech again on a retry', async () => {
-    speakLine.mockResolvedValue({ wav: Buffer.alloc(100), fileSeconds: 4.2, speech: { start: 0.3, end: 3.9, durationSec: 3.6 }, usage: { input: 10, output: 100 } });
+    speakLine.mockResolvedValue({ wav: Buffer.alloc(100), fileSeconds: 4.2, speech: { start: 0.3, end: 3.9, durationSec: 3.6 }, usage: { input: 10, output: 100 }, guard: GUARD });
     transcribe.mockRejectedValueOnce(new Error('503 unavailable'));
     const job = await narrationJob();
     await runLiteNarrationJob(job);
@@ -176,7 +186,7 @@ describe('narration worker', () => {
   });
 
   it('flags a voice that repeated part of the script', async () => {
-    speakLine.mockResolvedValue({ wav: Buffer.alloc(100), fileSeconds: 8, speech: { start: 0.3, end: 7.5, durationSec: 7.2 }, usage: { input: 10, output: 100 } });
+    speakLine.mockResolvedValue({ wav: Buffer.alloc(100), fileSeconds: 8, speech: { start: 0.3, end: 7.5, durationSec: 7.2 }, usage: { input: 10, output: 100 }, guard: GUARD });
     transcribe.mockResolvedValue({ text: '', words: words('Long ago, the village gathered by the fire. the village gathered by the fire by the fire.'), languageCode: 'en', modelId: 'm', usage: { input: 1, output: 1, thoughts: 0 }, latencyMs: 1 });
     const job = await narrationJob();
     await runLiteNarrationJob(job);

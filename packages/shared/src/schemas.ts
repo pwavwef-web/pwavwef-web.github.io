@@ -59,6 +59,11 @@ export const imageJobSchema = z.object({
   inputHash: text(40).optional(),
 });
 
+  /** Film Studio Lite / Music Video Lite: compare the new still with these characters' approved references (face and outfit). */
+  likenessCheck: z
+    .array(z.object({ characterId: id, name: text(120), assetIds: z.array(id).min(1).max(2), outfit: text(1200), outfitFromText: z.boolean() }))
+    .max(4)
+    .optional(),
 export const videoJobSchema = z.object({
   type: z.literal('video.generate'),
   projectId: id.nullable().optional(),

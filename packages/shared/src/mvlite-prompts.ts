@@ -1,5 +1,7 @@
 import { LITE_IMAGE_STYLE_PROMPTS, stableHash, type ShotScale } from './lite';
 import { compositionForMotion, type LiteImageRequest } from './lite-prompts';
+import { noLogoClause } from './brand-safety';
+import { likenessSubjects } from './likeness';
 import type { LyricsSheet } from './lyrics';
 import { findMvShot, lyricsDuring, mvDirectionOf, type MvLiteSpec, type MvSection, type MvShot } from './mvlite';
 import type { MvTiming } from './mvlite-timing';
@@ -70,11 +72,14 @@ export function compileMvImageRequest(spec: MvLiteSpec, section: MvSection, shot
     b.imageTreatment.trim() ? `Visual language: ${sentence(b.imageTreatment)}` : '',
     b.palette.trim() ? `Palette: ${sentence(b.palette)}` : '',
     b.lighting.trim() ? `Lighting: ${sentence(b.lighting)}` : '',
+    noLogoClause(`${shot.brief} ${shot.composition}`),
     `Avoid: ${[b.avoid.trim().replace(/[.;]+$/, ''), 'any readable text, lyrics, captions, subtitles, logos, watermarks, borders or frames', chars.some((c) => c.clothing.trim()) ? 'changing anyone’s clothing from the wardrobe above' : ''].filter(Boolean).join('; ')}.`,
   ].filter(Boolean);
   const prompt = lines.join('\n').slice(0, 7800);
   const out = { prompt, referenceAssetIds: refs.map((r) => r.id), referenceLabels: refs.map((r) => r.label), aspectRatio: spec.setup.aspect, imageSize: spec.setup.imageSize };
-  return { ...out, hash: stableHash(out) };
+  // The wardrobe rule: the clothing text, not the reference image, decides the outfit.
+  const likeness = likenessSubjects(chars, { outfitFromText: true });
+  return { ...out, hash: stableHash(out), ...(likeness.length ? { likeness } : {}) };
 }
 
 /** Shots that need a generated image: no approved image and not reusing another shot. */
