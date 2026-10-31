@@ -115,7 +115,19 @@ if (only.includes('stems')) {
 
 const targets = [];
 if (only.includes('rules')) targets.push('firestore', 'storage');
-if (only.includes('functions')) targets.push('functions:az-studio');
+if (only.includes('functions')) {
+  // Firebase CLI 15.30 crashes ("reading 'filter'") when a task queue has an empty IAM policy, so every task queue
+  // exists with its enqueuer binding before the functions deploy (idempotent).
+  for (const queue of ['azsJobWorker', 'azsMemberWorker']) {
+    try {
+      execFileSync('gcloud', ['tasks', 'queues', 'describe', queue, '--location', region, '--project', project, '--format=none'], { cwd: root, shell: win, stdio: 'ignore' });
+    } catch {
+      run('gcloud', ['tasks', 'queues', 'create', queue, '--location', region, '--project', project]);
+    }
+    withRetries(`Queue ${queue} IAM`, () => run('gcloud', ['tasks', 'queues', 'add-iam-policy-binding', queue, '--location', region, '--project', project, `--member=serviceAccount:az-studio-api@${project}.iam.gserviceaccount.com`, '--role=roles/cloudtasks.enqueuer', '--format=none']));
+  }
+  targets.push('functions:az-studio');
+}
 if (only.includes('hosting')) {
   run('npm', ['run', 'build', '-w', 'apps/web'], buildEnv);
   targets.push('hosting:studio');
