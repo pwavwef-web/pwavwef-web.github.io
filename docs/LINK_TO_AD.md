@@ -37,6 +37,8 @@ Legal moves are `LINKAD_TRANSITIONS` (`packages/shared/src/linkad.ts`, tested). 
 | Spend | `recordUsage`, `assertWithinLimits`, the owner's confirmation threshold; plus a per-ad cap and ledger |
 | UI | `apps/web/src/pages/linkad/*`, `lib/linkad.ts`; Create → Link to Ad; the project opens at `/linkad/:id` |
 
+The **Motion Poster Ad** (`poster_ad`) is the same document with a facts form instead of a website (`input.sourceKind: 'facts'`, `poster`) and the operations `createPoster`, `applyKit`, `buildScript`, `savePoster`, `music`; brand kits can also be applied to a Link to Ad (`applyKit`). See ARCHITECTURE.md → Motion Poster Ad and brand kits.
+
 Existing studios are untouched: `PROJECT_TYPES`, `JOB_TYPES` and the API union gained one member each, the rules gained one denied field (`linkad`), and `LitePlayer` learned to draw pictures placed in a box and text anchored to the top.
 
 ## Facts, claims and approval

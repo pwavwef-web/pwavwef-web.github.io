@@ -7,6 +7,7 @@ import {
   checkFacts,
   creditsFindings,
   factFindings,
+  staleFactFindings,
   dialogueMaskingFindings,
   EXPORT_PRESETS,
   exportReadiness,
@@ -214,6 +215,8 @@ export async function runFinalInspectJob(job: JobDoc): Promise<void> {
     findings.push(...privateInfoFindings(m.ocr, [...(projectDoc?.allowedOnScreenText ?? []), ...facts.filter((f) => f.kind === 'phone' || f.kind === 'url').map((f) => f.value)]));
     // Fact check: prices, phone numbers, dates and links on screen and in the speech against the approved facts.
     findings.push(...factFindings(checkFacts({ facts, ocr: m.ocr, words: m.words })));
+    // Brand-kit prices and contacts past their review-by day must be re-confirmed before the export goes out.
+    findings.push(...staleFactFindings(facts));
 
     // Model review of the cuts and the ending.
     await progress(job.id, 'Reviewing the cuts and the ending', 0.65);

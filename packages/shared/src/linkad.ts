@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { stableHash, wordCount } from './lite';
+import { posterEditSchema, posterSchema } from './poster-schema';
 
 /**
  * Link to Ad: paste a website address, get an editable first ad.
@@ -15,6 +16,15 @@ import { stableHash, wordCount } from './lite';
  */
 
 export const LINKAD_VERSION = 1 as const;
+
+/**
+ * Project types whose document is `project.linkad`: Link to Ad (a website becomes an ad) and the Motion Poster Ad
+ * (facts and real photos become a poster and an ad). Both use the same API, stages, voice, timing, assembly, caps
+ * and export checks; a poster ad's source is the facts form (`input.sourceKind: 'facts'`, `poster`).
+ */
+export const LINKAD_PROJECT_TYPES = ['link_ad', 'poster_ad'] as const;
+export type LinkAdProjectType = (typeof LINKAD_PROJECT_TYPES)[number];
+export const isLinkAdProjectType = (t: unknown): t is LinkAdProjectType => (LINKAD_PROJECT_TYPES as readonly unknown[]).includes(t);
 
 // ---------------------------------------------------------------------------
 // Limits and options
@@ -114,7 +124,9 @@ export const sourceFactSchema = z.object({
 });
 export type SourceFact = z.infer<typeof sourceFactSchema>;
 
-export const userFactSchema = z.object({ id, kind: z.enum(FACT_KINDS), text: text(400), at: ts });
+/** Where a director fact came from when a brand kit supplied it: the kit entry and the day it must be re-confirmed. */
+export const factKitSchema = z.object({ kitId: id, entryId: id, reviewBy: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) });
+export const userFactSchema = z.object({ id, kind: z.enum(FACT_KINDS), text: text(400), at: ts, kit: factKitSchema.nullable().optional() });
 export type UserFact = z.infer<typeof userFactSchema>;
 
 export const assetRefSchema = z.object({
@@ -141,6 +153,8 @@ export const assetRefSchema = z.object({
   selected: z.boolean().default(false),
   /** Where the tidied-up copy of the logo/image came from, for the editor. */
   note: text(240).default(''),
+  /** A real photograph of the real product or place (from a brand kit or marked by the director): offered first. */
+  real: z.boolean().optional(),
 });
 export type LinkAdAsset = z.infer<typeof assetRefSchema>;
 
@@ -307,6 +321,11 @@ export const musicSchema = z.object({
   /** The director states they may use this track in an advert. */
   rightsConfirmed: z.boolean().default(false),
   gainDb: z.number().min(-40).max(0).default(-17),
+  /** A library or uploaded track, or an instrumental bed made with the studio's music job. */
+  origin: z.enum(['library', 'generated']).optional(),
+  /** The music job making the bed (until its track is collected into `assetId`). */
+  jobId: text(120).nullable().optional(),
+  prompt: text(400).optional(),
 });
 
 export const adSchema = z.object({
@@ -330,7 +349,7 @@ export type LinkAdAd = z.infer<typeof adSchema>;
 export const ledgerEntrySchema = z.object({
   at: ts,
   step: z.string().max(40),
-  kind: z.enum(['reasoning', 'speech', 'transcription', 'image', 'render', 'fetch']),
+  kind: z.enum(['reasoning', 'speech', 'transcription', 'image', 'render', 'fetch', 'music']),
   units: text(80).default(''),
   estimateUsd: z.number().nonnegative(),
   /** Null until the provider reported what was used. */
@@ -376,6 +395,8 @@ export const inputSchema = z.object({
   manualText: text(LINKAD_LIMITS.userTextChars).default(''),
   /** The director confirms they may use the source pictures and anything they upload. */
   rightsConfirmed: z.boolean().default(false),
+  /** `url`: a website is read; `facts`: the director's facts form and photos are the source (Motion Poster Ad). */
+  sourceKind: z.enum(['url', 'facts']).default('url'),
 });
 export type LinkAdInput = z.infer<typeof inputSchema>;
 
@@ -406,6 +427,10 @@ export const linkAdSchema = z.object({
   timelineId: text(80).nullable().default(null),
   exports: z.array(exportRecordSchema).max(LINKAD_LIMITS.exports).default([]),
   importedFrom: z.object({ projectId: id, title: text(160), at: ts }).nullable().default(null),
+  /** Motion Poster Ad: the facts form, template, poster formats and saved posters. */
+  poster: posterSchema.nullable().default(null),
+  /** The brand kit last applied (its colours, fonts, logo, photos, prices and contacts were copied in). */
+  brandKit: z.object({ kitId: id, name: text(120), appliedAt: ts }).nullable().default(null),
   updatedAt: ts.default(0),
 });
 export type LinkAdDoc = z.infer<typeof linkAdSchema>;
@@ -456,13 +481,15 @@ export interface FactView {
   needsConfirmation: boolean;
   sourceUrl: string | null;
   excerpt: string | null;
+  /** Brand-kit facts: the day the kit entry must be re-confirmed (null for everything else). */
+  reviewBy?: string | null;
 }
 
 /** Sourced and director-written facts as one list (still marked by origin). */
 export function allFacts(doc: Pick<LinkAdDoc, 'source' | 'userFacts'>): FactView[] {
   return [
-    ...doc.source.facts.map<FactView>((f) => ({ id: f.id, kind: f.kind, text: f.text, value: f.value, currency: f.currency, qualifier: f.qualifier, origin: 'source', needsConfirmation: f.needsConfirmation || CONFIRM_KINDS.includes(f.kind), sourceUrl: f.sourceUrl, excerpt: f.excerpt })),
-    ...doc.userFacts.map<FactView>((f) => ({ id: f.id, kind: f.kind, text: f.text, value: null, currency: null, qualifier: null, origin: 'user', needsConfirmation: CONFIRM_KINDS.includes(f.kind), sourceUrl: null, excerpt: null })),
+    ...doc.source.facts.map<FactView>((f) => ({ id: f.id, kind: f.kind, text: f.text, value: f.value, currency: f.currency, qualifier: f.qualifier, origin: 'source', needsConfirmation: f.needsConfirmation || CONFIRM_KINDS.includes(f.kind), sourceUrl: f.sourceUrl, excerpt: f.excerpt, reviewBy: null })),
+    ...doc.userFacts.map<FactView>((f) => ({ id: f.id, kind: f.kind, text: f.text, value: null, currency: null, qualifier: null, origin: 'user', needsConfirmation: CONFIRM_KINDS.includes(f.kind), sourceUrl: null, excerpt: null, reviewBy: f.kit?.reviewBy ?? null })),
   ];
 }
 
@@ -617,6 +644,8 @@ export const linkAdEditSchema = z.object({
     })
     .optional(),
   spendCapUsd: z.number().min(0).max(100).optional(),
+  /** Motion Poster Ad facts form (the server re-derives the ad's facts from it). */
+  poster: posterEditSchema.optional(),
 });
 export type LinkAdEdit = z.infer<typeof linkAdEditSchema>;
 

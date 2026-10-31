@@ -7,6 +7,7 @@ import { uploadFile } from '../../lib/media';
 import { Badge, Button, cx, Field, Input, Notice, Select, Textarea } from '../../components/ui';
 import { Panel, SourceLink, Thumb, hostOf, useEstimate, EstimateBlock, type EstimateReply } from './common';
 import type { StepProps } from './LinkAdWorkspace';
+import { KitPicker } from '../../components/brand-kit-picker';
 
 export const KIND_LABEL: Record<FactKind, string> = {
   business_name: 'Business',
@@ -122,6 +123,17 @@ export function SourceStep(p: StepProps) {
         {!analysing && server.source.status === 'partial' && <Notice tone="warning">Some pages could not be read, so this is partial. Check the list below and add anything missing.</Notice>}
         {!analysing && server.source.status === 'manual' && <Notice tone="accent">This ad is built from the details you wrote, not from a website.</Notice>}
         <EstimateBlock state={est} doc={server} />
+        <KitPicker
+          appliedKitId={server.brandKit?.kitId ?? null}
+          busy={p.busy}
+          hint="Brings in the client's colours, logo, real photos, prices and contacts (marked as yours, with the day each must be re-confirmed)."
+          onApply={(k) =>
+            void act('Could not apply the brand kit', async () => {
+              await linkAdCall({ op: 'applyKit', projectId: project.id, kitId: k.id });
+              toast.success(`Applied “${k.kit.name}”`, { description: 'Real photos are offered first; prices past their review day stay unconfirmed until re-confirmed in the kit.' });
+            })
+          }
+        />
 
         {server.source.pages.length > 0 && (
           <ul className="space-y-1.5">

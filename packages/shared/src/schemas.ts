@@ -8,6 +8,7 @@ import { RETRY_POLICY_LIMITS } from './generation-errors';
 import { AMBIENCE_KINDS } from './lite';
 import { narratorRequestSchema } from './narrator-schemas';
 import { linkAdRequestSchema } from './linkad-schemas';
+import { brandKitRequestSchema } from './brand-kit';
 import { liteBoothRequestSchema } from './lite-booth';
 import { betaAdminRequestSchema } from './beta';
 
@@ -538,6 +539,8 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('narrator'), payload: narratorRequestSchema }),
   /** Link to Ad (owner-only, behind the feature flag): website -> sourced brief -> directions -> voice -> MP4. */
   z.object({ action: z.literal('linkAd'), payload: linkAdRequestSchema }),
+  /** Brand kits (owner-only): one per client — colours, fonts, logos, contacts, dated prices, real photos. */
+  z.object({ action: z.literal('brandKits'), payload: brandKitRequestSchema }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({

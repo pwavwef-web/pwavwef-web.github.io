@@ -1,4 +1,5 @@
 import { allFacts, isConfirmed, linkAdStatus, LINKAD_LIMITS, type FactView, type LinkAdDoc } from './linkad';
+import { checkFacts, factsFromLinkAd, type FactCheck } from './facts';
 
 /**
  * Link to Ad: the rules that keep an ad honest and readable. Everything here is deterministic and shared by
@@ -224,7 +225,7 @@ export interface ReadyIssue {
 }
 
 /** Everything that blocks (errors) or deserves a look (warnings) before an MP4 is rendered. */
-export function linkAdReadiness(doc: LinkAdDoc, opts: { final: boolean }): ReadyIssue[] {
+export function linkAdReadiness(doc: LinkAdDoc, opts: { final: boolean; today?: string }): ReadyIssue[] {
   const out: ReadyIssue[] = [];
   const { ad, brief } = doc;
   const add = (severity: ReadyIssue['severity'], area: ReadyArea, message: string, sceneId: string | null = null) => out.push({ severity, area, message, sceneId });
@@ -302,6 +303,28 @@ export function linkAdReadiness(doc: LinkAdDoc, opts: { final: boolean }): Ready
 
   // Music: only what the director may use.
   if (ad.music.assetId && !ad.music.rightsConfirmed) add('error', 'music', 'Confirm you may use the chosen music in an advert, or remove it.');
+  if (ad.music.jobId && !ad.music.assetId) add('warning', 'music', 'The music bed is still being made. Export after it arrives, or the ad has no music.');
+
+  // Brand-kit prices and contacts past their review-by day must be re-confirmed (names and prices change).
+  const today = opts.today ?? new Date().toISOString().slice(0, 10);
+  for (const f of facts) if (f.reviewBy && f.reviewBy < today) add(opts.final ? 'error' : 'warning', 'brief', `“${f.text.slice(0, 80)}” comes from the brand kit and was due for re-confirmation on ${f.reviewBy}. Re-confirm it in the brand kit and apply the kit again.`);
+
+  // Figures on screen and in the recorded voice against the approved facts (ads built from a kit or a facts form).
+  if (doc.poster || doc.brandKit) for (const c of linkAdFactChecks(doc)) add(c.severity, 'script', c.message);
 
   return out;
+}
+
+/**
+ * The approved-facts check (`checkFacts`, the one the final cut of a Short Ad gets) on an ad's own words: scene text,
+ * the closing and any extra texts (a poster's) as what is on screen, the recorded takes' words as what is said.
+ * A price or phone number shown or said differently from the confirmed fact is an error before anything is exported.
+ */
+export function linkAdFactChecks(doc: LinkAdDoc, extraTexts: readonly string[] = []): FactCheck[] {
+  const facts = factsFromLinkAd(doc);
+  if (!facts.length) return [];
+  const flat = (t: string) => t.replace(/\s+/g, ' ').trim();
+  const ocr = [...doc.ad.scenes.map((s) => s.overlay), doc.ad.closing.headline, doc.ad.closing.line, ...extraTexts].filter((t) => flat(t)).map((t) => ({ t: 0, text: t }));
+  const words = doc.ad.scenes.flatMap((s) => doc.ad.takes[s.id]?.words ?? []).map((w) => ({ text: w.text, start: w.start, end: w.end }));
+  return checkFacts({ facts, ocr, words }).map((c) => ({ ...c, message: c.message.replace(/^On screen at 0\.0 s/, 'On screen') }));
 }

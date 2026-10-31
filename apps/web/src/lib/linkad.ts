@@ -34,9 +34,9 @@ export function useLinkAdDoc(project: WithId<ProjectDoc>): LinkAdDoc {
   return useMemo(() => normalizeLinkAd(project.linkad), [project.linkad]);
 }
 
-type Sections = Pick<LinkAdDoc, 'input' | 'brief' | 'userFacts'> & { ad: Pick<LinkAdDoc['ad'], 'title' | 'scenes' | 'closing' | 'brand' | 'captions' | 'voiceGainDb' | 'music'>; capUsd: number };
+type Sections = Pick<LinkAdDoc, 'input' | 'brief' | 'userFacts' | 'poster'> & { ad: Pick<LinkAdDoc['ad'], 'title' | 'scenes' | 'closing' | 'brand' | 'captions' | 'voiceGainDb' | 'music'>; capUsd: number };
 
-const sectionsOf = (d: LinkAdDoc): Sections => ({ input: d.input, brief: d.brief, userFacts: d.userFacts, ad: { title: d.ad.title, scenes: d.ad.scenes, closing: d.ad.closing, brand: d.ad.brand, captions: d.ad.captions, voiceGainDb: d.ad.voiceGainDb, music: d.ad.music }, capUsd: d.spend.capUsd });
+const sectionsOf = (d: LinkAdDoc): Sections => ({ input: d.input, brief: d.brief, userFacts: d.userFacts, poster: d.poster, ad: { title: d.ad.title, scenes: d.ad.scenes, closing: d.ad.closing, brand: d.ad.brand, captions: d.ad.captions, voiceGainDb: d.ad.voiceGainDb, music: d.ad.music }, capUsd: d.spend.capUsd });
 
 /** What changed between the server's copy and the local draft, in the shape the `edit` call takes. */
 export function buildEdit(server: LinkAdDoc, draft: LinkAdDoc): LinkAdEdit {
@@ -47,6 +47,10 @@ export function buildEdit(server: LinkAdDoc, draft: LinkAdDoc): LinkAdEdit {
   if (differs(a.input, b.input)) edit.input = b.input;
   if (differs(a.brief, b.brief)) edit.brief = b.brief;
   if (differs(a.userFacts, b.userFacts)) edit.userFacts = b.userFacts;
+  if (b.poster && a.poster && differs({ ...a.poster, exports: null, scriptFor: null }, { ...b.poster, exports: null, scriptFor: null })) {
+    const { exports: _e, scriptFor: _s, ...form } = b.poster;
+    edit.poster = form;
+  }
   const ad: NonNullable<LinkAdEdit['ad']> = {};
   for (const k of ['title', 'scenes', 'closing', 'brand', 'captions', 'voiceGainDb', 'music'] as const) if (differs(a.ad[k], b.ad[k])) (ad as Record<string, unknown>)[k] = b.ad[k];
   if (Object.keys(ad).length) edit.ad = ad;
@@ -56,7 +60,7 @@ export function buildEdit(server: LinkAdDoc, draft: LinkAdDoc): LinkAdEdit {
 
 /** The draft keeps the director's unsaved edits and adopts everything else the server has since written. */
 function mergeDraft(server: LinkAdDoc, draft: LinkAdDoc): LinkAdDoc {
-  return { ...server, input: draft.input, brief: draft.brief, userFacts: draft.userFacts, spend: { ...server.spend, capUsd: draft.spend.capUsd }, ad: { ...server.ad, title: draft.ad.title, scenes: draft.ad.scenes, closing: draft.ad.closing, brand: draft.ad.brand, captions: draft.ad.captions, voiceGainDb: draft.ad.voiceGainDb, music: draft.ad.music } };
+  return { ...server, input: draft.input, brief: draft.brief, userFacts: draft.userFacts, poster: server.poster && draft.poster ? { ...draft.poster, exports: server.poster.exports, scriptFor: server.poster.scriptFor } : server.poster, spend: { ...server.spend, capUsd: draft.spend.capUsd }, ad: { ...server.ad, title: draft.ad.title, scenes: draft.ad.scenes, closing: draft.ad.closing, brand: draft.ad.brand, captions: draft.ad.captions, voiceGainDb: draft.ad.voiceGainDb, music: draft.ad.music } };
 }
 
 export interface LinkAdEditor {
@@ -180,7 +184,7 @@ export function useActiveJob(doc: LinkAdDoc) {
 
 /** While something runs, ask the server to bring the ad up to date (finished renders, collected pictures). */
 export function useRefreshWhileBusy(projectId: string, doc: LinkAdDoc) {
-  const busy = doc.stage === 'composing' || doc.exports.some((e) => e.status === 'queued' || e.status === 'rendering') || Boolean(doc.activeJobId);
+  const busy = doc.stage === 'composing' || doc.exports.some((e) => e.status === 'queued' || e.status === 'rendering') || Boolean(doc.activeJobId) || Boolean(doc.ad.music.jobId);
   useEffect(() => {
     if (!busy) return;
     const t = setInterval(() => void linkAdCall({ op: 'refresh', projectId }).catch(() => undefined), 7000);

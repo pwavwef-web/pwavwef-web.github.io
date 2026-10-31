@@ -26,7 +26,25 @@ import {
   defaultLinkAd,
   type ExportRecord,
   type LiteAssetInfo,
+  buildPosterScript,
+  defaultPoster,
+  kitPhotosFirst,
+  kitToLinkAdBrand,
+  posterFormHash,
+  posterInputHash,
+  posterReadiness,
+  POSTER_FORMATS,
+  POSTER_MUSIC_PROMPTS,
+  POSTER_TEMPLATE_INFO,
+  reviewState,
+  syncPosterFacts,
+  todayKey,
+  type BrandKitInput,
+  type LinkAdAsset,
+  type PosterForm,
+  type UserFact,
 } from '@az-studio/shared';
+import { loadKit } from './brand-kits';
 import { MODEL_REGISTRY } from '../config/models';
 import { IS_EMULATOR } from '../config/runtime';
 import { col, db, FieldValue } from '../lib/firebase';
@@ -74,7 +92,7 @@ async function config(owner: Owner) {
   if (!firecrawl) setup.push({ id: 'firecrawl', level: 'info', message: `Script-built pages can't be read without a Firecrawl key. Optional: store it as the secret ${FIRECRAWL_SECRET}. Ordinary pages work without it.` });
   return {
     entitlement: ent,
-    providers: { reasoning: MODEL_REGISTRY.reasoning.displayName, speech: MODEL_REGISTRY.speech.displayName, transcription: MODEL_REGISTRY.transcription.displayName, image: MODEL_REGISTRY.image.displayName, firecrawl },
+    providers: { reasoning: MODEL_REGISTRY.reasoning.displayName, speech: MODEL_REGISTRY.speech.displayName, transcription: MODEL_REGISTRY.transcription.displayName, image: MODEL_REGISTRY.image.displayName, music: MODEL_REGISTRY.music.displayName, firecrawl },
     fixturesAllowed: FIXTURES_ALLOWED(),
     limits: { maxPages: LINKAD_LIMITS.maxPagesCap, durationMin: LINKAD_LIMITS.durationMin, durationMax: LINKAD_LIMITS.durationMax, scenes: [LINKAD_LIMITS.minScenes, LINKAD_LIMITS.maxScenes] },
     pricing: { version: PRICING.version, source: PRICING.source },
@@ -146,7 +164,7 @@ export function applyEdit(doc0: LinkAdDoc, e: LinkAdEdit, maxCap: number): LinkA
       const c = checkPublicUrl(u);
       if (!c.ok) throw new HttpsError('invalid-argument', `“${u.slice(0, 60)}”: ${c.reason}`);
     }
-    d = { ...d, input: { ...input, maxPages: Math.min(LINKAD_LIMITS.maxPagesCap, input.maxPages) } };
+    d = { ...d, input: { ...input, sourceKind: d.input.sourceKind, maxPages: Math.min(LINKAD_LIMITS.maxPagesCap, input.maxPages) } };
     if (e.input.rightsConfirmed !== undefined) d = { ...d, source: { ...d.source, assets: d.source.assets.map((a) => (a.origin === 'site' ? { ...a, rights: e.input!.rightsConfirmed ? 'confirmed' : 'unconfirmed' } : a)) } };
   }
   if (e.userFacts) {
@@ -225,6 +243,15 @@ export function applyEdit(doc0: LinkAdDoc, e: LinkAdEdit, maxCap: number): LinkA
     d = { ...d, ad };
   }
   if (e.spendCapUsd !== undefined) d = { ...d, spend: { ...d.spend, capUsd: Math.min(maxCap, e.spendCapUsd) } };
+  if (e.poster) {
+    if (!d.poster) throw new HttpsError('failed-precondition', 'This ad has no poster form.');
+    const poster: PosterForm = { ...d.poster, ...Object.fromEntries(Object.entries(e.poster).filter(([, v]) => v !== undefined)) };
+    assertAssetsExist(d, poster.photoIds, 'The poster');
+    const rows = [...poster.prices.map((x) => x.id), ...poster.contacts.map((x) => x.id)];
+    if (new Set(rows).size !== rows.length) throw new HttpsError('invalid-argument', 'Two prices or contacts share an id.');
+    // The form's facts are the ad's facts: re-derived on every change (an edited price is no longer confirmed).
+    d = syncPosterFacts({ ...d, poster });
+  }
   // Wording that rests on a fact that has changed is flagged for review.
   d = { ...d, ad: { ...d.ad, scenes: reviewScenes(d) } };
   return d;
@@ -303,6 +330,7 @@ async function stepEstimate(uid: string, doc: LinkAdDoc, est: CostEstimate) {
 async function analyse(owner: Owner, p: Req<'analyse'>) {
   const ent = await assertLinkAdAccess(owner);
   const { doc } = await loadAd(owner.uid, p.projectId);
+  if (doc.input.sourceKind === 'facts') throw new HttpsError('failed-precondition', 'A motion poster ad is made from its facts form, not a website. Use “Write the ad from the facts”.');
   if (!p.manualOnly && !doc.input.url.trim() && doc.input.manualText.trim().length < 20) throw new HttpsError('failed-precondition', 'Add a website address, or write a few lines about what to promote.');
   const est = briefEstimate(doc, 9000);
   if (p.estimateOnly) return stepEstimate(owner.uid, doc, est);
@@ -609,7 +637,7 @@ async function cancel(owner: Owner, p: Req<'cancel'>) {
   const results: { jobId: string; status: string }[] = [];
   for (const d of active.docs) {
     const t = d.get('type');
-    if (t !== 'linkad.run' && t !== 'render.timeline' && t !== 'image.generate') continue;
+    if (t !== 'linkad.run' && t !== 'render.timeline' && t !== 'image.generate' && t !== 'music.generate') continue;
     const r = await cancelJob(owner, { jobId: d.id });
     results.push({ jobId: d.id, status: r.status });
   }
@@ -619,6 +647,7 @@ async function cancel(owner: Owner, p: Req<'cancel'>) {
 async function refresh(owner: Owner, p: Req<'refresh'>) {
   await assertLinkAdAccess(owner);
   await collectEnhancements(owner.uid, p.projectId).catch(() => false);
+  await collectMusic(owner.uid, p.projectId).catch(() => false);
   const doc = await syncExports(owner.uid, p.projectId);
   const active = await activeJobFor(owner.uid, p.projectId);
   // A step that finished (or died) without clearing the marker must not leave the ad looking busy.
@@ -632,16 +661,221 @@ async function refresh(owner: Owner, p: Req<'refresh'>) {
 async function duplicate(owner: Owner, p: Req<'duplicate'>) {
   await assertLinkAdAccess(owner);
   const src = await loadAd(owner.uid, p.projectId);
-  const id = `la${stableHash([owner.uid, p.requestId, 'dup'])}`.slice(0, 40);
+  const id = `${src.type === 'poster_ad' ? 'pa' : 'la'}${stableHash([owner.uid, p.requestId, 'dup'])}`.slice(0, 40);
   const ref = col.projects().doc(id);
-  const copy: LinkAdDoc = normalizeLinkAd({ ...src.doc, revision: 0, activeJobId: null, lastError: null, exports: [], timelineId: null, voiceInFlight: {}, spend: { ...src.doc.spend, ledger: [] }, importedFrom: { projectId: p.projectId, title: src.title, at: Date.now() }, stage: src.doc.stage === 'composing' || src.doc.stage === 'ready' ? 'generating' : src.doc.stage === 'analysing' ? 'reviewing' : src.doc.stage === 'planning' ? 'reviewing' : src.doc.stage, updatedAt: Date.now() });
+  const copy: LinkAdDoc = normalizeLinkAd({ ...src.doc, revision: 0, activeJobId: null, lastError: null, exports: [], timelineId: null, voiceInFlight: {}, spend: { ...src.doc.spend, ledger: [] }, importedFrom: { projectId: p.projectId, title: src.title, at: Date.now() }, poster: src.doc.poster ? { ...src.doc.poster, exports: {} } : null, ad: { ...src.doc.ad, music: { ...src.doc.ad.music, jobId: null } }, stage: src.doc.stage === 'composing' || src.doc.stage === 'ready' ? 'generating' : src.doc.stage === 'analysing' ? 'reviewing' : src.doc.stage === 'planning' ? 'reviewing' : src.doc.stage, updatedAt: Date.now() });
   const created = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (snap.exists) return false;
-    tx.set(ref, { ownerUid: owner.uid, title: `${src.title} (copy)`.slice(0, 160), type: 'link_ad', logline: '', idea: '', genre: '', status: 'active', format: { aspectRatio: '9:16', fps: 30 }, coverAssetId: null, styleBible: {}, linkad: copy, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    tx.set(ref, { ownerUid: owner.uid, title: `${src.title} (copy)`.slice(0, 160), type: src.type, logline: '', idea: '', genre: '', status: 'active', format: { aspectRatio: '9:16', fps: 30 }, coverAssetId: null, styleBible: {}, linkad: copy, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     return true;
   });
   return { projectId: id, created };
+}
+
+// ---------------------------------------------------------------------------
+// Motion Poster Ad: facts form -> poster + motion ad (same document, stages and pipeline)
+// ---------------------------------------------------------------------------
+
+async function createPoster(owner: Owner, p: Req<'createPoster'>) {
+  const ent = await assertLinkAdAccess(owner);
+  await assertRateLimit(owner.uid, 1, 30);
+  const fixture = p.fixture && FIXTURES_ALLOWED();
+  if (p.fixture && !fixture) throw new HttpsError('failed-precondition', 'Fixture mode is available only in the emulators and tests.');
+  const kit = p.kitId ? (await loadKit(owner.uid, p.kitId)).kit : null;
+  const id = `pa${stableHash([owner.uid, p.requestId])}`.slice(0, 40);
+  const ref = col.projects().doc(id);
+  const base = defaultLinkAd({ sourceKind: 'facts' });
+  let doc: LinkAdDoc = { ...base, mode: fixture ? 'fixture' : 'live', stage: 'reviewing', stageNote: 'Fill in the facts and add real photos.', poster: defaultPoster(p.template), ad: { ...base.ad, music: { ...base.ad.music, prompt: POSTER_MUSIC_PROMPTS[p.template] } }, spend: { ...base.spend, capUsd: Math.min(base.spend.capUsd, ent.quotas.maxSpendCapUsd) }, updatedAt: Date.now() };
+  if (kit && p.kitId) doc = await withKit(owner.uid, doc, p.kitId, kit);
+  const title = (p.title.trim() || (kit ? `${kit.name} · ${POSTER_TEMPLATE_INFO[p.template].label}` : POSTER_TEMPLATE_INFO[p.template].label)).slice(0, 120);
+  const created = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists) {
+      if (snap.get('ownerUid') !== owner.uid) throw new HttpsError('not-found', 'Ad not found.');
+      return false;
+    }
+    tx.set(ref, { ownerUid: owner.uid, title, type: 'poster_ad', logline: '', idea: '', genre: '', status: 'active', format: { aspectRatio: '9:16', fps: 30 }, coverAssetId: null, styleBible: {}, linkad: doc, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    return true;
+  });
+  return { projectId: id, created };
+}
+
+const kitRefId = (assetId: string) => `a_${stableHash([assetId])}`;
+
+/**
+ * Copies a brand kit into an ad: colours and the video font, the poster fonts, the logo and real photos (stored,
+ * marked real, offered before anything generated), prices and contacts with their review-by days. Prices the kit
+ * confirmed and that are not past review are confirmed in the ad; overdue ones stay unconfirmed and block export.
+ * Re-applying refreshes what came from the kit and keeps the director's own additions.
+ */
+export async function withKit(uid: string, doc0: LinkAdDoc, kitId: string, kit: BrandKitInput, now = Date.now()): Promise<LinkAdDoc> {
+  const today = todayKey(now);
+  const files = [...kit.logos.slice(0, 1).map((l) => l.assetId), ...kitPhotosFirst(kit).map((ph) => ph.assetId)];
+  const snaps = files.length ? await db.getAll(...files.map((x) => col.assets().doc(x))) : [];
+  const info = new Map(snaps.filter((s) => s.exists && s.get('ownerUid') === uid && s.get('status') === 'ready' && s.get('kind') === 'image').map((s) => [s.id, s.data() as Omit<AssetDoc, 'id'>]));
+  return applyKitToDoc(doc0, kitId, kit, info, today, now);
+}
+
+/** The pure part of applying a kit (tested): `info` holds the kit's files that are ready pictures the owner has. */
+export function applyKitToDoc(doc0: LinkAdDoc, kitId: string, kit: BrandKitInput, info: Map<string, Pick<AssetDoc, 'title' | 'width' | 'height' | 'sizeBytes' | 'mimeType'>>, today: string, now: number): LinkAdDoc {
+  let d: LinkAdDoc = { ...doc0, ad: { ...doc0.ad, brand: kitToLinkAdBrand(kit) } };
+  const assets: LinkAdAsset[] = [...d.source.assets];
+  const addFile = (assetId: string, role: 'logo' | 'image', real: boolean, label: string): string | null => {
+    const a = info.get(assetId);
+    if (!a) return null;
+    const refId = kitRefId(assetId);
+    const existing = assets.findIndex((x) => x.assetId === assetId);
+    const entry: LinkAdAsset = { id: existing >= 0 ? assets[existing]!.id : refId, assetId, role, origin: 'upload', url: null, pageUrl: null, alt: (label || a.title || '').slice(0, 240), width: a.width ?? null, height: a.height ?? null, bytes: a.sizeBytes ?? null, mime: a.mimeType ?? null, status: 'stored', rejectReason: null, rights: 'confirmed', needsReview: false, reviewed: false, selected: true, note: `From the brand kit “${kit.name.slice(0, 80)}”${real ? ' · real photo' : ''}`.slice(0, 240), real };
+    if (existing >= 0) assets[existing] = { ...assets[existing]!, ...entry };
+    else assets.push(entry);
+    return entry.id;
+  };
+  const logoId = kit.logos[0] ? addFile(kit.logos[0].assetId, 'logo', false, kit.logos[0].label || `${kit.name} logo`) : null;
+  const photoIds = kitPhotosFirst(kit).map((ph) => addFile(ph.assetId, 'image', ph.real, ph.label || ph.product)).filter((x): x is string => Boolean(x));
+  d = { ...d, source: { ...d.source, assets: assets.slice(0, 40) }, brief: { ...d.brief, logoId: logoId ?? d.brief.logoId, imageIds: [...new Set([...photoIds, ...d.brief.imageIds])].slice(0, LINKAD_LIMITS.maxImages) } };
+
+  // Facts: the brand's name, and (outside a poster form) its prices and contacts.
+  const kitFacts: UserFact[] = [{ id: 'kit_name', kind: 'business_name', text: kit.name.slice(0, 400), at: now, kit: null }];
+  if (!d.poster) {
+    for (const o of kit.offers) kitFacts.push({ id: `kit_o_${o.id}`.slice(0, 80), kind: 'price', text: [o.item, `${o.currency}${o.price}`, o.unit].filter(Boolean).join(' ').slice(0, 400), at: now, kit: { kitId, entryId: o.id, reviewBy: o.reviewBy } });
+    for (const c of kit.contacts) kitFacts.push({ id: `kit_c_${c.id}`.slice(0, 80), kind: c.kind === 'website' || c.kind === 'social' ? 'destination' : c.kind === 'address' ? 'location' : 'contact', text: `${c.label ? `${c.label} ` : ''}${c.value}`.slice(0, 400), at: now, kit: { kitId, entryId: c.id, reviewBy: c.reviewBy } });
+  }
+  d = { ...d, userFacts: [...d.userFacts.filter((f) => !f.id.startsWith('kit_')), ...kitFacts].slice(0, 40) };
+
+  if (d.poster) {
+    const p = d.poster;
+    const offers = new Map(kit.offers.map((o) => [o.id, o]));
+    const contacts = new Map(kit.contacts.map((c) => [c.id, c]));
+    // Rows that came from the kit follow it; an empty form is filled from it.
+    let prices = p.prices.filter((r) => !r.kitEntryId || offers.has(r.kitEntryId)).map((r) => {
+      const o = r.kitEntryId ? offers.get(r.kitEntryId) : undefined;
+      return o ? { ...r, item: o.item.slice(0, 60), price: o.price, currency: o.currency, unit: o.unit.slice(0, 40), reviewBy: o.reviewBy } : r;
+    });
+    if (!prices.length) prices = kit.offers.slice(0, p.template === 'price_list' ? 8 : 2).map((o) => ({ id: `p_${o.id}`.slice(0, 80), item: o.item.slice(0, 60), price: o.price, currency: o.currency, unit: o.unit.slice(0, 40), kitEntryId: o.id, reviewBy: o.reviewBy }));
+    let pc = p.contacts.filter((r) => !r.kitEntryId || contacts.has(r.kitEntryId)).map((r) => {
+      const c = r.kitEntryId ? contacts.get(r.kitEntryId) : undefined;
+      return c ? { ...r, kind: c.kind, value: c.value.slice(0, 160), reviewBy: c.reviewBy } : r;
+    });
+    if (!pc.length) {
+      const order = ['phone', 'whatsapp', 'website', 'social', 'email', 'address'];
+      pc = [...kit.contacts].sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)).slice(0, 2).map((c) => ({ id: `c_${c.id}`.slice(0, 80), kind: c.kind, value: c.value.slice(0, 160), kitEntryId: c.id, reviewBy: c.reviewBy }));
+    }
+    const poster: PosterForm = { ...p, prices, contacts: pc, fonts: { heading: kit.fonts.heading, body: kit.fonts.body }, photoIds: p.photoIds.length ? p.photoIds : photoIds.slice(0, 4) };
+    d = { ...d, poster };
+  }
+  d = { ...d, brandKit: { kitId, name: kit.name.slice(0, 120), appliedAt: now } };
+  d = syncPosterFacts(d, now);
+
+  // The kit's own confirmation stands in the ad while it is current; an overdue entry must be re-confirmed in the kit.
+  const confirmations = { ...d.confirmations };
+  for (const f of allFacts(d)) {
+    const u = d.userFacts.find((x) => x.id === f.id);
+    if (!u?.kit) continue;
+    if (reviewState(u.kit.reviewBy, today) === 'overdue') delete confirmations[f.id];
+    else confirmations[f.id] = factHash(f);
+  }
+  d = { ...d, confirmations };
+  return { ...d, ad: { ...d.ad, scenes: reviewScenes(d) } };
+}
+
+async function applyKit(owner: Owner, p: Req<'applyKit'>) {
+  await assertLinkAdAccess(owner);
+  const { kit } = await loadKit(owner.uid, p.kitId);
+  const { doc: cur } = await loadAd(owner.uid, p.projectId);
+  const prepared = await withKit(owner.uid, cur, p.kitId, kit);
+  const doc = await mutateAd(owner.uid, p.projectId, (d) => ({ ...d, ad: { ...d.ad, brand: prepared.ad.brand, scenes: prepared.ad.scenes }, source: { ...d.source, assets: prepared.source.assets }, brief: { ...d.brief, logoId: prepared.brief.logoId, imageIds: prepared.brief.imageIds }, userFacts: prepared.userFacts, confirmations: prepared.confirmations, poster: prepared.poster, brandKit: prepared.brandKit }));
+  return { revision: doc.revision };
+}
+
+async function buildScript(owner: Owner, p: Req<'buildScript'>) {
+  await assertLinkAdAccess(owner);
+  const doc = await mutateAd(
+    owner.uid,
+    p.projectId,
+    (d0) => {
+      if (!d0.poster) throw new HttpsError('failed-precondition', 'This ad has no facts form.');
+      if (!d0.poster.headline.trim()) throw new HttpsError('failed-precondition', 'Write a headline first.');
+      const d = syncPosterFacts(d0);
+      const script = buildPosterScript(d);
+      // Recordings stay with scenes whose words did not change (a take's hash says whether it is current).
+      const ids = new Set(script.scenes.map((s) => s.id));
+      const takes = Object.fromEntries(Object.entries(d.ad.takes).filter(([sid]) => ids.has(sid)));
+      const brief = { ...d.brief, ...script.brief };
+      const next: LinkAdDoc = { ...d, brief, ad: { ...d.ad, title: script.title.slice(0, 120), scenes: script.scenes, closing: script.closing, takes }, poster: { ...d.poster!, scriptFor: posterFormHash(d.poster!) } };
+      const approved = { ...next, briefApprovedAt: Date.now(), briefApprovedHash: usedFactsHash(next) };
+      return d.stage === 'generating' ? approved : moveStage(approved, 'generating', 'Check the script, then make the voice.', { force: true });
+    },
+    { expectedRevision: p.revision },
+  );
+  return { revision: doc.revision, scenes: doc.ad.scenes.length };
+}
+
+async function savePoster(owner: Owner, p: Req<'savePoster'>) {
+  await assertLinkAdAccess(owner);
+  const loaded = await loadAd(owner.uid, p.projectId);
+  const doc = loaded.doc;
+  if (!doc.poster) throw new HttpsError('failed-precondition', 'This ad has no poster.');
+  if (p.hash !== posterInputHash(doc, p.format)) throw new HttpsError('failed-precondition', 'The poster changed while it was being drawn. Save it again.', { reason: 'stale_poster' });
+  const blocking = posterReadiness(doc).filter((i) => i.severity === 'error');
+  if (blocking.length) throw new HttpsError('failed-precondition', `Fix ${blocking.length} problem${blocking.length === 1 ? '' : 's'} before saving the poster: ${blocking.slice(0, 3).map((i) => i.message).join(' ')}`, { reason: 'not_ready', issues: blocking.slice(0, 20) });
+  const a = await col.assets().doc(p.assetId).get();
+  if (!a.exists || a.get('ownerUid') !== owner.uid) throw new HttpsError('not-found', 'Poster file not found.');
+  if (a.get('kind') !== 'image' || a.get('status') !== 'ready') throw new HttpsError('failed-precondition', 'The poster file is not a ready picture yet.');
+  const want = POSTER_FORMATS[p.format];
+  if (Number(a.get('width')) !== want.width || Number(a.get('height')) !== want.height) throw new HttpsError('failed-precondition', `The poster file is ${a.get('width')}×${a.get('height')}; the ${p.format} poster must be exactly ${want.width}×${want.height}.`);
+  const next = await mutateAd(owner.uid, p.projectId, (d) => (d.poster ? { ...d, poster: { ...d.poster, exports: { ...d.poster.exports, [p.format]: { assetId: p.assetId, hash: p.hash, width: want.width, height: want.height, at: Date.now() } } } } : d));
+  if (p.format === '4:5' || !(await loaded.ref.get()).get('coverAssetId')) await loaded.ref.update({ coverAssetId: p.assetId }).catch(() => undefined);
+  return { revision: next.revision };
+}
+
+async function music(owner: Owner, p: Req<'music'>) {
+  await assertLinkAdAccess(owner);
+  const { doc, title } = await loadAd(owner.uid, p.projectId);
+  const request = { type: 'music.generate' as const, projectId: p.projectId, purpose: 'song' as const, instrumental: true, prompt: p.prompt, alternate: false, imageAssetIds: [], title: `${title} · music bed`.slice(0, 160), label: 'Instrumental bed for the ad' };
+  const prepared = await prepareAll(owner.uid, [request]);
+  const est = prepared[0]!.estimate;
+  const stepProblem = async () => {
+    try {
+      assertWithinAdCap(doc, est.usd);
+      assertWithinLimits(await getSettings(owner.uid), await spendSnapshot(owner.uid), est.usd);
+      return null;
+    } catch (e) {
+      return (e as Error).message;
+    }
+  };
+  if (p.estimateOnly) return { estimate: est, problem: await stepProblem(), capUsd: doc.spend.capUsd, committedUsd: committedUsd(doc), fixture: doc.mode === 'fixture' };
+  return withLock(p.projectId, 'linkad_music', async () => {
+    const fresh = (await loadAd(owner.uid, p.projectId)).doc;
+    if (fresh.ad.music.jobId) {
+      const j = await col.jobs().doc(fresh.ad.music.jobId).get();
+      if (j.exists && ACTIVE_STATUSES.includes(j.get('status'))) return { jobId: j.id, started: false, estimate: est };
+    }
+    assertWithinAdCap(fresh, est.usd);
+    const res = await createJobs(owner.uid, [request], { confirmedUsd: p.confirmedUsd, batchLabel: request.label });
+    const jobId = res.jobIds[0]!;
+    await mutateAd(owner.uid, p.projectId, (d) => addLedger({ ...d, ad: { ...d.ad, music: { ...d.ad.music, jobId, prompt: p.prompt, origin: 'generated' } } }, { step: 'music', kind: 'music', units: '1 instrumental', estimateUsd: res.estimate.usd, actualUsd: null, jobId, basis: d.mode === 'fixture' ? 'fixture' : 'published_rate' }));
+    return { jobId, started: true, estimate: res.estimate };
+  });
+}
+
+/** Puts a finished music bed on the ad (made by the studio's own music job for this ad, so its use is confirmed). */
+async function collectMusic(uid: string, projectId: string): Promise<boolean> {
+  const { doc } = await loadAd(uid, projectId);
+  const jobId = doc.ad.music.jobId;
+  if (!jobId) return false;
+  const j = await col.jobs().doc(jobId).get();
+  if (!j.exists || j.get('ownerUid') !== uid) return false;
+  const status = String(j.get('status'));
+  if (status !== 'completed' && status !== 'failed' && status !== 'cancelled') return false;
+  const assetId = ((j.get('result.assetIds') as string[] | undefined) ?? [])[0] ?? null;
+  await mutateAd(uid, projectId, (d) => {
+    if (d.ad.music.jobId !== jobId) return d;
+    const ledger = { ...d, spend: { ...d.spend, ledger: d.spend.ledger.map((e) => (e.jobId === jobId && e.actualUsd === null ? { ...e, actualUsd: Number(j.get('usageUsd') ?? 0) } : e)) } };
+    if (status === 'completed' && assetId) return { ...ledger, ad: { ...d.ad, music: { ...d.ad.music, assetId, title: 'Instrumental bed (made in the studio)', rightsConfirmed: true, origin: 'generated', jobId: null } } };
+    return { ...ledger, ad: { ...d.ad, music: { ...d.ad.music, jobId: null } }, lastError: { message: String(j.get('error.message') ?? 'The music bed could not be made.').slice(0, 500), step: 'music', at: Date.now(), retryable: true } };
+  });
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -680,6 +914,16 @@ export async function linkAd(owner: Owner, p: LinkAdRequest) {
       return refresh(owner, p);
     case 'duplicate':
       return duplicate(owner, p);
+    case 'createPoster':
+      return createPoster(owner, p);
+    case 'applyKit':
+      return applyKit(owner, p);
+    case 'buildScript':
+      return buildScript(owner, p);
+    case 'savePoster':
+      return savePoster(owner, p);
+    case 'music':
+      return music(owner, p);
     default: {
       const never: never = p;
       throw new HttpsError('invalid-argument', `Unknown Link to Ad operation ${(never as { op?: string }).op ?? ''}.`);

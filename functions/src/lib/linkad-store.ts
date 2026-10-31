@@ -1,5 +1,5 @@
 import { HttpsError } from 'firebase-functions/v2/https';
-import { canMoveStage, dayKey, LINKAD_LIMITS, normalizeLinkAd, stableHash, type CostEstimate, type JobDoc, type LedgerEntry, type LinkAdDoc, type LinkAdStage } from '@az-studio/shared';
+import { canMoveStage, dayKey, isLinkAdProjectType, LINKAD_LIMITS, normalizeLinkAd, stableHash, type CostEstimate, type JobDoc, type LedgerEntry, type LinkAdDoc, type LinkAdStage } from '@az-studio/shared';
 import { col, db, FieldValue } from './firebase';
 import { enqueueJob } from './jobs';
 import type { Owner } from './owner';
@@ -71,14 +71,16 @@ export interface LoadedAd {
   ref: FirebaseFirestore.DocumentReference;
   title: string;
   doc: LinkAdDoc;
+  /** `link_ad` or `poster_ad` (a Motion Poster Ad shares the document, API and pipeline). */
+  type: 'link_ad' | 'poster_ad';
 }
 
 /** Loads one ad the caller owns. Anything else — missing, someone else's, another project type — looks the same. */
 export async function loadAd(uid: string, projectId: string): Promise<LoadedAd> {
   const ref = col.projects().doc(projectId);
   const snap = await ref.get();
-  if (!snap.exists || snap.get('ownerUid') !== uid || snap.get('type') !== 'link_ad') throw new HttpsError('not-found', 'Ad not found.');
-  return { ref, title: String(snap.get('title') ?? 'Link to Ad'), doc: normalizeLinkAd(snap.get('linkad')) };
+  if (!snap.exists || snap.get('ownerUid') !== uid || !isLinkAdProjectType(snap.get('type'))) throw new HttpsError('not-found', 'Ad not found.');
+  return { ref, title: String(snap.get('title') ?? 'Link to Ad'), doc: normalizeLinkAd(snap.get('linkad')), type: snap.get('type') === 'poster_ad' ? 'poster_ad' : 'link_ad' };
 }
 
 const MAX_DOC_BYTES = 900_000;
@@ -113,7 +115,7 @@ export async function mutateAd(uid: string, projectId: string, fn: (doc: LinkAdD
   const ref = col.projects().doc(projectId);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
-    if (!snap.exists || snap.get('ownerUid') !== uid || snap.get('type') !== 'link_ad') throw new HttpsError('not-found', 'Ad not found.');
+    if (!snap.exists || snap.get('ownerUid') !== uid || !isLinkAdProjectType(snap.get('type'))) throw new HttpsError('not-found', 'Ad not found.');
     const cur = normalizeLinkAd(snap.get('linkad'));
     if (opts.expectedRevision !== undefined && cur.revision !== opts.expectedRevision) throw new HttpsError('aborted', 'This ad was changed somewhere else (another tab?). Reload to see the latest version.', { reason: 'revision_conflict', revision: cur.revision });
     const next = sizeGuard({ ...(await fn(cur, String(snap.get('title') ?? ''))), revision: cur.revision + 1, updatedAt: Date.now() });

@@ -28,7 +28,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite', 'link_ad'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite', 'link_ad', 'poster_ad'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -42,6 +42,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   film_lite: 'Film Studio Lite',
   mv_lite: 'Music Video Lite',
   link_ad: 'Link to Ad',
+  poster_ad: 'Motion Poster Ad',
 };
 
 export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';

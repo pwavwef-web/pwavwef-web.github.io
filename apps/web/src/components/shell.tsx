@@ -11,7 +11,7 @@ import { cx, Notice, Tip } from './ui';
 export const NAV = [
   { to: '/studio', label: 'Home', icon: House, end: true },
   { to: '/projects', label: 'Projects', icon: FolderOpen },
-  { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/linkad', '/ads', '/narrator'] },
+  { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/linkad', '/poster', '/studio/brands', '/ads', '/narrator'] },
   { to: '/assets', label: 'Assets', icon: Layers },
   { to: '/jobs', label: 'Jobs', icon: ListChecks },
   { to: '/settings', label: 'Settings', icon: Settings2 },

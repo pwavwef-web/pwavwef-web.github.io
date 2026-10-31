@@ -1,5 +1,5 @@
 import { logger } from 'firebase-functions';
-import type { JobDoc } from '@az-studio/shared';
+import { isLinkAdProjectType, type JobDoc } from '@az-studio/shared';
 import { col, db } from '../lib/firebase';
 import { prepareFinalInspect } from '../lib/prepare-studio';
 import { createInternalJob } from '../lib/submit';
@@ -35,6 +35,6 @@ export async function afterRenderCompleted(job: JobDoc): Promise<void> {
   if (!renderId || !job.projectId) return;
   // A Link to Ad export: measure the finished file and move the ad on (best effort; the editor also refreshes).
   const { syncExports } = await import('../api/linkad');
-  if ((await col.projects().doc(job.projectId).get()).get('type') === 'link_ad') await syncExports(job.ownerUid, job.projectId).catch((e) => logger.warn('link ad export sync failed', { error: String(e) }));
+  if (isLinkAdProjectType((await col.projects().doc(job.projectId).get()).get('type'))) await syncExports(job.ownerUid, job.projectId).catch((e) => logger.warn('link ad export sync failed', { error: String(e) }));
   await startFinalInspection(renderId, job.ownerUid, job.projectId);
 }

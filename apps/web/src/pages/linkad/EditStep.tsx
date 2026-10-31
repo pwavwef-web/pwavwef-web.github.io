@@ -62,6 +62,46 @@ function FocalPicker({ asset, scene, onPick }: { asset: LinkAdAsset; scene: AdSc
   );
 }
 
+/** An instrumental bed made for this ad with the studio's music job (estimate first, then the ordinary job queue). */
+function MusicBed({ p }: { p: StepProps }) {
+  const { editor, project, act } = p;
+  const doc = editor.doc;
+  const [open, setOpen] = useState(false);
+  const [prompt, setPrompt] = useState(doc.ad.music.prompt || 'Warm, modern instrumental bed for a 30 second advert, light percussion, steady mid tempo, leaves room for a voice. Strictly instrumental, no vocals.');
+  const making = Boolean(editor.server.ad.music.jobId);
+  const est = useEstimate(open && !making && prompt.trim().length >= 10 ? () => linkAdCall<EstimateReply>({ op: 'music', projectId: project.id, requestId: 'estimate-only', prompt: prompt.trim(), estimateOnly: true }) : null, `${open}|${making}`);
+  const make = () =>
+    act('Could not start the music', async () => {
+      const e = await linkAdCall<EstimateReply>({ op: 'music', projectId: project.id, requestId: 'estimate-only', prompt: prompt.trim(), estimateOnly: true });
+      const r = await linkAdCall<{ started: boolean }>({ op: 'music', projectId: project.id, requestId: newRequestId(), prompt: prompt.trim(), confirmedUsd: e.estimate?.usd ?? 0 });
+      toast.success(r.started ? 'Making the music bed' : 'Already making it', { description: 'It is added to the ad (ducked under the voice) when it is ready.' });
+      setOpen(false);
+    });
+  if (making) return <Notice tone="accent">Making an instrumental bed for this ad… It is added automatically when it is ready.</Notice>;
+  if (!open)
+    return (
+      <Button size="sm" variant="subtle" icon={<Sparkles className="size-3.5" />} onClick={() => setOpen(true)} disabled={p.busy}>
+        {doc.ad.music.origin === 'generated' && doc.ad.music.assetId ? 'Make another instrumental bed' : 'Make an instrumental bed'}
+      </Button>
+    );
+  return (
+    <div className="space-y-2 rounded-lg border border-line p-3">
+      <Field label="Describe the music" htmlFor="mb-prompt" hint="Strictly instrumental: the voice carries the words.">
+        <Textarea id="mb-prompt" rows={3} maxLength={400} value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+      </Field>
+      <EstimateBlock state={est} doc={doc} />
+      <div className="flex gap-2">
+        <Button size="sm" variant="primary" onClick={() => void make()} disabled={p.busy || !est.data?.estimate || Boolean(est.data?.problem)}>
+          Make it
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function EditStep(p: StepProps) {
   const { editor, project, act, job } = p;
   const uid = useUid();
@@ -142,13 +182,13 @@ export function EditStep(p: StepProps) {
   // --- music -------------------------------------------------------------------------------------------------------
   const chooseMusic = (assetId: string) => {
     const a = libraryAudio.data.find((x) => x.id === assetId);
-    patchAd({ music: { ...doc.ad.music, assetId: assetId || null, title: a?.title ?? '', rightsConfirmed: assetId === doc.ad.music.assetId ? doc.ad.music.rightsConfirmed : false } });
+    patchAd({ music: { ...doc.ad.music, assetId: assetId || null, title: a?.title ?? '', origin: assetId === doc.ad.music.assetId ? doc.ad.music.origin : 'library', rightsConfirmed: assetId === doc.ad.music.assetId ? doc.ad.music.rightsConfirmed : false } });
   };
   const uploadMusic = async (file: File | undefined) => {
     if (!file) return;
     await act('Could not add the music', async () => {
       const id = await uploadFile(file, { kind: 'audio', projectId: project.id, collections: ['linkad:music'] });
-      patchAd({ music: { ...doc.ad.music, assetId: id, title: file.name.replace(/\.[^.]+$/, ''), rightsConfirmed: false } });
+      patchAd({ music: { ...doc.ad.music, assetId: id, title: file.name.replace(/\.[^.]+$/, ''), origin: 'library', rightsConfirmed: false } });
     });
   };
 
@@ -419,7 +459,8 @@ export function EditStep(p: StepProps) {
                 </Field>
               </>
             )}
-            <p className="text-[11px] text-faint">Only music you are entitled to use. No music is generated or added for you.</p>
+            <MusicBed p={p} />
+            <p className="text-[11px] text-faint">Only music you are entitled to use, or a bed made for this ad with the studio's music model. Nothing is generated until you ask, and you see the estimate first.</p>
           </div>
         </Panel>
 

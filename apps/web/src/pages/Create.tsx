@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { ArrowRight, AudioLines, BookAudio, Clapperboard, Disc3, Film, GalleryHorizontalEnd, Image as ImageIcon, Link2, Megaphone, Music2, Scissors } from 'lucide-react';
+import { ArrowRight, AudioLines, BookAudio, Clapperboard, Disc3, Film, GalleryHorizontalEnd, Image as ImageIcon, Link2, Megaphone, Music2, Palette, Presentation, Scissors } from 'lucide-react';
 import type { ProjectType } from '@az-studio/shared';
 import { useCaps } from '../lib/session';
 import { NewProjectDialog } from '../components/projects';
@@ -20,6 +20,8 @@ export default function Create() {
     { key: 'lite', title: 'Film Studio Lite', body: 'Cinematic stories from images, voice and sound — several minutes long, slow camera movement over stills, narration, subtitles, score and ambience. No generated video.', icon: GalleryHorizontalEnd, to: '/lite', model: `${caps?.image.displayName ?? ''} · ${caps?.speech.displayName ?? ''}` },
     { key: 'mvlite', title: 'Music Video Lite', body: 'A music video from your song and still images — cuts on the beat, slow camera moves, lyrics synchronised to the vocals as captions. No generated video.', icon: Disc3, to: '/mvlite', model: caps?.image.displayName },
     { key: 'linkad', title: 'Link to Ad', body: 'Paste a website link. Get an editable first ad: sourced facts, three directions, voice-over, captions and a real MP4 — no generated video needed.', icon: Link2, to: '/linkad', model: `${caps?.reasoning.displayName ?? ''} · ${caps?.speech.displayName ?? ''}` },
+    { key: 'poster', title: 'Motion Poster Ad', body: 'Facts and real photos become a designed poster (4:5 and 9:16, your brand colours, fonts and logo) and a 15–30 s vertical ad with voice, word-timed captions and a music bed.', icon: Presentation, to: '/poster', model: `${caps?.speech.displayName ?? ''} · ${caps?.music.displayName ?? ''}` },
+    { key: 'brands', title: 'Brand kits', body: 'One kit per client: colours, fonts, logos, contacts, prices with the day they were confirmed, and real product photos — used by every ad tool.', icon: Palette, to: '/studio/brands' },
     { key: 'ads', title: 'Short Ads', body: 'Short promotional videos: brief → audio & assets → storyboard → generate → review → export, with captions and a final advert-safety check.', icon: Megaphone, to: '/ads', model: `${caps?.reasoning.displayName ?? ''} · ${caps?.video.displayName ?? ''}` },
     { key: 'narrator', title: 'Pwavwe Narrator', body: 'Audio editions of The Pwavwe Papers, read in your own replicated voice or one of 30 Google voices — one-take narration, chapters, Auto-direct, exports and a hosted player.', icon: BookAudio, to: '/narrator' },
     { key: 'image', title: 'Image Studio', body: 'Characters, turnarounds, costumes, sets, posters, thumbnails and storyboard frames — with iterative edits.', icon: ImageIcon, to: '/create/image', model: caps?.image.displayName },

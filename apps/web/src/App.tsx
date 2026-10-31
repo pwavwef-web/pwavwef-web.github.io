@@ -31,6 +31,9 @@ const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
 const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
 const LinkAdStudio = lazy(() => import('./pages/linkad/LinkAdStudio'));
 const LinkAdWorkspace = lazy(() => import('./pages/linkad/LinkAdWorkspace'));
+const PosterStudio = lazy(() => import('./pages/poster/PosterStudio'));
+const PosterWorkspace = lazy(() => import('./pages/poster/PosterWorkspace'));
+const BrandKits = lazy(() => import('./pages/BrandKits'));
 const NarratorShell = lazy(() => import('./pages/narrator/NarratorShell'));
 const NarratorEditions = lazy(() => import('./pages/narrator/EditionsHome'));
 const NarratorVoice = lazy(() => import('./pages/narrator/VoicePage'));
@@ -117,6 +120,9 @@ const router = createBrowserRouter([
           { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
           { path: 'linkad', element: <Page><LinkAdStudio /></Page> },
           { path: 'linkad/:projectId/:step?', element: <Page><LinkAdWorkspace /></Page> },
+          { path: 'poster', element: <Page><PosterStudio /></Page> },
+          { path: 'poster/:projectId/:step?', element: <Page><PosterWorkspace /></Page> },
+          { path: 'studio/brands/:kitId?', element: <Page><BrandKits /></Page> },
           {
             path: 'narrator',
             element: <Page><NarratorShell /></Page>,

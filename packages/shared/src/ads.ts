@@ -8,7 +8,7 @@ import { splitSentences, estimateSpeechSeconds } from './duration';
 import { mishearingsFor, protectedTermList, sharedTermsIn } from './protected-terms';
 import { readableWords, recognisedLogos, settleByOcr, type TextEvidence } from './ocr-evidence';
 import { noLogoClause } from './brand-safety';
-import { normalizeFacts, type ApprovedFact } from './facts';
+import { normalizeFacts, staleApprovedFacts, type ApprovedFact } from './facts';
 import { compileShotPrompt, EMPTY_DIRECTIONS } from './prompt';
 import { applyLyricCaptions, DEFAULT_TEXT_STYLE, makeClip, makeTrack, MIN_CLIP_SECONDS, type TimelineState } from './timeline';
 
@@ -122,6 +122,8 @@ export interface AdSpec {
   assets: AdAssetRef[];
   /** Approved facts (prices, phone numbers, dates, links): the final cut is checked against them before export. */
   facts: ApprovedFact[];
+  /** The brand kit the brand, logo and approved facts were last filled from (optional; older drafts have none). */
+  brandKit?: { kitId: string; name: string; appliedAt: number } | null;
   captions: { enabled: boolean; styleId: string | null };
   generation: { resolution: '720p' | '1080p'; qualityRepairs: number };
   timelineId: string | null;
@@ -1304,6 +1306,8 @@ export function adReadiness({ ad, sheet, scenes }: AdReadinessInput): AdReadines
     else if (isGeneratedScene(s.kind) && !s.validation) out.push({ step: 'review', severity: 'warning', message: `“${s.title}” has not been validated yet.` });
   }
   if (scenes.some((s) => s.kind === 'end_card') && !ad.brand.logoAssetId) out.push({ step: 'assets', severity: 'warning', message: 'No logo file: the end card uses typography only.' });
+  // Brand-kit prices and contacts past their review-by day (names and prices change) must be re-confirmed first.
+  for (const f of staleApprovedFacts(ad.facts)) out.push({ step: 'brief', severity: 'error', message: `“${f.value}”${f.label ? ` (${f.label})` : ''} comes from the brand kit and was due for re-confirmation on ${f.reviewBy}. Re-confirm it in the brand kit and apply the kit again.` });
   return out;
 }
 

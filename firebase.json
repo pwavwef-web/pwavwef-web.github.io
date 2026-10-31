@@ -70,7 +70,7 @@
           "destination": "/app.html"
         },
         {
-          "regex": "^/(studio|projects|ads|lite|mvlite|linkad|narrator|create|jobs|settings|print|home)(/.*)?$",
+          "regex": "^/(studio|projects|ads|lite|mvlite|linkad|poster|narrator|create|jobs|settings|print|home)(/.*)?$",
           "destination": "/studio.html"
         },
         {

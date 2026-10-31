@@ -169,6 +169,9 @@ service cloud.firestore {
 
     // Internal state (rate limits, concurrency slots) is never exposed.
     match /runtime/{document=**} { allow read, write: if false; }
+    // Brand kits (one per client): the owner reads them; every write goes through the owner-only API (files checked,
+    // edited prices and contacts re-confirmed, revision conflicts refused).
+    match /brandKits/{id} { allow read: if ownerCanRead(); allow write: if false; }
 
     // Public website early-access list and its hashed-address rate limits. Visitors submit through the
     // azsPublic function; the owner views, exports and deletes through the owner-only API. No client —

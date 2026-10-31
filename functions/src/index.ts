@@ -33,6 +33,7 @@ import * as ads from './api/ads';
 import * as lite from './api/lite';
 import * as mvlite from './api/mvlite';
 import { linkAd } from './api/linkad';
+import { brandKits } from './api/brand-kits';
 import { liteBooth } from './api/lite-booth';
 import { beta } from './api/beta';
 import { member } from './api/member';
@@ -159,6 +160,8 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return beta(owner, req.payload);
     case 'linkAd':
       return linkAd(owner, req.payload);
+    case 'brandKits':
+      return brandKits(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;

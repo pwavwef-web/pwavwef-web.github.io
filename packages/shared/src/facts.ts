@@ -22,6 +22,9 @@ export interface ApprovedFact {
   value: string;
   /** What it is ("Price of the honey jar"). */
   label: string;
+  /** From a brand kit: the day it must be confirmed again (YYYY-MM-DD). Past it, the fact check reports it as stale. */
+  reviewBy?: string | null;
+  origin?: 'kit' | 'user';
 }
 
 export interface Figure {
@@ -399,7 +402,7 @@ export function normalizeFacts(raw: unknown): ApprovedFact[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((f): f is Record<string, unknown> => Boolean(f) && typeof f === 'object')
-    .map((f) => ({ id: String(f.id ?? factId()).slice(0, 40), kind: (FACT_FIGURE_KINDS as readonly string[]).includes(String(f.kind)) ? (f.kind as FactFigureKind) : 'number', value: String(f.value ?? '').slice(0, 120), label: String(f.label ?? '').slice(0, 120) }))
+    .map((f) => ({ id: String(f.id ?? factId()).slice(0, 40), kind: (FACT_FIGURE_KINDS as readonly string[]).includes(String(f.kind)) ? (f.kind as FactFigureKind) : 'number', value: String(f.value ?? '').slice(0, 120), label: String(f.label ?? '').slice(0, 120), ...(typeof f.reviewBy === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(f.reviewBy) ? { reviewBy: f.reviewBy } : {}), ...(f.origin === 'kit' ? { origin: 'kit' as const } : {}) }))
     .filter((f) => f.value.trim())
     .slice(0, 40);
 }
@@ -412,10 +415,20 @@ export function factsFromLinkAd(doc: Pick<LinkAdDoc, 'source' | 'userFacts' | 'c
     const text = [f.currency && f.value ? `${f.currency}${f.value}` : f.value ?? '', f.text].filter(Boolean).join(' · ');
     for (const fig of extractFigures(text)) {
       if (out.some((o) => o.kind === fig.kind && approvedFigure(o)?.key === fig.key)) continue;
-      out.push({ id: `${f.id}_${out.length}`.slice(0, 40), kind: fig.kind, value: fig.raw, label: f.text.slice(0, 120) });
+      out.push({ id: `${f.id}_${out.length}`.slice(0, 40), kind: fig.kind, value: fig.raw, label: f.text.slice(0, 120), ...(f.reviewBy ? { reviewBy: f.reviewBy, origin: 'kit' as const } : {}) });
     }
   }
   return out.slice(0, 60);
+}
+
+/** Approved facts past their brand-kit review-by day: they must be re-confirmed before an export uses them. */
+export function staleApprovedFacts(facts: readonly ApprovedFact[], today = new Date().toISOString().slice(0, 10)): ApprovedFact[] {
+  return facts.filter((f) => typeof f.reviewBy === 'string' && f.reviewBy < today);
+}
+
+/** Stale brand-kit facts as final-inspection findings (a price or contact nobody has re-checked blocks the export). */
+export function staleFactFindings(facts: readonly ApprovedFact[], today?: string): FinalFinding[] {
+  return staleApprovedFacts(facts, today).map((f) => finding('fact_mismatch', 'error', `${FACT_FIGURE_LABELS[f.kind]} “${f.value}”${f.label ? ` (${f.label})` : ''} comes from a brand kit and was due for re-confirmation on ${f.reviewBy}. Re-confirm it in the brand kit (prices and names change) before exporting.`.slice(0, 400), 'measured', {}));
 }
 
 /** Every approved fact of a project: the Short Ads list and the confirmed facts of a Link to Ad. */

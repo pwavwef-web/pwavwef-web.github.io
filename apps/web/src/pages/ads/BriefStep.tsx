@@ -5,6 +5,7 @@ import { useAiRun } from '../../lib/ai';
 import { Button, Card, Field, IconButton, Input, Notice, Segmented, Select, Slider, Textarea } from '../../components/ui';
 import { BrandWarnings } from '../../components/quality-guards';
 import type { StepProps } from './AdStudio';
+import { AdKitCard } from '../../components/ad-kit';
 
 const FIELDS: { key: keyof AdBrief; label: string; hint?: string; rows?: number; placeholder?: string }[] = [
   { key: 'brand', label: 'Brand', placeholder: 'Indigen World' },
@@ -28,6 +29,7 @@ export function BriefStep({ project, ad, update, go }: StepProps) {
   };
   return (
     <div className="space-y-5">
+      <AdKitCard ad={ad} update={update} />
       <Card className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="eyebrow">How this advert starts</p>

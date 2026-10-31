@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { LINKAD_URL_MAX_CHARS } from './linkad-url';
 import { linkAdEditSchema } from './linkad';
+import { POSTER_FORMAT_IDS, POSTER_TEMPLATES } from './poster-schema';
 
 /** Request schema for Link to Ad (`azsApi` action `linkAd`, one `op` per operation). */
 
@@ -35,6 +36,16 @@ export const linkAdRequestSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('cancel'), projectId }),
   z.object({ op: z.literal('refresh'), projectId }),
   z.object({ op: z.literal('duplicate'), projectId, requestId }),
+  /** Motion Poster Ad: a new ad whose source is a facts form (project type `poster_ad`), optionally filled from a brand kit. */
+  z.object({ op: z.literal('createPoster'), requestId, template: z.enum(POSTER_TEMPLATES), title: z.string().max(120).default(''), kitId: id.nullable().default(null), fixture: z.boolean().default(false) }),
+  /** Copies a brand kit into the ad: colours, fonts, logo, real photos, prices and contacts (with their review-by days). */
+  z.object({ op: z.literal('applyKit'), projectId, kitId: id }),
+  /** Motion Poster Ad: writes the motion ad's scenes from the facts form (deterministic, no model call, free). */
+  z.object({ op: z.literal('buildScript'), projectId, revision: z.number().int().nonnegative() }),
+  /** Records a poster PNG the browser drew and uploaded (createUpload), after the poster checks pass. */
+  z.object({ op: z.literal('savePoster'), projectId, format: z.enum(POSTER_FORMAT_IDS), assetId: id, hash: z.string().min(1).max(40) }),
+  /** An instrumental bed for the ad made with the studio's music job (estimate first; confirmation above the threshold). */
+  z.object({ op: z.literal('music'), projectId, requestId, prompt: z.string().trim().min(10).max(400), estimateOnly: z.boolean().default(false), confirmedUsd: z.number().nonnegative().nullable().default(null) }),
 ]);
 /** What the server works with (defaults applied). */
 export type LinkAdRequest = z.output<typeof linkAdRequestSchema>;
