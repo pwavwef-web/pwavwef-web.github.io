@@ -4,9 +4,16 @@
 
 ```bash
 npm install
-npm run deploy                 # lint, typecheck, tests, then renderer + rules + functions + hosting
-node scripts/deploy.mjs --skip-checks --only=hosting   # partial deploys
+node scripts/release.mjs --deploy                      # tag the clean HEAD as studio-vYYYY.MM.DD.N, then deploy it
+node scripts/release.mjs --deploy --only=hosting       # partial deploys (any subset of renderer,stems,rules,functions,hosting)
+npm run deploy                                         # deploy HEAD when it is already tagged
 ```
+
+**Release train.** `scripts/deploy.mjs` deploys only a clean, tagged commit (`studio-v…`, annotated, made by `scripts/release.mjs`); untracked client production folders and `exports/` are ignored. The tag and short commit are stamped into the web build (`VITE_AZS_RELEASE`), the functions (`functions/.env.<project>`, `AZS_RELEASE`, gitignored) and the renderer and stems jobs' environment; Settings → Release shows the page's and the server's release, and a tab running an older release gets a reload banner.
+
+**Checks on every push.** `.github/workflows/check.yml` runs `npm run check` (lint, types, unit tests, builds; FFmpeg and fonts installed for the renderer tests) on every push and pull request. The deploy reads that run for the commit with `gh`: a red or unfinished run refuses the deploy; when no run is known (commit not pushed, or `gh` not signed in) the deploy runs lint, typecheck and tests itself (`--skip-checks` skips only this local fallback).
+
+**Safe by construction.** The rules are re-rendered from Secret Manager and verified on every deploy (`render-rules.mjs --verify`: no test owner, no placeholder, the production owner present), and `firebase.json` runs the same verification before *any* Firestore or Storage rules deploy, so a direct `firebase deploy` after an emulator run (which leaves `owner-test-uid` rules behind) is refused. The idempotent network steps — the Cloud Run job deploys, their IAM bindings and `firebase deploy` — are retried up to three times with a growing pause, because this network often drops them half way.
 
 `scripts/deploy.mjs` renders the security rules from Secret Manager (`scripts/render-rules.mjs`), writes the web env (`scripts/write-web-env.mjs`), deploys the Cloud Run jobs from source (`az-studio-renderer`, and `az-studio-stems` for stem separation), and runs a **scoped** `firebase deploy --only firestore,storage,functions:az-studio,hosting:studio`. Targets: `--only=renderer,stems,rules,functions,hosting` (any subset).
 
@@ -76,9 +83,15 @@ Settings → Models probes every role live (`modelStatus`, cached 6 h in `runtim
 - `lyria-3.5`: Vertex AI answers `400 Unsupported model interaction: lyria-3.5` (the publisher model is not found for the project in `global` or `us-central1`). Music is generated with the same model on the Gemini Developer API with `AZ_STUDIO_GEMINI_API_KEY` (configured since 2026-09-25, above); without the key, song, cue and section generation fail fast with this limitation — nothing is billed and no older Lyria model is used. When Google enables it on Vertex AI for the project, the existing jobs switch to it unchanged.
 - `gemini-omni-1.1-flash` is served as `gemini-omni-1.1-flash-preview`; `gemini-3.5-transcribe` (GA ID) and `gemini-3.5-flash-tts` return 404 for the project, so `gemini-3.5-transcribe-preview` and `gemini-2.5-pro-tts` are used.
 
+## Model health (daily canary)
+
+`azsCanary` runs every day at 06:30 (Africa/Accra): a JSON answer from the reasoning model, one spoken sentence and its transcript (≈ $0.002 in total, recorded in the ledger as studio checks), the Lyria route (Vertex AI's refusal must still be *recognised* so music jobs take the Developer API — the 13 Oct failure — and the Developer API must list the model), the Narrator model, and availability listings for video and image (a real probe would cost cents). Each probe keeps a signature (response shape, or error class plus normalised wording); any difference from the previous day's run is stored in `runtime/canary` (copies per day under `runtime/canary/runs`) and shown as a studio-wide banner until acknowledged in Settings → Model health, where the check can also be run on demand.
+
 ## Cost controls
 
 Settings → daily/monthly limits, confirmation threshold, concurrent generations, batch size. Limits are enforced server-side on submission (projected spend = recorded usage + running estimates + new estimate). Estimates use Google’s published list prices; invoices come from Cloud Billing.
+
+**Model budgets** (Settings): a monthly budget per model role (reasoning, video, image, speech, transcription, music, narration; 0 = none). The worker checks it before a job starts (`JOB_ROLES` in `packages/shared/src/role-budgets.ts` lists the roles each job type spends on) and fails the job with the reason, before any request is sent; other roles keep working. **Spend by task** (Settings) groups this month's usage by model and job type and prices the reasoning calls at Gemini 4 Argon's standard rate, which applies from 1 December 2026 (input $4 and output $20 per 1M tokens, double the introductory rate); `PRICING.text` is evaluated per call, so a function instance started in November prices December calls correctly.
 
 Per project (header → settings): **Draft / Final** generation quality (Draft generates new shots at the lowest resolution), a **project budget** with a warning threshold (enforced server-side before submission, shown in every cost confirmation with what remains), the advanced continuity workspaces toggle and **Cancel queued** (queued jobs and unstarted productions stop with no charge). Every cost confirmation lists the video generations, images, music requests, renders, inspections, processing jobs and reference images of the batch.
 

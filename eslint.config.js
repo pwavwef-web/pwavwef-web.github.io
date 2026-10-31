@@ -6,7 +6,9 @@ import globals from 'globals';
 export default tseslint.config(
   {
     // `exports/` holds finished production deliverables (and their own scripts), not studio source.
-    ignores: ['**/node_modules/**', '**/dist/**', 'functions/lib/**', 'firebase/generated/**', 'coverage/**', '.firebase/**', '.credentials/**', 'exports/**'],
+    ignores: ['**/node_modules/**', '**/dist/**', 'functions/lib/**', 'firebase/generated/**', 'coverage/**', '.firebase/**', '.credentials/**', 'exports/**', '.claude/**', 'tests/acceptance/.results/**',
+      // One-off client production scripts (working files, not studio code); the shared runner and the Link to Ad live check stay linted.
+      'scripts/production/**', '!scripts/production/run.mjs', '!scripts/production/link-ad/', '!scripts/production/link-ad/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

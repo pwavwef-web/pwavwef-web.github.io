@@ -5,7 +5,8 @@ import { ACTIVE_STATUSES, formatUsd, type JobDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery } from '../lib/data';
 import { useSession } from '../lib/session';
-import { cx, Tip } from './ui';
+import { releaseMismatch } from '../lib/release';
+import { cx, Notice, Tip } from './ui';
 
 export const NAV = [
   { to: '/studio', label: 'Home', icon: House, end: true },
@@ -56,6 +57,34 @@ function ActiveJobsPill({ collapsed }: { collapsed?: boolean }) {
       {!collapsed && <span>{n ? `${n} generating` : 'No active jobs'}</span>}
       {collapsed && n > 0 && <span>{n}</span>}
     </NavLink>
+  );
+}
+
+/** Studio-wide alerts: model canary changes (until acknowledged in Settings) and a tab running an older release. */
+function StudioAlerts() {
+  const boot = useSession((s) => s.boot);
+  const worse = (boot?.canary?.changes ?? []).filter((c) => c.worse);
+  const stale = releaseMismatch(boot?.release);
+  if (!worse.length && !stale) return null;
+  return (
+    <div className="mb-5 space-y-2">
+      {worse.length > 0 && (
+        <Notice tone="danger">
+          Model check: {worse.map((c) => c.message).join(' ')}{' '}
+          <NavLink to="/settings" className="underline">
+            Review in Settings
+          </NavLink>
+        </Notice>
+      )}
+      {stale && (
+        <Notice tone="warning">
+          A newer release of AZ Studio is live.{' '}
+          <button type="button" className="underline" onClick={() => window.location.reload()}>
+            Reload
+          </button>
+        </Notice>
+      )}
+    </div>
   );
 }
 
@@ -119,6 +148,7 @@ export function AppShell() {
           <ActiveJobsPill collapsed />
         </header>
         <main key={location.pathname.split('/').slice(0, 3).join('/')} className="mx-auto w-full max-w-[1480px] flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-9 lg:pb-12 animate-fade">
+          <StudioAlerts />
           <Outlet />
         </main>
       </div>

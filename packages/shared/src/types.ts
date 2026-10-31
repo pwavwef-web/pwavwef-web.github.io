@@ -843,6 +843,8 @@ export interface StudioSettings {
   retryPolicy: RetryPolicy;
   /** Allow one automatic benign rewrite of a prompt that a content filter blocked. */
   autoPromptRewrite: boolean;
+  /** Monthly budget per model role in USD (role-budgets.ts); 0 or absent = none. */
+  roleBudgetsUsd?: Partial<Record<'reasoning' | 'video' | 'image' | 'speech' | 'transcription' | 'music' | 'narration', number>>;
 }
 
 export const DEFAULT_SETTINGS: StudioSettings = {

@@ -5,6 +5,7 @@
  *  azsJobWorker   — Cloud Tasks queue that runs durable generation / render jobs
  *  azsOnUpload    — validates uploads in the private media bucket
  *  azsMaintenance — reconciles jobs every 10 minutes
+ *  azsCanary      — probes every model role once a day and records what changed
  *  azsPublic      — unauthenticated: published audio editions and the website's early-access form
  */
 import { setGlobalOptions } from 'firebase-functions/v2';
@@ -21,6 +22,7 @@ import type { CharacterDoc } from '@az-studio/shared';
 import { handleBibleCoverChange } from './triggers/bible-cover';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
+import * as ops from './api/ops';
 import * as continuity from './api/continuity';
 import * as production from './api/production';
 import * as studio from './api/studio';
@@ -34,6 +36,8 @@ import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
 import { runMaintenance } from './scheduled/maintenance';
+import { runCanary } from './scheduled/canary';
+import { ownerConfig } from './lib/owner';
 import { handlePublicAudio } from './public/audio';
 import { handleEarlyAccess } from './public/early-access';
 import { earlyAccess } from './api/early-access';
@@ -81,6 +85,10 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return production.productionAction(owner, req.payload);
     case 'modelStatus':
       return production.modelStatus(owner, req.payload);
+    case 'canary':
+      return ops.canary(owner, req.payload);
+    case 'spendByTask':
+      return ops.spendByTask(owner, req.payload);
     case 'continuitySave':
       return continuity.continuitySave(owner, req.payload);
     case 'continuityDelete':
@@ -222,4 +230,10 @@ export const azsMaintenance = onSchedule({ schedule: 'every 10 minutes', timeout
   await runMaintenance();
   // Hashed visitor addresses kept for the early-access rate limits expire after 48 hours.
   await pruneEarlyAccessRate();
+});
+
+/** Daily model canary (scheduled/canary.ts): changes show as a studio banner until acknowledged in Settings. */
+export const azsCanary = onSchedule({ schedule: 'every day 06:30', timeZone: 'Africa/Accra', timeoutSeconds: 300, memory: '512MiB', secrets: [OWNER_UID, OWNER_EMAIL] }, async () => {
+  const state = await runCanary(ownerConfig().uid);
+  if (state.changes.some((c) => c.worse)) logger.warn('model canary changes', { changes: state.changes });
 });

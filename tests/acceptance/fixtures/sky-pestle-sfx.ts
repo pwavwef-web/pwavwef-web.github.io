@@ -226,7 +226,7 @@ export async function synthesiseCues(
     const speechEnd = voiceAt + st.speechSec;
     const rand = rng(1000 + st.index * 17);
     const buf = new Buf(D);
-    let label = '';
+    let label: string;
     let levelDb = 0;
     switch (scene.id) {
       case 'sc_near': {

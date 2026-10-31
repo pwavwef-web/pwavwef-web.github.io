@@ -20,6 +20,9 @@ import {
 } from '@az-studio/shared';
 import { studioCapabilities } from '../config/models';
 import { PRICING } from '../config/pricing';
+import { RELEASE } from '../config/release';
+import { monthRoleSpend } from '../lib/role-budget';
+import { readCanary } from '../scheduled/canary';
 import { createAsset, withTmpDir } from '../lib/assets';
 import { activeSlots } from '../lib/concurrency';
 import { bucket, col, db, FieldValue } from '../lib/firebase';
@@ -55,7 +58,7 @@ async function ownedJob(uid: string, jobId: string): Promise<JobDoc> {
 
 export async function bootstrap(owner: Owner) {
   const userRef = col.users().doc(owner.uid);
-  const [user, settings, spend, slots] = await Promise.all([userRef.get(), getSettings(owner.uid), spendSnapshot(owner.uid), activeSlots(owner.uid)]);
+  const [user, settings, spend, slots, canaryState, roleSpent] = await Promise.all([userRef.get(), getSettings(owner.uid), spendSnapshot(owner.uid), activeSlots(owner.uid), readCanary().catch(() => null), monthRoleSpend(owner.uid).catch(() => null)]);
   if (!user.exists) await userRef.set({ email: owner.email, settings: DEFAULT_SETTINGS, createdAt: FieldValue.serverTimestamp() }, { merge: true });
   return {
     owner,
@@ -67,6 +70,11 @@ export async function bootstrap(owner: Owner) {
     activeSlots: slots.length,
     providerBlocks: await listBlocks().catch(() => []),
     serverTime: Date.now(),
+    /** The deployed release (scripts/release.mjs); the web build carries its own stamp to compare with. */
+    release: RELEASE,
+    /** Unacknowledged model canary changes (Settings → Model health). */
+    canary: canaryState ? { day: canaryState.latest?.day ?? null, changes: canaryState.acknowledgedAt ? [] : canaryState.changes } : null,
+    roleSpendUsd: roleSpent,
   };
 }
 

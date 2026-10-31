@@ -3,13 +3,19 @@
     {
       "database": "az-studio",
       "rules": "firebase/generated/firestore.rules",
-      "indexes": "firebase/firestore.indexes.json"
+      "indexes": "firebase/firestore.indexes.json",
+      "predeploy": [
+        "node scripts/render-rules.mjs --verify"
+      ]
     }
   ],
   "storage": [
     {
       "target": "media",
-      "rules": "firebase/generated/storage.rules"
+      "rules": "firebase/generated/storage.rules",
+      "predeploy": [
+        "node scripts/render-rules.mjs --verify"
+      ]
     }
   ],
   "functions": [

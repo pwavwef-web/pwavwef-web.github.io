@@ -8,6 +8,7 @@ import { useSession } from '../lib/session';
 import { PRESENTER_EVENT, presenterEnabled, setPresenterEnabled } from '../lib/presenter';
 import { Badge, Button, Card, Field, Input, Kbd, SectionHeader, Select, Skeleton, Toggle } from '../components/ui';
 import { EarlyAccessCard } from '../components/early-access';
+import { ModelHealthCard, ReleaseCard, RoleBudgetsCard, SpendByTaskCard } from '../components/ops-cards';
 
 export default function Settings() {
   const { boot, user, setSettings, signOut } = useSession();
@@ -102,7 +103,11 @@ export default function Settings() {
           </Button>
         </Card>
         <RetryCard draft={draft} onChange={(retryPolicy, autoPromptRewrite) => setDraft({ ...draft, retryPolicy, autoPromptRewrite })} onSave={() => void save()} saving={saving} />
+        <RoleBudgetsCard draft={draft} onChange={(roleBudgetsUsd) => setDraft({ ...draft, roleBudgetsUsd })} onSave={() => void save()} saving={saving} />
+        <SpendByTaskCard />
         <div className="space-y-6">
+          <ReleaseCard />
+          <ModelHealthCard />
           <EarlyAccessCard />
           <PresenterCard />
           <Card className="space-y-4 p-6">

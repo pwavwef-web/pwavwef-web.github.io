@@ -10,7 +10,7 @@ The Firebase project also hosts other apps (Hosting sites `az-learner`/“Last H
 | Web app | `AZ Studio` (`1:12958795950:web:06bec3bbdd07bc1c40453f`) |
 | Firestore database | `az-studio` (us-central1, delete protection on) |
 | Storage bucket | `az-studio-media-az-learner` (us-central1, uniform access, public access prevention) |
-| Functions codebase | `az-studio` (`azsApi`, `azsJobWorker`, `azsOnUpload`, `azsMaintenance`) |
+| Functions codebase | `az-studio` (`azsApi`, `azsJobWorker`, `azsOnUpload`, `azsMaintenance`, `azsCanary`, `azsPublic`) |
 | Cloud Run jobs | `az-studio-renderer` (FFmpeg + libass, real font metrics), `az-studio-stems` (Demucs) |
 | Service accounts | `az-studio-api@` (functions), `az-studio-renderer@` (render job) |
 | Secrets | `AZ_STUDIO_OWNER_UID`, `AZ_STUDIO_OWNER_EMAIL`, `AZ_STUDIO_GEMINI_API_KEY` (Lyria 3.5 on the Gemini Developer API; optional), `AZ_STUDIO_FIRECRAWL_API_KEY` (Link to Ad, script-built pages; optional) |

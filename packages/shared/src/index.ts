@@ -1,4 +1,6 @@
 export * from './types';
+export * from './role-budgets';
+export * from './canary';
 export * from './jobs';
 export * from './capabilities';
 export * from './media';

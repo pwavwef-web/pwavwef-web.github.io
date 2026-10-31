@@ -1,5 +1,5 @@
 import { httpsCallable, type FunctionsError } from 'firebase/functions';
-import type { ApiRequest, CostEstimate, JobRequest, PricingTable, StudioCapabilities, StudioSettings, UsageAggregate } from '@az-studio/shared';
+import type { ApiRequest, CostEstimate, JobRequest, PricingTable, StudioCapabilities, StudioSettings, UsageAggregate, BudgetRole, CanaryChange } from '@az-studio/shared';
 import { functions } from './firebase';
 
 const callable = httpsCallable<ApiRequest, unknown>(functions, 'azsApi', { timeout: 300_000 });
@@ -55,6 +55,12 @@ export interface BootstrapData {
   /** Automatic generation paused after an access, billing or quota failure (until fixed or reset). */
   providerBlocks?: { key: string; code: string; message: string; action: string | null; at: number; until: number }[];
   serverTime: number;
+  /** The deployed release (functions); compare with WEB_RELEASE. */
+  release?: { version: string; commit: string | null };
+  /** Unacknowledged daily model canary changes. */
+  canary?: { day: string | null; changes: CanaryChange[] } | null;
+  /** This month's spend per model role (Settings → Model budgets). */
+  roleSpendUsd?: Record<BudgetRole, number> | null;
 }
 
 export interface EstimateResponse {

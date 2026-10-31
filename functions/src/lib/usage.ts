@@ -58,7 +58,8 @@ export function assertWithinLimits(settings: StudioSettings, spend: SpendSnapsho
 export interface UsageInput {
   uid: string;
   projectId: string | null;
-  jobId: string;
+  /** Null for studio housekeeping that is not a job (the daily model canary). */
+  jobId: string | null;
   modelId: string;
   kind: Exclude<UsageRecord['kind'], 'render'>;
   inputTokens: number;
@@ -105,7 +106,7 @@ export async function recordUsage(u: UsageInput): Promise<number> {
   batch.set(col.usageDaily().doc(`${u.uid}_${day}`), { ...agg, day }, { merge: true });
   batch.set(col.usageMonthly().doc(`${u.uid}_${month}`), { ...agg, month }, { merge: true });
   if (u.projectId) batch.set(col.projects().doc(u.projectId), { usage: { costUsd: FieldValue.increment(costUsd), jobs: FieldValue.increment(jobs) } }, { merge: true });
-  batch.set(col.jobs().doc(u.jobId), { usageUsd: FieldValue.increment(costUsd) }, { merge: true });
+  if (u.jobId) batch.set(col.jobs().doc(u.jobId), { usageUsd: FieldValue.increment(costUsd) }, { merge: true });
   await batch.commit();
   return costUsd;
 }

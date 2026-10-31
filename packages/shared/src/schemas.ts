@@ -421,6 +421,7 @@ export const settingsSchema = z.object({
   defaultImageSize: z.string().max(3),
   retryPolicy: retryPolicySchema,
   autoPromptRewrite: z.boolean(),
+  roleBudgetsUsd: z.partialRecord(z.enum(['reasoning', 'video', 'image', 'speech', 'transcription', 'music', 'narration']), z.number().min(0).max(50000)),
 });
 
 export const apiRequestSchema = z.discriminatedUnion('action', [
@@ -560,6 +561,8 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
     }),
   }),
   z.object({ action: z.literal('modelStatus'), payload: z.object({ refresh: z.boolean().default(false) }).default({ refresh: false }) }),
+  z.object({ action: z.literal('canary'), payload: z.object({ op: z.enum(['status', 'run', 'acknowledge']).default('status') }).default({ op: 'status' }) }),
+  z.object({ action: z.literal('spendByTask'), payload: z.object({ month: z.string().regex(/^[0-9]{4}-[0-9]{2}$/).optional() }).default({}) }),
   z.object({
     action: z.literal('continuitySave'),
     payload: z.object({ projectId: id, collection: z.enum(CONTINUITY_COLLECTIONS), id: id.nullable().optional(), data: z.record(z.string(), z.unknown()) }),

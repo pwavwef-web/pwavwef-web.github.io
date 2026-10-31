@@ -30,6 +30,7 @@ import { continueNarratorSpeakJob, runNarratorExportJob, runNarratorSpeakJob, ru
 import { runNarratorDirectJob } from './narrator-direct';
 import { runLinkAdJob } from './linkad';
 import { col } from '../lib/firebase';
+import { jobRoleBudgetProblem } from '../lib/role-budget';
 import { assertProviderAvailable, recoverFromFailure, usesSlot } from './recovery';
 
 async function startJob(jobId: string, seq: number): Promise<void> {
@@ -41,6 +42,12 @@ async function startJob(jobId: string, seq: number): Promise<void> {
   }
   // Access, billing or quota problems pause automatic work: nothing is sent to Google until they change.
   await assertProviderAvailable(claimed);
+  // A model role whose monthly budget is used up starts nothing new (Settings → Model budgets).
+  const overBudget = await jobRoleBudgetProblem(claimed);
+  if (overBudget) {
+    await failJob(claimed, { code: 'role_budget', message: overBudget.message, retryable: false });
+    return;
+  }
   if (usesSlot(claimed)) {
     const settings = await getSettings(claimed.ownerUid);
     const ok = await acquireSlot(claimed.ownerUid, claimed.id, settings.maxConcurrentGenerations);
