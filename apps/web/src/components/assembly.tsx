@@ -158,7 +158,7 @@ export function EditAndExport({ project, onAssemble, assembleLabel = 'Assemble t
       </div>
       <Card className="space-y-4 p-5">
         <p className="eyebrow">Renders</p>
-        {renders.data.length === 0 ? <p className="text-sm text-faint">Rendered films appear here with live progress.</p> : <ul className="space-y-2">{renders.data.map((r) => <RenderRow key={r.id} render={r} inspectionHref={project.type === 'film' ? `/projects/${project.id}/film/final` : project.type === 'music_video' ? `/projects/${project.id}/music/final` : project.type === 'short_ad' ? `/ads/${project.id}/export` : project.type === 'film_lite' ? `/lite/${project.id}/export` : project.type === 'mv_lite' ? `/mvlite/${project.id}/export` : null} />)}</ul>}
+        {renders.data.length === 0 ? <p className="text-sm text-faint">Rendered films appear here with live progress.</p> : <ul className="space-y-2">{renders.data.map((r) => <RenderRow key={r.id} render={r} inspectionHref={project.type === 'film' ? `/projects/${project.id}/film/final` : project.type === 'music_video' ? `/projects/${project.id}/music/final` : project.type === 'short_ad' ? `/ads/${project.id}/export` : project.type === 'film_lite' ? `/lite/${project.id}/export` : project.type === 'mv_lite' ? `/mvlite/${project.id}/export` : project.type === 'link_ad' ? `/linkad/${project.id}/export` : null} />)}</ul>}
       </Card>
       {dialog}
     </div>

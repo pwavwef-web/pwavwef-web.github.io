@@ -7,6 +7,7 @@ import {
   assembleMvTimeline,
   computeMvTiming,
   defaultMvLiteSpec,
+  likenessFailures,
   mvExportChecks,
   normalizeMvLiteSpec,
   shotLyrics,
@@ -27,7 +28,7 @@ import { useDoc, type WithId } from './data';
 import { ASPECT_PRESET, useAssetMap, useProjectDraft } from './lite';
 import { createProject, createTimeline, saveTimeline, updateProject } from './studio';
 
-export { ASPECT_PRESET, jobIndex, useLiteJobs as useMvJobs, waitForJobAssets, type Job, type LiteGenerateResponse, type ShotCandidate } from './lite';
+export { ASPECT_PRESET, adoptableCandidate, jobIndex, useLiteJobs as useMvJobs, waitForJobAssets, type Job, type LiteGenerateResponse, type ShotCandidate } from './lite';
 
 export async function createMvLiteProject(uid: string, input: { title: string; logline?: string; direction: MvDirectionId; aspect: LiteAspect; idea?: string }): Promise<string> {
   const id = await createProject(uid, { title: input.title, type: 'mv_lite', logline: input.logline ?? '', aspectRatio: input.aspect, fps: 24, idea: input.idea ?? '' });
@@ -84,7 +85,7 @@ export function useMvComposition(spec: MvLiteSpec, song: MvSong | null, aspect: 
     for (const [id, a] of Object.entries(assetDocs)) if (a.status === 'ready') assets[id] = { width: a.width ?? null, height: a.height ?? null, durationSec: a.durationSec ?? null };
     const outWidth = EXPORT_PRESETS[ASPECT_PRESET[aspect]].final.width;
     const assembly = assembleMvTimeline({ spec, timing, song, assets, aspect, outWidth });
-    const findings = mvExportChecks({ spec, timing, assembly, song });
+    const findings = mvExportChecks({ spec, timing, assembly, song, likenessFailures: likenessFailures(assetDocs) });
     const lyrics = shotLyrics(timing, song?.sheet);
     return { timing, assembly, findings, lyrics, assetDocs };
   }, [spec, song, assetDocs, aspect]);

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { AudioLines, Download, FileUp, LoaderCircle, Mic, Music2, Pause, Play, RefreshCw, Trash2, TriangleAlert, Upload, Wand2, Wind } from 'lucide-react';
 import {
@@ -128,6 +129,9 @@ function TakeRow({ scene, index, voice, props, audio }: { scene: LiteScene; inde
               {scene.voiceUploadAssetId ? 'Replace recording' : 'Upload recording'}
             </Button>
             <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
+            <Link to={`/lite/booth/${project.id}/${scene.id}`} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-accent-2 hover:bg-white/[0.04]">
+              <Mic className="size-3.5" /> Recording booth
+            </Link>
           </>
         )}
         {scene.voiceUploadAssetId && (

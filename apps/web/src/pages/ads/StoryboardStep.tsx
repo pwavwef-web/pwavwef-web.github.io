@@ -10,6 +10,7 @@ import {
   formatTimecode,
   isGeneratedScene,
   linesInWindow,
+  lintBrief,
   planSceneWindows,
   sceneGenerationSeconds,
   sceneWindowProblems,
@@ -21,6 +22,7 @@ import { useAiRun } from '../../lib/ai';
 import { updateScene, useNarration, writeStoryboard, type AdScene } from '../../lib/ads';
 import { addShots, deleteSubDoc, newShot } from '../../lib/studio';
 import { Badge, Button, Card, ConfirmDialog, cx, EmptyState, Field, IconButton, Input, Notice, Select, Textarea, Toggle } from '../../components/ui';
+import { BrandWarnings } from '../../components/quality-guards';
 import type { StepProps } from './AdStudio';
 
 const KIND_COLOUR: Record<AdSceneKind, string> = {
@@ -123,6 +125,14 @@ function SceneEditor({ project, ad, scene, index, next, onMerge, onSplit }: { pr
           <Field label="What we see" hint="Concrete and visual. People are anonymous; no text, logos or app screens in generated pictures.">
             <Textarea rows={3} value={visual} onChange={(e) => setVisual(e.target.value)} onBlur={() => visual !== scene.description && save({ description: visual })} />
           </Field>
+          <BrandWarnings
+            text={`${visual} ${dir.action ?? ''}`}
+            onApply={() => {
+              const next = lintBrief(visual).saferText;
+              setVisual(next);
+              save({ description: next });
+            }}
+          />
           <button type="button" className="flex cursor-pointer items-center gap-1 text-xs text-faint hover:text-dim" onClick={() => setShowDirection((v) => !v)} aria-expanded={showDirection}>
             Camera, light & prompt <ChevronDown className={cx('size-3 transition-transform', showDirection && 'rotate-180')} />
           </button>

@@ -5,6 +5,10 @@ import type { LyricStyle, LyricStyleDoc } from './lyric-style';
 import { LYRIC_PRESET_STYLES } from './lyric-style';
 import { alignWords, normalizeWord, round3, tokenize, wordSimilarity } from './text-align';
 import { splitSentences, estimateSpeechSeconds } from './duration';
+import { mishearingsFor, protectedTermList, sharedTermsIn } from './protected-terms';
+import { readableWords, recognisedLogos, settleByOcr, type TextEvidence } from './ocr-evidence';
+import { noLogoClause } from './brand-safety';
+import { normalizeFacts, staleApprovedFacts, type ApprovedFact } from './facts';
 import { compileShotPrompt, EMPTY_DIRECTIONS } from './prompt';
 import { applyLyricCaptions, DEFAULT_TEXT_STYLE, makeClip, makeTrack, MIN_CLIP_SECONDS, type TimelineState } from './timeline';
 
@@ -116,6 +120,10 @@ export interface AdSpec {
   brand: AdBrand;
   audio: AdAudio;
   assets: AdAssetRef[];
+  /** Approved facts (prices, phone numbers, dates, links): the final cut is checked against them before export. */
+  facts: ApprovedFact[];
+  /** The brand kit the brand, logo and approved facts were last filled from (optional; older drafts have none). */
+  brandKit?: { kitId: string; name: string; appliedAt: number } | null;
   captions: { enabled: boolean; styleId: string | null };
   generation: { resolution: '720p' | '1080p'; qualityRepairs: number };
   timelineId: string | null;
@@ -134,6 +142,7 @@ export function defaultAdSpec(mode: AdMode = 'audio_first', aspect: AdAspect = '
     brand: { primary: '#19327F', background: '#0F1830', accent: '#22D3EE', text: '#FFFFFF', font: 'Noto Sans', fontAssetId: null, logoAssetId: null, logoSource: '' },
     audio: { assetId: null, songId: null, durationSec: null, fileName: '', preserve: true, referenceScript: '', protectedTerms: [], languageCode: 'en', transcriptApprovedAt: null },
     assets: [],
+    facts: [],
     captions: { enabled: true, styleId: null },
     generation: { resolution: '1080p', qualityRepairs: 1 },
     timelineId: null,
@@ -155,6 +164,7 @@ export function normalizeAdSpec(ad: Partial<AdSpec> | null | undefined): AdSpec 
     captions: { ...base.captions, ...(ad?.captions ?? {}) },
     generation: { ...base.generation, ...(ad?.generation ?? {}) },
     assets: ad?.assets ?? [],
+    facts: normalizeFacts(ad?.facts),
     finalRenderIds: ad?.finalRenderIds ?? {},
   } as AdSpec;
 }
@@ -177,14 +187,23 @@ export const AD_SCENE_KIND_LABELS: Record<AdSceneKind, string> = {
 export const GENERATED_SCENE_KINDS: readonly AdSceneKind[] = ['generated_video', 'generated_image'];
 export const isGeneratedScene = (kind: AdSceneKind) => GENERATED_SCENE_KINDS.includes(kind);
 
-export type AdCheckId = 'playable' | 'duration' | 'aspect' | 'resolution' | 'black' | 'brief' | 'text_in_frame' | 'artefacts' | 'continuity' | 'asset';
+export type AdCheckId = 'playable' | 'duration' | 'aspect' | 'resolution' | 'black' | 'full_frame' | 'brief' | 'text_in_frame' | 'artefacts' | 'continuity' | 'asset';
 
 export interface AdSceneValidation {
   verdict: 'pass' | 'warn' | 'fail';
   checkedAt: number;
   checks: { id: AdCheckId; label: string; ok: boolean; severity: 'info' | 'warning' | 'error'; detail: string }[];
   review: { matchesBrief: number | null; summary: string; issues: { type: string; severity: 'minor' | 'major' | 'critical'; note: string }[] } | null;
-  measurements: { durationSec: number | null; width: number | null; height: number | null; fps: number | null; decodeErrors: number; blackSec: number };
+  measurements: {
+    durationSec: number | null;
+    width: number | null;
+    height: number | null;
+    fps: number | null;
+    decodeErrors: number;
+    blackSec: number;
+    /** Share of the frame the picture actually fills (FFmpeg cropdetect; < 1 = bars or an inset). */
+    activeArea?: { w: number; h: number } | null;
+  };
   modelId: string | null;
   /** What text and logo recognition read on frames sampled from the part of the take the edit uses. */
   textEvidence?: AdTextEvidence | null;
@@ -197,40 +216,7 @@ export function validationSummary(takeId: string, v: AdSceneValidation | null | 
 }
 
 /** Text and logos recognised (Cloud Vision) on sampled frames: evidence for or against the reviewer's text findings. */
-export interface AdTextEvidence {
-  frames: number;
-  words: { text: string; frames: number; heightPct: number }[];
-  logos: { name: string; score: number; frames: number }[];
-}
-
-/** Summarises per-frame recognition into words (letters only, deduplicated) and logos, with how many frames showed each. */
-export function summarizeTextEvidence(frames: { text: { text: string; box: { h: number } | null }[]; logos: { name: string; score: number }[] }[]): AdTextEvidence {
-  const words = new Map<string, { frames: Set<number>; heightPct: number }>();
-  const logos = new Map<string, { frames: Set<number>; score: number }>();
-  frames.forEach((f, i) => {
-    for (const t of f.text) {
-      const key = t.text.normalize('NFC').replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
-      if (!key) continue;
-      const w = words.get(key) ?? { frames: new Set<number>(), heightPct: 0 };
-      w.frames.add(i);
-      w.heightPct = Math.max(w.heightPct, Math.round((t.box?.h ?? 0) * 1000) / 10);
-      words.set(key, w);
-    }
-    for (const l of f.logos) {
-      const key = l.name.trim();
-      if (!key) continue;
-      const g = logos.get(key) ?? { frames: new Set<number>(), score: 0 };
-      g.frames.add(i);
-      g.score = Math.max(g.score, l.score);
-      logos.set(key, g);
-    }
-  });
-  return {
-    frames: frames.length,
-    words: [...words].map(([text, w]) => ({ text, frames: w.frames.size, heightPct: w.heightPct })).sort((a, b) => b.frames - a.frames).slice(0, 20),
-    logos: [...logos].map(([name, g]) => ({ name, score: Math.round(g.score * 100) / 100, frames: g.frames.size })).sort((a, b) => b.score - a.score).slice(0, 10),
-  };
-}
+export type AdTextEvidence = TextEvidence;
 
 const TEXT_ISSUES = ['text_in_frame', 'logo', 'watermark'];
 
@@ -244,11 +230,12 @@ export function reconcileTextIssues(review: NonNullable<AdSceneValidation['revie
 export function reconcileTextIssues(review: AdSceneValidation['review'], evidence: AdTextEvidence | null): AdSceneValidation['review'];
 export function reconcileTextIssues(review: AdSceneValidation['review'], evidence: AdTextEvidence | null): AdSceneValidation['review'] {
   if (!review || !evidence || !evidence.frames) return review;
-  const words = evidence.words.filter((w) => w.text.replace(/\p{N}/gu, '').length >= 3 && (w.frames >= 2 || w.heightPct >= 3));
-  const logos = evidence.logos.filter((l) => l.score >= 0.5);
+  const words = readableWords(evidence);
+  const logos = recognisedLogos(evidence);
   let issues = review.issues;
   if (!words.length && !logos.length) {
-    issues = issues.map((i) => (TEXT_ISSUES.includes(i.type) ? { ...i, severity: 'minor' as const, note: `${i.note} (not confirmed: no text or logo recognised on ${evidence.frames} sampled frames)`.slice(0, 300) } : i));
+    // The shared rule (ocr-evidence.ts): an unconfirmed text or logo finding is minor, with a note.
+    issues = issues.map((i) => (TEXT_ISSUES.includes(i.type) ? settleByOcr(i, i.type === 'text_in_frame' ? 'text' : 'logo', evidence, { minor: 'minor', note: (x) => x.note, withNote: (x, note) => ({ ...x, note }) }) : i));
   } else {
     issues = issues.filter((i) => !TEXT_ISSUES.includes(i.type) || i.severity !== 'minor');
     if (logos.length) issues = [...issues, { type: 'logo', severity: 'major' as const, note: `Logo recognised in the picture: ${logos.map((l) => `${l.name} (${l.frames} frame${l.frames === 1 ? '' : 's'})`).join(', ')}`.slice(0, 300) }];
@@ -421,8 +408,17 @@ function heardTokens(asr: AsrWord[], terms: string[]): HeardToken[] {
       return toks.map((t, i) => ({ text: t.raw, norm: t.norm, start: w.start + span * i, end: w.start + span * (i + 1) }));
     });
   const multi = terms.filter((t) => tokenize(t).length >= 2).map((t) => ({ term: t, key: termKey(t) }));
+  // Known mishearings of an expected term ("Casa" for Kasem, "Within World" for Indigen World) stand for the term.
+  const misheard = mishearingsFor(terms).sort((a, b) => b.heard.length - a.heard.length);
   const out: HeardToken[] = [];
   for (let i = 0; i < words.length; i++) {
+    const known = misheard.find((m) => m.heard.every((h, k) => words[i + k]?.norm === h));
+    if (known) {
+      const span = words.slice(i, i + known.heard.length);
+      out.push({ text: span.map((w) => w.text).join(' '), norm: termKey(known.term), start: span[0]!.start, end: span[span.length - 1]!.end, term: known.term });
+      i += known.heard.length - 1;
+      continue;
+    }
     let best: { len: number; sim: number; term: string } | null = null;
     for (const m of multi) {
       for (let len = 1; len <= 3 && i + len <= words.length; len++) {
@@ -559,7 +555,8 @@ function tidy(words: PlacedWord[], durationSec: number): PlacedWord[] {
  * plainly said them, even if the transcription misheard them.
  */
 export function reconcileTranscript(asr: AsrWord[], reference: string | null | undefined, opts: ReconcileOptions): { sheet: LyricsSheet; report: TranscriptReport } {
-  const terms = [...new Set((opts.protectedTerms ?? []).map((t) => t.trim()).filter(Boolean))];
+  // The project's terms, plus shared protected terms the script uses (one list for every tool).
+  const terms = protectedTermList([...(opts.protectedTerms ?? []), ...sharedTermsIn(reference)], { shared: false });
   const heard = heardTokens(asr, terms);
   const speechStart = heard.length ? round3(heard[0]!.start) : null;
   const speechEnd = heard.length ? round3(heard[heard.length - 1]!.end) : null;
@@ -888,16 +885,20 @@ export interface AdScenePromptInput {
 }
 
 /** Ad-wide direction that every generated scene carries. */
-export function adStyleLines(brief: Pick<AdBrief, 'visualDirection' | 'mustAvoid' | 'tone'>): string[] {
+/** Look, tone and — when the scene or the direction names brand-prone objects — the matching no-logo clause. */
+export function adStyleLines(brief: Pick<AdBrief, 'visualDirection' | 'mustAvoid' | 'tone'>, visual = ''): string[] {
   const lines: string[] = [];
   if (brief.visualDirection.trim()) lines.push(`Look and feel: ${brief.visualDirection.trim().replace(/\s+/g, ' ')}`);
   if (brief.tone.trim()) lines.push(`Tone: ${brief.tone.trim()}`);
+  const clause = noLogoClause(`${visual} ${brief.visualDirection}`);
+  if (clause) lines.push(clause);
   return lines;
 }
 
 const AD_AVOID =
   'Do not show any readable text, captions, subtitles, signs with words, logos, brand marks, app interfaces or watermarks — text and branding are added in the edit. ' +
-  'Avoid distorted or extra fingers, morphing faces, characters who change appearance mid-shot, and generic corporate stock-footage staging.';
+  'Avoid distorted or extra fingers, morphing faces, characters who change appearance mid-shot, and generic corporate stock-footage staging. ' +
+  'The picture fills the whole frame edge to edge: no borders, letterbox or pillarbox bars, inset pictures or picture-in-picture.';
 
 /** The prompt for a generated video scene (Gemini Omni). The narration is laid over the edit, so the clip carries no dialogue track of its own. */
 export function compileAdVideoPrompt(input: AdScenePromptInput, brief: Pick<AdBrief, 'visualDirection' | 'mustAvoid' | 'tone'>): string {
@@ -911,7 +912,7 @@ export function compileAdVideoPrompt(input: AdScenePromptInput, brief: Pick<AdBr
   }).replace(/^Dialogue: No dialogue\.$/m, `Dialogue: No dialogue — people may smile, gesture or talk quietly without clear words; the advert's voice-over is added in the edit.`);
   const extra = [
     `Format: ${input.aspect === '9:16' ? 'vertical 9:16, subjects framed for a phone screen with room above and below' : 'horizontal 16:9'}; one continuous ${input.durationSec}-second shot with gentle, motivated camera movement.`,
-    ...adStyleLines(brief),
+    ...adStyleLines(brief, input.visual),
     'Sound: natural room or street ambience only, no music.',
     AD_AVOID,
     brief.mustAvoid.trim() ? `Also avoid: ${brief.mustAvoid.trim()}` : '',
@@ -924,8 +925,8 @@ export function compileAdVideoPrompt(input: AdScenePromptInput, brief: Pick<AdBr
 export function compileAdImagePrompt(input: AdScenePromptInput, brief: Pick<AdBrief, 'visualDirection' | 'mustAvoid' | 'tone'>): string {
   return [
     `Photographic still for a ${input.aspect === '9:16' ? 'vertical 9:16' : 'horizontal 16:9'} video advert: ${input.visual.trim()}`,
-    ...adStyleLines(brief),
-    'Natural, candid moment; realistic hands and faces; shallow depth of field; no text, letters, logos or watermarks anywhere in the image.',
+    ...adStyleLines(brief, input.visual),
+    'Natural, candid moment; realistic hands and faces; shallow depth of field; no text, letters, logos or watermarks anywhere in the image; the picture fills the whole frame with no borders or inset pictures.',
     brief.mustAvoid.trim() ? `Avoid: ${brief.mustAvoid.trim()}` : '',
     ...(input.repairNotes?.length ? [`Fix from the previous attempt: ${input.repairNotes.join(' ')}`] : []),
   ]
@@ -954,6 +955,28 @@ export interface AdValidationInput {
 
 const ASPECT_VALUE: Record<string, number> = { '9:16': 9 / 16, '16:9': 16 / 9, '1:1': 1 };
 
+/**
+ * Parses FFmpeg `cropdetect` output into the share of the frame the picture fills (median over the detections,
+ * so a fade or a dark moment does not decide it). Null when nothing was detected.
+ */
+export function activeAreaFromCropdetect(stderr: string, width: number, height: number): { w: number; h: number } | null {
+  if (!width || !height) return null;
+  const crops = [...stderr.matchAll(/crop=(\d+):(\d+):(\d+):(\d+)/g)].map((m) => ({ w: Number(m[1]) / width, h: Number(m[2]) / height }));
+  if (!crops.length) return null;
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
+  const r = (n: number) => Math.round(Math.min(1, n) * 1000) / 1000;
+  return { w: r(median(crops.map((c) => c.w))), h: r(median(crops.map((c) => c.h))) };
+}
+
+/** Bars or an inset picture: the picture leaves more than 6% of the frame's width or height empty. */
+export function framingProblem(a: { w: number; h: number }): string | null {
+  const lr = a.w < 0.94;
+  const tb = a.h < 0.94;
+  if (!lr && !tb) return null;
+  const kind = lr && tb ? 'an inset picture inside a border (picture-in-picture)' : tb ? 'letterbox bars above and below' : 'pillarbox bars at the sides';
+  return `The picture fills only ${Math.round(a.w * 100)}% × ${Math.round(a.h * 100)}% of the frame — ${kind}.`;
+}
+
 export function evaluateAdScene(input: AdValidationInput): AdSceneValidation {
   const m = input.measurements;
   const checks: AdSceneValidation['checks'] = [];
@@ -976,6 +999,10 @@ export function evaluateAdScene(input: AdValidationInput): AdSceneValidation {
     add('resolution', 'Resolution', ok, 'warning', `${m.width}×${m.height}${ok ? '' : ' — will look soft at the export size'}`);
   }
   if (isVideo) add('black', 'No black frames', m.blackSec < 0.25, 'warning', m.blackSec ? `${m.blackSec.toFixed(2)} s of black` : 'None');
+  // A generated take must fill the frame: letterbox or pillarbox bars, or a picture inset in a border, fail it.
+  const framing = input.review?.issues.filter((i) => i.type === 'not_full_frame' && i.severity !== 'minor') ?? [];
+  const bars = m.activeArea ? framingProblem(m.activeArea) : null;
+  if (isGeneratedScene(input.kind) && (m.activeArea || framing.length)) add('full_frame', 'Fills the whole frame', !bars && !framing.length, 'error', bars ?? (framing.map((i) => i.note).join(' ') || 'Fills the frame'));
   const r = input.review;
   if (r) {
     const issue = (types: string[]) => r.issues.filter((i) => types.includes(i.type));
@@ -1279,6 +1306,8 @@ export function adReadiness({ ad, sheet, scenes }: AdReadinessInput): AdReadines
     else if (isGeneratedScene(s.kind) && !s.validation) out.push({ step: 'review', severity: 'warning', message: `“${s.title}” has not been validated yet.` });
   }
   if (scenes.some((s) => s.kind === 'end_card') && !ad.brand.logoAssetId) out.push({ step: 'assets', severity: 'warning', message: 'No logo file: the end card uses typography only.' });
+  // Brand-kit prices and contacts past their review-by day (names and prices change) must be re-confirmed first.
+  for (const f of staleApprovedFacts(ad.facts)) out.push({ step: 'brief', severity: 'error', message: `“${f.value}”${f.label ? ` (${f.label})` : ''} comes from the brand kit and was due for re-confirmation on ${f.reviewBy}. Re-confirm it in the brand kit and apply the kit again.` });
   return out;
 }
 

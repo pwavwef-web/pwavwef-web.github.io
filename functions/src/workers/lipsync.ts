@@ -13,6 +13,7 @@ import { FFMPEG, probe } from '../lib/media';
 import { readFile } from 'node:fs/promises';
 import { recordDerivedTake } from '../lib/takes';
 import { recordUsage } from '../lib/usage';
+import { balanceProblem, readBalances, refreshFalBalance } from '../lib/provider-ledger';
 
 const execFileAsync = promisify(execFile);
 
@@ -48,6 +49,11 @@ export async function lipSyncClip(job: Pick<JobDoc, 'id' | 'ownerUid' | 'project
     // The exact stretch of the recording that plays under this clip, same length as the picture.
     const voiceLocal = path.join(dir, 'voice.mp3');
     await execFileAsync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(Math.max(0, p.audio.startSec)), '-t', D.toFixed(3), '-i', audioLocal, '-vn', '-ac', '1', '-ar', '44100', '-c:a', 'libmp3lame', '-b:a', '192k', voiceLocal], { timeout: 120_000 });
+    // One ledger for every provider: fal is prepaid, so its live balance must cover the estimate before anything is sent.
+    const estimateUsd = lipSyncEstimateUsd(D, p.tier);
+    const before = await refreshFalBalance();
+    const short = balanceProblem('fal', { ...(await readBalances()).fal, balanceUsd: before }, estimateUsd);
+    if (short) fail('insufficient_balance', short);
     {
       const [videoUrl, audioUrl] = await Promise.all([readFile(srcLocal).then((b) => falUpload(b, 'video/mp4', 'clip.mp4')), readFile(voiceLocal).then((b) => falUpload(b, 'audio/mpeg', 'voice.mp3'))]);
       await onStage('Lip-syncing with fal.ai', 0.25);
@@ -83,7 +89,10 @@ export async function lipSyncClip(job: Pick<JobDoc, 'id' | 'ownerUid' | 'project
         derivedFrom: { assetId: src.id },
         ...(src.generation ? { generation: { ...src.generation, jobId: job.id, parentAssetId: src.id, params: { ...src.generation.params, lipSync: { model: model.param, requestId, audioAssetId: p.audio.assetId, audioStartSec: p.audio.startSec } }, provenance: { ...src.generation.provenance, c2pa: 'absent' } } } : {}),
       });
-      const costUsd = lipSyncEstimateUsd(D, p.tier);
+      // The real charge when both balance reads worked and look sane (other fal use in between can blur it), else the estimate.
+      const after = await refreshFalBalance();
+      const charged = before !== null && after !== null ? Math.round((before - after) * 1000) / 1000 : null;
+      const costUsd = charged !== null && charged >= 0 && charged <= estimateUsd * 3 + 0.05 ? charged : estimateUsd;
       await recordUsage({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: `${model.id}#${model.param}`, kind: 'compute', inputTokens: 0, outputTokens: 0, thoughtTokens: 0, costUsdOverride: costUsd });
       return { assetId: newId, requestId, durationSec: outInfo.durationSec ?? D, costUsd };
     }

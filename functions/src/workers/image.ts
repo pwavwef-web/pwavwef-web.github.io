@@ -1,5 +1,5 @@
 import { Modality, type GenerateContentResponse, type Part } from '@google/genai';
-import type { JobDoc } from '@az-studio/shared';
+import { LIKENESS_SCHEMA, LIKENESS_SYSTEM, likenessPrompt, normalizeLikenessVerdict, type JobDoc, type LikenessSubject, type LikenessVerdict } from '@az-studio/shared';
 import { MODEL_REGISTRY } from '../config/models';
 import { applyTarget, createAsset, saveBufferToFile, withTmpDir } from '../lib/assets';
 import { bucket, col, gsUri } from '../lib/firebase';
@@ -11,6 +11,7 @@ import { logInteraction } from '../lib/interactions';
 import { progress, transition } from '../lib/jobs';
 import { recordUsage } from '../lib/usage';
 import { genai } from '../lib/vertex';
+import { callReasoning, usageFor } from './text';
 
 interface ImageRef {
   assetId: string;
@@ -32,6 +33,8 @@ export interface ImageParams {
   collections: string[];
   characterIds: string[];
   title: string | null;
+  /** Film Studio Lite / Music Video Lite: compare the still with these characters' approved references. */
+  likeness?: { subjects: LikenessSubject[]; references: ImageRef[] };
 }
 
 export const IMAGE_EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
@@ -106,6 +109,7 @@ export async function runImageJob(job: JobDoc): Promise<void> {
   }
 
   await transition(job.id, 'downloading', { stage: 'Saving image', progress: 0.85 });
+  let savedPath = '';
   const assetId = await withTmpDir(async (dir) => {
     const ext = IMAGE_EXT[image.mimeType] ?? 'png';
     const buf = Buffer.from(image.data, 'base64');
@@ -113,6 +117,7 @@ export async function runImageJob(job: JobDoc): Promise<void> {
     const newId = col.assets().doc().id;
     const storagePath = `users/${job.ownerUid}/generated/${job.id}/${newId}.${ext}`;
     // Original bytes are stored unmodified so the embedded C2PA manifest is preserved.
+    savedPath = storagePath;
     await bucket.file(storagePath).save(buf, { contentType: image.mimeType, resumable: false, metadata: { cacheControl: 'private, max-age=31536000', metadata: { jobId: job.id, modelId: model } } });
     return createAsset({
       uid: job.ownerUid,
@@ -160,7 +165,39 @@ export async function runImageJob(job: JobDoc): Promise<void> {
     response: { finishReason: res.candidates?.[0]?.finishReason ?? null, text: image.text.slice(0, 2000), usage: usage ?? null, modelVersion: res.modelVersion ?? null, assetId, costUsd: cost },
     latencyMs,
   });
+  // Wardrobe and likeness lock: the verdict is stored on the candidate (the job result and the asset); a failing still is kept, never auto-approved.
+  let likeness: LikenessVerdict | null = null;
+  if (p.likeness?.subjects.length) {
+    await progress(job.id, 'Checking face and wardrobe against the approved references', 0.9);
+    likeness = await checkLikeness(job, { storagePath: savedPath, mimeType: image.mimeType }, p.likeness);
+    await col.assets().doc(assetId).set({ likeness }, { merge: true });
+  }
   await progress(job.id, 'Finishing', 0.95);
-  await transition(job.id, 'completed', { stage: 'Done', result: { assetIds: [assetId], ...(image.text ? { text: image.text.slice(0, 2000) } : {}) } }, { assetId });
+  await transition(job.id, 'completed', { stage: likeness ? `Done · ${likeness.verdict === 'pass' ? 'likeness and wardrobe match' : likeness.verdict === 'fail' ? 'does not match the approved likeness — kept as a candidate, not approved' : 'likeness not checked'}` : 'Done', result: { assetIds: [assetId], ...(image.text ? { text: image.text.slice(0, 2000) } : {}), ...(likeness ? { data: { likeness } } : {}) } }, { assetId });
   await afterSceneGenerated(job, assetId);
+}
+
+/**
+ * Compares a new still with each character's approved reference image(s) for face and outfit (the reasoning model,
+ * both images in one request, JSON verdict). A failure to check is recorded as `unchecked`, never as a pass.
+ */
+export async function checkLikeness(job: JobDoc, still: { storagePath: string; mimeType: string }, l: NonNullable<ImageParams['likeness']>): Promise<LikenessVerdict> {
+  const byId = new Map(l.references.map((r) => [r.assetId, r]));
+  const parts: Part[] = [{ fileData: { fileUri: gsUri(still.storagePath), mimeType: still.mimeType } }];
+  for (const s of l.subjects) {
+    for (const id of s.assetIds) {
+      const r = byId.get(id);
+      if (r) parts.push({ fileData: { fileUri: gsUri(r.storagePath), mimeType: r.mimeType } });
+    }
+  }
+  parts.push({ text: likenessPrompt(l.subjects) });
+  try {
+    const r = await callReasoning(parts, { systemInstruction: LIKENESS_SYSTEM, responseJsonSchema: LIKENESS_SCHEMA }, 'LOW');
+    await usageFor(job, r, 'text', false);
+    const verdict = normalizeLikenessVerdict(r.json, l.subjects, { modelId: r.modelId });
+    await logInteraction({ uid: job.ownerUid, projectId: job.projectId, jobId: job.id, modelId: r.modelId, api: 'generateContent', request: { task: 'likeness_check', characters: l.subjects.length, references: parts.length - 2 }, response: { verdict: verdict.verdict, faceMatch: verdict.faceMatch, outfitMatch: verdict.outfitMatch, usage: r.res.usageMetadata ?? null }, latencyMs: r.latencyMs });
+    return verdict;
+  } catch (e) {
+    return { verdict: 'unchecked', faceMatch: null, outfitMatch: null, differences: [], characters: [], checkedAt: Date.now(), modelId: null, error: String((e as Error)?.message ?? e).slice(0, 200) };
+  }
 }

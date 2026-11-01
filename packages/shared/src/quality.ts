@@ -1,5 +1,6 @@
 import { alignWords, normalizeWord, round1, round3, tokenize, wordSimilarity } from './text-align';
 import type { DurationPlan, EditorialWindow } from './duration';
+import { mentionsLogo, settleByOcr, summarizeTextEvidence, type TextEvidence } from './ocr-evidence';
 import { CATEGORY_KEYS, computeCategoryScores, directorProblems, emptyExpectations, meanCategoryScore, measuredContinuityProblems, type CategoryScores, type ColourMeasurements, type DirectorReview, type InspectionExpectations, type TemporalMeasurements, type VisionMeasurements } from './inspection';
 
 /**
@@ -674,7 +675,7 @@ const clampScore = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) 
 
 function modelCategory(c: string): ProblemCategory {
   const k = c.trim().toLowerCase().replace(/[\s-]+/g, '_');
-  return (PROBLEM_CATEGORIES as readonly string[]).includes(k) ? (k as ProblemCategory) : k.includes('text') ? 'rendered_text' : k.includes('continu') ? 'story_continuity' : 'visual_artefact';
+  return (PROBLEM_CATEGORIES as readonly string[]).includes(k) ? (k as ProblemCategory) : k.includes('text') || /subtitle|caption|logo|watermark/.test(k) ? 'rendered_text' : k.includes('continu') ? 'story_continuity' : 'visual_artefact';
 }
 
 /** Marks which problems block approval under the project settings. */
@@ -688,6 +689,29 @@ export function isBlocking(p: Pick<QualityProblem, 'category' | 'severity' | 'wa
   // Editorial niceties (camera settles late, little room at the end) never block on their own.
   if (p.category === 'camera_unresolved' || p.category === 'no_edit_room' || p.category === 'emotional_performance' || p.category === 'camera_direction') return false;
   return true;
+}
+
+/** Reviewer findings that recognition on the frames can confirm or reject (text, subtitles, logos). */
+export const OCR_SETTLED_CATEGORIES: readonly ProblemCategory[] = ['rendered_text', 'misspelled_text', 'mirrored_text', 'text_flicker', 'reversed_logo'];
+
+/** Recognition evidence from the inspection's sampled frames (no extra Vision calls). */
+export function visionEvidence(v: VisionMeasurements): TextEvidence {
+  return summarizeTextEvidence(v.frames.map((f) => ({ text: f.text, logos: f.logos ?? [] })), { logoChecked: Boolean(v.logoChecked) });
+}
+
+/**
+ * The shared OCR rule applied to the scene inspection: a model's text, subtitle or logo problem that recognition on
+ * the frames does not confirm becomes minor (non-blocking) with a note. Measured problems are never touched.
+ */
+export function settleTextProblems(problems: QualityProblem[], evidence: TextEvidence | null): QualityProblem[] {
+  for (const [i, p] of problems.entries()) {
+    if (p.source !== 'model' || p.severity === 'minor') continue;
+    const logo = p.category === 'reversed_logo' || mentionsLogo(p.description);
+    if (!OCR_SETTLED_CATEGORIES.includes(p.category) && !(logo && (p.category === 'visual_artefact' || p.category === 'rendered_text'))) continue;
+    const quoted = /“([^”]{3,60})”/.exec(p.description)?.[1] ?? null;
+    problems[i] = settleByOcr(p, logo ? 'logo' : 'text', evidence, { minor: 'minor', quoted, note: (x) => x.description, withNote: (x, note) => ({ ...x, description: note }) });
+  }
+  return problems;
 }
 
 /** Combines deterministic measurements with the model's review into scores, problems and a verdict. */
@@ -767,6 +791,9 @@ export function evaluateQuality(input: VerdictInput): Verdict {
     if (p.category === 'final_line_incomplete' && !dialogue.applicable) continue;
     if (!problems.some((x) => x.category === p.category && x.description === p.description)) problems.push(p);
   }
+
+  // Text and logo findings of the reviewer count only when recognition on the frames confirms them.
+  if (m.vision) settleTextProblems(problems, visionEvidence(m.vision));
 
   const waived = new Set(input.waivedCategories ?? []);
   for (const p of problems) {

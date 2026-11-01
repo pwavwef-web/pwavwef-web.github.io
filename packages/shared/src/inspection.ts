@@ -401,10 +401,14 @@ export interface VisionFrame {
   people: { box: Box; score: number }[];
   objects: { name: string; box: Box; score: number }[];
   text: { text: string; box: Box | null }[];
+  /** Logos recognised (only when logo detection ran — see `VisionMeasurements.logoChecked`). */
+  logos?: { name: string; score: number }[];
 }
 
 export interface VisionMeasurements {
   frames: VisionFrame[];
+  /** Logo detection ran on the frames (done only when the reviewer reported a logo, to settle it). */
+  logoChecked?: boolean;
   /** OCR of protected surfaces: the frame as filmed and horizontally flipped. */
   screenText: { screenId: string; expected: string; t: number; normal: string; flipped: string }[];
 }

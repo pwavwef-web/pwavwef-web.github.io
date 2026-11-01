@@ -8,8 +8,10 @@ import type { ScoreMode } from './score';
 import { DEFAULT_RETRY_POLICY, type ErrorCategory, type GenerationAttempt, type PromptRevision, type RetryCounters, type RetryPolicy, type UserRemedy } from './generation-errors';
 import type { AdSceneSpec, AdSceneValidation, AdSpec, TranscriptReport } from './ads';
 import type { ClipLook, ClipMotion } from './motion';
+import type { LikenessVerdict } from './likeness';
 import type { LiteSpec } from './lite';
 import type { MvLiteSpec } from './mvlite';
+import type { LinkAdDoc } from './linkad';
 
 /**
  * AZ Studio domain model. These shapes are shared by the web app, Cloud Functions and the renderer.
@@ -26,7 +28,7 @@ export type Time = TimestampLike | null | undefined;
 // Projects
 // ---------------------------------------------------------------------------
 
-export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite'] as const;
+export const PROJECT_TYPES = ['quick_video', 'music_video', 'film', 'image', 'remix', 'music', 'short_ad', 'film_lite', 'mv_lite', 'link_ad', 'poster_ad'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
@@ -39,6 +41,8 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   short_ad: 'Short Ad',
   film_lite: 'Film Studio Lite',
   mv_lite: 'Music Video Lite',
+  link_ad: 'Link to Ad',
+  poster_ad: 'Motion Poster Ad',
 };
 
 export type FrameAspect = '16:9' | '9:16' | '1:1' | '4:5';
@@ -109,6 +113,8 @@ export interface ProjectDoc {
   lite?: LiteSpec | null;
   /** Music Video Lite: the video's song, concept, sections, shots and edit (draft saved as it is edited). */
   mvlite?: MvLiteSpec | null;
+  /** Link to Ad: the ad's sources, brief, directions, script, voice and exports. Written by the API only. */
+  linkad?: LinkAdDoc | null;
   /** Server-maintained aggregates (usage is an estimate derived from recorded token usage). */
   usage?: { costUsd: number; jobs: number };
   createdAt?: Time;
@@ -146,6 +152,8 @@ export interface AssetGeneration {
 
 export interface AssetDoc {
   id: string;
+  /** Film Studio Lite / Music Video Lite stills: the likeness and wardrobe check against the approved references. */
+  likeness?: LikenessVerdict | null;
   ownerUid: string;
   projectId: string | null;
   kind: AssetKind;
@@ -228,6 +236,8 @@ export const JOB_TYPES = [
   'narrator.speak',
   'narrator.export',
   'narrator.direct',
+  'linkad.run',
+  'pack.assemble',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -272,7 +282,7 @@ export interface CostEstimate {
 }
 
 export interface JobTarget {
-  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film' | 'narrator_voice' | 'narrator_edition';
+  kind: 'shot' | 'chain' | 'character' | 'location' | 'element' | 'lookbook' | 'storyboard' | 'song' | 'script' | 'project' | 'timeline' | 'asset' | 'production' | 'score' | 'set' | 'music_project' | 'render' | 'screen' | 'final_inspection' | 'lite_shot' | 'lite_scene' | 'lite_film' | 'narrator_voice' | 'narrator_edition' | 'linkad';
   id: string;
   /** Extra identifier, e.g. the take id created for a shot. */
   sub?: string;
@@ -812,6 +822,8 @@ export interface RenderDoc {
   finalInspection?: { id: string; status: 'queued' | 'running' | 'completed' | 'failed'; readiness: 'ready' | 'blocked' | 'overridden' | null; score: number | null; errors: number; warnings: number; error?: string } | null;
   /** Final renders are inspected automatically before export. */
   inspect?: boolean;
+  /** The deliverables pack this render belongs to (deliverables.ts). */
+  packId?: string | null;
   /** `preserve`: the approved soundtrack was passed through unchanged. */
   audioMaster?: 'normalize' | 'preserve';
   /** Text layout measured by the renderer with the real fonts (lyric issues, credit timings). */
@@ -838,6 +850,8 @@ export interface StudioSettings {
   retryPolicy: RetryPolicy;
   /** Allow one automatic benign rewrite of a prompt that a content filter blocked. */
   autoPromptRewrite: boolean;
+  /** Monthly budget per model role in USD (role-budgets.ts); 0 or absent = none. */
+  roleBudgetsUsd?: Partial<Record<'reasoning' | 'video' | 'image' | 'speech' | 'transcription' | 'music' | 'narration', number>>;
 }
 
 export const DEFAULT_SETTINGS: StudioSettings = {

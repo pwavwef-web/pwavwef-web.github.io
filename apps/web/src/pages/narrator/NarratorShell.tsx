@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useOutletContext } from 'react-router';
-import { BookOpenText, Mic, Settings2 } from 'lucide-react';
+import { BookOpenText, Globe, Mic, Settings2 } from 'lucide-react';
 import { NARRATOR } from '@az-studio/shared';
 import { useNarratorStatus, type NarratorStatus } from '../../lib/narrator';
 import { cx } from '../../components/ui';
@@ -15,6 +15,7 @@ export const useNarrator = () => useOutletContext<NarratorContext>();
 
 const TABS = [
   { to: '/narrator', label: 'Editions', icon: BookOpenText, end: true },
+  { to: '/narrator/publications', label: 'Publications', icon: Globe },
   { to: '/narrator/voice', label: 'My Voice', icon: Mic },
   { to: '/narrator/settings', label: 'Settings', icon: Settings2 },
 ];

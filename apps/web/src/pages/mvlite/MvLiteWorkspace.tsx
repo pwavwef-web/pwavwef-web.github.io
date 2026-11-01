@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { CircleAlert, Copy, LoaderCircle, Redo2, Square, Undo2 } from 'lucide-react';
 import { MV_DIRECTION_PRESETS, MV_STAGE_LABELS, MV_STAGES, allMvShots, formatUsd, mapMvShot, mvShotImageId, type LiteAspect, type MvStage, type ProjectDoc } from '@az-studio/shared';
 import type { WithId } from '../../lib/data';
-import { duplicateMvLiteProject, jobIndex, mvliteCancel, mvSongFrom, useMvComposition, useMvDraft, useMvJobs, useMvSongDoc } from '../../lib/mvlite';
+import { adoptableCandidate, duplicateMvLiteProject, jobIndex, mvliteCancel, mvSongFrom, useMvComposition, useMvDraft, useMvJobs, useMvSongDoc } from '../../lib/mvlite';
 import { useUid } from '../../lib/session';
 import { useProject } from '../../lib/studio';
 import { ProjectHeader } from '../../components/project-header';
@@ -47,12 +47,13 @@ function Workspace({ project }: { project: WithId<ProjectDoc> }) {
     if (aspect !== spec.setup.aspect && !spec.setup.extraAspects.includes(aspect)) setAspect(spec.setup.aspect);
   }, [aspect, spec.setup.aspect, spec.setup.extraAspects]);
 
-  // A finished image becomes the shot's approved image when it has none (later results never replace a choice).
+  // A finished image becomes the shot's approved image when it has none (later results never replace a choice);
+  // a still that failed the likeness and wardrobe check is kept as a candidate, never adopted.
   const index = useMemo(() => jobIndex(jobs.data), [jobs.data]);
   useEffect(() => {
     const adopt = allMvShots(spec)
       .filter(({ shot }) => !shot.image.approvedAssetId && !shot.image.reuseOfShotId)
-      .map(({ shot }) => ({ shot, c: index.imageCandidates(shot.id)[0] }))
+      .map(({ shot }) => ({ shot, c: adoptableCandidate(index.imageCandidates(shot.id)) }))
       .filter((x) => x.c);
     if (!adopt.length) return;
     update((s) => adopt.reduce((acc, { shot, c }) => mapMvShot(acc, shot.id, (x) => (x.image.approvedAssetId ? x : { ...x, image: { ...x.image, approvedAssetId: c!.assetId } })), s), 'auto-approve');

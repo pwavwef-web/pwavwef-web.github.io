@@ -5,14 +5,15 @@ import { ACTIVE_STATUSES, formatUsd, type JobDoc } from '@az-studio/shared';
 import { db } from '../lib/firebase';
 import { useQuery } from '../lib/data';
 import { useSession } from '../lib/session';
-import { cx, Tip } from './ui';
+import { releaseMismatch } from '../lib/release';
+import { cx, Notice, Tip } from './ui';
 
 export const NAV = [
-  { to: '/', label: 'Home', icon: House, end: true },
+  { to: '/studio', label: 'Home', icon: House, end: true },
   { to: '/projects', label: 'Projects', icon: FolderOpen },
-  { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/ads', '/narrator'] },
+  { to: '/create', label: 'Create', icon: Sparkles, within: ['/lite', '/mvlite', '/linkad', '/poster', '/studio/brands', '/ads', '/narrator'] },
   { to: '/assets', label: 'Assets', icon: Layers },
-  { to: '/jobs', label: 'Jobs', icon: ListChecks },
+  { to: '/jobs', label: 'Jobs', icon: ListChecks, within: ['/studio/reviews'] },
   { to: '/settings', label: 'Settings', icon: Settings2 },
 ] as { to: string; label: string; icon: typeof House; end?: boolean; within?: string[] }[];
 
@@ -59,6 +60,40 @@ function ActiveJobsPill({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
+/** Studio-wide alerts: model canary changes (until acknowledged in Settings) and a tab running an older release. */
+function StudioAlerts() {
+  const boot = useSession((s) => s.boot);
+  const worse = (boot?.canary?.changes ?? []).filter((c) => c.worse);
+  const stale = releaseMismatch(boot?.release);
+  const low = boot?.lowBalances ?? [];
+  if (!worse.length && !stale && !low.length) return null;
+  return (
+    <div className="mb-5 space-y-2">
+      {worse.length > 0 && (
+        <Notice tone="danger">
+          Model check: {worse.map((c) => c.message).join(' ')}{' '}
+          <NavLink to="/settings" className="underline">
+            Review in Settings
+          </NavLink>
+        </Notice>
+      )}
+      {low.map((b) => (
+        <Notice key={b.provider} tone="warning">
+          The {b.provider} balance is {formatUsd(b.balanceUsd)}, below its warning level of {formatUsd(b.lowUsd)}. Top it up before the next job that needs it.
+        </Notice>
+      ))}
+      {stale && (
+        <Notice tone="warning">
+          A newer release of AZ Studio is live.{' '}
+          <button type="button" className="underline" onClick={() => window.location.reload()}>
+            Reload
+          </button>
+        </Notice>
+      )}
+    </div>
+  );
+}
+
 export function AppShell() {
   const { user, boot, signOut } = useSession();
   const location = useLocation();
@@ -67,7 +102,7 @@ export function AppShell() {
     <div className="flex min-h-dvh">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-ink/70 px-4 py-5 backdrop-blur-xl lg:flex">
-        <NavLink to="/" className="px-2" aria-label="AZ Studio home">
+        <NavLink to="/studio" className="px-2" aria-label="AZ Studio home">
           <Logo />
         </NavLink>
         <nav aria-label="Primary" className="mt-8 flex flex-col gap-1">
@@ -113,12 +148,13 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="glass sticky top-0 z-30 flex items-center justify-between border-x-0 border-t-0 px-4 py-3 lg:hidden">
-          <NavLink to="/" aria-label="AZ Studio home">
+          <NavLink to="/studio" aria-label="AZ Studio home">
             <Logo />
           </NavLink>
           <ActiveJobsPill collapsed />
         </header>
         <main key={location.pathname.split('/').slice(0, 3).join('/')} className="mx-auto w-full max-w-[1480px] flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-9 lg:pb-12 animate-fade">
+          <StudioAlerts />
           <Outlet />
         </main>
       </div>

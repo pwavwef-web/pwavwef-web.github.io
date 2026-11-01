@@ -1,5 +1,7 @@
 import { LITE_IMAGE_STYLE_PROMPTS, findShot, narrationHash, spokenText, stableHash, voiceDirection, type LiteScene, type LiteShot, type LiteSpec } from './lite';
 import { MOTION_PRESET_LABELS } from './motion';
+import { noLogoClause } from './brand-safety';
+import { likenessSubjects, type LikenessSubject } from './likeness';
 
 /**
  * Prompts for Film Studio Lite's paid requests, compiled the same way in the browser (to show and hash them)
@@ -28,6 +30,8 @@ export interface LiteImageRequest {
   aspectRatio: string;
   imageSize: '2K' | '4K';
   hash: string;
+  /** Characters with likeness references: the still is checked against them after it is made (not part of the hash). */
+  likeness?: LikenessSubject[];
 }
 
 /** Composition guidance so the still survives slow movement and every planned format. */
@@ -67,11 +71,13 @@ export function compileLiteImageRequest(spec: LiteSpec, scene: LiteScene, shot: 
     b.imageTreatment.trim() ? `Visual language: ${b.imageTreatment.trim()}` : '',
     b.palette.trim() ? `Palette: ${b.palette.trim()}.` : '',
     b.lighting.trim() ? `Lighting: ${b.lighting.trim()}.` : '',
+    noLogoClause(`${shot.brief} ${shot.composition}`),
     `Avoid: ${[b.avoid.trim(), 'any readable text, captions, subtitles, logos, watermarks, borders or frames'].filter(Boolean).join('; ')}.`,
   ].filter(Boolean);
   const prompt = lines.join('\n').slice(0, 7800);
   const out = { prompt, referenceAssetIds: refs.map((r) => r.id), referenceLabels: refs.map((r) => r.label), aspectRatio: spec.setup.aspect, imageSize: spec.setup.imageSize };
-  return { ...out, hash: stableHash(out) };
+  const likeness = likenessSubjects(chars, { outfitFromText: false });
+  return { ...out, hash: stableHash(out), ...(likeness.length ? { likeness } : {}) };
 }
 
 /** Terms that bias recognition of the narration: pronunciation terms, character and place names. */

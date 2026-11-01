@@ -28,7 +28,10 @@ import { runLiteNarrationJob } from './lite-narration';
 import { runAmbienceJob } from './ambience';
 import { continueNarratorSpeakJob, runNarratorExportJob, runNarratorSpeakJob, runNarratorVoiceJob } from './narrator';
 import { runNarratorDirectJob } from './narrator-direct';
+import { runLinkAdJob } from './linkad';
+import { runPackAssembleJob } from './pack';
 import { col } from '../lib/firebase';
+import { jobRoleBudgetProblem } from '../lib/role-budget';
 import { assertProviderAvailable, recoverFromFailure, usesSlot } from './recovery';
 
 async function startJob(jobId: string, seq: number): Promise<void> {
@@ -40,6 +43,12 @@ async function startJob(jobId: string, seq: number): Promise<void> {
   }
   // Access, billing or quota problems pause automatic work: nothing is sent to Google until they change.
   await assertProviderAvailable(claimed);
+  // A model role whose monthly budget is used up starts nothing new (Settings → Model budgets).
+  const overBudget = await jobRoleBudgetProblem(claimed);
+  if (overBudget) {
+    await failJob(claimed, { code: 'role_budget', message: overBudget.message, retryable: false });
+    return;
+  }
   if (usesSlot(claimed)) {
     const settings = await getSettings(claimed.ownerUid);
     const ok = await acquireSlot(claimed.ownerUid, claimed.id, settings.maxConcurrentGenerations);
@@ -73,6 +82,12 @@ async function startJob(jobId: string, seq: number): Promise<void> {
       return;
     case 'narrator.direct':
       await runNarratorDirectJob(claimed);
+      return;
+    case 'linkad.run':
+      await runLinkAdJob(claimed);
+      return;
+    case 'pack.assemble':
+      await runPackAssembleJob(claimed);
       return;
     case 'image.generate':
       await runImageJob(claimed);

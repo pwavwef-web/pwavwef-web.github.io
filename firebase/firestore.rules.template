@@ -45,7 +45,7 @@ service cloud.firestore {
         && request.resource.data.type == resource.data.type
         && validTitle(request.resource.data.title)
         && request.resource.data.status in ['active', 'archived']
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage', 'linkad']);
       // Deletion goes through the API (keeps media, removes subcollections).
       allow delete: if false;
 
@@ -169,6 +169,26 @@ service cloud.firestore {
 
     // Internal state (rate limits, concurrency slots) is never exposed.
     match /runtime/{document=**} { allow read, write: if false; }
+    // Client review links (capability URLs): written by the owner-only API and the public review endpoint only.
+    match /reviewLinks/{document=**} { allow read, write: if false; }
+    // Deliverables packs: written by the backend, read through the owner-only API.
+    match /packs/{id} { allow read, write: if false; }
+    // Brand kits (one per client): the owner reads them; every write goes through the owner-only API (files checked,
+    // edited prices and contacts re-confirmed, revision conflicts refused).
+    match /brandKits/{id} { allow read: if ownerCanRead(); allow write: if false; }
+
+    // Public website early-access list and its hashed-address rate limits. Visitors submit through the
+    // azsPublic function; the owner views, exports and deletes through the owner-only API. No client —
+    // not even the owner's — reads or writes these directly, so a submission can never be listed or altered.
+    match /earlyAccess/{document=**} { allow read, write: if false; }
+    match /earlyAccessRate/{document=**} { allow read, write: if false; }
+
+    // Public beta (members): editions, credit ledgers, invitations and feedback are reached only through the
+    // member callable (azsMember) and the owner-only API, each of which checks who is calling. No client — not a
+    // member, not the owner — reads or writes them directly, whether the beta is switched on or off.
+    match /members/{document=**} { allow read, write: if false; }
+    match /invites/{document=**} { allow read, write: if false; }
+    match /betaFeedback/{document=**} { allow read, write: if false; }
 
     // Deny everything else.
     match /{document=**} { allow read, write: if false; }

@@ -110,9 +110,58 @@ afterAll(async () => {
   await browser?.close();
 });
 
+describe('the public website in a real browser', () => {
+  it('serves public pages that make no request beyond their own origin (no Firebase, API or AI provider)', async () => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const visitor = await context.newPage();
+    const requests: string[] = [];
+    visitor.on('request', (r) => requests.push(r.url()));
+    for (const p of ['/', '/explore', '/about', '/early-access', '/faq', '/privacy', '/terms']) {
+      const res = await visitor.goto(`${BASE}${p}`);
+      expect(res?.status(), p).toBe(200);
+      await visitor.locator('h1').first().waitFor();
+    }
+    const missing = await visitor.goto(`${BASE}/no-such-page`);
+    expect(missing?.status()).toBe(404);
+    expect(await visitor.locator('h1').textContent()).toContain('isn’t here');
+    const foreign = requests.filter((u) => !u.startsWith(BASE) && !u.startsWith('data:') && !u.startsWith('ws://127.0.0.1'));
+    expect(foreign).toEqual([]);
+    expect(requests.some((u) => /identitytoolkit|firestore|cloudfunctions|azsApi|googleapis/.test(u))).toBe(false);
+    expect(await context.cookies()).toEqual([]);
+    await context.close();
+  });
+
+  it('keeps the studio behind sign-in at /studio and its existing deep links', async () => {
+    const context = await browser.newContext();
+    const visitor = await context.newPage();
+    for (const p of ['/studio', '/projects', '/narrator', '/settings']) {
+      await visitor.goto(`${BASE}${p}`);
+      await visitor.getByRole('button', { name: 'Sign in with email' }).waitFor();
+      expect(await visitor.getByRole('link', { name: /Projects/ }).count(), p).toBe(0);
+    }
+    // A verified account that is not the owner gets the access message and nothing else.
+    const intruder = { uid: 'e2e-intruder', email: 'intruder@test.dev', password: 'intruder-password-1' };
+    const made = await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/projects/${PROJECT}/accounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+      body: JSON.stringify({ localId: intruder.uid, email: intruder.email, password: intruder.password, emailVerified: true }),
+    });
+    if (!made.ok && !(await made.text()).includes('DUPLICATE')) throw new Error(`intruder account failed: ${made.status}`);
+    await visitor.locator('#email').fill(intruder.email);
+    await visitor.locator('#password').fill(intruder.password);
+    await visitor.getByRole('button', { name: 'Sign in with email' }).click();
+    await visitor.getByRole('heading', { name: 'Private studio' }).waitFor();
+    expect(await visitor.getByText('This account does not have access').count()).toBe(1);
+    expect(await visitor.getByRole('link', { name: 'join the early-access list' }).getAttribute('href')).toBe('/early-access');
+    expect(await visitor.getByRole('link', { name: /Projects/ }).count()).toBe(0);
+    expect(await visitor.content()).not.toContain(OWNER.email);
+    await context.close();
+  });
+});
+
 describe('AZ Studio in a real browser', () => {
   it('signs the owner in', async () => {
-    await open('/');
+    await open('/studio');
     await page.locator('#email').fill(OWNER.email);
     await page.locator('#password').fill(OWNER.password);
     await page.getByRole('button', { name: 'Sign in with email' }).click();

@@ -12,7 +12,7 @@ import { MODEL_REGISTRY } from './models';
  * based on observed usage and are labelled as such in the UI.
  */
 /** Gemini 4 Argon list rates: introductory until 2026-11-30, standard from 2026-12-01. */
-function reasoningRates(now = Date.now()) {
+export function reasoningRates(now = Date.now()) {
   const intro = now < Date.UTC(2026, 11, 1);
   return intro
     ? { inputPerM: 2, outputPerM: 10, inputPerMLong: 2, outputPerMLong: 10, longContextThreshold: 1_000_000, audioTokensPerSecond: 32 }
@@ -53,8 +53,9 @@ export const PRICING: PricingTable = {
   // and reasoning) Global $10"; "Gemini 4 Argon (Starting December 1, 2026) … Global $4 … $20" (retrieved 2026-10-15).
   // The introductory rate is "provided through 50% credits back on net spend", so Cloud Billing shows the full rate
   // with a credit. One tier across the 1M window. Audio tokens/s carried over from 3.8 Flash (not yet measured).
-  text: {
-    [MODEL_REGISTRY.reasoning.id]: reasoningRates(),
+  // A getter, so a function instance started in November prices December calls at the standard rate.
+  get text() {
+    return { [MODEL_REGISTRY.reasoning.id]: reasoningRates() };
   },
   // Published 2026-09 (https://ai.google.dev/gemini-api/docs/pricing, Vertex AI list prices match):
   // "Gemini 2.5 Pro TTS — Input $1.00 (text), Output $20.00 (audio)"; observed 25 audio tokens/s.

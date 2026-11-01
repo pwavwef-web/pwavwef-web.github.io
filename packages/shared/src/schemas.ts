@@ -7,6 +7,10 @@ import { MUSIC_MODES } from './music-studio';
 import { RETRY_POLICY_LIMITS } from './generation-errors';
 import { AMBIENCE_KINDS } from './lite';
 import { narratorRequestSchema } from './narrator-schemas';
+import { linkAdRequestSchema } from './linkad-schemas';
+import { brandKitRequestSchema } from './brand-kit';
+import { liteBoothRequestSchema } from './lite-booth';
+import { betaAdminRequestSchema } from './beta';
 
 /**
  * Request schemas for the `azsApi` callable. Structural validation lives here; values that depend
@@ -18,7 +22,7 @@ const id = z.string().min(1).max(128).regex(/^[\w-]+$/, 'Invalid id');
 const text = (max: number) => z.string().max(max);
 
 export const jobTargetSchema = z.object({
-  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film', 'narrator_voice', 'narrator_edition']),
+  kind: z.enum(['shot', 'chain', 'character', 'location', 'element', 'lookbook', 'storyboard', 'song', 'script', 'project', 'timeline', 'asset', 'production', 'score', 'set', 'music_project', 'render', 'screen', 'final_inspection', 'lite_shot', 'lite_scene', 'lite_film', 'narrator_voice', 'narrator_edition', 'linkad']),
   id,
   sub: id.optional(),
 });
@@ -56,6 +60,11 @@ export const imageJobSchema = z.object({
   referenceLabels: z.array(text(160)).max(14).optional(),
   /** Film Studio Lite: identifies the input so the same image is never requested twice. */
   inputHash: text(40).optional(),
+  /** Film Studio Lite / Music Video Lite: compare the new still with these characters' approved references (face and outfit). */
+  likenessCheck: z
+    .array(z.object({ characterId: id, name: text(120), assetIds: z.array(id).min(1).max(2), outfit: text(1200), outfitFromText: z.boolean() }))
+    .max(4)
+    .optional(),
 });
 
 export const videoJobSchema = z.object({
@@ -139,11 +148,15 @@ export const renderJobSchema = z.object({
   quality: z.enum(['draft', 'final']),
   /** Run the final-film inspection on the finished render. */
   inspect: z.boolean().default(false),
+  /** A final render that is checked by its own feature (Link to Ad probes the file): no final-film inspection, no export gate. */
+  skipInspection: z.boolean().optional(),
   /** Render even though lyric captions are out of sync with the vocals (the issues are recorded). */
   acceptLyricSync: z.boolean().default(false),
   /** `preserve`: the approved soundtrack is passed through unchanged (no loudness normalisation or limiting). */
   audioMaster: z.enum(['normalize', 'preserve']).default('normalize'),
   label: text(160).optional(),
+  /** The deliverables pack this render belongs to. */
+  packId: id.optional(),
 });
 
 const languageCode = z.string().trim().min(2).max(24).regex(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/, 'Use a language code such as en, tw or xsm');
@@ -418,6 +431,7 @@ export const settingsSchema = z.object({
   defaultImageSize: z.string().max(3),
   retryPolicy: retryPolicySchema,
   autoPromptRewrite: z.boolean(),
+  roleBudgetsUsd: z.partialRecord(z.enum(['reasoning', 'video', 'image', 'speech', 'transcription', 'music', 'narration']), z.number().min(0).max(50000)),
 });
 
 export const apiRequestSchema = z.discriminatedUnion('action', [
@@ -506,6 +520,10 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Film Studio Lite: stop queued and running generation for the film (renders keep running). */
   z.object({ action: z.literal('liteCancel'), payload: z.object({ projectId: id }) }),
+  /** Film Studio Lite recording booth (Kasem narration recorded by a person): lines, takes, picks, joining. */
+  z.object({ action: z.literal('liteBooth'), payload: liteBoothRequestSchema }),
+  /** Public beta administration (owner only): invitations from the early-access list, members, credits, feedback. */
+  z.object({ action: z.literal('beta'), payload: betaAdminRequestSchema }),
   /** Music Video Lite: plan and price (or start) the images still needed; finished results for the same input are reused. */
   z.object({
     action: z.literal('mvliteGenerate'),
@@ -521,6 +539,10 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   /** Music Video Lite: stop queued and running generation for the video (renders keep running). */
   z.object({ action: z.literal('mvliteCancel'), payload: z.object({ projectId: id }) }),
   z.object({ action: z.literal('narrator'), payload: narratorRequestSchema }),
+  /** Link to Ad (owner-only, behind the feature flag): website -> sourced brief -> directions -> voice -> MP4. */
+  z.object({ action: z.literal('linkAd'), payload: linkAdRequestSchema }),
+  /** Brand kits (owner-only): one per client — colours, fonts, logos, contacts, dated prices, real photos. */
+  z.object({ action: z.literal('brandKits'), payload: brandKitRequestSchema }),
   z.object({ action: z.literal('updateSettings'), payload: settingsSchema.partial() }),
   z.object({ action: z.literal('deleteAsset'), payload: z.object({ assetId: id }) }),
   z.object({
@@ -555,6 +577,32 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
     }),
   }),
   z.object({ action: z.literal('modelStatus'), payload: z.object({ refresh: z.boolean().default(false) }).default({ refresh: false }) }),
+  z.object({ action: z.literal('canary'), payload: z.object({ op: z.enum(['status', 'run', 'acknowledge']).default('status') }).default({ op: 'status' }) }),
+  z.object({
+    action: z.literal('providerLedger'),
+    payload: z
+      .object({ op: z.enum(['status', 'refresh', 'set']).default('status'), provider: z.enum(['google', 'fal']).optional(), balanceUsd: z.number().min(0).max(100000).nullable().optional(), lowUsd: z.number().min(0).max(100000).optional() })
+      .default({ op: 'status' }),
+  }),
+  z.object({
+    action: z.literal('reviewLinks'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('create'), renderId: id, title: text(160).optional(), versionLabel: text(60).optional(), expiresInDays: z.number().int().min(1).max(30).optional() }),
+      z.object({ op: z.literal('list'), projectId: id.optional() }),
+      z.object({ op: z.literal('revoke'), token: z.string().regex(/^[A-Za-z0-9_-]{32}$/) }),
+      z.object({ op: z.literal('resolve'), token: z.string().regex(/^[A-Za-z0-9_-]{32}$/), commentId: id, resolved: z.boolean() }),
+    ]),
+  }),
+  z.object({
+    action: z.literal('deliverables'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('create'), projectId: id, timelineId: id, presets: z.array(z.enum(['vertical_9x16', 'portrait_4x5', 'square_1x1', 'youtube_16x9'])).min(1).max(4), posterAtSec: z.number().min(0).optional(), title: text(160).optional(), audioMaster: z.enum(['normalize', 'preserve']).default('normalize') }),
+      z.object({ op: z.literal('list'), projectId: id.optional() }),
+      z.object({ op: z.literal('advance'), packId: id }),
+      z.object({ op: z.literal('download'), packId: id }),
+    ]),
+  }),
+  z.object({ action: z.literal('spendByTask'), payload: z.object({ month: z.string().regex(/^[0-9]{4}-[0-9]{2}$/).optional() }).default({}) }),
   z.object({
     action: z.literal('continuitySave'),
     payload: z.object({ projectId: id, collection: z.enum(CONTINUITY_COLLECTIONS), id: id.nullable().optional(), data: z.record(z.string(), z.unknown()) }),
@@ -618,6 +666,18 @@ export const apiRequestSchema = z.discriminatedUnion('action', [
   }),
   /** Approve or withdraw a shot's take (approval updates canonical continuity; the rules deny direct writes). */
   z.object({ action: z.literal('takeAction'), payload: z.object({ projectId: id, shotId: id, takeId: id, action: z.enum(['approve', 'withdraw']), note: text(500).optional() }) }),
+  /**
+   * The public website's early-access list (the rules deny every client read): list (view and CSV export),
+   * delete one registration, or pause / resume new registrations.
+   */
+  z.object({
+    action: z.literal('earlyAccess'),
+    payload: z.discriminatedUnion('op', [
+      z.object({ op: z.literal('list') }),
+      z.object({ op: z.literal('delete'), id: z.string().regex(/^[a-f0-9]{64}$/, 'Invalid registration id') }),
+      z.object({ op: z.literal('pause'), paused: z.boolean() }),
+    ]),
+  }),
 ]);
 export type ApiRequest = z.infer<typeof apiRequestSchema>;
 export type ApiAction = ApiRequest['action'];

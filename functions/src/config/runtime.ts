@@ -17,6 +17,8 @@ export const WORKER_FUNCTION = 'azsJobWorker';
 export const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://az-studio.web.app',
   'https://az-studio.firebaseapp.com',
+  // Custom domain connected to the az-studio Hosting site (2026-10-24).
+  'https://azlearner.me',
   /^http:\/\/(localhost|127\.0\.0\.1):\d+$/,
 ];
 

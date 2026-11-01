@@ -2,6 +2,8 @@
 
 Private AI filmmaking portal for Indigen World music videos, promotional films, short films, episodic content and — shot by shot — feature-length productions.
 
+**Public website.** https://az-studio.web.app/ is the public information site (Home, Explore, Showcase, About, Early access, FAQ, Privacy, Terms) with a working early-access list; the private studio is at **[/studio](https://az-studio.web.app/studio)** and every other studio URL is unchanged. Pages are generated from `apps/web/site/`. See [`docs/PUBLIC_SITE.md`](docs/PUBLIC_SITE.md) (operations, early-access administration, rollback) and [`docs/PUBLIC_PRODUCT_PREP.md`](docs/PUBLIC_PRODUCT_PREP.md) (the next phase — not built).
+
 | Role | Model (Vertex AI, `global`) |
 | --- | --- |
 | Video generation & conversational editing (incl. quality repairs) | `gemini-omni-1.1-flash-preview` (Gemini Omni 1.1 Flash — Vertex AI ID of `gemini-omni-1.1-flash`) |
@@ -29,7 +31,7 @@ The Bible automatically queues a 16:9 project cover once every character has a u
 
 | Path | What |
 | --- | --- |
-| `apps/web` | React 19 + TypeScript + Vite + Tailwind SPA (Firebase Hosting site `az-studio`) |
+| `apps/web` | React 19 + TypeScript + Vite + Tailwind SPA (`studio.html`, Firebase Hosting site `az-studio`), the public website generated from `site/`, and the Narrator player (`embed.html`) |
 | `functions` | Firebase Functions v2, codebase `az-studio`, `us-central1`: owner-only API, Cloud Tasks job worker, upload validation, maintenance |
 | `services/renderer` | Cloud Run job `az-studio-renderer`: FFmpeg timeline rendering |
 | `packages/shared` | Domain model, job state machine, timeline ops, prompt compiler, cost maths, audio DSP, Fountain parser |

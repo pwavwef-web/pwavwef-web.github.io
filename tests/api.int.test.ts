@@ -396,3 +396,52 @@ describe('music studio', () => {
     expect(foreign.error?.status).toBe('PERMISSION_DENIED');
   }, 120_000);
 });
+
+describe('public website early-access list', () => {
+  const PUBLIC = `http://127.0.0.1:5001/${PROJECT}/us-central1/azsPublic/api/public/early-access`;
+  const register = (body: unknown, origin = 'http://127.0.0.1:5199') =>
+    fetch(PUBLIC, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin, 'X-Forwarded-For': '198.51.100.23' }, body: JSON.stringify(body) });
+  const entry = { email: 'listener+it@example.com', name: 'Ama', interest: 'narration', consent: true, noticeVersion: '2026-10-24', website: '' };
+
+  it('stores a registration without sign-in, answers repeats identically, and never shows it to clients', async () => {
+    const first = await register(entry);
+    expect(first.status).toBe(200);
+    expect(first.headers.get('cache-control')).toBe('no-store');
+    expect(await first.json()).toEqual({ ok: true });
+    const again = await register({ ...entry, name: 'Someone else' });
+    expect(again.status).toBe(200);
+    expect(await again.json()).toEqual({ ok: true });
+
+    // Persisted (read through the emulator's admin access), with consent time and notice version.
+    const res = await fetch(`http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/az-studio/documents/earlyAccess`, { headers: { Authorization: 'Bearer owner' } });
+    const docs = ((await res.json()) as { documents?: { name: string; fields: Record<string, any> }[] }).documents ?? [];
+    const stored = docs.find((d) => d.fields.email?.stringValue === 'listener+it@example.com');
+    expect(stored?.fields.name.stringValue).toBe('Ama');
+    expect(stored?.fields.consent.mapValue.fields.noticeVersion.stringValue).toBe('2026-10-24');
+    expect(stored?.fields.consent.mapValue.fields.at.timestampValue).toBeTruthy();
+
+    // No client can read it — not the owner's SDK, not another account.
+    const id = stored!.name.split('/').pop()!;
+    for (const s of [owner, intruder]) await expect(getDoc(doc(s.db, `earlyAccess/${id}`))).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+
+  it('refuses other websites and invalid input without storing anything', async () => {
+    expect((await register(entry, 'https://evil.example')).status).toBe(403);
+    const bad = await register({ ...entry, email: 'nope', consent: false });
+    expect(bad.status).toBe(400);
+    expect(Object.keys(((await bad.json()) as { fields: object }).fields).sort()).toEqual(['consent', 'email']);
+  });
+
+  it('lets only the owner list, export and delete registrations through the API', async () => {
+    expect((await call(null, 'earlyAccess', { op: 'list' })).error?.status).toBe('UNAUTHENTICATED');
+    expect((await call(intruder.token, 'earlyAccess', { op: 'list' })).error?.status).toBe('PERMISSION_DENIED');
+    const list = await call(owner.token, 'earlyAccess', { op: 'list' });
+    expect(list.error).toBeUndefined();
+    const rec = (list.result.records as { id: string; email: string }[]).find((r) => r.email === 'listener+it@example.com')!;
+    expect(rec).toBeTruthy();
+    expect((await call(intruder.token, 'earlyAccess', { op: 'delete', id: rec.id })).error?.status).toBe('PERMISSION_DENIED');
+    expect((await call(owner.token, 'earlyAccess', { op: 'delete', id: rec.id })).result).toEqual({ deleted: true });
+    const after = await call(owner.token, 'earlyAccess', { op: 'list' });
+    expect((after.result.records as { email: string }[]).some((r) => r.email === 'listener+it@example.com')).toBe(false);
+  });
+});

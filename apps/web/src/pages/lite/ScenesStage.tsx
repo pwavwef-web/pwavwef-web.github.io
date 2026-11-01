@@ -13,6 +13,7 @@ import {
   estimateNarrationSec,
   findShot,
   insertScene,
+  lintBrief,
   liteId,
   mapScene,
   mapShot,
@@ -38,6 +39,7 @@ import { jobIndex, type ShotCandidate } from '../../lib/lite';
 import { uploadFile } from '../../lib/media';
 import { AssetPicker, AssetThumb, useAsset, type Asset } from '../../components/media';
 import { Badge, Button, ConfirmDialog, cx, IconButton, Input, Modal, Notice, Select, Textarea, Tip } from '../../components/ui';
+import { BrandWarnings, LikenessBadge, LikenessNote } from '../../components/quality-guards';
 import { MotionExample } from '../../components/lite/FramingEditor';
 import { fmtSec, Section, type StageProps } from './common';
 
@@ -152,6 +154,7 @@ function CandidatesDialog({ open, onOpenChange, shot, candidates, onApprove }: {
                 <CandidateThumb assetId={c.assetId} />
                 <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                   <span className="text-faint">{c.source === 'generated' ? 'Generated' : c.source === 'upload' ? 'Uploaded' : 'Imported'} · {new Date(c.at).toLocaleString()}</span>
+                  <LikenessBadge verdict={c.likeness} />
                   {approved ? (
                     <Badge tone="success" icon={<Check className="size-3" />}>
                       Approved
@@ -222,6 +225,7 @@ function ShotCard({ spec, scene, shot, index, props, focused }: { spec: LiteSpec
           <button type="button" className="block w-full cursor-pointer text-left" onClick={() => setCompare(true)} aria-label="Compare images for this shot">
             <ImageStatus assetId={imageId} active={Boolean(active)} failed={failed?.error?.message ?? null} />
           </button>
+          <LikenessNote generated={generated} imageId={imageId} />
           <div className="flex flex-wrap gap-1">
             {!reuse && (
               <Button size="sm" variant={imageId ? 'ghost' : 'secondary'} icon={imageId ? <RefreshCw className="size-3.5" /> : <Wand2 className="size-3.5" />} disabled={Boolean(active) || Boolean(work.busy)} onClick={() => void work.run('images', { targetIds: [shot.id], force: Boolean(imageId) })}>
@@ -272,6 +276,7 @@ function ShotCard({ spec, scene, shot, index, props, focused }: { spec: LiteSpec
           </div>
           <Textarea aria-label="Image brief" rows={2} value={shot.brief} placeholder="What the image shows — subject, action, setting, light" onChange={(e) => set((s) => ({ ...s, brief: e.target.value }), 'brief')} />
           <Input aria-label="Composition" value={shot.composition} placeholder="Composition: where the subject sits, space around it" onChange={(e) => set((s) => ({ ...s, composition: e.target.value }), 'composition')} />
+          <BrandWarnings text={`${shot.brief} ${shot.composition}`} onApply={() => set((s) => ({ ...s, brief: lintBrief(s.brief).saferText }), 'brief')} />
           <div className="flex flex-wrap items-center gap-1.5">
             {spec.bible.characters.map((c) => {
               const on = shot.characterIds.includes(c.id);

@@ -126,14 +126,17 @@ describe('Film Studio Lite in a real browser', () => {
   let filmId = '';
 
   it('creates a film from the studio list and saves the narration', async () => {
-    await page.goto(`${BASE}/`);
+    await page.goto(`${BASE}/studio`);
+    // The first visit compiles the app in the dev server; give it time on a busy machine.
+    await page.locator('#email, nav[aria-label="Primary"]').first().waitFor({ timeout: 120_000 });
     if (await page.locator('#email').count()) {
       await page.locator('#email').fill(OWNER.email);
       await page.locator('#password').fill(OWNER.password);
       await page.getByRole('button', { name: 'Sign in with email' }).click();
     }
-    // The first visit compiles the app in the dev server; give it time on a busy machine.
-    await page.getByRole('link', { name: /Film Lite/ }).first().click({ timeout: 120_000 });
+    // The studio is opened from the Create page since the sidebar was trimmed; go to it directly.
+    await page.getByRole('link', { name: 'Projects' }).first().waitFor({ timeout: 120_000 });
+    await page.goto(`${BASE}/lite`);
     await page.getByRole('button', { name: 'New film' }).first().click();
     await page.locator('#lite-title').fill('E2E Lite film');
     await page.getByRole('radio', { name: /Atmospheric documentary/ }).click();

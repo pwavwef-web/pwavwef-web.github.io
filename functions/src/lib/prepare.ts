@@ -3,6 +3,8 @@ import {
   EXPORT_PRESETS,
   compileImagePrompt,
   estimateImage,
+  estimateLikenessCheck,
+  likenessPrompt,
   estimateMusic,
   estimateSpeech,
   estimateSpeechSeconds,
@@ -27,6 +29,7 @@ import {
   type CharacterDoc,
   type CostEstimate,
   type ImageJobRequest,
+  type LikenessSubject,
   type JobRequest,
   type JobTarget,
   type JobType,
@@ -369,7 +372,16 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
     if (a.sizeBytes > cap.maxImageBytes) bad(`“${a.title}” is larger than ${Math.round(cap.maxImageBytes / 1048576)} MB.`);
   }
   const prompt = compileImagePrompt(req.purpose, req.prompt, req.applyStyleBible ? project?.styleBible ?? null : null);
-  const estimate = estimateImage({ imageSize: req.imageSize, referenceImages: refIds.length, promptChars: prompt.length, outputs: 1 }, PRICING);
+  let estimate = estimateImage({ imageSize: req.imageSize, referenceImages: refIds.length, promptChars: prompt.length, outputs: 1 }, PRICING);
+  // Wardrobe and likeness lock: the new still is compared with the characters' approved references (priced here).
+  let likeness: { subjects: LikenessSubject[]; references: { assetId: string; storagePath: string; mimeType: string }[] } | null = null;
+  if (req.likenessCheck?.length) {
+    const subjects = req.likenessCheck.map((s) => ({ ...s, assetIds: s.assetIds.slice(0, 2) }));
+    const refAssets = await loadAssets(uid, [...new Set(subjects.flatMap((s) => s.assetIds))]);
+    for (const a of refAssets.values()) if (a.kind !== 'image') bad(`“${a.title}” is not an image.`);
+    likeness = { subjects, references: [...refAssets.values()].map((a) => ({ assetId: a.id, storagePath: a.storagePath, mimeType: normMime(a.mimeType) })) };
+    estimate = sumEstimates([estimate, estimateLikenessCheck({ modelId: MODEL_REGISTRY.reasoning.id, images: 1 + likeness.references.length, promptChars: likenessPrompt(subjects).length }, PRICING)], PRICING);
+  }
   let take: PreparedJob['take'];
   if (target?.kind === 'shot' && !target.sub) {
     if (!req.projectId) bad('Shot images need a project.');
@@ -410,6 +422,7 @@ async function prepareImage(uid: string, req: ImageJobRequest): Promise<Prepared
       ...(bibleCoverSignature ? { bibleCoverSignature } : {}),
       ...(req.adScene ? { adScene: true } : {}),
       ...(req.inputHash ? { inputHash: req.inputHash } : {}),
+      ...(likeness ? { likeness } : {}),
     },
     estimate,
     target,
@@ -510,7 +523,7 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
   // Lyric styles, credits, fonts, face tracks and face-safe reframe paths for this export shape.
   const inputs = await renderInputs(uid, req.projectId, tl, req.preset, assets);
   estimate.notes.push(...inputs.notes);
-  if (req.quality === 'final' || req.inspect) estimate.notes.push('The finished film is inspected before export (sound, picture, text, structure).');
+  if (!req.skipInspection && (req.quality === 'final' || req.inspect)) estimate.notes.push('The finished film is inspected before export (sound, picture, text, structure).');
   const assetMap = Object.fromEntries(
     [...assets.values()].map((a) => [a.id, { storagePath: a.storagePath, kind: a.kind, mimeType: a.mimeType, width: a.width ?? null, height: a.height ?? null, durationSec: a.durationSec ?? null, hasAudio: a.hasAudio ?? null, title: a.title, provenance: a.generation?.provenance ?? null, modelId: a.generation?.modelId ?? null }]),
   );
@@ -539,10 +552,11 @@ async function prepareRender(uid: string, req: RenderJobRequest): Promise<Prepar
         snapshot: { tracks: tl.tracks, clips: inputs.clips, aspectRatio: tl.aspectRatio, fps: tl.fps },
         text: inputs.text,
         lyricSync: { checkedAt: Date.now(), issues: lyricSync.slice(0, 50) },
-        // Final renders are always inspected before export; drafts only when asked.
-        inspect: req.inspect || req.quality === 'final',
+        // Final renders are inspected before export (drafts only when asked) unless the feature that made them checks the file itself.
+        inspect: req.skipInspection ? false : req.inspect || req.quality === 'final',
         // `preserve`: an approved soundtrack is passed through without loudness normalisation or limiting.
         audioMaster: req.audioMaster,
+        packId: req.packId ?? null,
         finalInspection: null,
         assets: assetMap,
         computeRates: { vcpu: PRICING.render.vcpu, memoryGiB: PRICING.render.memoryGiB, perVcpuSecond: PRICING.render.perVcpuSecond, perGiBSecond: PRICING.render.perGiBSecond },

@@ -12,7 +12,8 @@ export default defineConfig({
     include: ['**/*.e2e.test.ts'],
     environment: 'node',
     globalSetup: './global-setup.ts',
-    testTimeout: 180_000,
+    // A test can wait on real local renders; on a busy workstation a draft alone can take three minutes.
+    testTimeout: 900_000,
     hookTimeout: 180_000,
     fileParallelism: false,
   },

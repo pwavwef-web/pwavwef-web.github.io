@@ -66,6 +66,7 @@ import { media, ncol, npath, voiceFingerprint } from '../lib/narrator-store';
 import type { Owner } from '../lib/owner';
 import { activeLimit, clearLimit, dailyAllowance, limitMessage, resetDailyCount, type Allowance } from '../lib/narrator-limits';
 import { publish, unpublish, withdraw } from './narrator-publish';
+import { publicationHealth } from './narrator-health';
 import { signedReadUrl } from '../lib/storage';
 import { assertRateLimit, assertWithinLimits, getSettings, recordUsage, spendSnapshot } from '../lib/usage';
 
@@ -969,6 +970,8 @@ export async function narrator(owner: Owner, p: NarratorRequest): Promise<unknow
       return publish(owner, p);
     case 'unpublish':
       return unpublish(owner, p);
+    case 'publicationHealth':
+      return publicationHealth(owner, p);
     case 'autodirect':
       return autodirect(owner, p);
     default: {

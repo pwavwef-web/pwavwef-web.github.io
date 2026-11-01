@@ -2,6 +2,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import { ACTIVE_STATUSES, DEFAULT_SETTINGS, costFromUsage, dayKey, monthKey, type StudioSettings, type UsageAggregate, type UsageRecord } from '@az-studio/shared';
 import { col, db, FieldValue } from './firebase';
 import { PRICING } from '../config/pricing';
+import { providerOf } from './provider-ledger';
 
 export async function getSettings(uid: string): Promise<StudioSettings> {
   const snap = await col.users().doc(uid).get();
@@ -58,7 +59,8 @@ export function assertWithinLimits(settings: StudioSettings, spend: SpendSnapsho
 export interface UsageInput {
   uid: string;
   projectId: string | null;
-  jobId: string;
+  /** Null for studio housekeeping that is not a job (the daily model canary). */
+  jobId: string | null;
   modelId: string;
   kind: Exclude<UsageRecord['kind'], 'render'>;
   inputTokens: number;
@@ -94,6 +96,7 @@ export async function recordUsage(u: UsageInput): Promise<number> {
     jobId: u.jobId,
     modelId: u.modelId,
     kind: u.kind,
+    provider: providerOf(u.modelId),
     tokens: { input: u.inputTokens, output: u.outputTokens, thoughts: u.thoughtTokens, byModality: u.outputByModality ?? {} },
     costUsd,
     pricingVersion: PRICING.version,
@@ -105,7 +108,7 @@ export async function recordUsage(u: UsageInput): Promise<number> {
   batch.set(col.usageDaily().doc(`${u.uid}_${day}`), { ...agg, day }, { merge: true });
   batch.set(col.usageMonthly().doc(`${u.uid}_${month}`), { ...agg, month }, { merge: true });
   if (u.projectId) batch.set(col.projects().doc(u.projectId), { usage: { costUsd: FieldValue.increment(costUsd), jobs: FieldValue.increment(jobs) } }, { merge: true });
-  batch.set(col.jobs().doc(u.jobId), { usageUsd: FieldValue.increment(costUsd) }, { merge: true });
+  if (u.jobId) batch.set(col.jobs().doc(u.jobId), { usageUsd: FieldValue.increment(costUsd) }, { merge: true });
   await batch.commit();
   return costUsd;
 }

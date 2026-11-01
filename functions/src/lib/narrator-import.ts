@@ -101,6 +101,15 @@ export function setImportFetcherForTests(f: Fetcher | null): void {
 }
 
 export async function importArticle(raw: string): Promise<ExtractedArticle & { url: string }> {
+  const page = await fetchAllowedPage(raw);
+  return { ...extractArticle(page.html), url: page.url };
+}
+
+/**
+ * Fetches one allowed HTML page with every protection above (https on the allowed hosts, redirects re-checked,
+ * private addresses refused at connect time, time and size caps). The HTML is returned as text, never run.
+ */
+export async function fetchAllowedPage(raw: string): Promise<{ html: string; url: string }> {
   let url = checkImportUrl(raw);
   const deadline = Date.now() + IMPORT_LIMITS.timeoutMs * 2;
   for (let hop = 0; hop <= IMPORT_LIMITS.maxRedirects; hop++) {
@@ -113,8 +122,7 @@ export async function importArticle(raw: string): Promise<ExtractedArticle & { u
     }
     if (res.status !== 200) throw new ImportError(`The page answered with HTTP ${res.status}. Paste the article text instead.`);
     if (!/^(text\/html|application\/xhtml\+xml)/i.test(res.contentType)) throw new ImportError('That address is not an HTML page.');
-    const html = res.body.toString('utf8');
-    return { ...extractArticle(html), url: url.toString() };
+    return { html: res.body.toString('utf8'), url: url.toString() };
   }
   throw new ImportError('Too many redirects.');
 }

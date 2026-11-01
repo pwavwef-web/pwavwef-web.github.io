@@ -33,6 +33,8 @@ export interface LiteCheckInput {
   staleNarration: string[];
   /** Mean luminance (0–1) of the subtitle band of each image, when measured in the browser. */
   captionBandLuma?: Record<string, number>;
+  /** Stills that failed the likeness and wardrobe check (asset id → what differs). */
+  likenessFailures?: Record<string, string>;
 }
 
 export function liteExportChecks(input: LiteCheckInput): LiteFinding[] {
@@ -47,6 +49,13 @@ export function liteExportChecks(input: LiteCheckInput): LiteFinding[] {
   for (const id of input.staleNarration) {
     const s = spec.scenes.find((x) => x.id === id);
     add({ severity: 'error', basis: 'deterministic', kind: 'narration_stale', message: `The narration of ${s?.title || 'a scene'} was recorded before its text or voice changed. Re-voice it (or choose the take deliberately).`, stage: 'sound', sceneId: id, shotId: null, at: null });
+  }
+
+  // Wardrobe and likeness lock: a still that failed the check was chosen by hand — say so before export.
+  for (const { scene, shot } of spec.scenes.flatMap((sc) => sc.shots.map((sh) => ({ scene: sc, shot: sh })))) {
+    const img = shotImageId(spec, shot);
+    const note = img ? input.likenessFailures?.[img] : undefined;
+    if (note !== undefined) add({ severity: 'warning', basis: 'model', kind: 'image_likeness', message: `${scene.title || 'A scene'}, shot ${scene.shots.indexOf(shot) + 1}: the image does not match the approved character reference${note ? ` (${note})` : ''}. Regenerate it or approve it deliberately.`, stage: 'scenes', sceneId: scene.id, shotId: shot.id, at: null });
   }
 
   const D = assembly.durationSec;

@@ -175,6 +175,11 @@ export const narratorRequestSchema = z.discriminatedUnion('op', [
   /** Publishes one reviewed export through AZ Studio's hosted player (explicit action; never automatic). */
   z.object({ op: z.literal('publish'), editionId: id, exportId: id, reviewed: z.literal(true) }),
   z.object({ op: z.literal('unpublish'), editionId: id }),
+  /**
+   * Publication health: every published paper with its live revision and export, a newer export waiting, and
+   * (when `checkPosts`) whether the live blog post still carries today's player markup (read-only fetch).
+   */
+  z.object({ op: z.literal('publicationHealth'), checkPosts: z.boolean().default(true), publicIds: z.array(z.string().regex(/^[A-Za-z0-9]{12}$/)).max(50).optional() }),
   /** Auto-direct: suggests delivery directions for passages (reasoning model only — never synthesises audio). */
   z.object({ op: z.literal('autodirect'), editionId: id, intensity: z.enum(['subtle', 'expressive', 'dramatic']), passageIds: z.array(id).max(NARRATOR_LIMITS.passages).default([]), requestId }),
 ]);

@@ -49,6 +49,22 @@ describe('Firestore rules — projects', () => {
     await assertFails(setDoc(doc(db, 'projects/p3'), { ...project(), title: '' }));
   });
 
+  it('keeps a Link to Ad project server-written: no client creates one or edits its sources, facts or exports', async () => {
+    const db = owner().firestore();
+    // Only the API (Admin SDK) creates link_ad projects; the browser cannot, even as the owner.
+    await assertFails(setDoc(doc(db, 'projects/ad1'), { ...project(), type: 'link_ad', linkad: { v: 1 } }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'projects/ad1'), { ...project(), type: 'link_ad', linkad: { v: 1, revision: 3 } });
+    });
+    await assertSucceeds(getDoc(doc(db, 'projects/ad1')));
+    await assertSucceeds(updateDoc(doc(db, 'projects/ad1'), { title: 'Renamed' }));
+    await assertFails(updateDoc(doc(db, 'projects/ad1'), { linkad: { v: 1, revision: 99 } }));
+    await assertFails(updateDoc(doc(db, 'projects/ad1'), { 'linkad.stage': 'ready' }));
+    // Nobody else can read it.
+    await assertFails(getDoc(doc(intruder().firestore(), 'projects/ad1')));
+    await assertFails(getDoc(doc(anon().firestore(), 'projects/ad1')));
+  });
+
   it('denies every other signed-in user, unverified tokens and anonymous access', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'projects/p1'), project());
@@ -190,6 +206,23 @@ describe('Firestore rules — creative documents and server records', () => {
     await assertFails(getDoc(doc(db, 'runtime/owner-test-uid_slots')));
     await assertFails(updateDoc(doc(db, 'users/owner-test-uid'), { settings: { dailyLimitUsd: 99999 } }));
     await assertSucceeds(getDoc(doc(db, 'users/owner-test-uid')));
+  });
+
+  it('keeps the public early-access list and its rate limits out of every client’s reach, the owner’s included', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'earlyAccess/abc'), { email: 'ama@example.com', consent: { updates: true } });
+      await setDoc(doc(ctx.firestore(), 'earlyAccessRate/h1'), { hourCount: 1 });
+    });
+    for (const who of [owner(), intruder(), anon()]) {
+      const db = who.firestore();
+      await assertFails(getDoc(doc(db, 'earlyAccess/abc')));
+      await assertFails(getDocs(collection(db, 'earlyAccess')));
+      await assertFails(setDoc(doc(db, 'earlyAccess/new'), { email: 'x@example.com' }));
+      await assertFails(updateDoc(doc(db, 'earlyAccess/abc'), { name: 'changed' }));
+      await assertFails(deleteDoc(doc(db, 'earlyAccess/abc')));
+      await assertFails(getDoc(doc(db, 'earlyAccessRate/h1')));
+      await assertFails(getDoc(doc(db, 'runtime/earlyAccessKey')));
+    }
   });
 
   it('reads missing records as not-found for the owner only, and never exposes foreign records', async () => {

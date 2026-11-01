@@ -40,6 +40,12 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Public beta: members' audio is written by the member worker and served only as short signed URLs issued by the
+    // member callable after its membership check. No client reads or writes it directly.
+    match /members/{rest=**} {
+      allow read, write: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

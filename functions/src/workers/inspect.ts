@@ -4,6 +4,7 @@ import type { Part } from '@google/genai';
 import {
   frozenOutsideBlack,
   analyzeDialogue,
+  mentionsLogo,
   compareStates,
   detectedToState,
   evaluateQuality,
@@ -157,8 +158,15 @@ async function skinOf(frame: { jpeg: Buffer } | null, annotated: Pick<VisionFram
 }
 
 /** Frames stored with the report: compact (no pixels, limited text). */
+/** The reviewer reported a logo, watermark or brand mark somewhere in its findings. */
+export function reviewMentionsLogo(review: ModelReview): boolean {
+  if (review.director?.text.some((t) => t.logoReversed)) return true;
+  if (review.renderedText.present && mentionsLogo(review.renderedText.note)) return true;
+  return [...review.problems.map((p) => `${p.category} ${p.description}`), ...review.artefacts.map((a) => a.description), ...(review.director?.text.map((t) => `${t.surface} ${t.note}`) ?? [])].some(mentionsLogo);
+}
+
 function compactFrames(frames: AnnotatedFrame[]): VisionFrame[] {
-  return frames.map((f) => ({ t: f.t, faces: f.faces.slice(0, 8), people: f.people.slice(0, 8), objects: f.objects.slice(0, 10), text: f.text.slice(0, 12).map((x) => ({ text: x.text.slice(0, 80), box: x.box })) }));
+  return frames.map((f) => ({ t: f.t, faces: f.faces.slice(0, 8), people: f.people.slice(0, 8), objects: f.objects.slice(0, 10), text: f.text.slice(0, 12).map((x) => ({ text: x.text.slice(0, 80), box: x.box })), ...(f.logos.length ? { logos: f.logos.slice(0, 5).map((l) => ({ name: l.name.slice(0, 60), score: l.score })) } : {}) }));
 }
 
 /** One OCR verdict per protected screen: the frame where its text is most legible, as filmed and mirrored. */
@@ -368,7 +376,7 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
       }
     }
     const vision: VisionMeasurements | null = annotated.length ? { frames: compactFrames(annotated), screenText: c ? screenReadings(c.expectations, annotated, flippedText) : [] } : null;
-    return { durationSec, fps: info.fps, hasAudio: info.hasAudio, words, transcriptText, languageCode, audio, endRatio, visual, temporal, vision, annotated, colour, previousFrame, visionError };
+    return { durationSec, fps: info.fps, hasAudio: info.hasAudio, words, transcriptText, languageCode, audio, endRatio, visual, temporal, vision, annotated, sampled: frames, colour, previousFrame, visionError };
   });
 
   const lastWordEnd = measured.words.length ? Math.max(...measured.words.map((w) => w.end)) : null;
@@ -404,6 +412,19 @@ export async function runInspectJob(job: JobDoc): Promise<void> {
   if (invalid.length) fail('invalid_output', `The reviewer's reply was incomplete (${invalid.slice(0, 3).join('; ')}), so nothing was scored from it.`, { details: invalid.join('\n').slice(0, 900), retryable: true });
   const review = normalizeReview(r.json);
   review.director = normalizeDirectorReview(r.json);
+  // A logo the reviewer reports is settled by logo recognition on the frames already sampled (only then — it costs a Vision unit per frame).
+  if (measured.vision && measured.sampled.length && reviewMentionsLogo(review)) {
+    try {
+      const logos = await annotateFrames({ frames: measured.sampled, features: ['LOGO_DETECTION'], usage });
+      const frames = measured.vision.frames.map((f) => {
+        const hit = logos.find((l) => l.t === f.t);
+        return hit?.logos.length ? { ...f, logos: hit.logos.slice(0, 5).map((l) => ({ name: l.name.slice(0, 60), score: l.score })) } : f;
+      });
+      measured.vision = { ...measured.vision, logoChecked: true, frames };
+    } catch {
+      // Without logo recognition the finding is settled by readable text alone.
+    }
+  }
   const measurements: Measurements = { durationSec: measured.durationSec, fps: measured.fps, hasAudio: measured.hasAudio, audio: measured.audio, visual: measured.visual, temporal: measured.temporal, vision: measured.vision, colour: measured.colour };
   const verdict = evaluateQuality({ expect: c?.expectations ?? null, dialogue, review, measurements, settings: p.settings, plannedCuts: p.plan.plannedCuts, editorialCuts: p.plan.editorialCuts ?? [], hasCharacters: e.characters.length > 0, waivedCategories: p.waivedCategories });
 

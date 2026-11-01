@@ -8,6 +8,8 @@ import {
   computeLiteTiming,
   defaultLiteSpec,
   liteExportChecks,
+  likenessBlocksAutoApproval,
+  likenessFailures,
   narrationHash,
   normalizeLiteSpec,
   pickTake,
@@ -24,6 +26,7 @@ import {
   type LiteDirectionId,
   type LiteNarrationTake,
   type LiteSpec,
+  type LikenessVerdict,
   type LocationDoc,
   type ProjectDoc,
   type ScoreDoc,
@@ -226,6 +229,13 @@ export interface ShotCandidate {
   jobId: string | null;
   prompt: string | null;
   at: number;
+  /** Likeness and wardrobe check of a generated still (a failing one is never approved automatically). */
+  likeness?: LikenessVerdict | null;
+}
+
+/** The candidate a shot without an image adopts: the newest generated still that did not fail the likeness check. */
+export function adoptableCandidate(candidates: ShotCandidate[]): ShotCandidate | null {
+  return candidates.find((c) => !likenessBlocksAutoApproval(c.likeness)) ?? null;
 }
 
 const ms = (t: unknown) => (t && typeof (t as { toMillis?: () => number }).toMillis === 'function' ? (t as { toMillis: () => number }).toMillis() : 0);
@@ -250,7 +260,7 @@ export function jobIndex(jobs: Job[]) {
     imageCandidates: (shotId: string): ShotCandidate[] =>
       forTarget('lite_shot', shotId)
         .filter((j) => j.type === 'image.generate' && j.status === 'completed' && j.result?.assetIds?.[0])
-        .map((j) => ({ assetId: j.result!.assetIds![0]!, source: 'generated' as const, jobId: j.id, prompt: (j.params as { prompt?: string }).prompt ?? null, at: ms(j.completedAt) || ms(j.createdAt) })),
+        .map((j) => ({ assetId: j.result!.assetIds![0]!, source: 'generated' as const, jobId: j.id, prompt: (j.params as { prompt?: string }).prompt ?? null, at: ms(j.completedAt) || ms(j.createdAt), likeness: ((j.result?.data as { likeness?: LikenessVerdict } | undefined)?.likeness ?? null) })),
   };
 }
 
@@ -318,7 +328,7 @@ export function useComposition(spec: LiteSpec, jobs: Job[], score: ScoreDoc | nu
     const outWidth = EXPORT_PRESETS[ASPECT_PRESET[aspect]].final.width;
     const assembly = assembleLiteTimeline({ spec, timing, takes, assets, aspect, outWidth, score: spec.sound.music.mode === 'score' ? score : null, ambience: beds });
     const stale = Object.entries(voices).filter(([, v]) => v.stale).map(([k]) => k);
-    const findings = liteExportChecks({ spec, timing, assembly, staleNarration: stale, captionBandLuma });
+    const findings = liteExportChecks({ spec, timing, assembly, staleNarration: stale, captionBandLuma, likenessFailures: likenessFailures(assetDocs) });
     const reconciliation = reconcileTiming(spec, timing);
     return { voices, beds, timing, assembly, findings, reconciliation, assetDocs, takes };
   }, [spec, voices, beds, assetDocs, score, aspect, captionBandLuma]);

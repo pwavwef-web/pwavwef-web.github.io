@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     name: 'web',
     root: import.meta.dirname,
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'site/**/*.test.ts'],
     environment: 'jsdom',
   },
 });

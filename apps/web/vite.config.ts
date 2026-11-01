@@ -1,11 +1,13 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { publicSite, siteInputs } from './site/plugin';
 
-/** Dev/preview servers route /embed/audio/{id} to the public player page, like the Hosting rewrite. */
+/** Dev/preview servers route /embed/audio/{id} and /review/{token} to their public pages, like the Hosting rewrites. */
 function embedRoute(): Plugin {
   const rewrite = (req: { url?: string }, _res: unknown, next: () => void) => {
     if (req.url && /^\/embed\/audio\/[^/?#]+\/?(\?.*)?$/.test(req.url)) req.url = '/embed.html';
+    else if (req.url && /^\/review\/[^/?#]+\/?(\?.*)?$/.test(req.url)) req.url = '/review.html';
     next();
   };
   return {
@@ -23,7 +25,7 @@ export default defineConfig(({ mode }) => {
   // real published editions without a local export. Dev/preview only — it never reaches a build.
   const proxy = env.VITE_USE_EMULATORS === 'true' ? { '/api/public': { target: 'http://127.0.0.1:5001', rewrite: (p: string) => `/${project}/us-central1/azsPublic${p}` } } : env.VITE_PUBLIC_API_ORIGIN ? { '/api/public': { target: env.VITE_PUBLIC_API_ORIGIN, changeOrigin: true } } : undefined;
   return {
-    plugins: [react(), tailwindcss(), embedRoute()],
+    plugins: [publicSite(), react(), tailwindcss(), embedRoute()],
     server: { port: 5173, strictPort: true, proxy },
     preview: { port: 5173, proxy },
     worker: { format: 'es' },
@@ -32,8 +34,9 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       chunkSizeWarningLimit: 1200,
       rollupOptions: {
-        // The public player is its own small page: it shares no code with the studio dashboard.
-        input: { main: 'index.html', embed: 'embed.html' },
+        // The public player, the client review page and the public website (static pages from site/) are their own small pages: they
+        // share no code with the private studio, which is studio.html.
+        input: { main: 'studio.html', embed: 'embed.html', review: 'review.html', app: 'app.html', ...siteInputs() },
         output: {
           // Long-lived vendor chunks cache across app deploys.
           manualChunks(id: string) {

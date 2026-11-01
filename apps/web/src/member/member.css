@@ -1,0 +1,40 @@
+/* The member app (/app) on top of the public website's stylesheet (site.css): only what the site has no class for. */
+
+.m-user { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.m-email { color: var(--ink-3); font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
+.m-stack { display: grid; gap: 1.5rem; }
+.m-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+.m-head h1 { font-size: clamp(2rem, 1.5rem + 2vw, 3rem); margin: 0; }
+.m-row { display: flex; gap: 0.5rem; }
+.m-row input { flex: 1; min-width: 0; }
+.field textarea.m-text {
+  width: 100%; padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--ink); font: inherit; font-size: 1rem; line-height: 1.6; resize: vertical;
+}
+.field textarea.m-text:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); outline: none; }
+.field textarea[disabled], .field input[disabled], .field select[disabled] { opacity: 0.65; }
+.m-allowance { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.m-allowance > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-small); padding: 0.9rem 1rem; }
+.m-k { display: block; font-size: 0.82rem; color: var(--ink-3); }
+.m-v { display: block; font-family: var(--font-display); font-size: 1.9rem; line-height: 1.1; }
+.m-list { list-style: none; display: grid; gap: 0.5rem; }
+.m-list button {
+  display: grid; gap: 0.15rem; width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-small); padding: 0.9rem 1rem;
+}
+.m-list button:hover { border-color: var(--accent); }
+.m-title { font-weight: 650; }
+.m-meta { font-size: 0.9rem; color: var(--ink-3); }
+.m-empty { padding: 1.5rem; }
+.m-note { border-radius: 12px; padding: 0.8rem 1rem; margin: 0 0 1rem; font-size: 0.95rem; background: var(--accent-soft); color: var(--ink-2); }
+.m-note-ok { background: var(--ok-bg); color: var(--ok-ink); }
+.m-link { background: none; border: 0; padding: 0; margin-bottom: 1rem; color: var(--accent-text); cursor: pointer; font: inherit; }
+.m-estimate { border: 1px solid var(--line-strong); border-radius: var(--radius-small); padding: 1rem; margin: 0 0 1rem; }
+.m-actions { flex-wrap: wrap; }
+.m-audio { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+.m-audio p { margin: 0; width: 100%; color: var(--ink-2); }
+.m-audio audio { width: 100%; }
+@media (max-width: 520px) {
+  .m-allowance { grid-template-columns: 1fr; }
+  .m-row { flex-direction: column; }
+}

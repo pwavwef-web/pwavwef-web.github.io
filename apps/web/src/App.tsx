@@ -9,6 +9,7 @@ import { Presenter } from './components/presenter';
 import { isStaleChunkError, reloadForNewBuild } from './lib/build-refresh';
 
 const Home = lazy(() => import('./pages/Home'));
+const Reviews = lazy(() => import('./pages/Reviews'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectRouter = lazy(() => import('./pages/ProjectRouter'));
 const Create = lazy(() => import('./pages/Create'));
@@ -25,13 +26,21 @@ const ShortAds = lazy(() => import('./pages/ads/ShortAds'));
 const AdStudio = lazy(() => import('./pages/ads/AdStudio'));
 const LiteStudio = lazy(() => import('./pages/lite/LiteStudio'));
 const LiteWorkspace = lazy(() => import('./pages/lite/LiteWorkspace'));
+const RecordingBooth = lazy(() => import('./pages/lite/RecordingBooth'));
+const Beta = lazy(() => import('./pages/Beta'));
 const MvLiteStudio = lazy(() => import('./pages/mvlite/MvLiteStudio'));
 const MvLiteWorkspace = lazy(() => import('./pages/mvlite/MvLiteWorkspace'));
+const LinkAdStudio = lazy(() => import('./pages/linkad/LinkAdStudio'));
+const LinkAdWorkspace = lazy(() => import('./pages/linkad/LinkAdWorkspace'));
+const PosterStudio = lazy(() => import('./pages/poster/PosterStudio'));
+const PosterWorkspace = lazy(() => import('./pages/poster/PosterWorkspace'));
+const BrandKits = lazy(() => import('./pages/BrandKits'));
 const NarratorShell = lazy(() => import('./pages/narrator/NarratorShell'));
 const NarratorEditions = lazy(() => import('./pages/narrator/EditionsHome'));
 const NarratorVoice = lazy(() => import('./pages/narrator/VoicePage'));
 const NarratorSettings = lazy(() => import('./pages/narrator/SettingsPage'));
 const NarratorEditor = lazy(() => import('./pages/narrator/EditionEditor'));
+const NarratorPublications = lazy(() => import('./pages/narrator/PublicationHealth'));
 const TimelineEditor = lazy(() => import('./pages/editor/TimelineEditor'));
 const PrintScreenplay = lazy(() => import('./pages/print/PrintScreenplay'));
 const PrintStoryboard = lazy(() => import('./pages/print/PrintStoryboard'));
@@ -73,7 +82,7 @@ function NotFound() {
       <div>
         <p className="eyebrow">404</p>
         <p className="display mt-2 text-4xl">This reel is missing</p>
-        <a href="/" className="mt-4 inline-block text-sm text-accent-2 hover:underline">
+        <a href="/studio" className="mt-4 inline-block text-sm text-accent-2 hover:underline">
           Back to Home
         </a>
       </div>
@@ -94,7 +103,10 @@ const router = createBrowserRouter([
         element: <AppShell />,
         errorElement: <RouteError />,
         children: [
-          { index: true, element: <Page><Home /></Page> },
+          // The public website owns `/`; the studio dashboard lives at /studio (every other studio URL is unchanged).
+          { index: true, element: <Navigate to="/studio" replace /> },
+          { path: 'studio', element: <Page><Home /></Page> },
+          { path: 'studio/beta', element: <Page><Beta /></Page> },
           { path: 'projects', element: <Page><Projects /></Page> },
           { path: 'projects/:projectId', element: <Page><ProjectRouter /></Page> },
           { path: 'projects/:projectId/film/:tab?', element: <Page><FilmStudio /></Page> },
@@ -103,14 +115,21 @@ const router = createBrowserRouter([
           { path: 'ads', element: <Page><ShortAds /></Page> },
           { path: 'ads/:projectId/:step?', element: <Page><AdStudio /></Page> },
           { path: 'lite', element: <Page><LiteStudio /></Page> },
+          { path: 'lite/booth/:projectId?/:sceneId?', element: <Page><RecordingBooth /></Page> },
           { path: 'lite/:projectId/:stage?', element: <Page><LiteWorkspace /></Page> },
           { path: 'mvlite', element: <Page><MvLiteStudio /></Page> },
           { path: 'mvlite/:projectId/:stage?', element: <Page><MvLiteWorkspace /></Page> },
+          { path: 'linkad', element: <Page><LinkAdStudio /></Page> },
+          { path: 'linkad/:projectId/:step?', element: <Page><LinkAdWorkspace /></Page> },
+          { path: 'poster', element: <Page><PosterStudio /></Page> },
+          { path: 'poster/:projectId/:step?', element: <Page><PosterWorkspace /></Page> },
+          { path: 'studio/brands/:kitId?', element: <Page><BrandKits /></Page> },
           {
             path: 'narrator',
             element: <Page><NarratorShell /></Page>,
             children: [
               { index: true, element: <Page><NarratorEditions /></Page> },
+              { path: 'publications', element: <Page><NarratorPublications /></Page> },
               { path: 'voice', element: <Page><NarratorVoice /></Page> },
               { path: 'settings', element: <Page><NarratorSettings /></Page> },
               { path: 'e/:editionId', element: <Page><NarratorEditor /></Page> },
@@ -122,8 +141,9 @@ const router = createBrowserRouter([
           { path: 'create/remix', element: <Page><Remix /></Page> },
           { path: 'assets', element: <Page><Assets /></Page> },
           { path: 'jobs', element: <Page><Jobs /></Page> },
+          { path: 'studio/reviews', element: <Page><Reviews /></Page> },
           { path: 'settings', element: <Page><Settings /></Page> },
-          { path: 'home', element: <Navigate to="/" replace /> },
+          { path: 'home', element: <Navigate to="/studio" replace /> },
           { path: '*', element: <NotFound /> },
         ],
       },

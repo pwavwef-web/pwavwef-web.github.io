@@ -5,6 +5,10 @@
  *  azsJobWorker   — Cloud Tasks queue that runs durable generation / render jobs
  *  azsOnUpload    — validates uploads in the private media bucket
  *  azsMaintenance — reconciles jobs every 10 minutes
+ *  azsCanary      — probes every model role once a day and records what changed
+ *  azsMember      — the public beta's member callable (off unless runtime/features.beta.enabled; never the owner API)
+ *  azsMemberWorker — Cloud Tasks queue that voices members' audio editions (prebuilt voices only)
+ *  azsPublic      — unauthenticated: published audio editions, client review links and the website's early-access form
  */
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, onRequest, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
@@ -20,6 +24,10 @@ import type { CharacterDoc } from '@az-studio/shared';
 import { handleBibleCoverChange } from './triggers/bible-cover';
 import { assertOwner } from './lib/owner';
 import * as actions from './api/actions';
+import * as ops from './api/ops';
+import { reviewLinks } from './api/review-links';
+import { advanceOpenPacks, deliverables } from './api/deliverables';
+import { handlePublicReview } from './public/review';
 import * as continuity from './api/continuity';
 import * as production from './api/production';
 import * as studio from './api/studio';
@@ -27,12 +35,25 @@ import * as takes from './api/takes';
 import * as ads from './api/ads';
 import * as lite from './api/lite';
 import * as mvlite from './api/mvlite';
+import { linkAd } from './api/linkad';
+import { brandKits } from './api/brand-kits';
+import { liteBooth } from './api/lite-booth';
+import { beta } from './api/beta';
+import { member } from './api/member';
+import { runMemberSpeak, type MemberTask } from './workers/member-speak';
+import { isOwner } from './lib/owner';
+import { memberRequestSchema } from '@az-studio/shared';
 import { narrator } from './api/narrator';
 import { handleTask } from './workers/worker';
 import type { WorkerPayload } from './lib/jobs';
 import { handleUpload } from './triggers/upload';
 import { runMaintenance } from './scheduled/maintenance';
+import { runCanary } from './scheduled/canary';
+import { ownerConfig } from './lib/owner';
 import { handlePublicAudio } from './public/audio';
+import { handleEarlyAccess } from './public/early-access';
+import { earlyAccess } from './api/early-access';
+import { pruneEarlyAccessRate } from './lib/early-access';
 
 setGlobalOptions({ region: REGION, serviceAccount: RUNTIME_SERVICE_ACCOUNT, maxInstances: 10 });
 
@@ -76,6 +97,16 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return production.productionAction(owner, req.payload);
     case 'modelStatus':
       return production.modelStatus(owner, req.payload);
+    case 'canary':
+      return ops.canary(owner, req.payload);
+    case 'spendByTask':
+      return ops.spendByTask(owner, req.payload);
+    case 'providerLedger':
+      return ops.providerLedger(owner, req.payload);
+    case 'reviewLinks':
+      return reviewLinks(owner, req.payload);
+    case 'deliverables':
+      return deliverables(owner, req.payload);
     case 'continuitySave':
       return continuity.continuitySave(owner, req.payload);
     case 'continuityDelete':
@@ -130,6 +161,16 @@ async function dispatch(req: ApiRequest, owner: ReturnType<typeof assertOwner>):
       return mvlite.mvliteCancel(owner, req.payload);
     case 'narrator':
       return narrator(owner, req.payload);
+    case 'earlyAccess':
+      return earlyAccess(owner, req.payload);
+    case 'liteBooth':
+      return liteBooth(owner, req.payload);
+    case 'beta':
+      return beta(owner, req.payload);
+    case 'linkAd':
+      return linkAd(owner, req.payload);
+    case 'brandKits':
+      return brandKits(owner, req.payload);
     default: {
       // Every action in the request schema must be handled here (compile-time check).
       const unhandled: never = req;
@@ -192,11 +233,20 @@ export const azsOnUpload = onObjectFinalized(
 );
 
 /**
- * Public, unauthenticated audio-edition endpoints (published revisions only), reached through Hosting at
- * /api/public/**. No Auth, App Check, studio data or generation code is involved.
+ * Public, unauthenticated endpoints reached through Hosting at /api/public/**: audio editions (published
+ * revisions only) and the website's early-access form (stores an interest registration, nothing else).
+ * No Auth, App Check, studio data or generation code is involved.
  */
 export const azsPublic = onRequest({ invoker: 'public', memory: '512MiB', timeoutSeconds: 120, concurrency: 80, maxInstances: 10 }, async (req, res) => {
   try {
+    if (req.path.startsWith('/api/public/review/')) {
+      await handlePublicReview({ method: req.method, path: req.path, headers: req.headers, body: req.body }, res);
+      return;
+    }
+    if (req.path === '/api/public/early-access') {
+      await handleEarlyAccess({ method: req.method, headers: req.headers, body: req.body, rawBody: req.rawBody, ip: req.ip }, res);
+      return;
+    }
     await handlePublicAudio({ method: req.method, path: req.path, headers: req.headers }, Object.assign(res, { pipeFrom: (s: NodeJS.ReadableStream) => void s.pipe(res) }));
   } catch (e) {
     logger.error('azsPublic failure', { path: req.path, error: String((e as Error)?.message ?? e) });
@@ -206,4 +256,54 @@ export const azsPublic = onRequest({ invoker: 'public', memory: '512MiB', timeou
 
 export const azsMaintenance = onSchedule({ schedule: 'every 10 minutes', timeoutSeconds: 300, memory: '512MiB' }, async () => {
   await runMaintenance();
+  // Hashed visitor addresses kept for the early-access rate limits expire after 48 hours.
+  await pruneEarlyAccessRate();
+  // Deliverables packs waiting for their renders' export checks.
+  await advanceOpenPacks();
 });
+
+/** Daily model canary (scheduled/canary.ts): changes show as a studio banner until acknowledged in Settings. */
+export const azsCanary = onSchedule({ schedule: 'every day 06:30', timeZone: 'Africa/Accra', timeoutSeconds: 300, memory: '512MiB', secrets: [OWNER_UID, OWNER_EMAIL] }, async () => {
+  const state = await runCanary(ownerConfig().uid);
+  if (state.changes.some((c) => c.worse)) logger.warn('model canary changes', { changes: state.changes });
+});
+
+/**
+ * The public beta's member API. A separate callable with its own gate (`assertMember`, lib/member.ts): it never runs
+ * `assertOwner`'s code path and owner actions are not reachable from it. With `runtime/features.beta.enabled` unset (the
+ * default) or `AZS_FEATURE_BETA=off`, every call is refused before anything is read.
+ */
+export const azsMember = onCall(
+  { secrets: [OWNER_UID, OWNER_EMAIL], enforceAppCheck: !IS_EMULATOR, cors: ALLOWED_ORIGINS, memory: '512MiB', timeoutSeconds: 120, concurrency: 40, maxInstances: 5 },
+  async (request: CallableRequest<unknown>) => {
+    let parsed;
+    try {
+      parsed = memberRequestSchema.parse(request.data);
+    } catch (e) {
+      const msg = e instanceof ZodError ? e.issues.map((i) => `${i.path.join('.') || 'request'}: ${i.message}`).join('; ') : 'Invalid request.';
+      throw new HttpsError('invalid-argument', msg);
+    }
+    try {
+      const owner = Boolean(request.auth && isOwner(request.auth, ownerConfig()));
+      return await member(request.auth, parsed, owner);
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      logger.error('azsMember failure', { op: parsed.op, error: String((e as Error)?.stack ?? e) });
+      throw new HttpsError('internal', 'Something went wrong. It has been logged.');
+    }
+  },
+);
+
+export const azsMemberWorker = onTaskDispatched<MemberTask>(
+  {
+    invoker: RUNTIME_SERVICE_ACCOUNT_EMAIL,
+    retryConfig: { maxAttempts: 3, minBackoffSeconds: 30, maxBackoffSeconds: 600 },
+    rateLimits: { maxConcurrentDispatches: 4, maxDispatchesPerSecond: 2 },
+    memory: '1GiB',
+    timeoutSeconds: 1800,
+    concurrency: 4,
+  },
+  async (req) => {
+    await runMemberSpeak(req.data);
+  },
+);
